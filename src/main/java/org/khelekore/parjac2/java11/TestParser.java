@@ -27,7 +27,7 @@ public class TestParser {
     }
 
     public void test () throws IOException {
-	CharBuffer buffer = CharBuffer.wrap ("package foo;\nimport bar;\nimport baz;\nclass Foo {}");
+	CharBuffer buffer = CharBuffer.wrap ("package foo;\nimport bar;\nimport baz;\nclass Foo { private final int x; }");
 	CharBufferLexer lexer = new CharBufferLexer (grammar, java11Tokens, buffer);
 	CompilerDiagnosticCollector diagnostics = new CompilerDiagnosticCollector ();
 	Parser p = new Parser (grammar, Paths.get ("Foo.java"), predictCache, lexer, diagnostics);
