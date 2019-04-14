@@ -192,8 +192,14 @@ public class Parser {
 	if (DEBUG) {
 	    int dotPos = positions & 0xff;
 	    int origin = positions >>> 8;
-	    System.out.println ("added State: " + grammar.getRule (rule) + ", dotPos: " + dotPos + ", origin: " + origin);
+	    System.out.println ("added State: " + readableRule (rule) +
+				", dotPos: " + dotPos + ", origin: " + origin);
 	}
+    }
+
+    private String readableRule (int rule) {
+	Rule r = grammar.getRule (rule);
+	return r.toReadableString (grammar);
     }
 
     private boolean nextIsMatchingToken (Rule r, int dotPos, Token scannedToken) {

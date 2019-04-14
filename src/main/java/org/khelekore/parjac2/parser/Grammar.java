@@ -82,6 +82,11 @@ public class Grammar {
 	return r.rules;
     }
 
+    public String getRuleGroupName (int ruleGroupId) {
+	RuleGroup r = ruleGroups.get (-ruleGroupId);
+	return r.rules.get (0).getName ();
+    }
+
     public Token getToken (int id) {
 	return tokens.get (id);
     }

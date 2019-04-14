@@ -38,4 +38,26 @@ public class Rule {
     @Override public String toString () {
 	return "Rule{" + ruleName + ", " + ruleId + "/" + ruleGroupId + ": " + Arrays.toString (rightHandSide) + "}";
     }
+
+    public String toReadableString (Grammar g) {
+	StringBuilder sb = new StringBuilder ();
+	sb.append ("Rule{" + ruleName + ", " + ruleId + "/" + ruleGroupId + ": [");
+	boolean first = true;
+	for (int i : rightHandSide) {
+	    if (!first)
+		sb.append (" ");
+	    if (g.isToken (i)) {
+		Token t = g.getToken (i);
+		sb.append ("'");
+		sb.append (t.getName ());
+		sb.append ("'");
+	    } else if (g.isRule (i)){
+		String name = g.getRuleGroupName (i);
+		sb.append (name);
+	    }
+	    first = false;
+	}
+	sb.append ("]}");
+	return sb.toString ();
+    }
 }
