@@ -1,4 +1,4 @@
-package org.khelekore.parjac2.parser;
+package org.khelekore.parjac2.java11;
 
 import java.math.BigInteger;
 import java.nio.CharBuffer;
@@ -6,8 +6,13 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Set;
 
+import org.khelekore.parjac2.parser.Grammar;
+import org.khelekore.parjac2.parser.Lexer;
+import org.khelekore.parjac2.parser.ParsePosition;
+import org.khelekore.parjac2.parser.Token;
+
 /** A lexer for the java language */
-public class CharBufferLexer {
+public class CharBufferLexer implements Lexer {
     private final Grammar grammar;
     private final Java11Tokens java11Tokens;
     // We use the position for keeping track of where we are

@@ -1,11 +1,15 @@
-package org.khelekore.parjac2.parser;
+package org.khelekore.parjac2.java11;
 
 import java.io.IOException;
 import java.nio.CharBuffer;
 import java.nio.file.Paths;
 import java.util.Locale;
+
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
-import org.khelekore.parjac2.JavaGrammarHelper;
+import org.khelekore.parjac2.parser.Grammar;
+import org.khelekore.parjac2.parser.Parser;
+import org.khelekore.parjac2.parser.PredictCache;
+import org.khelekore.parjac2.parser.Rule;
 
 public class TestParser {
     private final Grammar grammar = new Grammar ();

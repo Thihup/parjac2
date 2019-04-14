@@ -1,4 +1,4 @@
-package org.khelekore.parjac2;
+package org.khelekore.parjac2.java11;
 
 import java.io.IOException;
 

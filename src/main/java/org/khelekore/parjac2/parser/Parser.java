@@ -18,7 +18,7 @@ public class Parser {
     private final Grammar grammar;
     private final Path path;
     private final PredictCache predictCache;
-    private final CharBufferLexer lexer;
+    private final Lexer lexer;
     private final CompilerDiagnosticCollector diagnostics;
 
     private final IntHolder startPositions = new IntHolder (1024);
@@ -27,7 +27,7 @@ public class Parser {
     private final IntHolder states = new IntHolder (1024);
     private final List<IntHolder> predictions = new ArrayList<> ();
 
-    public Parser (Grammar grammar, Path path, PredictCache predictCache, CharBufferLexer lexer,
+    public Parser (Grammar grammar, Path path, PredictCache predictCache, Lexer lexer,
 		   CompilerDiagnosticCollector diagnostics) {
 	this.grammar = grammar;
 	this.path = path;

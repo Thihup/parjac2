@@ -1,8 +1,11 @@
-package org.khelekore.parjac2.parser;
+package org.khelekore.parjac2.java11;
 
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.khelekore.parjac2.parser.Grammar;
+import org.khelekore.parjac2.parser.Token;
 
 public class Java11Tokens {
 
