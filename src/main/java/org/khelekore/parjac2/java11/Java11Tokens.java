@@ -9,8 +9,6 @@ import org.khelekore.parjac2.parser.Token;
 
 public class Java11Tokens {
 
-    private final Grammar grammar;
-
     // 3.4. Line Terminators
     public final Token LF;
     public final Token CR;
@@ -172,7 +170,6 @@ public class Java11Tokens {
     private final Map<String, Token> nameToRestrictedKeyword = new HashMap<> ();
 
     public Java11Tokens (Grammar grammar) {
-	this.grammar = grammar;
 
 	// 3.4. Line Terminators
 	LF = grammar.getToken ("LF");          // \n

@@ -3,8 +3,6 @@ package org.khelekore.parjac2.java11;
 import java.math.BigInteger;
 import java.nio.CharBuffer;
 import java.util.BitSet;
-import java.util.List;
-import java.util.Set;
 
 import org.khelekore.parjac2.parser.Grammar;
 import org.khelekore.parjac2.parser.Lexer;

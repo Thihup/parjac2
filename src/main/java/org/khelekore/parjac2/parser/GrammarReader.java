@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -130,7 +129,7 @@ public class GrammarReader {
 	    for (int i = s; i < parts.size (); i++)
 		parts.get (i).add (zomName);
 	} else if (p instanceof List) {
-	    List<?> ls = (List)p;
+	    List<?> ls = (List<?>)p;
 	    for (Object x : ls)
 		split (x, parts);
 	} else {

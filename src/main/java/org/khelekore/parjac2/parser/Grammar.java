@@ -36,7 +36,7 @@ public class Grammar {
     }
 
     public Token getToken (String tokenName) {
-	return tokenNameToToken.computeIfAbsent​ (tokenName, this::addToken);
+	return tokenNameToToken.computeIfAbsent (tokenName, this::addToken);
     }
 
     private Token addToken (String tokenName) {
@@ -72,7 +72,7 @@ public class Grammar {
     }
 
     private RuleGroup addRuleGroup (String name) {
-	RuleGroup g = new RuleGroup (name, -ruleGroups.size ());
+	RuleGroup g = new RuleGroup (-ruleGroups.size ());
 	ruleGroups.add (g);
 	return g;
     }
@@ -103,12 +103,10 @@ public class Grammar {
     }
 
     private static class RuleGroup {
-	private final String name;
 	private final int id;
 	private final List<Rule> rules = new ArrayList<> ();
 
-	public RuleGroup (String name, int id) {
-	    this.name = name;
+	public RuleGroup (int id) {
 	    this.id = id;
 	}
 

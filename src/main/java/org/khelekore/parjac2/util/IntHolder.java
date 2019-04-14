@@ -61,8 +61,6 @@ public class IntHolder {
 	    return;
 	int startBlock = from / blockSize;
 	int startPos = from % blockSize;
-	int endBlock = to / blockSize;
-	int endPos = to % blockSize;
 	int[] block = parts.get (startBlock);
 	for (int c = from, posInBlock = startPos, currentBlock = startBlock; c < to; c++, posInBlock++) {
 	    if (posInBlock == blockSize) {
@@ -82,8 +80,6 @@ public class IntHolder {
 	    return;
 	int startBlock = from / blockSize;
 	int startPos = from % blockSize;
-	int endBlock = to / blockSize;
-	int endPos = to % blockSize;
 	int[] block = parts.get (startBlock);
 	for (int c = from, posInBlock = startPos, currentBlock = startBlock; c < to; c += 2, posInBlock += 2) {
 	    if (posInBlock == blockSize) {

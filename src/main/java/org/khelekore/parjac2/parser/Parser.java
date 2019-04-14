@@ -1,12 +1,9 @@
 package org.khelekore.parjac2.parser;
 
-import java.nio.CharBuffer;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.SourceDiagnostics;
 import org.khelekore.parjac2.util.IntHolder;
