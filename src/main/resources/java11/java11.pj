@@ -101,31 +101,31 @@ WildcardBounds:
 # Productions from §6 (Names)
 
 ModuleName:
-	Identifier
-	ModuleName . Identifier
+	'Identifier'
+	ModuleName '.' 'Identifier'
 
 PackageName:
-	Identifier
-	PackageName . Identifier
+	'Identifier'
+	PackageName '.' 'Identifier'
 
 TypeName:
 	TypeIdentifier
-	PackageOrTypeName . TypeIdentifier
+	PackageOrTypeName '.' TypeIdentifier
 
 ExpressionName:
-	Identifier
-	AmbiguousName . Identifier
+	'Identifier'
+	AmbiguousName '.' 'Identifier'
 
 MethodName:
 	Identifier
 
 PackageOrTypeName:
-	Identifier
-	PackageOrTypeName . Identifier
+	'Identifier'
+	PackageOrTypeName '.' 'Identifier'
 
 AmbiguousName:
-	Identifier
-	AmbiguousName . Identifier
+	'Identifier'
+	AmbiguousName '.' 'Identifier'
 
 # Productions from §7 (Packages and Modules)
 CompilationUnit:
@@ -252,7 +252,7 @@ VariableDeclarator:
 	VariableDeclaratorId ['=' VariableInitializer]
 
 VariableDeclaratorId:
-	Identifier [Dims]
+	'Identifier' [Dims]
 
 VariableInitializer:
 	Expression
