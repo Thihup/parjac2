@@ -17,11 +17,11 @@ public class Token {
 	return tokenId;
     }
 
-    public int hashCode () {
+    @Override public int hashCode () {
 	return tokenId;
     }
 
-    public boolean equals (Object o) {
+    @Override public boolean equals (Object o) {
 	if (o == this)
 	    return true;
 	if (o == null)

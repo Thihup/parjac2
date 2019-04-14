@@ -31,39 +31,39 @@ public class SourceDiagnostics implements Diagnostic<Path> {
 	return new SourceDiagnostics (Diagnostic.Kind.WARNING, path, parsePosition, format, args);
     }
 
-    public Diagnostic.Kind getKind () {
+    @Override public Diagnostic.Kind getKind () {
 	return kind;
     }
 
-    public Path getSource () {
+    @Override public Path getSource () {
 	return path;
     }
 
-    public long getPosition () {
+    @Override public long getPosition () {
 	return parsePosition.getTokenStartPos ();
     }
 
-    public long getStartPosition () {
+    @Override public long getStartPosition () {
 	return parsePosition.getTokenStartPos ();
     }
 
-    public long getEndPosition () {
+    @Override public long getEndPosition () {
 	return parsePosition.getTokenEndPos ();
     }
 
-    public long getLineNumber () {
+    @Override public long getLineNumber () {
 	return parsePosition != null ? parsePosition.getLineNumber () : -1;
     }
 
-    public long getColumnNumber () {
+    @Override public long getColumnNumber () {
 	return parsePosition != null ? parsePosition.getTokenColumn () : -1;
     }
 
-    public String getCode () {
+    @Override public String getCode () {
 	return null;
     }
 
-    public String getMessage (Locale locale) {
+    @Override public String getMessage (Locale locale) {
 	String msg = String.format (format, args);
 	return String.format ("%s:%d:%d: %s: %s", path.toString (),
 			      getLineNumber (), getColumnNumber (), kind, msg);

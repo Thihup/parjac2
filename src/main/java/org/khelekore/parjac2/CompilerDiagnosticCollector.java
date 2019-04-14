@@ -19,7 +19,7 @@ public class CompilerDiagnosticCollector implements DiagnosticListener<Path> {
     private volatile boolean hasError;
     private volatile boolean hasWarning;
 
-    public void report (Diagnostic<? extends Path> diagnostic) {
+    @Override public void report (Diagnostic<? extends Path> diagnostic) {
 	if (diagnostic.getKind () == Diagnostic.Kind.ERROR)
 	    hasError = true;
 	if (diagnostic.getKind () == Diagnostic.Kind.WARNING)

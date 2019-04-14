@@ -88,7 +88,7 @@ public class CharBufferLexer implements Lexer {
 	return currentIdentifier;
     }
 
-    public ParsePosition getParsePosition () {
+    @Override public ParsePosition getParsePosition () {
 	return new ParsePosition (getLineNumber (), getTokenColumn (),
 				  getTokenStartPos (), getTokenEndPos ());
     }
@@ -109,7 +109,7 @@ public class CharBufferLexer implements Lexer {
 	return tokenStartColumn;
     }
 
-    public Token nextToken (BitSet wantedTokens) {
+    @Override public Token nextToken (BitSet wantedTokens) {
 	while (hasMoreTokens ()) {
 	    Token t = nextRealToken (wantedTokens);
 	    if (java11Tokens.isWhitespace (t) || java11Tokens.isComment (t))
@@ -225,7 +225,7 @@ public class CharBufferLexer implements Lexer {
 	return grammar.END_OF_INPUT;
     }
 
-    public boolean hasMoreTokens () {
+    @Override public boolean hasMoreTokens () {
 	return buf.position () != buf.limit () || !hasSentEOI;
     }
 
