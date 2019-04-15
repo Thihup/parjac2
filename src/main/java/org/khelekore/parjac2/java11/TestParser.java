@@ -1,7 +1,14 @@
 package org.khelekore.parjac2.java11;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Locale;
 
@@ -19,22 +26,31 @@ public class TestParser {
 
     public static void main (String[] args) throws IOException {
 	TestParser tg = new TestParser ();
-	tg.test ();
+	for (String file : args)
+	    tg.test (file);
     }
 
     public TestParser () throws IOException {
 	goalRule = JavaGrammarHelper.readAndValidateRules (grammar, false);
     }
 
-    public void test () throws IOException {
-	CharBuffer buffer = CharBuffer.wrap ("package foo;\nimport bar;\nimport baz;\nclass Foo { private final int x; }");
-	CharBufferLexer lexer = new CharBufferLexer (grammar, java11Tokens, buffer);
+    public void test (String file) throws IOException {
+	CharBuffer input = pathToCharBuffer (Paths.get (file), StandardCharsets.UTF_8);
+	CharBufferLexer lexer = new CharBufferLexer (grammar, java11Tokens, input);
 	CompilerDiagnosticCollector diagnostics = new CompilerDiagnosticCollector ();
-	Parser p = new Parser (grammar, Paths.get ("Foo.java"), predictCache, lexer, diagnostics);
+	Parser p = new Parser (grammar, Paths.get (file), predictCache, lexer, diagnostics);
 	p.parse (goalRule);
 	if (diagnostics.hasError ()) {
 	    Locale locale = Locale.getDefault ();
 	    diagnostics.getDiagnostics ().forEach (d -> System.err.println (d.getMessage (locale)));
 	}
+    }
+
+    private CharBuffer pathToCharBuffer (Path path, Charset encoding) throws IOException {
+	ByteBuffer  buf = ByteBuffer.wrap (Files.readAllBytes (path));
+	CharsetDecoder decoder = encoding.newDecoder ();
+	decoder.onMalformedInput (CodingErrorAction.REPORT);
+	decoder.onUnmappableCharacter (CodingErrorAction.REPORT);
+	return decoder.decode (buf);
     }
 }
