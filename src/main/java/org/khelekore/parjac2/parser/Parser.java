@@ -23,6 +23,7 @@ public class Parser {
     // 2 ints per state: first is ruleid, second is positions: 24 bit startpos, 8 bit dotPos.
     private final IntHolder states = new IntHolder (1024);
     private final List<IntHolder> predictions = new ArrayList<> ();
+    private int currentPosition = 0;
 
     public Parser (Grammar grammar, Path path, PredictCache predictCache, Lexer lexer,
 		   CompilerDiagnosticCollector diagnostics) {
@@ -35,7 +36,6 @@ public class Parser {
     }
 
     public void parse (Rule goalRule) {
-	int currentPosition = 0;
 	addState (goalRule.getId (), 0);
 
 	while (lexer.hasMoreTokens ()) {
@@ -45,8 +45,8 @@ public class Parser {
 		System.out.println ("stateStartPos: " + stateStartPos);
 	    }
 	    complete (stateStartPos);
-	    predict (currentPosition);
-	    scan (currentPosition);
+	    predict ();
+	    scan ();
 	    // TODO: check for failures
 	    if (isInError ()) {
 
@@ -109,7 +109,7 @@ public class Parser {
 	}
     }
 
-    private void predict (int currentPosition) {
+    private void predict () {
 	BitSet ruleParts = new BitSet ();
 	states.apply ((r, p) -> addRules (r, p, ruleParts),
 		      startPositions.get (currentPosition), states.size ());
@@ -127,7 +127,7 @@ public class Parser {
 	    ruleParts.set (-ruleGroupId);
     }
 
-    private void scan (int currentPosition) {
+    private void scan () {
 	int positions = currentPosition << 8;
 	// Find tokens that we want to scan
 	BitSet tokens = new BitSet ();
@@ -140,7 +140,8 @@ public class Parser {
 
 	// TODO: deal with wrong token back from scan.
 	if (!tokens.get (scannedToken.getId ())) {
-	    addParserError ("Got unexpected token: '" + scannedToken.getName () + "', expected one of: " +
+	    addParserError ("Got unexpected token: '%s', expected one of: %s",
+			    scannedToken.getName (),
 			    tokens.stream ().mapToObj (i -> "'" + grammar.getToken (i).getName () + "'")
 			    .collect (java.util.stream.Collectors.joining (", ")));
 	}
@@ -188,6 +189,11 @@ public class Parser {
     }
 
     private void addState (int rule, int positions) {
+	int[] c = new int[1];
+	states.apply ((r, p) -> checkDup (rule, positions, r, p, c),
+		      startPositions.get (currentPosition), states.size ());
+	if (c[0] > 0)
+	    return;
 	states.add (rule, positions);
 	if (DEBUG) {
 	    int dotPos = positions & 0xff;
@@ -195,6 +201,11 @@ public class Parser {
 	    System.out.println ("added State: " + readableRule (rule) +
 				", dotPos: " + dotPos + ", origin: " + origin);
 	}
+    }
+
+    private void checkDup (int r1, int p1, int r2, int p2, int[] c) {
+	if (r1 == r2 && p1 == p2)
+	    c[0]++;
     }
 
     private String readableRule (int rule) {
@@ -223,7 +234,7 @@ public class Parser {
 	goalHolder.add (rule, positions);
     }
 
-    private void addParserError (String error) {
-	diagnostics.report (SourceDiagnostics.error (path, lexer.getParsePosition (), error));
+    private void addParserError (String format, Object... args) {
+	diagnostics.report (SourceDiagnostics.error (path, lexer.getParsePosition (), format, args));
     }
 }
