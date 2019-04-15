@@ -361,7 +361,7 @@ public class Java11Tokens {
     }
 
     public boolean isComment (Token t) {
-	return whitespaces.get (t.getId ());
+	return comments.get (t.getId ());
     }
 
     public boolean isKeyword (Token t) {
