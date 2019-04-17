@@ -33,6 +33,9 @@ public class Grammar {
 	for (int i = 1; i < rules.size (); i++)
 	    if (rules.get (i).size () == 0)
 		System.err.println ("Empty rule found: " + rules.get (i));
+	for (int i = 1; i < ruleGroups.size (); i++)
+	    if (ruleGroups.get (i).rules.isEmpty ())
+		System.err.println ("Empty rule group found: " + ruleGroups.get (i));
     }
 
     public Token getToken (String tokenName) {
@@ -72,7 +75,7 @@ public class Grammar {
     }
 
     private RuleGroup addRuleGroup (String name) {
-	RuleGroup g = new RuleGroup (-ruleGroups.size ());
+	RuleGroup g = new RuleGroup (-ruleGroups.size (), name);
 	ruleGroups.add (g);
 	return g;
     }
@@ -109,14 +112,20 @@ public class Grammar {
 
     private static class RuleGroup {
 	private final int id;
+	private final String name;
 	private final List<Rule> rules = new ArrayList<> ();
 
-	public RuleGroup (int id) {
+	public RuleGroup (int id, String name) {
 	    this.id = id;
+	    this.name = name;
 	}
 
 	public void addRule (Rule r) {
 	    rules.add (r);
+	}
+
+	@Override public String toString () {
+	    return "RuleGroup{" + id + ", " + name + ", " + rules + "}";
 	}
     }
 }
