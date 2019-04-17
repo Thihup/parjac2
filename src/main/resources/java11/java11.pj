@@ -530,7 +530,7 @@ LocalVariableDeclaration:
 
 LocalVariableType:
 	UnannType
-	var
+	'var'
 
 Statement:
 	StatementWithoutTrailingSubstatement
@@ -702,6 +702,10 @@ Resource:
 	{VariableModifier} LocalVariableType 'Identifier' '=' Expression
 	VariableAccess
 
+VariableAccess:
+	ExpressionName
+	FieldAccess
+
 # Productions from §15 (Expressions)
 Primary:
 	PrimaryNoNewArray
@@ -722,7 +726,7 @@ PrimaryNoNewArray:
 ClassLiteral:
 	TypeName {'[' ']'} '.' 'class'
 	NumericType {'[' ']'} '.' 'class'
-	boolean {'[' ']'} '.' 'class'
+	'boolean' {'[' ']'} '.' 'class'
 	'void' '.' 'class'
 
 ClassInstanceCreationExpression:
@@ -764,7 +768,7 @@ MethodReference:
 	ExpressionName '::' [TypeArguments] 'Identifier'
 	Primary '::' [TypeArguments] 'Identifier'
 	ReferenceType '::' [TypeArguments] 'Identifier'
-	super '::' [TypeArguments] 'Identifier'
+	'super' '::' [TypeArguments] 'Identifier'
 	TypeName '.' 'super' '::' [TypeArguments] 'Identifier'
 	ClassType '::' [TypeArguments] 'new'
 	ArrayType '::' 'new'
