@@ -91,6 +91,27 @@ public class IntHolder {
 	}
     }
 
+    public boolean checkFor (IntIntFilter filter, int from, int to) {
+	if (from % 2 == 1)
+	    throw new IllegalArgumentException ("From-position is odd: " + from);
+	validateRange (from, to);
+	if (from == to)
+	    return false;
+	int startBlock = from / blockSize;
+	int startPos = from % blockSize;
+	int[] block = parts.get (startBlock);
+	for (int c = from, posInBlock = startPos, currentBlock = startBlock; c < to; c += 2, posInBlock += 2) {
+	    if (posInBlock == blockSize) {
+		posInBlock = 0;
+		currentBlock++;
+		block = parts.get (currentBlock);
+	    }
+	    if (filter.accept (block[posInBlock], block[posInBlock + 1]))
+		return true;
+	}
+	return false;
+    }
+
     private void validateRange (int from, int to) {
 	if (from < 0)
 	    throw new IllegalArgumentException ("from: " + from + " is < 0");
@@ -108,6 +129,10 @@ public class IntHolder {
 
     public interface IntIntConsumer {
 	void accept (int i, int j);
+    }
+
+    public interface IntIntFilter {
+	boolean accept (int i, int j);
     }
 
     public int size () {

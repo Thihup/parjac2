@@ -20,8 +20,8 @@ public class Parser {
 
     private final IntHolder startPositions = new IntHolder (1024);
 
-    // 2 ints per state: first is ruleid, second is positions: 24 bit startpos, 8 bit dotPos.
-    private final IntHolder states = new IntHolder (1024);
+    // 2 ints per state: first is ruleid<<8 | dotPos, second is origin
+    private final IntHolder states = new IntHolder (4096);
     private final List<IntHolder> predictions = new ArrayList<> ();
     private int currentPosition = 0;
 
@@ -36,7 +36,8 @@ public class Parser {
     }
 
     public void parse (Rule goalRule) {
-	addState (goalRule.getId (), 0);
+	long startTime = System.currentTimeMillis ();
+	addState (goalRule.getId (), 0, 0);
 
 	while (lexer.hasMoreTokens ()) {
 	    int stateStartPos = startPositions.get (currentPosition);
@@ -58,19 +59,25 @@ public class Parser {
 	    return;
 
 	IntHolder goalHolder = new IntHolder (10);
-	states.apply ((r, p) -> findFinished (r, p, goalRule, goalHolder),
+	states.apply ((rp, o) -> findFinished (rp, o, goalRule, goalHolder),
 		      startPositions.get (currentPosition), states.size ());
 	if (goalHolder.size () < 2)
 	    addParserError ("Did not find any finishing state");
-	if (goalHolder.size () > 2)
+	else if (goalHolder.size () > 2)
 	    addParserError ("Found several valid parses: " + (goalHolder.size () / 2));
+
+	if (diagnostics.hasError ())
+	    return;
+
+	long endTime = System.currentTimeMillis ();
+	System.out.println ("Successful parse of: " + path + " in " + (endTime - startTime) + " millis " +
+			    "states.size: " + states.size () + ", total tokens: " + currentPosition);
     }
 
     private void complete (int stateStartPos) {
 	// No empty rules so we do not have to care about predictions, they are never completed.
 
 	// if we added any state we may have to deal with the new ones
-	// TODO: keep track of seen states.
 	int end;
 	int start = stateStartPos;
 	while (start < (end = states.size ())) {
@@ -79,47 +86,46 @@ public class Parser {
 	}
     }
 
-    private void tryComplete (int rule, int positions) {
+    private void tryComplete (int rulePos, int origin) {
+	int dotPos = rulePos & 0xff;
+	int rule = rulePos >> 8;
 	Rule r = grammar.getRule (rule);
-	int dotPos = positions & 0xff;
 	if (r.size () == dotPos) {
-	    completeLast (rule, positions, r);
+	    completeLast (rulePos, origin, r);
 	}
     }
 
-    private void completeLast (int rule, int positions, Rule r) {
-	int startPos = positions >>> 8;
-	int stateStartPos = startPositions.get (startPos);
-	int stateEndPos = startPos < startPositions.size () ? startPositions.get (startPos + 1) : states.size ();
-	states.apply ((cr, cp) -> tryAdvance (rule, positions, r, cr, cp), stateStartPos, stateEndPos);
-	IntHolder ih = predictions.get (startPos);
-	ih.apply (cr -> tryAdvance (rule, positions, r, cr, startPos << 8), 0, ih.size ());
+    private void completeLast (int rulePos, int origin, Rule r) {
+	int stateStartPos = startPositions.get (origin);
+	int stateEndPos = origin < startPositions.size () ? startPositions.get (origin + 1) : states.size ();
+	states.apply ((crp, co) -> tryAdvance (rulePos, origin, r, crp, co), stateStartPos, stateEndPos);
+	IntHolder ih = predictions.get (origin);
+	ih.apply (crp -> tryAdvance (rulePos, origin, r, crp << 8, origin), 0, ih.size ());
     }
 
-    private void tryAdvance (int rule, int position, Rule r, int crule, int cposition) {
+    private void tryAdvance (int rulePos, int origin, Rule r, int cRulePos, int cOrigin) {
+	int cDotPos = cRulePos & 0xff;
+	int crule = cRulePos >> 8;
 	Rule candidate = grammar.getRule (crule);
-	int cDotPos = cposition & 0xff;
 	if (cDotPos < candidate.size ()) {
 	    int part = candidate.get (cDotPos);
-	    if (grammar.isRule (part) && grammar.sameRule (r.getId (), part)) {
-		// TODO: do we need to check for duplicates?
-		int nextPosition = cposition & 0xffffff00 | (cDotPos + 1);
-		addState (crule, nextPosition);
-	    }
+	    if (grammar.isRule (part) && grammar.sameRule (r.getId (), part))
+		addState (crule, cDotPos + 1, cOrigin);
 	}
     }
 
     private void predict () {
 	BitSet ruleParts = new BitSet ();
-	states.apply ((r, p) -> addRules (r, p, ruleParts),
+	states.apply ((rp, o) -> addRules (rp, o, ruleParts),
 		      startPositions.get (currentPosition), states.size ());
 	IntHolder currentPredictions = predictCache.getPredictedRules (ruleParts);
 	predictions.add (currentPredictions);
     }
 
-    private void addRules (int rule, int positions, BitSet ruleParts) {
+    private void addRules (int rulePos, int origin, BitSet ruleParts) {
+	int dotPos = rulePos & 0xff;
+	int rule = rulePos >> 8;
 	Rule r = grammar.getRule (rule);
-	int dotPos = positions & 0xff;
 	if (r.size () == dotPos)
 	    return;
 	int ruleGroupId = r.get (dotPos);
@@ -128,13 +134,12 @@ public class Parser {
     }
 
     private void scan () {
-	int positions = currentPosition << 8;
 	// Find tokens that we want to scan
 	BitSet tokens = new BitSet ();
-	states.apply ((r, p) -> addTokens (r, p, tokens),
+	states.apply ((rp, o) -> addTokens (rp, tokens),
 		      startPositions.get (currentPosition), states.size ());
 	IntHolder ih = predictions.get (currentPosition);
-	ih.apply (r -> addTokens (r, positions, tokens), 0, ih.size ());
+	ih.apply (r -> addTokens (r << 8, tokens), 0, ih.size ());
 
 	Token scannedToken = scanToken (currentPosition, tokens);
 
@@ -148,14 +153,15 @@ public class Parser {
 
 	// Advance the states that can be advanced by the scanned token
 	startPositions.add (states.size ());
-	states.apply ((r, p) -> advance (r, p, scannedToken),
+	states.apply ((rp, o) -> advance (rp, o, scannedToken),
 		      startPositions.get (currentPosition), states.size ());
-	ih.apply (r -> advance (r, positions, scannedToken), 0, ih.size ());
+	ih.apply (r -> advance (r << 8, currentPosition, scannedToken), 0, ih.size ());
     }
 
-    private void addTokens (int rule, int positions, BitSet tokens) {
+    private void addTokens (int rulePos, BitSet tokens) {
+	int dotPos = rulePos & 0xff;
+	int rule = rulePos >> 8;
 	Rule r = grammar.getRule (rule);
-	int dotPos = positions & 0xff;
 	if (dotPos >= r.size ())
 	    return;
 	int id = r.get (dotPos);
@@ -175,37 +181,31 @@ public class Parser {
 	return t;
     }
 
-    private void advance (int rule, int positions, Token scannedToken) {
+    private void advance (int rulePos, int origin, Token scannedToken) {
+	int dotPos = rulePos & 0xff;
+	int rule = rulePos >> 8;
 	Rule r = grammar.getRule (rule);
-	int dotPos = positions & 0xff;
 	if (dotPos >= r.size ())
 	    return;
 	if (!nextIsMatchingToken (r, dotPos, scannedToken))
 	    return;
-	dotPos++;
-	positions &= 0xffffff00;
-	positions |= dotPos;
-	addState (rule, positions);
+	addState (rule, dotPos + 1, origin);
     }
 
-    private void addState (int rule, int positions) {
-	int[] c = new int[1];
-	states.apply ((r, p) -> checkDup (rule, positions, r, p, c),
-		      startPositions.get (currentPosition), states.size ());
-	if (c[0] > 0)
+    private void addState (int rule, int dotPos, int origin) {
+	int arp = rule << 8 | dotPos;
+	if (states.checkFor ((rp, o) -> checkDup (arp, origin, rp, o),
+			     startPositions.get (currentPosition), states.size ()))
 	    return;
-	states.add (rule, positions);
+	states.add (arp, origin);
 	if (DEBUG) {
-	    int dotPos = positions & 0xff;
-	    int origin = positions >>> 8;
 	    System.out.println ("added State: " + readableRule (rule) +
 				", dotPos: " + dotPos + ", origin: " + origin);
 	}
     }
 
-    private void checkDup (int r1, int p1, int r2, int p2, int[] c) {
-	if (r1 == r2 && p1 == p2)
-	    c[0]++;
+    private boolean checkDup (int rp1, int o1, int rp2, int o2) {
+	return rp1 == rp2 && o1 == o2;
     }
 
     private String readableRule (int rule) {
@@ -222,16 +222,16 @@ public class Parser {
 	return false;
     }
 
-    private void findFinished (int rule, int positions, Rule goalRule, IntHolder goalHolder) {
+    private void findFinished (int rulePos, int origin, Rule goalRule, IntHolder goalHolder) {
+	int dotPos = rulePos & 0xff;
+	int rule = rulePos >> 8;
 	if (rule != goalRule.getId ())
 	    return;
-	int dotPos = positions & 0xff;
-	int origin = positions >>> 8;
 	if (origin != 0)
 	    return;
 	if (dotPos < goalRule.size ())
 	    return;
-	goalHolder.add (rule, positions);
+	goalHolder.add (rulePos, origin);
     }
 
     private void addParserError (String format, Object... args) {
