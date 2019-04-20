@@ -389,6 +389,7 @@ public class CharBufferLexer implements Lexer {
 			}
 		    }
 		    pushBack ();
+		    return java11Tokens.RIGHT_SHIFT;
 		}
 	    }
 	    pushBack ();
