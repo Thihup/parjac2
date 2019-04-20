@@ -19,8 +19,14 @@ public class PredictCache {
      * @param rules each bit is a RuleGroup id.
      */
     public IntHolder getPredictedRules (BitSet rules) {
-	// TODO: thread safety
-	return cache.computeIfAbsent (rules, this::compute);
+	IntHolder ret = cache.get (rules);
+	if (ret == null) {
+	    // Need to clone since rules is modifiable
+	    BitSet k = (BitSet)rules.clone ();
+	    ret = compute (rules);
+	    cache.put (k, ret);
+	}
+	return ret;
     }
 
     private IntHolder compute (BitSet rules) {
@@ -31,7 +37,7 @@ public class PredictCache {
 	} while (rules.length () > 0);
 
 	IntHolder ret = new IntHolder (rules.size ());
-	predicted.stream ().forEach (i -> ret.add (-i));
+	predicted.stream ().forEach (i -> ret.add (-(i << 8)));
 	return ret;
     }
 

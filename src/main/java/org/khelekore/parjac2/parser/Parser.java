@@ -21,8 +21,14 @@ public class Parser {
     private final IntHolder startPositions = new IntHolder (1024);
 
     // 2 ints per state: first is ruleid<<8 | dotPos, second is origin
+    // Since rule ids are negative we shift (>>) down to keep id when we want rule
     private final IntHolder states = new IntHolder (4096);
+
+    private final BitSet predictedRules;
     private final List<IntHolder> predictions = new ArrayList<> ();
+
+    private final BitSet wantedScanTokens;
+
     private int currentPosition = 0;
 
     public Parser (Grammar grammar, Path path, PredictCache predictCache, Lexer lexer,
@@ -33,6 +39,8 @@ public class Parser {
 	this.lexer = lexer;
 	this.diagnostics = diagnostics;
 	startPositions.add (0);
+	predictedRules = new BitSet (-grammar.getMaxRuleGroupId ());
+	wantedScanTokens = new BitSet (grammar.getMaxTokenId ());
     }
 
     public void parse (Rule goalRule) {
@@ -100,7 +108,7 @@ public class Parser {
 	int stateEndPos = origin < startPositions.size () ? startPositions.get (origin + 1) : states.size ();
 	states.apply ((crp, co) -> tryAdvance (rulePos, origin, r, crp, co), stateStartPos, stateEndPos);
 	IntHolder ih = predictions.get (origin);
-	ih.apply (crp -> tryAdvance (rulePos, origin, r, crp << 8, origin), 0, ih.size ());
+	ih.apply (crp -> tryAdvance (rulePos, origin, r, crp, origin), 0, ih.size ());
     }
 
     private void tryAdvance (int rulePos, int origin, Rule r, int cRulePos, int cOrigin) {
@@ -115,39 +123,40 @@ public class Parser {
     }
 
     private void predict () {
-	BitSet ruleParts = new BitSet ();
-	states.apply ((rp, o) -> addRules (rp, o, ruleParts),
+	predictedRules.clear ();
+	states.apply ((rp, o) -> addRules (rp, o),
 		      startPositions.get (currentPosition), states.size ());
-	IntHolder currentPredictions = predictCache.getPredictedRules (ruleParts);
+	IntHolder currentPredictions = predictCache.getPredictedRules (predictedRules);
 	predictions.add (currentPredictions);
     }
 
-    private void addRules (int rulePos, int origin, BitSet ruleParts) {
+    private void addRules (int rulePos, int origin) {
 	int dotPos = rulePos & 0xff;
 	int rule = rulePos >> 8;
 	Rule r = grammar.getRule (rule);
 	if (r.size () == dotPos)
 	    return;
 	int ruleGroupId = r.get (dotPos);
-	if (grammar.isRule (ruleGroupId))
-	    ruleParts.set (-ruleGroupId);
+	if (grammar.isRule (ruleGroupId)) {
+	    predictedRules.set (-ruleGroupId);
+	}
     }
 
     private void scan () {
 	// Find tokens that we want to scan
-	BitSet tokens = new BitSet ();
-	states.apply ((rp, o) -> addTokens (rp, tokens),
+	wantedScanTokens.clear ();
+	states.apply ((rp, o) -> addTokens (rp, wantedScanTokens),
 		      startPositions.get (currentPosition), states.size ());
 	IntHolder ih = predictions.get (currentPosition);
-	ih.apply (r -> addTokens (r << 8, tokens), 0, ih.size ());
+	ih.apply (r -> addTokens (r, wantedScanTokens), 0, ih.size ());
 
-	Token scannedToken = scanToken (currentPosition, tokens);
+	Token scannedToken = scanToken (currentPosition, wantedScanTokens);
 
 	// TODO: deal with wrong token back from scan.
-	if (!tokens.get (scannedToken.getId ())) {
+	if (!wantedScanTokens.get (scannedToken.getId ())) {
 	    addParserError ("Got unexpected token: '%s', expected one of: %s",
 			    scannedToken.getName (),
-			    tokens.stream ().mapToObj (i -> "'" + grammar.getToken (i).getName () + "'")
+			    wantedScanTokens.stream ().mapToObj (i -> "'" + grammar.getToken (i).getName () + "'")
 			    .collect (java.util.stream.Collectors.joining (", ")));
 	}
 
@@ -155,7 +164,7 @@ public class Parser {
 	startPositions.add (states.size ());
 	states.apply ((rp, o) -> advance (rp, o, scannedToken),
 		      startPositions.get (currentPosition), states.size ());
-	ih.apply (r -> advance (r << 8, currentPosition, scannedToken), 0, ih.size ());
+	ih.apply (r -> advance (r, currentPosition, scannedToken), 0, ih.size ());
     }
 
     private void addTokens (int rulePos, BitSet tokens) {
@@ -165,8 +174,9 @@ public class Parser {
 	if (dotPos >= r.size ())
 	    return;
 	int id = r.get (dotPos);
-	if (grammar.isToken (id))
+	if (grammar.isToken (id)) {
 	    tokens.set (id);
+	}
     }
 
     private Token scanToken (int currentPosition, BitSet wantedTokens) {

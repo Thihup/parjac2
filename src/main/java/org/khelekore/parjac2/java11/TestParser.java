@@ -32,6 +32,8 @@ public class TestParser {
 
     public TestParser () throws IOException {
 	goalRule = JavaGrammarHelper.readAndValidateRules (grammar, false);
+	System.out.println ("Testing parsing with " + grammar.getMaxRuleGroupId () + " rule groups, " +
+			    grammar.getMaxRuleId () + " rules and " + grammar.getMaxTokenId () + " tokens");
     }
 
     public void test (String file) throws IOException {
