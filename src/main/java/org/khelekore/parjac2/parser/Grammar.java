@@ -98,8 +98,20 @@ public class Grammar {
 	return tokens.size () - 1;
     }
 
+    public int getMaxTokenId () {
+	return tokens.size ();
+    }
+
     public int getNumberOfRules () {
 	return rules.size () - 1;
+    }
+
+    public int getMaxRuleId () {
+	return -rules.size ();
+    }
+
+    public int getMaxRuleGroupId () {
+	return -ruleGroups.size ();
     }
 
     public boolean isToken (int id) {
