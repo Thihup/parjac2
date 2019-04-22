@@ -4,12 +4,11 @@ import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.khelekore.parjac2.util.IntHolder;
 
 public class PredictCache {
 
     private final Grammar grammar;
-    private final Map<BitSet, IntHolder> cache = new HashMap<> ();
+    private final Map<BitSet, PredictGroup> cache = new HashMap<> ();
 
     public PredictCache (Grammar grammar) {
 	this.grammar = grammar;
@@ -18,8 +17,8 @@ public class PredictCache {
     /**
      * @param rules each bit is a RuleGroup id.
      */
-    public IntHolder getPredictedRules (BitSet rules) {
-	IntHolder ret = cache.get (rules);
+    public PredictGroup getPredictedRules (BitSet rules) {
+	PredictGroup ret = cache.get (rules);
 	if (ret == null) {
 	    // Need to clone since rules is modifiable
 	    BitSet k = (BitSet)rules.clone ();
@@ -29,16 +28,14 @@ public class PredictCache {
 	return ret;
     }
 
-    private IntHolder compute (BitSet rules) {
+    private PredictGroup compute (BitSet rules) {
 	BitSet seen = new BitSet ();
 	BitSet predicted = new BitSet ();
 	do {
 	    rules.stream ().forEach (b -> addRules (b, rules, predicted, seen));
 	} while (rules.length () > 0);
 
-	IntHolder ret = new IntHolder (rules.size ());
-	predicted.stream ().forEach (i -> ret.add (-(i << 8)));
-	return ret;
+	return new PredictGroup (grammar, predicted);
     }
 
     private void addRules (int ruleGroupId, BitSet rules, BitSet predicted, BitSet seen) {

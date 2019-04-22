@@ -25,7 +25,7 @@ public class Parser {
     private final IntHolder states = new IntHolder (4096);
 
     private final BitSet predictedRules;
-    private final List<IntHolder> predictions = new ArrayList<> ();
+    private final List<PredictGroup> predictions = new ArrayList<> ();
 
     private final BitSet wantedScanTokens;
 
@@ -107,8 +107,10 @@ public class Parser {
 	int stateStartPos = startPositions.get (origin);
 	int stateEndPos = origin < startPositions.size () ? startPositions.get (origin + 1) : states.size ();
 	states.apply ((crp, co) -> tryAdvance (rulePos, origin, r, crp, co), stateStartPos, stateEndPos);
-	IntHolder ih = predictions.get (origin);
-	ih.apply (crp -> tryAdvance (rulePos, origin, r, crp, origin), 0, ih.size ());
+	PredictGroup pg = predictions.get (origin);
+	IntHolder ih = pg.getRulesWithNext (r.getGroupId ());
+	if (ih != null)
+	    ih.apply (crp -> advancePrediction (rulePos, origin, crp), 0, ih.size ());
     }
 
     private void tryAdvance (int rulePos, int origin, Rule r, int cRulePos, int cOrigin) {
@@ -122,12 +124,18 @@ public class Parser {
 	}
     }
 
+    private void advancePrediction (int rulePos, int origin, int cRulePos) {
+	// We already know next is matching
+	int crule = cRulePos >> 8;
+	addState (crule, 1, origin);
+    }
+
     private void predict () {
 	predictedRules.clear ();
 	states.apply ((rp, o) -> addRules (rp, o),
 		      startPositions.get (currentPosition), states.size ());
-	IntHolder currentPredictions = predictCache.getPredictedRules (predictedRules);
-	predictions.add (currentPredictions);
+	PredictGroup pg = predictCache.getPredictedRules (predictedRules);
+	predictions.add (pg);
     }
 
     private void addRules (int rulePos, int origin) {
@@ -147,8 +155,8 @@ public class Parser {
 	wantedScanTokens.clear ();
 	states.apply ((rp, o) -> addTokens (rp, wantedScanTokens),
 		      startPositions.get (currentPosition), states.size ());
-	IntHolder ih = predictions.get (currentPosition);
-	ih.apply (r -> addTokens (r, wantedScanTokens), 0, ih.size ());
+	PredictGroup pg = predictions.get (currentPosition);
+	wantedScanTokens.or (pg.getWantedScanTokens ());
 
 	Token scannedToken = scanToken (currentPosition, wantedScanTokens);
 
@@ -164,7 +172,9 @@ public class Parser {
 	startPositions.add (states.size ());
 	states.apply ((rp, o) -> advance (rp, o, scannedToken),
 		      startPositions.get (currentPosition), states.size ());
-	ih.apply (r -> advance (r, currentPosition, scannedToken), 0, ih.size ());
+	IntHolder ih = pg.getRulesWithNext (scannedToken.getId ());
+	if (ih != null)
+	    ih.apply (rp -> advancePrediction (rp, currentPosition), 0, ih.size ());
     }
 
     private void addTokens (int rulePos, BitSet tokens) {
@@ -200,6 +210,12 @@ public class Parser {
 	if (!nextIsMatchingToken (r, dotPos, scannedToken))
 	    return;
 	addState (rule, dotPos + 1, origin);
+    }
+
+    private void advancePrediction (int rulePos, int origin) {
+	// we already know that next is matching
+	int rule = rulePos >> 8;
+	addState (rule, 1, origin);
     }
 
     private void addState (int rule, int dotPos, int origin) {

@@ -32,12 +32,12 @@ public class TestParser {
 
     public TestParser () throws IOException {
 	goalRule = JavaGrammarHelper.readAndValidateRules (grammar, false);
-	System.out.println ("Testing parsing with " + grammar.getMaxRuleGroupId () + " rule groups, " +
-			    grammar.getMaxRuleId () + " rules and " + grammar.getMaxTokenId () + " tokens");
+	System.out.println ("Testing parsing with " + -grammar.getMaxRuleGroupId () + " rule groups, " +
+			    -grammar.getMaxRuleId () + " rules and " + grammar.getMaxTokenId () + " tokens");
     }
 
     public void test (String file) throws IOException {
-	CharBuffer input = pathToCharBuffer (Paths.get (file), StandardCharsets.UTF_8);
+	CharBuffer input = pathToCharBuffer (Paths.get (file), StandardCharsets.ISO_8859_1);
 	CharBufferLexer lexer = new CharBufferLexer (grammar, java11Tokens, input);
 	CompilerDiagnosticCollector diagnostics = new CompilerDiagnosticCollector ();
 	Parser p = new Parser (grammar, Paths.get (file), predictCache, lexer, diagnostics);
