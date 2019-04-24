@@ -1,14 +1,14 @@
 package org.khelekore.parjac2.parser;
 
 import java.util.BitSet;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.Map;
 
 public class PredictCache {
 
     private final Grammar grammar;
-    private final Map<BitSet, PredictGroup> cache = new HashMap<> ();
+    private final Map<BitSet, PredictGroup> cache = new ConcurrentHashMap<> ();
 
     public PredictCache (Grammar grammar) {
 	this.grammar = grammar;
@@ -22,8 +22,7 @@ public class PredictCache {
 	if (ret == null) {
 	    // Need to clone since rules is modifiable
 	    BitSet k = (BitSet)rules.clone ();
-	    ret = compute (rules);
-	    cache.put (k, ret);
+	    ret = cache.computeIfAbsent (k, key -> compute (rules));
 	}
 	return ret;
     }
