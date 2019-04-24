@@ -29,6 +29,15 @@ public class Parser {
 
     private final BitSet wantedScanTokens;
 
+    /** We use this to try to avoid full scanning for duplicates.
+     *  If we find a hash miss then we know there is no dup, if we have a hash collision
+     *  We have to scan the current set to see.
+     */
+    private final BitSet hashOfStates;
+    // TODO: how big? random prime for now, I tried 512 and that does not work well
+    // I have only seen about ~150 states in one set
+    private final int STATE_HASH_SIZE = 509;
+
     private int currentPosition = 0;
 
     public Parser (Grammar grammar, Path path, PredictCache predictCache, Lexer lexer,
@@ -41,6 +50,7 @@ public class Parser {
 	startPositions.add (0);
 	predictedRules = new BitSet (-grammar.getMaxRuleGroupId ());
 	wantedScanTokens = new BitSet (grammar.getMaxTokenId ());
+	hashOfStates = new BitSet (STATE_HASH_SIZE);
     }
 
     public void parse (Rule goalRule) {
@@ -55,6 +65,7 @@ public class Parser {
 	    }
 	    complete (stateStartPos);
 	    predict ();
+	    setupNextEarleyState ();
 	    scan ();
 	    // TODO: check for failures
 	    if (isInError ()) {
@@ -150,9 +161,13 @@ public class Parser {
 	}
     }
 
+    private void setupNextEarleyState () {
+	wantedScanTokens.clear ();
+	hashOfStates.clear ();
+    }
+
     private void scan () {
 	// Find tokens that we want to scan
-	wantedScanTokens.clear ();
 	states.apply ((rp, o) -> addTokens (rp, wantedScanTokens),
 		      startPositions.get (currentPosition), states.size ());
 	PredictGroup pg = predictions.get (currentPosition);
@@ -220,18 +235,18 @@ public class Parser {
 
     private void addState (int rule, int dotPos, int origin) {
 	int arp = rule << 8 | dotPos;
-	if (states.checkFor ((rp, o) -> checkDup (arp, origin, rp, o),
-			     startPositions.get (currentPosition), states.size ()))
-	    return;
+
+	int bitPos = Math.abs ((arp ^ origin) % STATE_HASH_SIZE);
+	if (hashOfStates.get (bitPos)) {
+	    if (states.checkFor (arp, origin, startPositions.get (currentPosition), states.size ()))
+		return;
+	}
+	hashOfStates.set (bitPos, true);
 	states.add (arp, origin);
 	if (DEBUG) {
 	    System.out.println ("added State: " + readableRule (rule) +
 				", dotPos: " + dotPos + ", origin: " + origin);
 	}
-    }
-
-    private boolean checkDup (int rp1, int o1, int rp2, int o2) {
-	return rp1 == rp2 && o1 == o2;
     }
 
     private String readableRule (int rule) {
