@@ -3,6 +3,7 @@ package org.khelekore.parjac2.parser;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.List;
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.SourceDiagnostics;
@@ -91,6 +92,10 @@ public class Parser {
 	long endTime = System.currentTimeMillis ();
 	System.out.println ("Successful parse of: " + path + " in " + (endTime - startTime) + " millis " +
 			    "states.size: " + states.size () + ", total tokens: " + currentPosition);
+
+	TreeInfo ti = generateParseTree (goalHolder.get (0), goalHolder.get (1), currentPosition);
+	STNode root = ti.node;
+	System.out.println ("parse tree: " + root);
     }
 
     private void complete (int stateStartPos) {
@@ -238,8 +243,12 @@ public class Parser {
 
 	int bitPos = Math.abs ((arp ^ origin) % STATE_HASH_SIZE);
 	if (hashOfStates.get (bitPos)) {
-	    if (states.checkFor (arp, origin, startPositions.get (currentPosition), states.size ()))
+	    if (states.checkFor (arp, origin, startPositions.get (currentPosition), states.size ())) {
+		System.out.println ("Dup found for: " + grammar.getRule (rule).toReadableString(grammar) +
+				    ", dotPos: " + dotPos);
+		printCurrentStates ();
 		return;
+	    }
 	}
 	hashOfStates.set (bitPos, true);
 	states.add (arp, origin);
@@ -247,6 +256,19 @@ public class Parser {
 	    System.out.println ("added State: " + readableRule (rule) +
 				", dotPos: " + dotPos + ", origin: " + origin);
 	}
+    }
+
+    private void printCurrentStates () {
+	int startPos = startPositions.get (currentPosition);
+	int endPos = states.size ();
+	states.apply (this::printStateEntry, startPos, endPos);
+    }
+
+    private void printStateEntry (int rulePos, int origin) {
+	int dotPos = rulePos & 0xff;
+	int ruleId = rulePos >> 8;
+	Rule rule = grammar.getRule (ruleId);
+	System.out.println ("\trule: " + rule.toReadableString (grammar) + ": " + dotPos);
     }
 
     private String readableRule (int rule) {
@@ -275,7 +297,86 @@ public class Parser {
 	goalHolder.add (rulePos, origin);
     }
 
+    private TreeInfo generateParseTree (int rulePos, int origin, int completedIn) {
+	int rule = rulePos >> 8;
+	Rule r = grammar.getRule (rule);
+
+	int usedTokens = 0;
+	List<STNode> children = new ArrayList<> (r.size ());
+	for (int i = r.size () - 1; i >= 0; i--) {
+	    int tokenDiff = 0;
+	    int p = r.get (i);
+	    if (grammar.isToken (p)) {
+		tokenDiff = 1;
+		children.add (new STNode (grammar.getToken (p), getTokenValue (completedIn), null));
+	    } else {
+		IntHolder ih = findCompleted (p, completedIn);
+		TreeInfo ti = generateParseTree (ih.get (0), ih.get (1), completedIn);
+		tokenDiff = ti.usedTokens;
+		children.add (ti.node);
+	    }
+	    usedTokens += tokenDiff;
+	    completedIn -= tokenDiff;
+	}
+	Collections.reverse (children);
+	STNode st = new STNode (r, null, children); // TODO: data?
+	return new TreeInfo (st, usedTokens);
+    }
+
+    private Object getTokenValue (int position) {
+	return null;  // TODO: implement
+    }
+
+    private IntHolder findCompleted (int ruleGroup, int completedIn) {
+	IntHolder ih = new IntHolder (10);
+	// Last scanned token is always END_OF_INPUT so we can easily get end
+	int stateStartPos = startPositions.get (completedIn);
+	int stateEndPos = startPositions.get (completedIn + 1);
+	states.apply ((rp, o) -> findCompleted (rp, o, ruleGroup, ih), stateStartPos, stateEndPos);
+	if (ih.size () < 2) {
+	    System.out.println ("found no completed: " + grammar.getRuleGroupName (ruleGroup) + " in " + completedIn);
+	} else if (ih.size () > 2) {
+	    System.out.println ("found several completed: " + grammar.getRuleGroupName (ruleGroup) + " in " + completedIn);
+	}
+	return ih;
+    }
+
+    private void findCompleted (int rulePos, int origin, int ruleGroup, IntHolder ih) {
+	int dotPos = rulePos & 0xff;
+	int rule = rulePos >> 8;
+	Rule candidate = grammar.getRule (rule);
+	if (candidate.getGroupId () == ruleGroup && candidate.size () == dotPos)
+	    ih.add (rulePos, origin);
+    }
+
     private void addParserError (String format, Object... args) {
 	diagnostics.report (SourceDiagnostics.error (path, lexer.getParsePosition (), format, args));
     }
+
+    private static class TreeInfo {
+	private final STNode node;
+	private final int usedTokens;
+
+	public TreeInfo (STNode node, int usedTokens) {
+	    this.node = node;
+	    this.usedTokens = usedTokens;
+	}
+    }
+
+    private class STNode {
+	private final Object id;
+	private final Object value;
+	private final List<STNode> children;
+
+	public STNode (Object id, Object value, List<STNode> children) {
+	    this.id = id;
+	    this.value = value;
+	    this.children = children;
+	}
+
+	@Override public String toString () {
+	    return "STNode{" + id + ", " + value +
+		(children == null ? "" : (", children:\n" + children)) + "}";
+	}
+   }
 }
