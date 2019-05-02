@@ -11,6 +11,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.parser.Grammar;
@@ -26,8 +28,13 @@ public class TestParser {
 
     public static void main (String[] args) throws IOException {
 	TestParser tg = new TestParser ();
-	for (String file : args)
-	    tg.test (file);
+	ExecutorService es = Executors.newFixedThreadPool (Runtime.getRuntime ().availableProcessors () + 1);
+	//System.in.read ();
+	for (final String file : args) {
+	    es.submit (() -> tg.test(file));
+	}
+	es.shutdown ();
+	//System.in.read();
     }
 
     public TestParser () throws IOException {
@@ -36,7 +43,7 @@ public class TestParser {
 			    -grammar.getMaxRuleId () + " rules and " + grammar.getMaxTokenId () + " tokens");
     }
 
-    public void test (String file) throws IOException {
+    public Void test (String file) throws IOException {
 	CharBuffer input = pathToCharBuffer (Paths.get (file), StandardCharsets.ISO_8859_1);
 	CharBufferLexer lexer = new CharBufferLexer (grammar, java11Tokens, input);
 	CompilerDiagnosticCollector diagnostics = new CompilerDiagnosticCollector ();
@@ -46,6 +53,7 @@ public class TestParser {
 	    Locale locale = Locale.getDefault ();
 	    diagnostics.getDiagnostics ().forEach (d -> System.err.println (d.getMessage (locale)));
 	}
+	return null;
     }
 
     private CharBuffer pathToCharBuffer (Path path, Charset encoding) throws IOException {
