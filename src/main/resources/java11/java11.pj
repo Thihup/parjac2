@@ -1,4 +1,4 @@
-
+# Modified to avoid conflicts
 
 # Productions from §3 (Lexical Structure)
 TypeIdentifier:
@@ -41,28 +41,22 @@ FloatingPointType:
 	'double'
 
 ReferenceType:
-	ClassOrInterfaceType
-	TypeVariable
+	ClassType     # may be a TypeVariable
 	ArrayType
 
-ClassOrInterfaceType:
-	ClassType
-	InterfaceType
-
 ClassType:
-	{Annotation} TypeIdentifier [TypeArguments]
-	PackageName '.' {Annotation} TypeIdentifier [TypeArguments]
-	ClassOrInterfaceType '.' {Annotation} TypeIdentifier [TypeArguments]
+	SimpleClassType
+	ClassType '.' SimpleClassType
 
-InterfaceType:
-	ClassType
+SimpleClassType:
+	{Annotation} TypeIdentifier [TypeArguments]
 
 TypeVariable:
 	{Annotation} TypeIdentifier
 
 ArrayType:
 	PrimitiveType Dims
-	ClassOrInterfaceType Dims
+	ClassType Dims
 	TypeVariable Dims
 
 Dims:
@@ -76,10 +70,10 @@ TypeParameterModifier:
 
 TypeBound:
 	'extends' TypeVariable
-	'extends' ClassOrInterfaceType {AdditionalBound}
+	'extends' ClassType {AdditionalBound}
 
 AdditionalBound:
-	'&' InterfaceType
+	'&' ClassType
 
 TypeArguments:
 	'<' TypeArgumentList '>'
@@ -213,7 +207,7 @@ Superinterfaces:
 	'implements' InterfaceTypeList
 
 InterfaceTypeList:
-	InterfaceType {',' InterfaceType}
+	ClassType {',' ClassType}
 
 ClassBody:
 	'{' {ClassBodyDeclaration} '}'
@@ -267,29 +261,18 @@ UnannPrimitiveType:
 	'boolean'
 
 UnannReferenceType:
-	UnannClassOrInterfaceType
-	UnannTypeVariable
+	UnannClassType
 	UnannArrayType
 
-UnannClassOrInterfaceType:
-	UnannClassType
-	UnannInterfaceType
-
+# May be class, interface or type variable
 UnannClassType:
 	TypeIdentifier [TypeArguments]
-	PackageName '.' {Annotation} TypeIdentifier [TypeArguments]
-	UnannClassOrInterfaceType '.' {Annotation} TypeIdentifier [TypeArguments]
-
-UnannInterfaceType:
-	UnannClassType
-
-UnannTypeVariable:
-	TypeIdentifier
+	# PackageName or UnannClassType
+	UnannClassType '.' SimpleClassType
 
 UnannArrayType:
 	UnannPrimitiveType Dims
-	UnannClassOrInterfaceType Dims
-	UnannTypeVariable Dims
+	UnannClassType Dims
 
 MethodDeclaration:
 	{MethodModifier} MethodHeader MethodBody
@@ -341,8 +324,7 @@ ExceptionTypeList:
 	ExceptionType {',' ExceptionType}
 
 ExceptionType:
-	ClassType
-	TypeVariable
+	ClassType # may be a TypeVariable
 
 MethodBody:
 	Block
@@ -754,12 +736,15 @@ ArrayAccess:
 	PrimaryNoNewArray '[' Expression ']'
 
 MethodInvocation:
+	UntypedMethodInvocation
+	# We can't differ between TypeName and ExpressionName
+	AmbiguousName '.' [TypeArguments] UntypedMethodInvocation
+	Primary '.' [TypeArguments] UntypedMethodInvocation
+	'super' '.' [TypeArguments] UntypedMethodInvocation
+	TypeName '.' 'super' '.' [TypeArguments] UntypedMethodInvocation
+
+UntypedMethodInvocation:
 	MethodName '(' [ArgumentList] ')'
-	TypeName '.' [TypeArguments] 'Identifier' '(' [ArgumentList] ')'
-	ExpressionName '.' [TypeArguments] 'Identifier' '(' [ArgumentList] ')'
-	Primary '.' [TypeArguments] 'Identifier' '(' [ArgumentList] ')'
-	'super' '.' [TypeArguments] 'Identifier' '(' [ArgumentList] ')'
-	TypeName '.' 'super' '.' [TypeArguments] 'Identifier' '(' [ArgumentList] ')'
 
 ArgumentList:
 	Expression {',' Expression}
@@ -775,9 +760,9 @@ MethodReference:
 
 ArrayCreationExpression:
 	'new' PrimitiveType DimExprs [Dims]
-	'new' ClassOrInterfaceType DimExprs [Dims]
+	'new' ClassType DimExprs [Dims]
 	'new' PrimitiveType Dims ArrayInitializer
-	'new' ClassOrInterfaceType Dims ArrayInitializer
+	'new' ClassType Dims ArrayInitializer
 
 DimExprs:
 	DimExpr {DimExpr}
