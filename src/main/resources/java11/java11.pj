@@ -56,8 +56,8 @@ TypeVariable:
 
 ArrayType:
 	PrimitiveType Dims
+	# ClassType may be TypeVariable
 	ClassType Dims
-	TypeVariable Dims
 
 Dims:
 	{Annotation} '[' ']' {{Annotation} '[' ']'}
@@ -69,7 +69,7 @@ TypeParameterModifier:
 	Annotation
 
 TypeBound:
-	'extends' TypeVariable
+	# ClassType may be a TypeVariable
 	'extends' ClassType {AdditionalBound}
 
 AdditionalBound:
@@ -590,8 +590,8 @@ SwitchLabels:
 	SwitchLabel {SwitchLabel}
 
 SwitchLabel:
+	# ConstantExpression may be EnumConstantName
 	'case' ConstantExpression ':'
-	'case' EnumConstantName ':'
 	'default' ':'
 
 EnumConstantName:
