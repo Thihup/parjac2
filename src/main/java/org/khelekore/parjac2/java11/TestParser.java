@@ -44,6 +44,7 @@ public class TestParser {
     }
 
     public Void test (String file) throws IOException {
+	System.out.println ("Testing parsing of: " + file);
 	CharBuffer input = pathToCharBuffer (Paths.get (file), StandardCharsets.ISO_8859_1);
 	CharBufferLexer lexer = new CharBufferLexer (grammar, java11Tokens, input);
 	CompilerDiagnosticCollector diagnostics = new CompilerDiagnosticCollector ();
