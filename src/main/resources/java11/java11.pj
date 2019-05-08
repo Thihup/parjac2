@@ -863,9 +863,12 @@ RelationalExpression:
 
 ShiftExpression:
 	AdditiveExpression
-	ShiftExpression '<<' AdditiveExpression
-	ShiftExpression '>>' AdditiveExpression
-	ShiftExpression '>>>' AdditiveExpression
+	ShiftExpression ShiftOp AdditiveExpression
+
+ShiftOp:
+	'<<'
+	'>' '>'
+	'>' '>' '>'
 
 AdditiveExpression:
 	MultiplicativeExpression

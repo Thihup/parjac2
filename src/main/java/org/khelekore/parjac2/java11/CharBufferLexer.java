@@ -43,14 +43,15 @@ public class CharBufferLexer implements Lexer {
     private static final BigInteger MAX_UINT_LITERAL = new BigInteger  ("FFFFFFFF", 16);
     private static final BigInteger MAX_ULONG_LITERAL = new BigInteger ("FFFFFFFFFFFFFFFF", 16);
 
-    private final int rightShiftId;
+    private final BitSet multiGTTTokens = new BitSet ();
 
     public CharBufferLexer (Grammar grammar, Java11Tokens java11Tokens, CharBuffer buf) {
 	this.grammar = grammar;
 	this.java11Tokens = java11Tokens;
 	this.buf = buf;
-
-	rightShiftId = grammar.getToken (">>").getId ();
+	multiGTTTokens.set (java11Tokens.GE.getId ());
+	multiGTTTokens.set (java11Tokens.RIGHT_SHIFT_EQUAL.getId ());
+	multiGTTTokens.set (java11Tokens.RIGHT_SHIFT_UNSIGNED_EQUAL.getId ());
     }
 
     public String getError () {
@@ -170,7 +171,7 @@ public class CharBufferLexer implements Lexer {
 	    case '=':
 		return handleEquals ();
 	    case '>':
-		return handleGT (wantedTokens.get (rightShiftId));
+		return handleGT (wantedTokens.intersects (multiGTTTokens));
 	    case '<':
 		return handleLT ();
 	    case '!':
@@ -367,12 +368,17 @@ public class CharBufferLexer implements Lexer {
 			   java11Tokens.LEFT_SHIFT, java11Tokens.LEFT_SHIFT_EQUAL);
     }
 
-    private Token handleGT (boolean shiftAllowed) {
-	// >, >=, >>, >>=, >>>, >>>=
+    private Token handleGT (boolean multiCharsAllowed) {
+	// We would like to handle: >, >=, >>, >>=, >>>, >>>=
+	// but due to grammar being conflicting we only do
+	// > and >=, >>= and >>>=
 	Token tt = java11Tokens.GT;
 
-	if (shiftAllowed && buf.hasRemaining ()) {
+	if (multiCharsAllowed && buf.hasRemaining ()) {
+	    // Save state for column and char start
+	    int cc = currentColumn;
 	    char c = nextChar ();
+	    int lcs = lastCharStart;
 	    if (c == '=') {
 		return java11Tokens.GE;
 	    } else if (c == '>') {
@@ -385,14 +391,13 @@ public class CharBufferLexer implements Lexer {
 			    char e = nextChar ();
 			    if (e == '=')
 				return java11Tokens.RIGHT_SHIFT_UNSIGNED_EQUAL;
-			    pushBack ();
 			}
 		    }
-		    pushBack ();
-		    return java11Tokens.RIGHT_SHIFT;
 		}
 	    }
-	    pushBack ();
+	    // We failed to scan a multi char token, restore state
+	    buf.position (lcs);
+	    currentColumn = cc;
 	}
 	return tt;
     }
