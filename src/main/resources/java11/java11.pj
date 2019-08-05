@@ -581,10 +581,7 @@ SwitchStatement:
 	'switch' '(' Expression ')' SwitchBlock
 
 SwitchBlock:
-	'{' {SwitchBlockStatementGroup} {SwitchLabel} '}'
-
-SwitchBlockStatementGroup:
-	SwitchLabels BlockStatements
+	'{' {SwitchLabel [BlockStatements]} '}'
 
 SwitchLabels:
 	SwitchLabel {SwitchLabel}
@@ -593,9 +590,6 @@ SwitchLabel:
 	# ConstantExpression may be EnumConstantName
 	'case' ConstantExpression ':'
 	'default' ':'
-
-EnumConstantName:
-	'Identifier'
 
 WhileStatement:
 	'while' '(' Expression ')' Statement
