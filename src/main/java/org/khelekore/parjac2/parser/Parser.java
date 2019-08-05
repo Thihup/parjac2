@@ -24,7 +24,6 @@ public class Parser {
     // 2 ints per state: first is ruleid<<8 | dotPos, second is origin
     // Since rule ids are negative we shift (>>) down to keep id when we want rule
     private final IntHolder states = new IntHolder (4096);
-
     private final BitSet predictedRules;
     private final List<PredictGroup> predictions = new ArrayList<> ();
 
@@ -90,13 +89,21 @@ public class Parser {
 	    return;
 
 	long endTime = System.currentTimeMillis ();
-	System.out.println ("Successful parse of: " + path + " in " + (endTime - startTime) + " millis " +
-			    "states.size: " + states.size () + ", total tokens: " + currentPosition);
+	if (DEBUG)
+	    // TODO: print on higher level than debug
+	    System.out.println ("Successful parse of: " + path + " in " + (endTime - startTime) + " millis " +
+				"states.size: " + states.size () + ", total tokens: " + currentPosition);
 
-	TreeInfo ti = generateParseTree (goalHolder.get (0), goalHolder.get (1), currentPosition);
-	STNode root = ti.node;
-	if (root == null)
-	    addParserError ("Failed to generate parse tree for %s", path);
+	try {
+	    TreeInfo ti = generateParseTree (goalHolder.get (0), goalHolder.get (1), currentPosition, states.size ());
+	    if (DEBUG)
+		System.out.println ("ti: "+ ti);
+	    STNode root = ti.node;
+	    if (root == null)
+		addParserError ("Failed to generate parse tree for %s", path);
+	} catch (Exception t) {
+	    t.printStackTrace ();
+	}
     }
 
     private void complete (int stateStartPos) {
@@ -285,38 +292,49 @@ public class Parser {
 	goalHolder.add (rulePos, origin);
     }
 
-    private TreeInfo generateParseTree (int rulePos, int origin, int completedIn) {
+    private TreeInfo generateParseTree (int rulePos, int origin, int completedIn, int endPos) {
+	// TODO: rewrite to a breath first search.
+	// TODO: we may have several options for example SwitchBlockStatementGroup and SwitchLabel
+	// TOOD: both start the same way
 	int rule = rulePos >> 8;
 	Rule r = grammar.getRule (rule);
-	/*
-	System.out.println ("generateParseTree: rule: " + r.toReadableString(grammar) +
-			    ", origin: " + origin + ", completedIn: " + completedIn);
-	*/
+	if (DEBUG) {
+	    System.out.println ("generateParseTree: rule: " + r.toReadableString(grammar) +
+				", origin: " + origin + ", completedIn: " + completedIn);
+	    printStates (completedIn);
+	}
 	int usedTokens = 0;
 	List<STNode> children = new ArrayList<> (r.size ());
 	for (int i = r.size () - 1; i >= 0; i--) {
 	    int tokenDiff = 0;
 	    int p = r.get (i);
 	    if (grammar.isToken (p)) {
+		if (DEBUG)
+		    System.out.println ("Accepting token: " + grammar.getToken (p));
 		tokenDiff = 1;
 		children.add (new STNode (grammar.getToken (p), getTokenValue (completedIn), null));
 	    } else {
+		if (DEBUG)
+		    System.out.println ("Trying to find rule: " + grammar.getRuleGroupName (p));
 		int originLEQ = i == 0 ? origin : completedIn;
 		int originGEQ = origin + i;
-		IntHolder ih = findCompleted (p, completedIn, originLEQ, originGEQ);
-		int ihs = ih.size () - 2;
-		if (ihs < 0) {
+		int ihPos = findCompleted (p, completedIn, originLEQ, originGEQ, endPos);
+		if (ihPos < 0) {
+		    System.err.println ("Failed to find completed: " + grammar.getRuleGroupName (p) +
+					" for: " + r.toReadableString (grammar));
 		    addParserError ("Failed to find completed: %s for %s",
-				    grammar.getRule (p).toReadableString(grammar),
+				    grammar.getRuleGroupName (p),
 				    r.toReadableString (grammar));
 		    return null;
 		}
-		TreeInfo ti = generateParseTree (ih.get (ihs), ih.get (ihs + 1), completedIn);
+		TreeInfo ti = generateParseTree (states.get (ihPos), states.get (ihPos + 1), completedIn, ihPos);
 		tokenDiff = ti.usedTokens;
 		children.add (ti.node);
 	    }
 	    usedTokens += tokenDiff;
 	    completedIn -= tokenDiff;
+	    if (tokenDiff > 0)
+		endPos = startPositions.get (completedIn + 1);
 	}
 	Collections.reverse (children);
 	STNode st = new STNode (r, null, children); // TODO: data?
@@ -327,22 +345,30 @@ public class Parser {
 	return null;  // TODO: implement
     }
 
-    private IntHolder findCompleted (int ruleGroup, int completedIn, int originLEQ, int originGEQ) {
-	IntHolder ih = new IntHolder (10);
-	// Last scanned token is always END_OF_INPUT so we can easily get end
+    private int findCompleted (int ruleGroup, int completedIn, int originLEQ, int originGEQ, int endPos) {
 	int stateStartPos = startPositions.get (completedIn);
-	int stateEndPos = startPositions.get (completedIn + 1);
-	states.apply ((rp, o) -> findCompleted (rp, o, ruleGroup, originLEQ, originGEQ, ih), stateStartPos, stateEndPos);
-	return ih;
+	int stateEndPos = endPos;
+	if (DEBUG)
+	    System.out.println ("Looking in " + completedIn + ": " + stateStartPos + " - " + stateEndPos);
+	return states.reverseCheckFor ((rp, o) -> validComplete (rp, o, ruleGroup, originLEQ, originGEQ),
+				       stateEndPos, stateStartPos);
     }
 
-    private void findCompleted (int rulePos, int origin, int ruleGroup, int originLEQ, int originGEQ, IntHolder ih) {
+    private boolean validComplete (int rulePos, int origin, int ruleGroup, int originLEQ, int originGEQ) {
 	int dotPos = rulePos & 0xff;
 	int rule = rulePos >> 8;
 	Rule candidate = grammar.getRule (rule);
-	if (candidate.getGroupId () == ruleGroup && candidate.size () == dotPos &&
-	    origin <= originLEQ && origin >= originGEQ)
-	    ih.add (rulePos, origin);
+	if (DEBUG)
+	    System.out.println ("candidate: " + candidate.toReadableString (grammar) + ", " +
+				dotPos + ", " + origin +
+				" oleq: " + originLEQ + ", ogeq: " + originGEQ +
+				" => " +
+				(candidate.getGroupId () == ruleGroup &&
+				 candidate.size () == dotPos &&
+				 origin <= originLEQ && origin >= originGEQ));
+	return candidate.getGroupId () == ruleGroup &&
+	    candidate.size () == dotPos &&
+	    origin <= originLEQ && origin >= originGEQ;
     }
 
     private void printStates (int position) {

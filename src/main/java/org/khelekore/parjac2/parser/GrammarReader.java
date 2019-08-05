@@ -138,7 +138,7 @@ public class GrammarReader {
     }
 
     private String addZomRule (ZeroOrMore zom) {
-	String name = "_ZOM" + zomToName.size ();
+	String name = "_ZOM" + zomToName.size () + "{" + zom.data + "}";
 	addRules (name, List.of (new ZeroOrOne (name), zom.data));
 	return name;
     }

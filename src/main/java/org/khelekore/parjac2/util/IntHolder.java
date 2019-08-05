@@ -112,6 +112,32 @@ public class IntHolder {
 	return false;
     }
 
+    /** Do a reverse find, that is starting at the end and go to the beginning
+     * @param filter used to match values
+     * @param start high end of the search, non inclusive
+     * @param stop low end of the search, inclusive
+     * @return position of wanted values or -1 if not found
+     */
+    public int reverseCheckFor (IntIntPredicate filter, int start, int stop) {
+	if (start % 2 == 1)
+	    throw new IllegalArgumentException ("From-position is odd: " + start);
+	validateRange (stop, start); //  reverse
+	start -= 2;
+	int startBlock = start / blockSize;
+	int startPos = start % blockSize;
+	int[] block = parts.get (startBlock);
+	for (int c = start, posInBlock = startPos, currentBlock = startBlock; c >= stop; c -= 2, posInBlock -= 2) {
+	    if (posInBlock < 0) {
+		posInBlock = blockSize - 2;
+		currentBlock--;
+		block = parts.get (currentBlock);
+	    }
+	    if (filter.accept (block[posInBlock], block[posInBlock + 1]))
+		return c;
+	}
+	return -1;
+    }
+
     private void validateRange (int from, int to) {
 	if (from < 0)
 	    throw new IllegalArgumentException ("from: " + from + " is < 0");
@@ -129,6 +155,10 @@ public class IntHolder {
 
     public interface IntIntConsumer {
 	void accept (int i, int j);
+    }
+
+    public interface IntIntPredicate {
+	boolean accept (int i, int j);
     }
 
     public int size () {
