@@ -14,6 +14,9 @@ public interface Lexer {
      */
     Token nextToken (BitSet wantedTokens);
 
+    /** Get the current token value, if any */
+    Object getCurrentValue ();
+
     /** Get the current position.
      */
     ParsePosition getParsePosition ();

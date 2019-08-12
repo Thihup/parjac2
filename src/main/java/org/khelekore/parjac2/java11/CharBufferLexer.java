@@ -26,6 +26,8 @@ public class CharBufferLexer implements Lexer {
     // Text set when we get an lexer ERROR
     private String errorText;
 
+    private Token lastScannedToken = null;
+
     // The different values we can have
     private char currentCharValue;
     private String currentStringValue;
@@ -89,6 +91,24 @@ public class CharBufferLexer implements Lexer {
 	return currentIdentifier;
     }
 
+    @Override public Object getCurrentValue () {
+	if (lastScannedToken == java11Tokens.CHARACTER_LITERAL)
+	    return getCharValue ();
+	if (lastScannedToken == java11Tokens.STRING_LITERAL)
+	    return getStringValue ();
+	if (lastScannedToken == java11Tokens.INT_LITERAL)
+	    return getIntValue ();
+	if (lastScannedToken == java11Tokens.LONG_LITERAL)
+	    return getLongValue ();
+	if (lastScannedToken == java11Tokens.FLOAT_LITERAL)
+	    return getFloatValue ();
+	if (lastScannedToken == java11Tokens.DOUBLE_LITERAL)
+	    return getDoubleValue ();
+	if (lastScannedToken == java11Tokens.IDENTIFIER)
+	    return getIdentifier ();
+	return null;
+    }
+
     @Override public ParsePosition getParsePosition () {
 	return new ParsePosition (getLineNumber (), getTokenColumn (),
 				  getTokenStartPos (), getTokenEndPos ());
@@ -112,12 +132,12 @@ public class CharBufferLexer implements Lexer {
 
     @Override public Token nextToken (BitSet wantedTokens) {
 	while (hasMoreTokens ()) {
-	    Token t = nextRealToken (wantedTokens);
-	    if (java11Tokens.isWhitespace (t) || java11Tokens.isComment (t))
+	    lastScannedToken = nextRealToken (wantedTokens);
+	    if (java11Tokens.isWhitespace (lastScannedToken) || java11Tokens.isComment (lastScannedToken))
 		continue;
-	    return t;
+	    return lastScannedToken;
 	}
-	return grammar.END_OF_INPUT;
+	return lastScannedToken = grammar.END_OF_INPUT;
     }
 
     private Token nextRealToken (BitSet wantedTokens) {

@@ -20,6 +20,8 @@ public class Parser {
     private final CompilerDiagnosticCollector diagnostics;
 
     private final IntHolder startPositions = new IntHolder (1024);
+    private final List<Object> tokenValues = new ArrayList<> ();
+    private final List<ParsePosition> parsePositions = new ArrayList<> ();
 
     // 2 ints per state: first is ruleid<<8 | dotPos, second is origin
     // Since rule ids are negative we shift (>>) down to keep id when we want rule
@@ -27,6 +29,7 @@ public class Parser {
     private final BitSet predictedRules;
     private final List<PredictGroup> predictions = new ArrayList<> ();
 
+    // This one is reused every time we scan
     private final BitSet wantedScanTokens;
 
     /** We use this to try to avoid full scanning for duplicates.
@@ -58,6 +61,7 @@ public class Parser {
 	addState (goalRule.getId (), 0, 0);
 
 	while (lexer.hasMoreTokens ()) {
+	    parsePositions.add (lexer.getParsePosition ());
 	    int stateStartPos = startPositions.get (currentPosition);
 	    if (DEBUG) {
 		System.out.println ("currentPosition: " + currentPosition + ", states.size: " + states.size ());
@@ -67,9 +71,10 @@ public class Parser {
 	    predict ();
 	    setupNextEarleyState ();
 	    scan ();
+	    tokenValues.add (lexer.getCurrentValue ());
 	    // TODO: check for failures
 	    if (isInError ()) {
-
+		// TODO: try to recover
 	    }
 	    currentPosition++;
 	}
@@ -97,7 +102,7 @@ public class Parser {
 	try {
 	    TreeInfo ti = generateParseTree (goalHolder.get (0), goalHolder.get (1), currentPosition, states.size ());
 	    if (DEBUG)
-		System.out.println ("ti: "+ ti);
+		printTree (ti);
 	    STNode root = ti.node;
 	    if (root == null)
 		addParserError ("Failed to generate parse tree for %s", path);
@@ -312,7 +317,7 @@ public class Parser {
 		if (DEBUG)
 		    System.out.println ("Accepting token: " + grammar.getToken (p));
 		tokenDiff = 1;
-		children.add (new STNode (grammar.getToken (p), getTokenValue (completedIn), null));
+		children.add (new STNode (grammar.getToken (p), getTokenValue (completedIn - 1), null));
 	    } else {
 		if (DEBUG)
 		    System.out.println ("Trying to find rule: " + grammar.getRuleGroupName (p));
@@ -342,7 +347,7 @@ public class Parser {
     }
 
     private Object getTokenValue (int position) {
-	return null;  // TODO: implement
+	return tokenValues.get (position);
     }
 
     private int findCompleted (int ruleGroup, int completedIn, int originLEQ, int originGEQ, int endPos) {
@@ -388,6 +393,21 @@ public class Parser {
 	diagnostics.report (SourceDiagnostics.error (path, lexer.getParsePosition (), format, args));
     }
 
+    private void printTree (TreeInfo ti) {
+	printTree (ti.node, "");
+    }
+
+    private void printTree (STNode n, String indent) {
+	System.out.print (indent);
+	System.out.print (n.id);
+	if (n.value != null)
+	    System.out.print ("(" + n.value + ")");
+	System.out.println ();
+	if (n.children != null) {
+	    n.children.forEach (c -> printTree (c, indent + " "));
+	}
+    }
+
     private static class TreeInfo {
 	private final STNode node;
 	private final int usedTokens;
@@ -395,6 +415,10 @@ public class Parser {
 	public TreeInfo (STNode node, int usedTokens) {
 	    this.node = node;
 	    this.usedTokens = usedTokens;
+	}
+
+	@Override public String toString () {
+	    return "TreeInfo{" + node + "}";
 	}
     }
 
