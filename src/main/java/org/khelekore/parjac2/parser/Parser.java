@@ -7,6 +7,9 @@ import java.util.Collections;
 import java.util.List;
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.SourceDiagnostics;
+import org.khelekore.parjac2.parsetree.RuleSyntaxTreeNode;
+import org.khelekore.parjac2.parsetree.SyntaxTreeNode;
+import org.khelekore.parjac2.parsetree.TokenSyntaxTreeNode;
 import org.khelekore.parjac2.util.IntHolder;
 
 public class Parser {
@@ -103,7 +106,7 @@ public class Parser {
 	    TreeInfo ti = generateParseTree (goalHolder.get (0), goalHolder.get (1), currentPosition, states.size ());
 	    if (DEBUG)
 		printTree (ti);
-	    STNode root = ti.node;
+	    SyntaxTreeNode root = ti.node;
 	    if (root == null)
 		addParserError ("Failed to generate parse tree for %s", path);
 	} catch (Exception t) {
@@ -309,7 +312,7 @@ public class Parser {
 	    printStates (completedIn);
 	}
 	int usedTokens = 0;
-	List<STNode> children = new ArrayList<> (r.size ());
+	List<SyntaxTreeNode> children = new ArrayList<> (r.size ());
 	for (int i = r.size () - 1; i >= 0; i--) {
 	    int tokenDiff = 0;
 	    int p = r.get (i);
@@ -317,7 +320,7 @@ public class Parser {
 		if (DEBUG)
 		    System.out.println ("Accepting token: " + grammar.getToken (p));
 		tokenDiff = 1;
-		children.add (new STNode (grammar.getToken (p), getTokenValue (completedIn - 1), null));
+		children.add (new TokenSyntaxTreeNode (grammar.getToken (p), getTokenValue (completedIn - 1)));
 	    } else {
 		if (DEBUG)
 		    System.out.println ("Trying to find rule: " + grammar.getRuleGroupName (p));
@@ -342,7 +345,7 @@ public class Parser {
 		endPos = startPositions.get (completedIn + 1);
 	}
 	Collections.reverse (children);
-	STNode st = new STNode (r, null, children); // TODO: data?
+	SyntaxTreeNode st = new RuleSyntaxTreeNode (r, children);
 	return new TreeInfo (st, usedTokens);
     }
 
@@ -397,22 +400,20 @@ public class Parser {
 	printTree (ti.node, "");
     }
 
-    private void printTree (STNode n, String indent) {
+    private void printTree (SyntaxTreeNode n, String indent) {
 	System.out.print (indent);
-	System.out.print (n.id);
-	if (n.value != null)
-	    System.out.print ("(" + n.value + ")");
+	System.out.print (n.getId ());
+	if (n.getValue () != null)
+	    System.out.print ("(" + n.getValue () + ")");
 	System.out.println ();
-	if (n.children != null) {
-	    n.children.forEach (c -> printTree (c, indent + " "));
-	}
+	n.getChildren ().forEach (c -> printTree (c, indent + " "));
     }
 
     private static class TreeInfo {
-	private final STNode node;
+	private final SyntaxTreeNode node;
 	private final int usedTokens;
 
-	public TreeInfo (STNode node, int usedTokens) {
+	public TreeInfo (SyntaxTreeNode node, int usedTokens) {
 	    this.node = node;
 	    this.usedTokens = usedTokens;
 	}
@@ -421,21 +422,4 @@ public class Parser {
 	    return "TreeInfo{" + node + "}";
 	}
     }
-
-    private class STNode {
-	private final Object id;
-	private final Object value;
-	private final List<STNode> children;
-
-	public STNode (Object id, Object value, List<STNode> children) {
-	    this.id = id;
-	    this.value = value;
-	    this.children = children;
-	}
-
-	@Override public String toString () {
-	    return "STNode{" + id + ", " + value +
-		(children == null ? "" : (", children:\n" + children)) + "}";
-	}
-   }
 }
