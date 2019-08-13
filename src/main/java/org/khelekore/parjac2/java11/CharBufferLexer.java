@@ -8,6 +8,8 @@ import org.khelekore.parjac2.parser.Grammar;
 import org.khelekore.parjac2.parser.Lexer;
 import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Token;
+import org.khelekore.parjac2.parsetree.SyntaxTreeNode;
+import org.khelekore.parjac2.parsetree.TokenSyntaxTreeNode;
 
 /** A lexer for the java language */
 public class CharBufferLexer implements Lexer {
@@ -91,22 +93,22 @@ public class CharBufferLexer implements Lexer {
 	return currentIdentifier;
     }
 
-    @Override public Object getCurrentValue () {
+    @Override public SyntaxTreeNode getCurrentValue () {
 	if (lastScannedToken == java11Tokens.CHARACTER_LITERAL)
-	    return getCharValue ();
+	    return new CharSyntaxTreeNode (lastScannedToken, getCharValue ());
 	if (lastScannedToken == java11Tokens.STRING_LITERAL)
-	    return getStringValue ();
+	    return new StringSyntaxTreeNode (lastScannedToken, getStringValue ());
 	if (lastScannedToken == java11Tokens.INT_LITERAL)
-	    return getIntValue ();
+	    return new IntSyntaxTreeNode (lastScannedToken, getIntValue ());
 	if (lastScannedToken == java11Tokens.LONG_LITERAL)
-	    return getLongValue ();
+	    return new LongSyntaxTreeNode (lastScannedToken, getLongValue ());
 	if (lastScannedToken == java11Tokens.FLOAT_LITERAL)
-	    return getFloatValue ();
+	    return new FloatSyntaxTreeNode (lastScannedToken, getFloatValue ());
 	if (lastScannedToken == java11Tokens.DOUBLE_LITERAL)
-	    return getDoubleValue ();
+	    return new DoubleSyntaxTreeNode (lastScannedToken, getDoubleValue ());
 	if (lastScannedToken == java11Tokens.IDENTIFIER)
-	    return getIdentifier ();
-	return null;
+	    return new IdentifierSyntaxTreeNode (lastScannedToken, getIdentifier ());
+	return new TokenSyntaxTreeNode (lastScannedToken);
     }
 
     @Override public ParsePosition getParsePosition () {

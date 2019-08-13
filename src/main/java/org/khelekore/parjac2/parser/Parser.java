@@ -9,7 +9,6 @@ import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.SourceDiagnostics;
 import org.khelekore.parjac2.parsetree.RuleSyntaxTreeNode;
 import org.khelekore.parjac2.parsetree.SyntaxTreeNode;
-import org.khelekore.parjac2.parsetree.TokenSyntaxTreeNode;
 import org.khelekore.parjac2.util.IntHolder;
 
 public class Parser {
@@ -23,7 +22,7 @@ public class Parser {
     private final CompilerDiagnosticCollector diagnostics;
 
     private final IntHolder startPositions = new IntHolder (1024);
-    private final List<Object> tokenValues = new ArrayList<> ();
+    private final List<SyntaxTreeNode> tokenValues = new ArrayList<> ();
     private final List<ParsePosition> parsePositions = new ArrayList<> ();
 
     // 2 ints per state: first is ruleid<<8 | dotPos, second is origin
@@ -320,7 +319,7 @@ public class Parser {
 		if (DEBUG)
 		    System.out.println ("Accepting token: " + grammar.getToken (p));
 		tokenDiff = 1;
-		children.add (new TokenSyntaxTreeNode (grammar.getToken (p), getTokenValue (completedIn - 1)));
+		children.add (getTokenValue (completedIn - 1));
 	    } else {
 		if (DEBUG)
 		    System.out.println ("Trying to find rule: " + grammar.getRuleGroupName (p));
@@ -349,7 +348,7 @@ public class Parser {
 	return new TreeInfo (st, usedTokens);
     }
 
-    private Object getTokenValue (int position) {
+    private SyntaxTreeNode getTokenValue (int position) {
 	return tokenValues.get (position);
     }
 

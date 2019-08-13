@@ -6,11 +6,9 @@ import java.util.List;
 
 public class TokenSyntaxTreeNode implements SyntaxTreeNode {
     private final Token token;
-    private final Object value;
 
-    public TokenSyntaxTreeNode (Token token, Object value) {
+    public TokenSyntaxTreeNode (Token token) {
 	this.token = token;
-	this.value = value;
     }
 
     @Override public String getId () {
@@ -18,7 +16,7 @@ public class TokenSyntaxTreeNode implements SyntaxTreeNode {
     }
 
     @Override public Object getValue () {
-	return value;
+	return null;
     }
 
     @Override public boolean isRule () {
@@ -34,6 +32,6 @@ public class TokenSyntaxTreeNode implements SyntaxTreeNode {
     }
 
     @Override public String toString () {
-	return token + ":" + value;
+	return token.getName ();
     }
 }

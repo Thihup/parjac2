@@ -2,6 +2,8 @@ package org.khelekore.parjac2.parser;
 
 import java.util.BitSet;
 
+import org.khelekore.parjac2.parsetree.SyntaxTreeNode;
+
 public interface Lexer {
     /** Check if there are any more tokens.
      * @return true if there are more tokens to be read
@@ -14,8 +16,8 @@ public interface Lexer {
      */
     Token nextToken (BitSet wantedTokens);
 
-    /** Get the current token value, if any */
-    Object getCurrentValue ();
+    /** Get the current token value */
+    SyntaxTreeNode getCurrentValue ();
 
     /** Get the current position.
      */
