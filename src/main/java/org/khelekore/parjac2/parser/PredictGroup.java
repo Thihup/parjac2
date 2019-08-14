@@ -3,6 +3,7 @@ package org.khelekore.parjac2.parser;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.IntConsumer;
 import org.khelekore.parjac2.util.IntHolder;
 
 public class PredictGroup {
@@ -28,7 +29,13 @@ public class PredictGroup {
 	return wantedScanTokens;
     }
 
-    public IntHolder getRulesWithNext (int tokenOrRuleGroup) {
-	return nextTokenOrRuleGroupToRules.get (tokenOrRuleGroup);
+    public void apply (int tokenOrRuleGroup, IntConsumer ic) {
+	IntHolder ih = nextTokenOrRuleGroupToRules.get (tokenOrRuleGroup);
+	if (ih != null)
+	    ih.apply (ic, 0, ih.size ());
+    }
+
+    public void applyAll (IntConsumer ic) {
+	nextTokenOrRuleGroupToRules.values ().forEach (ih -> ih.apply (ic, 0, ih.size ()));
     }
 }

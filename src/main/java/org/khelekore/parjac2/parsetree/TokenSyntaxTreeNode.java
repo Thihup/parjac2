@@ -15,6 +15,10 @@ public class TokenSyntaxTreeNode implements SyntaxTreeNode {
 	return token.getName ();
     }
 
+    public Token getToken () {
+	return token;
+    }
+
     @Override public Object getValue () {
 	return null;
     }

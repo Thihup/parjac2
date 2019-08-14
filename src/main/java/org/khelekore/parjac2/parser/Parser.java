@@ -4,11 +4,16 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.SourceDiagnostics;
 import org.khelekore.parjac2.parsetree.RuleSyntaxTreeNode;
 import org.khelekore.parjac2.parsetree.SyntaxTreeNode;
+import org.khelekore.parjac2.parsetree.TokenSyntaxTreeNode;
+import org.khelekore.parjac2.parsetree.WildcardSyntaxTreeNode;
 import org.khelekore.parjac2.util.IntHolder;
 
 public class Parser {
@@ -20,6 +25,7 @@ public class Parser {
     private final PredictCache predictCache;
     private final Lexer lexer;
     private final CompilerDiagnosticCollector diagnostics;
+    private final Set<ParsePosition> errorPositions = new HashSet<> ();
 
     private final IntHolder startPositions = new IntHolder (1024);
     private final List<SyntaxTreeNode> tokenValues = new ArrayList<> ();
@@ -33,6 +39,7 @@ public class Parser {
 
     // This one is reused every time we scan
     private final BitSet wantedScanTokens;
+    private Token pushbackToken = null;
 
     /** We use this to try to avoid full scanning for duplicates.
      *  If we find a hash miss then we know there is no dup, if we have a hash collision
@@ -44,6 +51,7 @@ public class Parser {
     private final int STATE_HASH_SIZE = 509;
 
     private int currentPosition = 0;
+    private int errorCount = 0;
 
     public Parser (Grammar grammar, Path path, PredictCache predictCache, Lexer lexer,
 		   CompilerDiagnosticCollector diagnostics) {
@@ -58,7 +66,7 @@ public class Parser {
 	hashOfStates = new BitSet (STATE_HASH_SIZE);
     }
 
-    public void parse (Rule goalRule) {
+    public SyntaxTreeNode parse (Rule goalRule) {
 	long startTime = System.currentTimeMillis ();
 	addState (goalRule.getId (), 0, 0);
 
@@ -73,27 +81,28 @@ public class Parser {
 	    predict ();
 	    setupNextEarleyState ();
 	    scan ();
-	    tokenValues.add (lexer.getCurrentValue ());
 	    // TODO: check for failures
 	    if (isInError ()) {
 		// TODO: try to recover
+		break;
 	    }
 	    currentPosition++;
 	}
 
-	if (diagnostics.hasError ())
-	    return;
+	if (isInError ())
+	    return null;
 
 	IntHolder goalHolder = new IntHolder (10);
 	states.apply ((rp, o) -> findFinished (rp, o, goalRule, goalHolder),
 		      startPositions.get (currentPosition), states.size ());
-	if (goalHolder.size () < 2)
+	if (goalHolder.size () < 2) {
 	    addParserError ("Did not find any finishing state");
-	else if (goalHolder.size () > 2)
+	} else if (goalHolder.size () > 2) {
 	    addParserError ("Found several valid parses: " + (goalHolder.size () / 2));
+	}
 
-	if (diagnostics.hasError ())
-	    return;
+	if (isInError ())
+	    return null;
 
 	long endTime = System.currentTimeMillis ();
 	if (DEBUG)
@@ -101,16 +110,13 @@ public class Parser {
 	    System.out.println ("Successful parse of: " + path + " in " + (endTime - startTime) + " millis " +
 				"states.size: " + states.size () + ", total tokens: " + currentPosition);
 
-	try {
-	    TreeInfo ti = generateParseTree (goalHolder.get (0), goalHolder.get (1), currentPosition, states.size ());
-	    if (DEBUG)
-		printTree (ti);
-	    SyntaxTreeNode root = ti.node;
-	    if (root == null)
-		addParserError ("Failed to generate parse tree for %s", path);
-	} catch (Exception t) {
-	    t.printStackTrace ();
-	}
+	TreeInfo ti = generateParseTree (goalHolder.get (0), goalHolder.get (1), currentPosition, states.size ());
+	if (DEBUG)
+	    printTree (ti);
+	SyntaxTreeNode root = ti.node;
+	if (root == null)
+	    addParserError ("Failed to generate parse tree for %s", path);
+	return root;
     }
 
     private void complete (int stateStartPos) {
@@ -139,9 +145,7 @@ public class Parser {
 	int stateEndPos = origin < startPositions.size () ? startPositions.get (origin + 1) : states.size ();
 	states.apply ((crp, co) -> tryAdvance (rulePos, origin, r, crp, co), stateStartPos, stateEndPos);
 	PredictGroup pg = predictions.get (origin);
-	IntHolder ih = pg.getRulesWithNext (r.getGroupId ());
-	if (ih != null)
-	    ih.apply (crp -> advancePrediction (rulePos, origin, crp), 0, ih.size ());
+	pg.apply (r.getGroupId (), crp -> advancePrediction (rulePos, origin, crp));
     }
 
     private void tryAdvance (int rulePos, int origin, Rule r, int cRulePos, int cOrigin) {
@@ -195,21 +199,26 @@ public class Parser {
 
 	Token scannedToken = scanToken (currentPosition, wantedScanTokens);
 
-	// TODO: deal with wrong token back from scan.
-	if (!wantedScanTokens.get (scannedToken.getId ())) {
+	startPositions.add (states.size ());
+
+	if (wantedScanTokens.get (scannedToken.getId ())) {
+	    // Advance the states that can be advanced by the scanned token
+	    states.apply ((rp, o) -> advance (rp, o, scannedToken),
+			  startPositions.get (currentPosition), states.size ());
+	    pg.apply (scannedToken.getId (), rp -> advancePrediction (rp));
+	    tokenValues.add (lexer.getCurrentValue ());
+	} else {
+	    // Try to advance by saying we got what we wanted
 	    addParserError ("Got unexpected token: '%s', expected one of: %s",
 			    scannedToken.getName (),
 			    wantedScanTokens.stream ().mapToObj (i -> "'" + grammar.getToken (i).getName () + "'")
 			    .collect (java.util.stream.Collectors.joining (", ")));
+	    pushbackToken = scannedToken;
+	    states.apply ((rp, o) -> advanceAllTokens (rp, o),
+			  startPositions.get (currentPosition), states.size ());
+	    pg.applyAll (rp -> advancePredictionsStartingWith (rp));
+	    tokenValues.add (new TokenSyntaxTreeNode (grammar.WILDCARD));
 	}
-
-	// Advance the states that can be advanced by the scanned token
-	startPositions.add (states.size ());
-	states.apply ((rp, o) -> advance (rp, o, scannedToken),
-		      startPositions.get (currentPosition), states.size ());
-	IntHolder ih = pg.getRulesWithNext (scannedToken.getId ());
-	if (ih != null)
-	    ih.apply (rp -> advancePrediction (rp, currentPosition), 0, ih.size ());
     }
 
     private void addTokens (int rulePos, BitSet tokens) {
@@ -225,6 +234,11 @@ public class Parser {
     }
 
     private Token scanToken (int currentPosition, BitSet wantedTokens) {
+	if (pushbackToken != null) {
+	    Token t = pushbackToken;
+	    pushbackToken = null;
+	    return t;
+	}
 	Token t = lexer.nextToken (wantedTokens);
 	if (DEBUG) {
 	    String sTokens =
@@ -247,10 +261,41 @@ public class Parser {
 	addState (rule, dotPos + 1, origin);
     }
 
-    private void advancePrediction (int rulePos, int origin) {
+    private boolean nextIsMatchingToken (Rule r, int dotPos, Token scannedToken) {
+	int tokenOrRuleId = r.get (dotPos);
+	return tokenOrRuleId == scannedToken.getId ();
+    }
+
+    private void advancePrediction (int rulePos) {
 	// we already know that next is matching
 	int rule = rulePos >> 8;
-	addState (rule, 1, origin);
+	addState (rule, 1, currentPosition);
+    }
+
+    /** Used to advance all token for error handling, trying to see what we can do */
+    private void advanceAllTokens (int rulePos, int origin) {
+	int dotPos = rulePos & 0xff;
+	int rule = rulePos >> 8;
+	Rule r = grammar.getRule (rule);
+	if (dotPos >= r.size ())
+	    return;
+	if (!nextIsToken (r, dotPos))
+	    return;
+	addState (rule, dotPos + 1, origin);
+    }
+
+    /** Used to advance all token for error handling, trying to see what we can do */
+    private void advancePredictionsStartingWith (int rulePos) {
+	int rule = rulePos >> 8;
+	Rule r = grammar.getRule (rule);
+	if (!nextIsToken (r, 0))
+	    return;
+	addState (rule, 1, currentPosition);
+    }
+
+    private boolean nextIsToken (Rule r, int dotPos) {
+	int tokenOrRuleId = r.get (dotPos);
+	return grammar.isToken (tokenOrRuleId);
     }
 
     private void addState (int rule, int dotPos, int origin) {
@@ -278,13 +323,9 @@ public class Parser {
 	return r.toReadableString (grammar);
     }
 
-    private boolean nextIsMatchingToken (Rule r, int dotPos, Token scannedToken) {
-	int tokenId = r.get (dotPos);
-	return tokenId == scannedToken.getId ();
-    }
-
     private boolean isInError () {
-	return false;
+	// make sure we try to fix a few things before we bail
+	return errorCount > 10;
     }
 
     private void findFinished (int rulePos, int origin, Rule goalRule, IntHolder goalHolder) {
@@ -319,7 +360,13 @@ public class Parser {
 		if (DEBUG)
 		    System.out.println ("Accepting token: " + grammar.getToken (p));
 		tokenDiff = 1;
-		children.add (getTokenValue (completedIn - 1));
+		TokenSyntaxTreeNode n = (TokenSyntaxTreeNode)getTokenValue (completedIn - 1);
+		Token t = n.getToken ();
+		if (t == grammar.WILDCARD) {
+		    children.add (new WildcardSyntaxTreeNode (grammar.getToken (p)));
+		} else {
+		    children.add (n);
+		}
 	    } else {
 		if (DEBUG)
 		    System.out.println ("Trying to find rule: " + grammar.getRuleGroupName (p));
@@ -392,7 +439,10 @@ public class Parser {
     }
 
     private void addParserError (String format, Object... args) {
-	diagnostics.report (SourceDiagnostics.error (path, lexer.getParsePosition (), format, args));
+	errorCount++;
+	ParsePosition pp = lexer.getParsePosition ();
+	if (errorPositions.add (pp))
+	    diagnostics.report (SourceDiagnostics.error (path, pp, format, args));
     }
 
     private void printTree (TreeInfo ti) {

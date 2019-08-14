@@ -42,4 +42,23 @@ public class ParsePosition {
     public int getTokenColumn () {
 	return tokenColumn;
     }
+
+    @Override public int hashCode () {
+	return lineNumber << 16 | (0xffff & tokenColumn);
+    }
+
+    @Override public boolean equals (Object o) {
+	if (o == this)
+	    return true;
+	if (o == null)
+	    return false;
+	if (o instanceof ParsePosition) {
+	    ParsePosition pp = (ParsePosition)o;
+	    return pp.lineNumber == lineNumber &&
+		pp.tokenColumn == tokenColumn &&
+		pp.tokenStartPos == tokenStartPos &&
+		pp.tokenEndPos == tokenEndPos;
+	}
+	return false;
+    }
 }

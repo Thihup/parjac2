@@ -18,6 +18,7 @@ public class Grammar {
 
     public final Token END_OF_INPUT;
     public final Token ERROR;
+    public final Token WILDCARD;
 
     public Grammar () {
 	// skip zero element
@@ -27,6 +28,7 @@ public class Grammar {
 
 	END_OF_INPUT = getToken ("end of input");
 	ERROR = getToken ("Error");
+	WILDCARD = getToken ("Wildcard");
     }
 
     public void validateRules () {
