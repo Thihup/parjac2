@@ -19,25 +19,41 @@ import org.khelekore.parjac2.parser.Grammar;
 import org.khelekore.parjac2.parser.Parser;
 import org.khelekore.parjac2.parser.PredictCache;
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.SyntaxTreeNode;
 
 public class TestParser {
+    private final boolean printTree;
     private final Grammar grammar = new Grammar ();
     private final Java11Tokens java11Tokens = new Java11Tokens (grammar);
     private final PredictCache predictCache = new PredictCache (grammar);
     private final Rule goalRule;
 
     public static void main (String[] args) throws IOException {
-	TestParser tg = new TestParser ();
+	if (args.length < 1) {
+	    usage ();
+	    return;
+	}
+	boolean printTree = false;
+	int fileStart = 0;
+	if (args[0].equals ("-print_parse")) {
+	    printTree = true;
+	    fileStart = 1;
+	}
+	TestParser tg = new TestParser (printTree);
 	ExecutorService es = Executors.newFixedThreadPool (Runtime.getRuntime ().availableProcessors () + 1);
-	//System.in.read ();
-	for (final String file : args) {
-	    es.submit (() -> tg.test(file));
+	for (int i = fileStart; i < args.length; i++) {
+	    String filename = args[i];
+	    es.submit (() -> tg.test(filename));
 	}
 	es.shutdown ();
-	//System.in.read();
     }
 
-    public TestParser () throws IOException {
+    private static void usage () {
+	System.err.println ("usage: java " + TestParser.class.getName () + " [-print_parse] file_to_parse*");
+    }
+
+    public TestParser (boolean printTree) throws IOException {
+	this.printTree = printTree;
 	goalRule = JavaGrammarHelper.readAndValidateRules (grammar, false);
 	System.out.println ("Testing parsing with " + -grammar.getMaxRuleGroupId () + " rule groups, " +
 			    -grammar.getMaxRuleId () + " rules and " + grammar.getMaxTokenId () + " tokens");
@@ -49,11 +65,13 @@ public class TestParser {
 	CharBufferLexer lexer = new CharBufferLexer (grammar, java11Tokens, input);
 	CompilerDiagnosticCollector diagnostics = new CompilerDiagnosticCollector ();
 	Parser p = new Parser (grammar, Paths.get (file), predictCache, lexer, diagnostics);
-	p.parse (goalRule);
+	SyntaxTreeNode tree = p.parse (goalRule);
 	if (diagnostics.hasError ()) {
 	    Locale locale = Locale.getDefault ();
 	    diagnostics.getDiagnostics ().forEach (d -> System.err.println (d.getMessage (locale)));
 	}
+	if (printTree)
+	    printTree (tree);
 	return null;
     }
 
@@ -63,5 +81,18 @@ public class TestParser {
 	decoder.onMalformedInput (CodingErrorAction.REPORT);
 	decoder.onUnmappableCharacter (CodingErrorAction.REPORT);
 	return decoder.decode (buf);
+    }
+
+    private void printTree (SyntaxTreeNode tree) {
+	printTree (tree, "");
+    }
+
+    private void printTree (SyntaxTreeNode n, String indent) {
+	System.out.print (indent);
+	System.out.print (n.getId ());
+	if (n.getValue () != null)
+	    System.out.print ("(" + n.getValue () + ")");
+	System.out.println ();
+	n.getChildren ().forEach (c -> printTree (c, indent + " "));
     }
 }

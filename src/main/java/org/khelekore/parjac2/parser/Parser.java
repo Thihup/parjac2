@@ -108,8 +108,6 @@ public class Parser {
 				"states.size: " + states.size () + ", total tokens: " + currentPosition);
 
 	TreeInfo ti = generateParseTree (goalHolder.get (0), goalHolder.get (1), currentPosition, states.size ());
-	if (DEBUG)
-	    printTree (ti);
 	SyntaxTreeNode root = ti.node;
 	if (root == null)
 	    addParserError ("Failed to generate parse tree for %s", path);
@@ -441,19 +439,6 @@ public class Parser {
 	ParsePosition pp = lexer.getParsePosition ();
 	if (errorPositions.add (pp))
 	    diagnostics.report (SourceDiagnostics.error (path, pp, format, args));
-    }
-
-    private void printTree (TreeInfo ti) {
-	printTree (ti.node, "");
-    }
-
-    private void printTree (SyntaxTreeNode n, String indent) {
-	System.out.print (indent);
-	System.out.print (n.getId ());
-	if (n.getValue () != null)
-	    System.out.print ("(" + n.getValue () + ")");
-	System.out.println ();
-	n.getChildren ().forEach (c -> printTree (c, indent + " "));
     }
 
     private static class TreeInfo {
