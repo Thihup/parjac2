@@ -81,15 +81,12 @@ public class Parser {
 	    predict ();
 	    setupNextEarleyState ();
 	    scan ();
-	    // TODO: check for failures
-	    if (isInError ()) {
-		// TODO: try to recover
+	    if (tooManyErrors ())
 		break;
-	    }
 	    currentPosition++;
 	}
 
-	if (isInError ())
+	if (tooManyErrors ())
 	    return null;
 
 	IntHolder goalHolder = new IntHolder (10);
@@ -101,7 +98,7 @@ public class Parser {
 	    addParserError ("Found several valid parses: " + (goalHolder.size () / 2));
 	}
 
-	if (isInError ())
+	if (tooManyErrors ())
 	    return null;
 
 	long endTime = System.currentTimeMillis ();
@@ -324,7 +321,7 @@ public class Parser {
 	return r.toReadableString (grammar);
     }
 
-    private boolean isInError () {
+    private boolean tooManyErrors () {
 	// make sure we try to fix a few things before we bail
 	return errorCount > 10;
     }
