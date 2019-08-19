@@ -1,14 +1,17 @@
 package org.khelekore.parjac2.parsetree;
 
+import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Token;
 import java.util.Collections;
 import java.util.List;
 
 public class TokenSyntaxTreeNode implements SyntaxTreeNode {
     private final Token token;
+    private final ParsePosition pos;
 
-    public TokenSyntaxTreeNode (Token token) {
+    public TokenSyntaxTreeNode (Token token, ParsePosition pos) {
 	this.token = token;
+	this.pos = pos;
     }
 
     @Override public String getId () {
@@ -17,6 +20,10 @@ public class TokenSyntaxTreeNode implements SyntaxTreeNode {
 
     public Token getToken () {
 	return token;
+    }
+
+    public ParsePosition getPosition () {
+	return pos;
     }
 
     @Override public Object getValue () {

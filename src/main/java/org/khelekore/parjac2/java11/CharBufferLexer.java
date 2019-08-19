@@ -95,20 +95,20 @@ public class CharBufferLexer implements Lexer {
 
     @Override public SyntaxTreeNode getCurrentValue () {
 	if (lastScannedToken == java11Tokens.CHARACTER_LITERAL)
-	    return new CharSyntaxTreeNode (lastScannedToken, getCharValue ());
+	    return new CharSyntaxTreeNode (lastScannedToken, getCharValue (), getParsePosition ());
 	if (lastScannedToken == java11Tokens.STRING_LITERAL)
-	    return new StringSyntaxTreeNode (lastScannedToken, getStringValue ());
+	    return new StringSyntaxTreeNode (lastScannedToken, getStringValue (), getParsePosition ());
 	if (lastScannedToken == java11Tokens.INT_LITERAL)
-	    return new IntSyntaxTreeNode (lastScannedToken, getIntValue ());
+	    return new IntSyntaxTreeNode (lastScannedToken, getIntValue (), getParsePosition ());
 	if (lastScannedToken == java11Tokens.LONG_LITERAL)
-	    return new LongSyntaxTreeNode (lastScannedToken, getLongValue ());
+	    return new LongSyntaxTreeNode (lastScannedToken, getLongValue (), getParsePosition ());
 	if (lastScannedToken == java11Tokens.FLOAT_LITERAL)
-	    return new FloatSyntaxTreeNode (lastScannedToken, getFloatValue ());
+	    return new FloatSyntaxTreeNode (lastScannedToken, getFloatValue (), getParsePosition ());
 	if (lastScannedToken == java11Tokens.DOUBLE_LITERAL)
-	    return new DoubleSyntaxTreeNode (lastScannedToken, getDoubleValue ());
+	    return new DoubleSyntaxTreeNode (lastScannedToken, getDoubleValue (), getParsePosition ());
 	if (lastScannedToken == java11Tokens.IDENTIFIER)
-	    return new IdentifierSyntaxTreeNode (lastScannedToken, getIdentifier ());
-	return new TokenSyntaxTreeNode (lastScannedToken);
+	    return new IdentifierSyntaxTreeNode (lastScannedToken, getIdentifier (), getParsePosition ());
+	return new TokenSyntaxTreeNode (lastScannedToken, getParsePosition ());
     }
 
     @Override public ParsePosition getParsePosition () {

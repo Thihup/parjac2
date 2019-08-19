@@ -212,7 +212,7 @@ public class Parser {
 	    states.apply ((rp, o) -> advanceAllTokens (rp, o),
 			  startPositions.get (currentPosition), states.size ());
 	    pg.applyAll (rp -> advancePredictionsStartingWith (rp));
-	    tokenValues.add (new TokenSyntaxTreeNode (grammar.WILDCARD));
+	    tokenValues.add (new TokenSyntaxTreeNode (grammar.WILDCARD, lexer.getParsePosition ()));
 	}
     }
 
@@ -359,7 +359,7 @@ public class Parser {
 		TokenSyntaxTreeNode n = (TokenSyntaxTreeNode)getTokenValue (completedIn - 1);
 		Token t = n.getToken ();
 		if (t == grammar.WILDCARD) {
-		    children.add (new WildcardSyntaxTreeNode (grammar.getToken (p)));
+		    children.add (new WildcardSyntaxTreeNode (grammar.getToken (p), n.getPosition ()));
 		} else {
 		    children.add (n);
 		}
