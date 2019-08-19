@@ -22,7 +22,7 @@ public class TokenSyntaxTreeNode implements SyntaxTreeNode {
 	return token;
     }
 
-    public ParsePosition getPosition () {
+    @Override public ParsePosition getPosition () {
 	return pos;
     }
 

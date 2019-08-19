@@ -89,9 +89,9 @@ public class TestParser {
 
     private void printTree (SyntaxTreeNode n, String indent) {
 	System.out.print (indent);
-	System.out.print (n.getId ());
+	System.out.print (n.getId () + " " + n.getPosition ().toShortString ());
 	if (n.getValue () != null)
-	    System.out.print ("(" + n.getValue () + ")");
+	    System.out.print (" (" + n.getValue () + ")");
 	System.out.println ();
 	n.getChildren ().forEach (c -> printTree (c, indent + " "));
     }

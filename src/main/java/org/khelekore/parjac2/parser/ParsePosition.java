@@ -23,6 +23,10 @@ public class ParsePosition {
 	    "}";
     }
 
+    public String toShortString () {
+	return "(" + lineNumber + "," + tokenColumn + ")";
+    }
+
     /** Get the start position of the current token */
     public int getTokenStartPos () {
 	return tokenStartPos;
