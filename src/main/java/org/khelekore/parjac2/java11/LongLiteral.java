@@ -4,10 +4,10 @@ import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Token;
 import org.khelekore.parjac2.parsetree.TokenNode;
 
-public class DoubleSyntaxTreeNode extends TokenNode {
-    private final double value;
+public class LongLiteral extends TokenNode {
+    private final long value;
 
-    public DoubleSyntaxTreeNode (Token token, double value, ParsePosition pos) {
+    public LongLiteral (Token token, long value, ParsePosition pos) {
 	super (token, pos);
 	this.value = value;
     }

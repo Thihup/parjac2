@@ -4,10 +4,10 @@ import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Token;
 import org.khelekore.parjac2.parsetree.TokenNode;
 
-public class StringSyntaxTreeNode extends TokenNode {
-    private final String value;
+public class CharLiteral extends TokenNode {
+    private final char value;
 
-    public StringSyntaxTreeNode (Token token, String value, ParsePosition pos) {
+    public CharLiteral (Token token, char value, ParsePosition pos) {
 	super (token, pos);
 	this.value = value;
     }
