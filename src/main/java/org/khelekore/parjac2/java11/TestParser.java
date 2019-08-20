@@ -19,7 +19,7 @@ import org.khelekore.parjac2.parser.Grammar;
 import org.khelekore.parjac2.parser.Parser;
 import org.khelekore.parjac2.parser.PredictCache;
 import org.khelekore.parjac2.parser.Rule;
-import org.khelekore.parjac2.parsetree.SyntaxTreeNode;
+import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class TestParser {
     private final boolean printTree;
@@ -65,7 +65,7 @@ public class TestParser {
 	CharBufferLexer lexer = new CharBufferLexer (grammar, java11Tokens, input);
 	CompilerDiagnosticCollector diagnostics = new CompilerDiagnosticCollector ();
 	Parser p = new Parser (grammar, Paths.get (file), predictCache, lexer, diagnostics);
-	SyntaxTreeNode tree = p.parse (goalRule);
+	ParseTreeNode tree = p.parse (goalRule);
 	if (diagnostics.hasError ()) {
 	    Locale locale = Locale.getDefault ();
 	    diagnostics.getDiagnostics ().forEach (d -> System.err.println (d.getMessage (locale)));
@@ -83,11 +83,11 @@ public class TestParser {
 	return decoder.decode (buf);
     }
 
-    private void printTree (SyntaxTreeNode tree) {
+    private void printTree (ParseTreeNode tree) {
 	printTree (tree, "");
     }
 
-    private void printTree (SyntaxTreeNode n, String indent) {
+    private void printTree (ParseTreeNode n, String indent) {
 	System.out.print (indent);
 	System.out.print (n.getId () + " " + n.getPosition ().toShortString ());
 	if (n.getValue () != null)

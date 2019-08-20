@@ -11,7 +11,7 @@ import java.util.Set;
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.SourceDiagnostics;
 import org.khelekore.parjac2.parsetree.RuleSyntaxTreeNode;
-import org.khelekore.parjac2.parsetree.SyntaxTreeNode;
+import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.khelekore.parjac2.parsetree.TokenSyntaxTreeNode;
 import org.khelekore.parjac2.parsetree.WildcardSyntaxTreeNode;
 import org.khelekore.parjac2.util.IntHolder;
@@ -28,7 +28,7 @@ public class Parser {
     private final Set<ParsePosition> errorPositions = new HashSet<> ();
 
     private final IntHolder startPositions = new IntHolder (1024);
-    private final List<SyntaxTreeNode> tokenValues = new ArrayList<> ();
+    private final List<ParseTreeNode> tokenValues = new ArrayList<> ();
     private final List<ParsePosition> parsePositions = new ArrayList<> ();
 
     // 2 ints per state: first is ruleid<<8 | dotPos, second is origin
@@ -66,7 +66,7 @@ public class Parser {
 	hashOfStates = new BitSet (STATE_HASH_SIZE);
     }
 
-    public SyntaxTreeNode parse (Rule goalRule) {
+    public ParseTreeNode parse (Rule goalRule) {
 	long startTime = System.currentTimeMillis ();
 	addState (goalRule.getId (), 0, 0);
 
@@ -108,7 +108,7 @@ public class Parser {
 				"states.size: " + states.size () + ", total tokens: " + currentPosition);
 
 	TreeInfo ti = generateParseTree (goalHolder.get (0), goalHolder.get (1), currentPosition, states.size ());
-	SyntaxTreeNode root = ti.node;
+	ParseTreeNode root = ti.node;
 	if (root == null)
 	    addParserError ("Failed to generate parse tree for %s", path);
 	return root;
@@ -348,7 +348,7 @@ public class Parser {
 	    printStates (completedIn);
 	}
 	int usedTokens = 0;
-	List<SyntaxTreeNode> children = new ArrayList<> (r.size ());
+	List<ParseTreeNode> children = new ArrayList<> (r.size ());
 	for (int i = r.size () - 1; i >= 0; i--) {
 	    int tokenDiff = 0;
 	    int p = r.get (i);
@@ -387,11 +387,11 @@ public class Parser {
 		endPos = startPositions.get (completedIn + 1);
 	}
 	Collections.reverse (children);
-	SyntaxTreeNode st = new RuleSyntaxTreeNode (r, children);
+	ParseTreeNode st = new RuleSyntaxTreeNode (r, children);
 	return new TreeInfo (st, usedTokens);
     }
 
-    private SyntaxTreeNode getTokenValue (int position) {
+    private ParseTreeNode getTokenValue (int position) {
 	return tokenValues.get (position);
     }
 
@@ -442,10 +442,10 @@ public class Parser {
     }
 
     private static class TreeInfo {
-	private final SyntaxTreeNode node;
+	private final ParseTreeNode node;
 	private final int usedTokens;
 
-	public TreeInfo (SyntaxTreeNode node, int usedTokens) {
+	public TreeInfo (ParseTreeNode node, int usedTokens) {
 	    this.node = node;
 	    this.usedTokens = usedTokens;
 	}

@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.khelekore.parjac2.parser.ParsePosition;
 
-public interface SyntaxTreeNode {
+public interface ParseTreeNode {
     /** Get the id of this tree node, typically the name of the token or rule */
     Object getId ();
     /** Get the value the lexer produced for this token, may be null */
@@ -14,7 +14,7 @@ public interface SyntaxTreeNode {
     /** Is this node a token? */
     boolean isToken ();
     /** Get the child nodes for this token, empty list for leaf nodes */
-    List<SyntaxTreeNode> getChildren ();
+    List<ParseTreeNode> getChildren ();
     /** Get the parse position for this node of the tree. */
     ParsePosition getPosition ();
 }

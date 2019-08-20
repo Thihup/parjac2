@@ -5,7 +5,7 @@ import org.khelekore.parjac2.parser.Token;
 import java.util.Collections;
 import java.util.List;
 
-public class TokenSyntaxTreeNode implements SyntaxTreeNode {
+public class TokenSyntaxTreeNode implements ParseTreeNode {
     private final Token token;
     private final ParsePosition pos;
 
@@ -38,7 +38,7 @@ public class TokenSyntaxTreeNode implements SyntaxTreeNode {
 	return true;
     }
 
-    @Override public List<SyntaxTreeNode> getChildren () {
+    @Override public List<ParseTreeNode> getChildren () {
 	return Collections.emptyList ();
     }
 

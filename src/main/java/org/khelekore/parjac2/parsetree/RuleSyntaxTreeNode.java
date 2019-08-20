@@ -4,11 +4,11 @@ import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import java.util.List;
 
-public class RuleSyntaxTreeNode implements SyntaxTreeNode {
+public class RuleSyntaxTreeNode implements ParseTreeNode {
     private final Rule rule;
-    private final List<SyntaxTreeNode> children;
+    private final List<ParseTreeNode> children;
 
-    public RuleSyntaxTreeNode (Rule rule, List<SyntaxTreeNode> children) {
+    public RuleSyntaxTreeNode (Rule rule, List<ParseTreeNode> children) {
 	this.rule = rule;
 	this.children = children;
     }
@@ -29,7 +29,7 @@ public class RuleSyntaxTreeNode implements SyntaxTreeNode {
 	return false;
     }
 
-    @Override public List<SyntaxTreeNode> getChildren () {
+    @Override public List<ParseTreeNode> getChildren () {
 	return children;
     }
 
