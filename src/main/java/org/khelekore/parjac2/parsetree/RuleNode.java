@@ -4,11 +4,11 @@ import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import java.util.List;
 
-public class RuleSyntaxTreeNode implements ParseTreeNode {
+public class RuleNode implements ParseTreeNode {
     private final Rule rule;
     private final List<ParseTreeNode> children;
 
-    public RuleSyntaxTreeNode (Rule rule, List<ParseTreeNode> children) {
+    public RuleNode (Rule rule, List<ParseTreeNode> children) {
 	this.rule = rule;
 	this.children = children;
     }

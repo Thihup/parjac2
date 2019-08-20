@@ -2,9 +2,9 @@ package org.khelekore.parjac2.java11;
 
 import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Token;
-import org.khelekore.parjac2.parsetree.TokenSyntaxTreeNode;
+import org.khelekore.parjac2.parsetree.TokenNode;
 
-public class LongSyntaxTreeNode extends TokenSyntaxTreeNode {
+public class LongSyntaxTreeNode extends TokenNode {
     private final long value;
 
     public LongSyntaxTreeNode (Token token, long value, ParsePosition pos) {

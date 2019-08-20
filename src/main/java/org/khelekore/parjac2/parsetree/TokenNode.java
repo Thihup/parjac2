@@ -5,11 +5,11 @@ import org.khelekore.parjac2.parser.Token;
 import java.util.Collections;
 import java.util.List;
 
-public class TokenSyntaxTreeNode implements ParseTreeNode {
+public class TokenNode implements ParseTreeNode {
     private final Token token;
     private final ParsePosition pos;
 
-    public TokenSyntaxTreeNode (Token token, ParsePosition pos) {
+    public TokenNode (Token token, ParsePosition pos) {
 	this.token = token;
 	this.pos = pos;
     }

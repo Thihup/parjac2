@@ -10,10 +10,10 @@ import java.util.Set;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.SourceDiagnostics;
-import org.khelekore.parjac2.parsetree.RuleSyntaxTreeNode;
+import org.khelekore.parjac2.parsetree.RuleNode;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
-import org.khelekore.parjac2.parsetree.TokenSyntaxTreeNode;
-import org.khelekore.parjac2.parsetree.WildcardSyntaxTreeNode;
+import org.khelekore.parjac2.parsetree.TokenNode;
+import org.khelekore.parjac2.parsetree.WildcardNode;
 import org.khelekore.parjac2.util.IntHolder;
 
 public class Parser {
@@ -212,7 +212,7 @@ public class Parser {
 	    states.apply ((rp, o) -> advanceAllTokens (rp, o),
 			  startPositions.get (currentPosition), states.size ());
 	    pg.applyAll (rp -> advancePredictionsStartingWith (rp));
-	    tokenValues.add (new TokenSyntaxTreeNode (grammar.WILDCARD, lexer.getParsePosition ()));
+	    tokenValues.add (new TokenNode (grammar.WILDCARD, lexer.getParsePosition ()));
 	}
     }
 
@@ -356,10 +356,10 @@ public class Parser {
 		if (DEBUG)
 		    System.out.println ("Accepting token: " + grammar.getToken (p));
 		tokenDiff = 1;
-		TokenSyntaxTreeNode n = (TokenSyntaxTreeNode)getTokenValue (completedIn - 1);
+		TokenNode n = (TokenNode)getTokenValue (completedIn - 1);
 		Token t = n.getToken ();
 		if (t == grammar.WILDCARD) {
-		    children.add (new WildcardSyntaxTreeNode (grammar.getToken (p), n.getPosition ()));
+		    children.add (new WildcardNode (grammar.getToken (p), n.getPosition ()));
 		} else {
 		    children.add (n);
 		}
@@ -387,7 +387,7 @@ public class Parser {
 		endPos = startPositions.get (completedIn + 1);
 	}
 	Collections.reverse (children);
-	ParseTreeNode st = new RuleSyntaxTreeNode (r, children);
+	ParseTreeNode st = new RuleNode (r, children);
 	return new TreeInfo (st, usedTokens);
     }
 

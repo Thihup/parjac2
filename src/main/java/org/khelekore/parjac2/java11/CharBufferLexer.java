@@ -9,7 +9,7 @@ import org.khelekore.parjac2.parser.Lexer;
 import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Token;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
-import org.khelekore.parjac2.parsetree.TokenSyntaxTreeNode;
+import org.khelekore.parjac2.parsetree.TokenNode;
 
 /** A lexer for the java language */
 public class CharBufferLexer implements Lexer {
@@ -108,7 +108,7 @@ public class CharBufferLexer implements Lexer {
 	    return new DoubleSyntaxTreeNode (lastScannedToken, getDoubleValue (), getParsePosition ());
 	if (lastScannedToken == java11Tokens.IDENTIFIER)
 	    return new IdentifierSyntaxTreeNode (lastScannedToken, getIdentifier (), getParsePosition ());
-	return new TokenSyntaxTreeNode (lastScannedToken, getParsePosition ());
+	return new TokenNode (lastScannedToken, getParsePosition ());
     }
 
     @Override public ParsePosition getParsePosition () {

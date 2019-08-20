@@ -5,8 +5,8 @@ import org.khelekore.parjac2.parser.Token;
 
 /** Wildcard interpreted as a given token.
  */
-public class WildcardSyntaxTreeNode extends TokenSyntaxTreeNode {
-    public WildcardSyntaxTreeNode (Token token, ParsePosition pos) {
+public class WildcardNode extends TokenNode {
+    public WildcardNode (Token token, ParsePosition pos) {
 	super (token, pos);
     }
 
