@@ -22,10 +22,13 @@ import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class TestParser {
-    private final boolean printTree;
+    private final boolean printParseTree;
+    private final boolean printSyntaxTree;
     private final Grammar grammar = new Grammar ();
     private final Java11Tokens java11Tokens = new Java11Tokens (grammar);
     private final PredictCache predictCache = new PredictCache (grammar);
+    private final CompilerDiagnosticCollector diagnostics = new CompilerDiagnosticCollector ();
+    private final SyntaxTreeBuilder stb = new SyntaxTreeBuilder (java11Tokens, diagnostics);
     private final Rule goalRule;
 
     public static void main (String[] args) throws IOException {
@@ -33,13 +36,19 @@ public class TestParser {
 	    usage ();
 	    return;
 	}
-	boolean printTree = false;
+	boolean printParseTree = false;
+	boolean printSyntaxTree = false;
 	int fileStart = 0;
 	if (args[0].equals ("-print_parse")) {
-	    printTree = true;
-	    fileStart = 1;
+	    printParseTree = true;
+	    fileStart++;
 	}
-	TestParser tg = new TestParser (printTree);
+	if (args[fileStart].equals ("-print_syntax")) {
+	    printSyntaxTree = true;
+	    fileStart++;
+	}
+
+	TestParser tg = new TestParser (printParseTree, printSyntaxTree);
 	ExecutorService es = Executors.newFixedThreadPool (Runtime.getRuntime ().availableProcessors () + 1);
 	for (int i = fileStart; i < args.length; i++) {
 	    String filename = args[i];
@@ -52,27 +61,42 @@ public class TestParser {
 	System.err.println ("usage: java " + TestParser.class.getName () + " [-print_parse] file_to_parse*");
     }
 
-    public TestParser (boolean printTree) throws IOException {
-	this.printTree = printTree;
+    public TestParser (boolean printParseTree, boolean printSyntaxTree) throws IOException {
+	this.printParseTree = printParseTree;
+	this.printSyntaxTree = printSyntaxTree;
 	goalRule = JavaGrammarHelper.readAndValidateRules (grammar, false);
 	System.out.println ("Testing parsing with " + -grammar.getMaxRuleGroupId () + " rule groups, " +
 			    -grammar.getMaxRuleId () + " rules and " + grammar.getMaxTokenId () + " tokens");
     }
 
     public Void test (String file) throws IOException {
-	System.out.println ("Testing parsing of: " + file);
-	CharBuffer input = pathToCharBuffer (Paths.get (file), StandardCharsets.ISO_8859_1);
-	CharBufferLexer lexer = new CharBufferLexer (grammar, java11Tokens, input);
-	CompilerDiagnosticCollector diagnostics = new CompilerDiagnosticCollector ();
-	Parser p = new Parser (grammar, Paths.get (file), predictCache, lexer, diagnostics);
-	ParseTreeNode tree = p.parse (goalRule);
+	Path filePath = Paths.get (file);
+	System.out.println ("Testing parsing of: " + filePath);
+	parse (filePath, diagnostics);
 	if (diagnostics.hasError ()) {
 	    Locale locale = Locale.getDefault ();
 	    diagnostics.getDiagnostics ().forEach (d -> System.err.println (d.getMessage (locale)));
 	}
-	if (printTree)
-	    printTree (tree);
 	return null;
+    }
+
+    private void parse (Path filePath, CompilerDiagnosticCollector diagnostics) throws IOException {
+	CharBuffer input = pathToCharBuffer (filePath, StandardCharsets.ISO_8859_1);
+	CharBufferLexer lexer = new CharBufferLexer (grammar, java11Tokens, input);
+	Parser p = new Parser (grammar, filePath, predictCache, lexer, diagnostics);
+	ParseTreeNode parseTree = p.parse (goalRule);
+	if (diagnostics.hasError ())
+	    return;
+
+	if (printParseTree)
+	    printTree (parseTree);
+
+	try {
+	ParseTreeNode syntaxTree = stb.build (filePath, parseTree);
+	if (printSyntaxTree)
+	    printTree (syntaxTree);
+	} catch (Throwable t) { t.printStackTrace (); }
+	return;
     }
 
     private CharBuffer pathToCharBuffer (Path path, Charset encoding) throws IOException {
