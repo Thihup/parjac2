@@ -114,7 +114,9 @@ VariableDeclaratorId:
 /*
 UnannArrayType:
 MethodDeclaration:
-MethodModifier:
+*/
+	register ("MethodModifier", this::liftUp);
+/*
 MethodHeader:
 */
 	register ("Result", this::liftUp);
@@ -124,44 +126,62 @@ ReceiverParameter:
 FormalParameterList:
 FormalParameter:
 VariableArityParameter:
-VariableModifier:
+*/
+	register ("VariableModifier", this::liftUp);
+/*
 Throws:
 ExceptionTypeList:
-ExceptionType:
-MethodBody:
-InstanceInitializer:
+*/
+	register ("ExceptionType", this::liftUp);
+	register ("MethodBody", this::liftUp);
+	register ("InstanceInitializer", this::liftUp);
+/*
 StaticInitializer:
 ConstructorDeclaration:
-ConstructorModifier:
+*/
+	register ("ConstructorModifier", this::liftUp);
+/*
 ConstructorDeclarator:
-SimpleTypeName:
+*/
+	register ("SimpleTypeName", this::liftUp);
+/*
 ConstructorBody:
 ExplicitConstructorInvocation:
 EnumDeclaration:
 EnumBody:
 EnumConstantList:
 EnumConstant:
-EnumConstantModifier:
+*/
+	register ("EnumConstantModifier", this::liftUp);
+/*
 EnumBodyDeclarations:
 */
 
 	// Productions from §9 (Interfaces)
+	register ("InterfaceDeclaration", this::liftUp);
 /*
-InterfaceDeclaration:
 NormalInterfaceDeclaration:
 InterfaceModifier:
 ExtendsInterfaces:
 InterfaceBody:
 InterfaceMemberDeclaration:
 ConstantDeclaration:
-ConstantModifier:
+*/
+	register ("ConstantModifier", this::liftUp);
+/*
 InterfaceMethodDeclaration:
-InterfaceMethodModifier:
+*/
+	register ("InterfaceMethodModifier", this::liftUp);
+/*
 AnnotationTypeDeclaration:
 AnnotationTypeBody:
-AnnotationTypeMemberDeclaration:
+*/
+	register ("AnnotationTypeMemberDeclaration", this::liftUp);
+/*
 AnnotationTypeElementDeclaration:
-AnnotationTypeElementModifier:
+*/
+	register ("AnnotationTypeElementModifier", this::liftUp);
+/*
 DefaultValue:
 */
 	register ("Annotation", this::liftUp);
@@ -169,7 +189,9 @@ DefaultValue:
 /*
 ElementValuePairList:
 ElementValuePair:
-ElementValue:
+*/
+	register ("ElementValue", this::liftUp);
+/*
 ElementValueArrayInitializer:
 ElementValueList:
 */
@@ -186,18 +208,24 @@ VariableInitializerList:
 /*
 Block:
 BlockStatements:
-BlockStatement:
+*/
+	register ("BlockStatement", this::liftUp);
+/*
 LocalVariableDeclarationStatement:
 LocalVariableDeclaration:
-LocalVariableType:
-Statement:
-StatementNoShortIf:
-StatementWithoutTrailingSubstatement:
-EmptyStatement:
+*/
+	register ("LocalVariableType", this::liftUp);
+	register ("Statement", this::liftUp);
+	register ("StatementNoShortIf", this::liftUp);
+	register ("StatementWithoutTrailingSubstatement", this::liftUp);
+	register ("EmptyStatement", this::liftUp);
+/*
 LabeledStatement:
 LabeledStatementNoShortIf:
 ExpressionStatement:
-StatementExpression:
+*/
+	register ("StatementExpression", this::liftUp);
+/*
 IfThenStatement:
 IfThenElseStatement:
 IfThenElseStatementNoShortIf:
@@ -209,12 +237,16 @@ SwitchLabel:
 WhileStatement:
 WhileStatementNoShortIf:
 DoStatement:
-ForStatement:
-ForStatementNoShortIf:
+*/
+	register ("ForStatement", this::liftUp);
+	register ("ForStatementNoShortIf", this::liftUp);
+/*
 BasicForStatement:
 BasicForStatementNoShortIf:
-ForInit:
-ForUpdate:
+*/
+	register ("ForInit", this::liftUp);
+	register ("ForUpdate", this::liftUp);
+/*
 StatementExpressionList:
 EnhancedForStatement:
 EnhancedForStatementNoShortIf:
@@ -236,8 +268,8 @@ Resource:
 VariableAccess:
 */
 	// Productions from §15 (Expressions)
+	register ("Primary", this::liftUp);
 /*
-Primary:
 PrimaryNoNewArray:
 ClassLiteral:
 ClassInstanceCreationExpression:
@@ -253,17 +285,23 @@ MethodReference:
 ArrayCreationExpression:
 DimExprs:
 DimExpr:
-Expression:
+*/
+	register ("Expression", this::liftUp);
+/*
 LambdaExpression:
 LambdaParameters:
 LambdaParameterList:
 LambdaParameter:
-LambdaParameterType:
-LambdaBody:
-AssignmentExpression:
+*/
+	register ("LambdaParameterType", this::liftUp);
+	register ("LambdaBody", this::liftUp);
+	register ("AssignmentExpression", this::liftUp);
+/*
 Assignment:
-LeftHandSide:
-AssignmentOperator:
+*/
+	register ("LeftHandSide", this::liftUp);
+	register ("AssignmentOperator", this::liftUp);
+/*
 ConditionalExpression:
 ConditionalOrExpression:
 ConditionalAndExpression:
@@ -280,12 +318,14 @@ UnaryExpression:
 PreIncrementExpression:
 PreDecrementExpression:
 UnaryExpressionNotPlusMinus:
-PostfixExpression:
+*/
+	register ("PostfixExpression", this::liftUp);
+/*
 PostIncrementExpression:
 PostDecrementExpression:
 CastExpression:
-ConstantExpression:
  */
+	register ("ConstantExpression", this::liftUp);
     }
 
     private final void register (String name, NodeBuilder nb) {
