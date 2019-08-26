@@ -785,7 +785,7 @@ LambdaParameter:
 
 LambdaParameterType:
 	UnannType
-	'var'    # TODO: is var really a token?
+	'var'
 
 LambdaBody:
 	Expression
