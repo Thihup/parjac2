@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.SourceDiagnostics;
+import org.khelekore.parjac2.parser.Grammar;
 import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parser.Token;
@@ -20,11 +21,13 @@ import org.khelekore.parjac2.parsetree.TokenNode;
 
 public class SyntaxTreeBuilder {
     private final Java11Tokens java11Tokens;
+    private final Grammar grammar;
     private final CompilerDiagnosticCollector diagnostics;
     private final Map<String, NodeBuilder> nodeBuilders;
 
-    public SyntaxTreeBuilder (Java11Tokens java11Tokens, CompilerDiagnosticCollector diagnostics) {
+    public SyntaxTreeBuilder (Java11Tokens java11Tokens, Grammar grammar, CompilerDiagnosticCollector diagnostics) {
 	this.java11Tokens = java11Tokens;
+	this.grammar = grammar;
 	this.diagnostics = diagnostics;
 	nodeBuilders = new HashMap<> ();
 
@@ -66,10 +69,8 @@ public class SyntaxTreeBuilder {
 
 	// Productions from §7 (Packages and Modules)
 	register ("CompilationUnit", this::liftUp);
-/*
-OrdinaryCompilationUnit:
-ModularCompilationUnit:
-*/
+	register ("OrdinaryCompilationUnit", OrdinaryCompilationUnit::new);
+	register ("ModularCompilationUnit", ModularCompilationUnit::new);
 	register ("PackageDeclaration", PackageDeclaration::new);
 	register ("PackageModifier", this::liftUp);
 	register ("ImportDeclaration", this::liftUp);
@@ -78,25 +79,19 @@ ModularCompilationUnit:
 	register ("SingleStaticImportDeclaration", SingleStaticImportDeclaration::new);
 	register ("StaticImportOnDemandDeclaration", StaticImportOnDemandDeclaration::new);
 	register ("TypeDeclaration", this::liftUp);
-/*
-ModuleDeclaration:
-ModuleDirective:
-RequiresModifier:
-*/
+	register ("ModuleDeclaration", ModuleDeclaration::new);
+	register ("ModuleDirective", this::moduleDirective);
+	register ("RequiresModifier", this::liftUp);
 	// Productions from §8 (Classes)
 	register ("ClassDeclaration", this::liftUp);
-/*
-NormalClassDeclaration:
-*/
+	register ("NormalClassDeclaration", NormalClassDeclaration::new);
 	register ("ClassModifier", this::liftUp);
 	register ("TypeParameters", TypeParameters::new);
 	register ("TypeParameterList", TypeParameterList::new);
 	register ("Superclass", Superclass::new);
 	register ("Superinterfaces", Superinterfaces::new);
 	register ("InterfaceTypeList", InterfaceTypeList::new);
-/*
-ClassBody:
-*/
+	register ("ClassBody", ClassBody::new);
 	register ("ClassBodyDeclaration", this::liftUp);
 	register ("ClassMemberDeclaration", this::liftUp);
 /*
@@ -376,7 +371,7 @@ CastExpression:
     }
 
     private class PrimitiveType extends ComplexTreeNode {
-	private List<ParseTreeNode> annotations;
+	private List<Annotation> annotations;
 	private Token type;
 
 	public PrimitiveType (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
@@ -427,7 +422,7 @@ CastExpression:
     }
 
     private class SimpleClassType extends ComplexTreeNode {
-	private final List<ParseTreeNode> annotations;
+	private final List<Annotation> annotations;
 	private final String id;
 	private final TypeArguments typeArguments;
 
@@ -445,7 +440,7 @@ CastExpression:
 	    typeArguments = rule.size () > i ? (TypeArguments)children.get (i) : null;
 	}
 
-	public SimpleClassType (ParsePosition pos, List<ParseTreeNode> annotations, String id, TypeArguments tas) {
+	public SimpleClassType (ParsePosition pos, List<Annotation> annotations, String id, TypeArguments tas) {
 	    super (pos);
 	    this.annotations = annotations;
 	    this.id = id;
@@ -459,7 +454,7 @@ CastExpression:
     }
 
     private class TypeVariable extends ComplexTreeNode {
-	private List<ParseTreeNode> annotations;
+	private List<Annotation> annotations;
 	private String id;
 
 	public TypeVariable (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
@@ -530,7 +525,7 @@ CastExpression:
     }
 
     private class TypeParameter extends ComplexTreeNode {
-	private List<ParseTreeNode> annotations;
+	private List<Annotation> annotations;
 	private String id;
 	private TypeBound bound;
 
@@ -626,7 +621,7 @@ CastExpression:
     }
 
     private class Wildcard extends ComplexTreeNode {
-	private final List<ParseTreeNode> annotations;
+	private final List<Annotation> annotations;
 	private final WildcardBounds bounds;
 
 	private Wildcard (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
@@ -720,8 +715,75 @@ CastExpression:
 	}
     }
 
+    private class OrdinaryCompilationUnit extends ComplexTreeNode {
+	private PackageDeclaration packageDeclarataion;
+	private List<ImportDeclaration> imports;
+	private List<TypeDeclaration> types;
+
+	public OrdinaryCompilationUnit (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 0;
+	    if (rule.size () > i && rule.get (i) == grammar.getRuleGroupId ("PackageDeclaration"))
+		packageDeclarataion = (PackageDeclaration)children.get (i++);
+	    else
+		packageDeclarataion = null;
+
+	    if (rule.size () > i && isZomImports (children.get (i)))
+		imports = ((ZOMEntry)children.get (i++)).<ImportDeclaration>get ();
+	    else
+		imports = Collections.emptyList ();
+
+	    if (rule.size () > i)
+		types = ((ZOMEntry)children.get (i++)).<TypeDeclaration>get ();
+	    else
+		types = Collections.emptyList ();
+	}
+
+	private boolean isZomImports (ParseTreeNode n) {
+	    if (n instanceof ZOMEntry) {
+		ZOMEntry z = (ZOMEntry)n;
+		if (z.getInternalGroupId () == grammar.getRuleGroupId ("ImportDeclaration"))
+		    return true;
+	    }
+	    return false;
+	}
+
+	@Override public Object getValue() {
+	    StringBuilder sb = new StringBuilder ();
+	    if (packageDeclarataion != null)
+		sb.append (packageDeclarataion).append ("\n");
+	    for (ImportDeclaration id : imports)
+		sb.append (id).append ("\n");
+	    for (TypeDeclaration type : types)
+		sb.append (type).append ("\n");
+	    return sb.toString ();
+	}
+    }
+
+    private class ModularCompilationUnit extends ComplexTreeNode {
+	private List<ImportDeclaration> imports;
+	private ModuleDeclaration moduleDeclaration;
+
+	public ModularCompilationUnit (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 0;
+	    imports = (rule.size () > 1) ? ((ZOMEntry)children.get (i++)).get () : Collections.emptyList ();
+	    moduleDeclaration = (ModuleDeclaration)children.get (i++);
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    if (!imports.isEmpty ()) {
+		for (ImportDeclaration i : imports)
+		    sb.append (i).append ("\n");
+	    }
+	    sb.append (moduleDeclaration);
+	    return sb.toString ();
+	}
+    }
+
     private class PackageDeclaration extends ComplexTreeNode {
-	private final List<ParseTreeNode> annotations;
+	private final List<Annotation> annotations;
 	private final List<String> nameParts;
 
 	public PackageDeclaration (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
@@ -748,7 +810,7 @@ CastExpression:
 	}
     }
 
-    private class SingleTypeImportDeclaration extends ComplexTreeNode {
+    private class SingleTypeImportDeclaration extends ImportDeclaration {
 	private TypeName typename;
 	public SingleTypeImportDeclaration (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	    super (n.getPosition ());
@@ -760,7 +822,7 @@ CastExpression:
 	}
     }
 
-    private class TypeImportOnDemandDeclaration extends ComplexTreeNode {
+    private class TypeImportOnDemandDeclaration extends ImportDeclaration {
 	private final PackageOrTypeName typename;
 	public TypeImportOnDemandDeclaration (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	    super (n.getPosition ());
@@ -772,7 +834,7 @@ CastExpression:
 	}
     }
 
-    private class SingleStaticImportDeclaration extends ComplexTreeNode {
+    private class SingleStaticImportDeclaration extends ImportDeclaration {
 	private TypeName typename;
 	private String id;
 	public SingleStaticImportDeclaration (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
@@ -786,7 +848,7 @@ CastExpression:
 	}
     }
 
-    private class StaticImportOnDemandDeclaration extends ComplexTreeNode {
+    private class StaticImportOnDemandDeclaration extends ImportDeclaration {
 	private TypeName typename;
 	public StaticImportOnDemandDeclaration (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	    super (n.getPosition ());
@@ -795,6 +857,54 @@ CastExpression:
 
 	@Override public Object getValue () {
 	    return "import static " + typename + ".*;";
+	}
+    }
+
+    private abstract class ImportDeclaration extends ComplexTreeNode {
+	public ImportDeclaration (ParsePosition pos) {
+	    super (pos);
+	}
+    }
+
+    private class NormalClassDeclaration extends TypeDeclaration {
+	private List<ParseTreeNode> modifiers;
+	private String id;
+	private TypeParameters typeParameters;
+	private Superclass superClass;
+	private Superinterfaces superInterfaces;
+	private ClassBody classBody;
+
+	public NormalClassDeclaration (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 0;
+	    if (children.get (i) instanceof ZOMEntry)
+		modifiers = ((ZOMEntry)children.get (i++)).get ();
+	    else
+		modifiers = Collections.emptyList ();
+	    i++; // 'class'
+	    id = ((Identifier)children.get (i++)).getValue ();
+	    if (children.get (i) instanceof TypeParameters)
+		typeParameters = (TypeParameters)children.get (i++);
+	    if (children.get (i) instanceof Superclass)
+		superClass = (Superclass)children.get (i++);
+	    if (children.get (i) instanceof Superinterfaces)
+		superInterfaces = (Superinterfaces)children.get (i++);
+	    classBody = (ClassBody)children.get (i++);
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    if (!modifiers.isEmpty ())
+		sb.append (modifiers).append (" ");
+	    sb.append ("class ").append (id);
+	    if (typeParameters != null)
+		sb.append (typeParameters).append (" ");
+	    if (superClass != null)
+		sb.append (superClass).append (" ");
+	    if (superInterfaces != null)
+		sb.append (superInterfaces).append (" ");
+	    sb.append (classBody);
+	    return sb.toString ();
 	}
     }
 
@@ -873,6 +983,29 @@ CastExpression:
 	}
     }
 
+    private class ClassBody extends ComplexTreeNode {
+	private List<ParseTreeNode> declarations;
+	public ClassBody (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    declarations = (rule.size () > 2) ? ((ZOMEntry)children.get (1)).get () : Collections.emptyList ();
+	}
+
+	@Override public Object getValue() {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append (" {\n");
+	    for (ParseTreeNode d : declarations)
+		sb.append (d).append ("\n");
+	    sb.append ("}\n");
+	    return sb.toString ();
+	}
+    }
+
+    private abstract class ClassBodyDeclaration extends ComplexTreeNode {
+	public ClassBodyDeclaration (ParsePosition pos) {
+	    super (pos);
+	}
+    }
+
     private ParseTreeNode unannClassType (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	if (rule.size () == 3) {
 	    UnannClassType uct = (UnannClassType)children.get (0);
@@ -901,7 +1034,205 @@ CastExpression:
 	}
     }
 
-    private class NormalAnnotation extends ComplexTreeNode {
+    private abstract class TypeDeclaration extends ComplexTreeNode {
+	public TypeDeclaration (ParsePosition pos) {
+	    super (pos);
+	}
+    }
+
+    private class ModuleDeclaration extends ComplexTreeNode {
+	private List<Annotation> annotations;
+	private boolean isOpen;
+	private List<String> identifiers;
+	private List<ModuleDirective> directives;
+
+	public ModuleDeclaration (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 0;
+	    if (children.get (i) instanceof ZOMEntry)
+		annotations = ((ZOMEntry)children.get (i++)).get ();
+	    else
+		annotations = Collections.emptyList ();
+
+	    isOpen = (rule.get (i) == java11Tokens.OPEN.getId ());
+	    if (isOpen)
+		i++;
+
+	    i++; // 'module'
+	    identifiers = new ArrayList<> ();
+	    identifiers.add (((Identifier)children.get (i++)).getValue ());
+	    if (children.get (i) instanceof ZOMEntry) {
+		ZOMEntry z = (ZOMEntry)children.get (i++);
+		for (int j = 1; j < z.nodes.size (); j += 2)
+		    identifiers.add (((Identifier)z.nodes.get (j)).getValue ());
+	    }
+	    i++; // '{'
+	    if (children.get (i) instanceof ZOMEntry)
+		directives = ((ZOMEntry)children.get (i++)).get ();
+	    else
+		directives = Collections.emptyList ();
+
+	    i++; // '}'
+	}
+
+	@Override public Object getValue() {
+	    StringBuilder sb = new StringBuilder ();
+	    if (!annotations.isEmpty ())
+		sb.append (annotations).append (" ");
+	    if (isOpen)
+		sb.append ("open ");
+	    sb.append ("module ");
+	    sb.append (identifiers.get (0));
+	    for (int i = 1; i < identifiers.size (); i++)
+		sb.append (".").append (identifiers.get (i));
+	    sb.append ("{\n");
+	    for (ModuleDirective d : directives)
+		sb.append (d).append ("\n");
+	    sb.append ("}\n");
+	    return sb.toString ();
+	}
+    }
+
+    private ParseTreeNode moduleDirective (Path path, Rule r, ParseTreeNode n, List<ParseTreeNode> children) {
+	if (r.get (0) == java11Tokens.REQUIRES.getId ()) {
+	    return new RequiresDirective (r, n, children);
+	} else if (r.get (0) == java11Tokens.EXPORTS.getId ()) {
+	    return new ExportsDirective (r, n, children);
+	} else if (r.get (0) == java11Tokens.OPENS.getId ()) {
+	    return new OpensDirective (r, n, children);
+	} else if (r.get (0) == java11Tokens.USES.getId ()) {
+	    return new UsesDirective (r, n, children);
+	} else if (r.get (0) == java11Tokens.PROVIDES.getId ()) {
+	    return new ProvidesDirective (r, n, children);
+	} else {
+	    throw new IllegalArgumentException ("Type: " + r.get (0) + ", " + r.toReadableString (grammar));
+	}
+    }
+
+    private class RequiresDirective extends ModuleDirective {
+	private final List<ParseTreeNode> modifiers;
+	private final ModuleName moduleName;
+
+	public RequiresDirective (Rule r, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 1;
+	    modifiers = (r.size () > 3) ? ((ZOMEntry)children.get (i++)).get () : Collections.emptyList ();
+	    moduleName = (ModuleName)children.get (i);
+	}
+
+	@Override public Object getValue() {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append ("requires ");
+	    if (!modifiers.isEmpty ())
+		sb.append (modifiers).append (" ");
+	    sb.append (moduleName).append (";");
+	    return sb.toString ();
+	}
+    }
+
+    private class ExportsDirective extends PackageNameTo<PackageName, ModuleName> {
+	public ExportsDirective (Rule r, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (r, n, children);
+	}
+
+	@Override protected String getType () {
+	    return "exports";
+	}
+
+	@Override protected String getThing () {
+	    return "to";
+	}
+    }
+
+    private class OpensDirective extends PackageNameTo<PackageName, ModuleName> {
+	public OpensDirective (Rule r, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (r, n, children);
+	}
+
+	@Override protected String getType () {
+	    return "opens";
+	}
+
+	@Override protected String getThing () {
+	    return "to";
+	}
+    }
+
+    private class UsesDirective extends ModuleDirective {
+	private TypeName typeName;
+
+	public UsesDirective (Rule r, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    typeName = (TypeName)children.get (1);
+	}
+
+	@Override public Object getValue() {
+	    return "uses " + typeName + ";";
+	}
+    }
+
+    private class ProvidesDirective extends PackageNameTo<TypeName, TypeName> {
+	public ProvidesDirective (Rule r, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (r, n, children);
+	}
+
+	@Override protected String getType () {
+	    return "provides";
+	}
+
+	@Override protected String getThing () {
+	    return "with";
+	}
+    }
+
+    private abstract class PackageNameTo<T extends DottedName, S extends DottedName> extends ModuleDirective {
+	private T packageName;
+	private List<S> exportedTo;
+
+	@SuppressWarnings("unchecked")
+	public PackageNameTo (Rule r, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    packageName = (T)children.get (1);
+	    if (r.size () > 3) {
+		exportedTo = new ArrayList<> ();
+		exportedTo.add ((S)children.get (3));
+		if (r.size () > 5) {
+		    ZOMEntry z = (ZOMEntry)children.get (4);
+		    for (int i = 1; i < z.nodes.size (); i += 2)
+			exportedTo.add ((S)z.nodes.get (i));
+		}
+	    }
+	}
+
+	@Override public Object getValue() {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append (getType ()).append (" ").append (packageName);
+	    if (exportedTo != null) {
+		sb.append (" ").append (getThing ()).append (" " ).append (exportedTo.get (0));
+		for (int i = 1; i < exportedTo.size (); i++)
+		    sb.append (", " + exportedTo.get (i));
+	    }
+	    sb.append (";");
+	    return sb.toString ();
+	}
+
+	protected abstract String getType ();
+	protected abstract String getThing ();
+    }
+
+    private abstract class ModuleDirective extends ComplexTreeNode {
+	public ModuleDirective (ParsePosition pos) {
+	    super (pos);
+	}
+    }
+
+    private abstract class Annotation extends ComplexTreeNode {
+	public Annotation (ParsePosition pos) {
+	    super (pos);
+	}
+    }
+
+    private class NormalAnnotation extends Annotation {
 	private TypeName typename;
 	private ParseTreeNode elementValuePairList;
 	public NormalAnnotation (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
@@ -915,7 +1246,7 @@ CastExpression:
 	}
     }
 
-    private class MarkerAnnotation extends ComplexTreeNode {
+    private class MarkerAnnotation extends Annotation {
 	private TypeName typename;
 	public MarkerAnnotation (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	    super (n.getPosition ());
@@ -937,30 +1268,37 @@ CastExpression:
 	    z.nodes.addAll (children.subList (1, children.size ()));
 	    return z;
 	} else {
-	    return new ZOMEntry (node.getPosition (), rule.getName (), new ArrayList<> (children));
+	    return new ZOMEntry (node.getPosition (), rule.get (0), rule.getName (),
+				 new ArrayList<> (children));
 	}
     }
 
     private class ZOMEntry extends ComplexTreeNode {
+	private final int ruleGroupId; // zero or more of this group
 	private final String name;
 	private final List<ParseTreeNode> nodes;
 
-	public ZOMEntry (ParsePosition pos, String name, List<ParseTreeNode> nodes) {
+	public ZOMEntry (ParsePosition pos, int ruleGroupId, String name, List<ParseTreeNode> nodes) {
 	    super (pos);
+	    this.ruleGroupId = ruleGroupId;
 	    this.name = name;
 	    this.nodes = nodes;
+	}
+
+	public int getInternalGroupId () {
+	    return ruleGroupId;
 	}
 
 	@Override public Object getValue () {
 	    return name;
 	}
 
-	public List<ParseTreeNode> get () {
-	    return nodes;
+	@SuppressWarnings("unchecked") public <T extends ParseTreeNode> List<T> get () {
+	    return (List<T>)nodes;
 	}
 
-	@Override public List<ParseTreeNode> getChildren () {
-	    return nodes;
+	@SuppressWarnings("unchecked") @Override public <T extends ParseTreeNode> List<T> getChildren () {
+	    return (List<T>)nodes;
 	}
     }
 
@@ -983,8 +1321,8 @@ CastExpression:
 	    return false;
 	}
 
-	@Override public List<ParseTreeNode> getChildren () {
-	    return Collections.emptyList ();
+	@Override public <T extends ParseTreeNode> List<T> getChildren () {
+	    return Collections.<T>emptyList ();
 	}
 
 	@Override public ParsePosition getPosition () {

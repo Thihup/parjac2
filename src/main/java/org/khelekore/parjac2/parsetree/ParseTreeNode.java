@@ -14,7 +14,7 @@ public interface ParseTreeNode {
     /** Is this node a token? */
     boolean isToken ();
     /** Get the child nodes for this token, empty list for leaf nodes */
-    List<ParseTreeNode> getChildren ();
+    <T extends ParseTreeNode> List<T> getChildren ();
     /** Get the parse position for this node of the tree. */
     ParsePosition getPosition ();
 }
