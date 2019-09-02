@@ -129,7 +129,7 @@ ConstructorDeclaration:
 /*
 ConstructorDeclarator:
 */
-	register ("SimpleTypeName", this::liftUp);
+	register ("SimpleTypeName",this::liftUp);
 /*
 ConstructorBody:
 ExplicitConstructorInvocation:
@@ -1849,8 +1849,8 @@ UnaryExpressionNotPlusMinus:
 	    return (List<T>)nodes;
 	}
 
-	@SuppressWarnings("unchecked") @Override public <T extends ParseTreeNode> List<T> getChildren () {
-	    return (List<T>)nodes;
+	@Override public List<ParseTreeNode> getChildren () {
+	    return nodes;
 	}
     }
 
@@ -1873,8 +1873,8 @@ UnaryExpressionNotPlusMinus:
 	    return false;
 	}
 
-	@Override public <T extends ParseTreeNode> List<T> getChildren () {
-	    return Collections.<T>emptyList ();
+	@Override public List<ParseTreeNode> getChildren () {
+	    return Collections.emptyList ();
 	}
 
 	@Override public ParsePosition getPosition () {
