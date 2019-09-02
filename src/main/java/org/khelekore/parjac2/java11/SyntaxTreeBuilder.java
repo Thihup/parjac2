@@ -82,6 +82,7 @@ public class SyntaxTreeBuilder {
 	register ("ModuleDeclaration", ModuleDeclaration::new);
 	register ("ModuleDirective", this::moduleDirective);
 	register ("RequiresModifier", this::liftUp);
+
 	// Productions from §8 (Classes)
 	register ("ClassDeclaration", this::liftUp);
 	register ("NormalClassDeclaration", NormalClassDeclaration::new);
@@ -94,44 +95,34 @@ public class SyntaxTreeBuilder {
 	register ("ClassBody", ClassBody::new);
 	register ("ClassBodyDeclaration", this::liftUp);
 	register ("ClassMemberDeclaration", this::liftUp);
-/*
-FieldDeclaration:
-FieldModifier:
-VariableDeclaratorList:
-VariableDeclarator:
-VariableDeclaratorId:
-*/
+	register ("FieldDeclaration", FieldDeclaration::new);
+	register ("FieldModifier", this::liftUp);
+	register ("VariableDeclaratorList", VariableDeclaratorList::new);
+	register ("VariableDeclarator", VariableDeclarator::new);
+	register ("VariableDeclaratorId", VariableDeclaratorId::new);
 	register ("VariableInitializer", this::liftUp);
 	register ("UnannType", this::liftUp);
 	register ("UnannPrimitiveType", this::liftUp);
 	register ("UnannReferenceType", this::liftUp);
 	register ("UnannClassType", this::unannClassType);
-/*
-UnannArrayType:
-MethodDeclaration:
-*/
+	register ("UnannArrayType", UnannArrayType::new);
+	register ("MethodDeclaration", MethodDeclaration::new);
 	register ("MethodModifier", this::liftUp);
-/*
-MethodHeader:
-*/
+	register ("MethodHeader", MethodHeader::new);
 	register ("Result", this::liftUp);
-/*
-MethodDeclarator:
-ReceiverParameter:
-FormalParameterList:
-FormalParameter:
-VariableArityParameter:
-*/
+	register ("MethodDeclarator", MethodDeclarator::new);
+	register ("ReceiverParameter", ReceiverParameter::new);
+	register ("FormalParameterList", FormalParameterList::new);
+	register ("FormalParameter", this::formalParameter);
+	register ("VariableArityParameter", VariableArityParameter::new);
 	register ("VariableModifier", this::liftUp);
-/*
-Throws:
-ExceptionTypeList:
-*/
+	register ("Throws", Throws::new);
+	register ("ExceptionTypeList", ExceptionTypeList::new);
 	register ("ExceptionType", this::liftUp);
 	register ("MethodBody", this::liftUp);
 	register ("InstanceInitializer", this::liftUp);
+	register ("StaticInitializer", StaticInitializer::new);
 /*
-StaticInitializer:
 ConstructorDeclaration:
 */
 	register ("ConstructorModifier", this::liftUp);
@@ -176,9 +167,7 @@ AnnotationTypeBody:
 AnnotationTypeElementDeclaration:
 */
 	register ("AnnotationTypeElementModifier", this::liftUp);
-/*
-DefaultValue:
-*/
+	register ("DefaultValue", DefaultValue::new);
 	register ("Annotation", this::liftUp);
 	register ("NormalAnnotation", NormalAnnotation::new);
 /*
@@ -195,15 +184,12 @@ ElementValueList:
 SingleElementAnnotation:
 */
 	// Productions from §10 (Arrays)
-/*
-ArrayInitializer:
-VariableInitializerList:
-*/
+	register ("ArrayInitializer", ArrayInitializer::new);
+	register ("VariableInitializerList", VariableInitializerList::new);
+
 	// Productions from §14 (Blocks and Statements)
-/*
-Block:
-BlockStatements:
-*/
+	register ("Block", Block::new);
+	register ("BlockStatements", BlockStatements::new);
 	register ("BlockStatement", this::liftUp);
 /*
 LocalVariableDeclarationStatement:
@@ -214,9 +200,9 @@ LocalVariableDeclaration:
 	register ("StatementNoShortIf", this::liftUp);
 	register ("StatementWithoutTrailingSubstatement", this::liftUp);
 	register ("EmptyStatement", this::liftUp);
+	register ("LabeledStatement", LabeledStatement::new);
+	register ("LabeledStatementNoShortIf", LabeledStatement::new);
 /*
-LabeledStatement:
-LabeledStatementNoShortIf:
 ExpressionStatement:
 */
 	register ("StatementExpression", this::liftUp);
@@ -291,35 +277,35 @@ LambdaParameter:
 	register ("LambdaParameterType", this::liftUp);
 	register ("LambdaBody", this::liftUp);
 	register ("AssignmentExpression", this::liftUp);
-/*
-Assignment:
-*/
+	register ("Assignment", Assignment::new);
 	register ("LeftHandSide", this::liftUp);
 	register ("AssignmentOperator", this::liftUp);
 /*
 ConditionalExpression:
-ConditionalOrExpression:
-ConditionalAndExpression:
-InclusiveOrExpression:
-ExclusiveOrExpression:
-AndExpression:
-EqualityExpression:
-RelationalExpression:
-ShiftExpression:
-ShiftOp:
-AdditiveExpression:
-MultiplicativeExpression:
+*/
+	register ("ConditionalOrExpression", this::oneOrTwoParter);
+	register ("ConditionalAndExpression", this::oneOrTwoParter);
+	register ("InclusiveOrExpression", this::oneOrTwoParter);
+	register ("ExclusiveOrExpression", this::oneOrTwoParter);
+	register ("AndExpression", this::oneOrTwoParter);
+	register ("EqualityExpression", this::oneOrTwoParter);
+	register ("RelationalExpression", this::oneOrTwoParter);
+	register ("ShiftExpression", this::oneOrTwoParter);
+	register ("ShiftOp", this::shiftOp);
+	register ("AdditiveExpression", this::oneOrTwoParter);
+	register ("MultiplicativeExpression", this::oneOrTwoParter);
+/*
 UnaryExpression:
-PreIncrementExpression:
-PreDecrementExpression:
+*/
+	register ("PreIncrementExpression", PreIncrementExpression::new);
+	register ("PreDecrementExpression", PreDecrementExpression::new);
+/*
 UnaryExpressionNotPlusMinus:
 */
 	register ("PostfixExpression", this::liftUp);
-/*
-PostIncrementExpression:
-PostDecrementExpression:
-CastExpression:
- */
+	register ("PostIncrementExpression", PostIncrementExpression::new);
+	register ("PostDecrementExpression", PostDecrementExpression::new);
+	register ("CastExpression", CastExpression::new);
 	register ("ConstantExpression", this::liftUp);
     }
 
@@ -562,9 +548,7 @@ CastExpression:
 	    if (rule.size () > 2) {
 		additionalBounds = new ArrayList<> ();
 		ZOMEntry z = (ZOMEntry)children.get (2);
-		// additionalBound below removes the '&' so grab every one of them
-		for (int j = 0; j < z.nodes.size (); j++)
-		    additionalBounds.add ((ClassType)z.nodes.get (j));
+		z.nodes.forEach (c -> additionalBounds.add ((ClassType)c));
 	    } else {
 		additionalBounds = Collections.emptyList ();
 	    }
@@ -1006,6 +990,90 @@ CastExpression:
 	}
     }
 
+    private class FieldDeclaration extends ClassBodyDeclaration {
+	private List<ParseTreeNode> modifiers;
+	private ParseTreeNode type;
+	private VariableDeclaratorList list;
+
+	public FieldDeclaration (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 0;
+	    modifiers = (rule.size () > 3) ? ((ZOMEntry)children.get (i++)).get () : Collections.emptyList ();
+	    type = children.get (i++);
+	    list = (VariableDeclaratorList)children.get (i++);
+	}
+
+	@Override public Object getValue() {
+	    StringBuilder sb = new StringBuilder ();
+	    if (!modifiers.isEmpty ())
+		sb.append (modifiers).append (" ");
+	    sb.append (type).append (" ").append (list).append (";");
+	    return sb.toString ();
+	}
+    }
+
+    private class VariableDeclaratorList extends ComplexTreeNode {
+	private List<VariableDeclarator> declarators;
+
+	public VariableDeclaratorList (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    declarators = new ArrayList<> ();
+	    declarators.add ((VariableDeclarator)children.get (0));
+	    if (rule.size () > 1) {
+		ZOMEntry z = (ZOMEntry)children.get (1);
+		for (int i = 1; i < z.nodes.size (); i += 2)
+		    declarators.add ((VariableDeclarator)z.nodes.get (i));
+	    }
+	}
+
+	@Override public Object getValue() {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append (declarators.get (0));
+	    for (int i = 1; i < declarators.size (); i++)
+		sb.append (", ").append (declarators.get (i));
+	    return sb.toString ();
+	}
+    }
+
+    private class VariableDeclarator extends ComplexTreeNode {
+	private VariableDeclaratorId id;
+	private ParseTreeNode initializer;
+	public VariableDeclarator (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    id = (VariableDeclaratorId)children.get (0);
+	    if (rule.size () > 1)
+		initializer = children.get (2);
+	}
+
+	@Override public Object getValue() {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append (id);
+	    if (initializer != null)
+		sb.append (" = ").append (initializer);
+	    return sb.toString ();
+	}
+    }
+
+    private class VariableDeclaratorId extends ComplexTreeNode {
+	private String id;
+	private Dims dims;
+
+	public VariableDeclaratorId (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    id = ((Identifier)children.get (0)).getValue ();
+	    if (rule.size () > 1)
+		dims = (Dims)children.get (1);
+	}
+
+	@Override public Object getValue() {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append (id);
+	    if (dims != null)
+		sb.append (dims);
+	    return sb.toString ();
+	}
+    }
+
     private ParseTreeNode unannClassType (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	if (rule.size () == 3) {
 	    UnannClassType uct = (UnannClassType)children.get (0);
@@ -1015,7 +1083,8 @@ CastExpression:
 	} else {
 	    Identifier i = (Identifier)children.get (0);
 	    TypeArguments tas = children.size () > 1 ? (TypeArguments)children.get (1) : null;
-	    SimpleClassType sct = new SimpleClassType (n.getPosition (), Collections.emptyList (), i.getValue (), tas);
+	    SimpleClassType sct =
+		new SimpleClassType (n.getPosition (), Collections.emptyList (), i.getValue (), tas);
 	    return new UnannClassType (sct);
 	}
     }
@@ -1031,6 +1100,267 @@ CastExpression:
 
 	@Override public Object getValue() {
 	    return types.toString ();
+	}
+    }
+
+    private class UnannArrayType extends ComplexTreeNode {
+	private ParseTreeNode type;
+	private Dims dims;
+	public UnannArrayType (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    type = children.get (0);
+	    dims = (Dims)children.get (1);
+	}
+
+	@Override public Object getValue() {
+	    return type.toString () + dims;
+	}
+    }
+
+    private class MethodDeclaration extends ClassBodyDeclaration {
+	private List<ParseTreeNode> modifiers;
+	private MethodHeader header;
+	private ParseTreeNode body; // Block or ;
+	public MethodDeclaration (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 0;
+	    modifiers = (rule.size () > 2) ? ((ZOMEntry)children.get (i++)).get () : Collections.emptyList ();
+	    header = (MethodHeader)children.get (i++);
+	    body = children.get (i);
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    if (!modifiers.isEmpty ())
+		sb.append (modifiers).append (" ");
+	    sb.append (header).append (" ").append (body);
+	    return sb.toString ();
+	}
+    }
+
+    private class MethodHeader extends ComplexTreeNode {
+	private TypeParameters types;
+	private List<ParseTreeNode> annotations;
+	private ParseTreeNode result;
+	private MethodDeclarator methodDeclarator;
+	private Throws t;
+
+	public MethodHeader (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 0;
+	    annotations = Collections.emptyList ();
+	    if (rule.get (0) == grammar.getRuleGroupId ("TypeParameters")) {
+		types = (TypeParameters)children.get (i++);
+		if (children.get (i) instanceof ZOMEntry)
+		    annotations = ((ZOMEntry)children.get (i++)).get ();
+	    }
+	    result = children.get (i++);
+	    methodDeclarator = (MethodDeclarator)children.get (i++);
+	    if (rule.size () > i)
+		t = (Throws)children.get (i);
+	}
+
+	@Override public Object getValue() {
+	    StringBuilder sb = new StringBuilder ();
+	    if (types != null)
+		sb.append (types).append (" ");
+	    if (!annotations.isEmpty ())
+		sb.append (annotations).append (" ");
+	    sb.append (result).append (" ").append (methodDeclarator);
+	    if (t != null)
+		sb.append (" ").append (t);
+	    return sb.toString ();
+	}
+    }
+
+    private class MethodDeclarator extends ComplexTreeNode {
+	private String id;
+	private ReceiverParameter rp;
+	private FormalParameterList params;
+	private Dims dims;
+
+	public MethodDeclarator (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    id = ((Identifier)children.get (0)).getValue ();
+	    int i = 2;
+	    if (rule.get (i) == grammar.getRuleGroupId ("ReceiverParameter")) {
+		rp = (ReceiverParameter)children.get (i);
+		i += 2;
+	    }
+	    if (rule.get (i) == grammar.getRuleGroupId ("FormalParameterList"))
+		params = (FormalParameterList)children.get (i++);
+	    i++;
+	    if (rule.size () > i)
+		dims = (Dims)children.get (i);
+	}
+
+	@Override public Object getValue() {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append (id).append ("(");
+	    if (rp != null)
+		sb.append (rp).append (", ");
+	    if (params != null)
+		sb.append (params);
+	    sb.append (")");
+	    if (dims != null)
+		sb.append (dims);
+	    return sb.toString ();
+	}
+    }
+
+    private class ReceiverParameter extends ComplexTreeNode {
+	private List<Annotation> annotations;
+	private ParseTreeNode type;
+	private String id;
+
+	public ReceiverParameter (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 0;
+	    if (children.get (i) instanceof ZOMEntry)
+		annotations = ((ZOMEntry)children.get (i++)).get ();
+	    else
+		annotations = Collections.emptyList ();
+	    type = children.get (i++);
+	    if (rule.get (i) != java11Tokens.THIS.getId ())
+		id = ((Identifier)children.get (i)).getValue ();
+	}
+
+	@Override public Object getValue() {
+	    StringBuilder sb = new StringBuilder ();
+	    if (!annotations.isEmpty ())
+		sb.append (annotations).append (" ");
+	    sb.append (type).append (" ");
+	    if (id != null)
+		sb.append (id).append (".");
+	    sb.append ("this");
+	    return sb.toString ();
+	}
+    }
+
+    private class FormalParameterList extends ComplexTreeNode {
+	List<FormalParameterBase> params;
+	public FormalParameterList (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    params = new ArrayList<> ();
+	    params.add ((FormalParameterBase)children.get (0));
+	    if (rule.size () > 1) {
+		ZOMEntry z = (ZOMEntry)children.get (1);
+		for (int i = 1; i < z.nodes.size (); i += 2)
+		    params.add ((FormalParameterBase)z.nodes.get (i));
+	    }
+	}
+
+	@Override public Object getValue() {
+	    return params;
+	}
+    }
+
+    private ParseTreeNode formalParameter (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	if (rule.size () > 1)
+	    return new FormalParameter (path, rule, n, children);
+	return children.get (0); // lift it up
+    }
+
+    private class FormalParameter extends FormalParameterBase {
+	private final List<ParseTreeNode> modifiers;
+	private final ParseTreeNode type;
+	private final VariableDeclaratorId var;
+
+	// since we have the formalParameter method we do not have to care about VariableArityParameter
+	public FormalParameter (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 0;
+	    modifiers = (rule.size () > 2) ? ((ZOMEntry)children.get (i++)).get () : Collections.emptyList ();
+	    type = children.get (i++);
+	    var = (VariableDeclaratorId)children.get (i);
+	}
+	@Override public Object getValue() {
+	    StringBuilder sb = new StringBuilder ();
+	    if (!modifiers.isEmpty ())
+		sb.append (modifiers).append (" ");
+	    sb.append (type).append (" ").append (var);
+	    return sb.toString ();
+	}
+    }
+
+    private class VariableArityParameter extends FormalParameterBase {
+	private final List<ParseTreeNode> modifiers;
+	private final ParseTreeNode type;
+	private final List<Annotation> annotations;
+	private final String id;
+	public VariableArityParameter (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 0;
+	    modifiers = (children.get (i) instanceof ZOMEntry) ?
+		((ZOMEntry)children.get (i++)).get () : Collections.emptyList ();
+	    type = children.get (i++);
+	    annotations = (children.get (i) instanceof ZOMEntry) ?
+		((ZOMEntry)children.get (i++)).get () : Collections.emptyList ();
+	    i++; // ...
+	    id = ((Identifier)children.get (i)).getValue ();
+	}
+
+	@Override public Object getValue() {
+	    StringBuilder sb = new StringBuilder ();
+	    if (!modifiers.isEmpty ())
+		sb.append (modifiers).append (" ");
+	    sb.append (type).append (" ");
+	    if (!annotations.isEmpty ())
+		sb.append (annotations).append (" ");
+	    sb.append ("...").append (id);
+	    return sb.toString ();
+	}
+    }
+
+    private abstract class FormalParameterBase extends ComplexTreeNode {
+	public FormalParameterBase (ParsePosition pos) {
+	    super (pos);
+	}
+    }
+
+    private class Throws extends ComplexTreeNode {
+	private ExceptionTypeList exceptionTypeList;
+	public Throws (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    exceptionTypeList = (ExceptionTypeList)children.get (1);
+	}
+
+	@Override public Object getValue() {
+	    return "throws " + exceptionTypeList;
+	}
+    }
+
+    private class ExceptionTypeList extends ComplexTreeNode {
+	private List<ClassType> types;
+	public ExceptionTypeList (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    types = new ArrayList<> ();
+	    types.add ((ClassType)children.get (0));
+	    if (rule.size () > 1) {
+		ZOMEntry z = (ZOMEntry)children.get (1);
+		for (int i = 1; i < z.nodes.size (); i += 2)
+		    types.add ((ClassType)z.nodes.get (i));
+	    }
+	}
+
+	@Override public Object getValue() {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append (types.get (0));
+	    for (int i = 1; i < types.size (); i++)
+		sb.append (", ").append (types.get (i));
+	    return sb.toString ();
+	}
+    }
+
+    private class StaticInitializer extends ClassBodyDeclaration {
+	private final Block block;
+	public StaticInitializer (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    block = (Block)children.get (1);
+	}
+
+	@Override public Object getValue() {
+	    return "static " + block;
 	}
     }
 
@@ -1226,6 +1556,18 @@ CastExpression:
 	}
     }
 
+    private class DefaultValue extends ComplexTreeNode {
+	private ParseTreeNode value;
+	public DefaultValue (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    this.value = children.get (1);
+	}
+
+	@Override public Object getValue() {
+	    return "default " + value;
+	}
+    }
+
     private abstract class Annotation extends ComplexTreeNode {
 	public Annotation (ParsePosition pos) {
 	    super (pos);
@@ -1255,6 +1597,216 @@ CastExpression:
 
 	@Override public Object getValue() {
 	    return "@" + typename;
+	}
+    }
+
+    private class ArrayInitializer extends ComplexTreeNode {
+	private final  VariableInitializerList variableList;
+	public ArrayInitializer (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    if (rule.get (1) == grammar.getRuleGroupId ("VariableInitializerList"))
+		variableList = (VariableInitializerList)children.get (1);
+	    else
+		variableList = null;
+	}
+	@Override public Object getValue() {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append ("{");
+	    if (variableList != null)
+		sb.append (variableList);
+	    sb.append ("}");
+	    return sb.toString ();
+	}
+    }
+
+    private class VariableInitializerList extends ComplexTreeNode {
+	private List<ParseTreeNode> variableInitializers;
+	public VariableInitializerList (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    variableInitializers = new ArrayList<> ();
+	    variableInitializers.add (children.get (0));
+	    if (rule.size () > 2) {
+		ZOMEntry z = (ZOMEntry)children.get (1);
+		for (int j = 1; j < z.nodes.size (); j += 2)
+		    variableInitializers.add (z.nodes.get (j));
+	    }
+	}
+
+	@Override public Object getValue() {
+	    return variableInitializers;
+	}
+    }
+
+    private class Block extends ComplexTreeNode {
+	private final BlockStatements statements;
+	public Block (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    statements = (rule.size () > 2) ? (BlockStatements)children.get (1) : null;
+	}
+
+	@Override public Object getValue() {
+	    return "{\n" + statements + "\n}";
+	}
+    }
+
+    private class BlockStatements extends ComplexTreeNode {
+	private List<ParseTreeNode> statements;
+	public BlockStatements (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    statements = new ArrayList<> ();
+	    statements.add (children.get (0));
+	    if (rule.size () > 1)
+		statements.addAll (((ZOMEntry)children.get (1)).get ());
+	}
+
+	@Override public Object getValue() {
+	    return statements;
+	}
+    }
+
+    private class LabeledStatement extends ComplexTreeNode {
+	private String id;
+	private ParseTreeNode statement;
+	public LabeledStatement (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    id = ((Identifier)children.get (0)).getValue ();
+	    statement = children.get (2);
+	}
+
+	@Override public Object getValue() {
+	    return id + ":" + statement;
+	}
+    }
+
+    private class Assignment extends ComplexTreeNode {
+	private ParseTreeNode left;
+	private Token operator;
+	private ParseTreeNode right;
+
+	public Assignment (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    left = children.get (0);
+	    operator = ((TokenNode)children.get (1)).getToken ();
+	    right = children.get (2);
+	}
+
+	@Override public Object getValue() {
+	    return left + " " + operator + " " + right;
+	}
+    }
+
+    private ParseTreeNode shiftOp (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	switch (rule.size ()) {
+	case 1:
+	    return children.get (0);
+	case 2:
+	    return new TokenNode (java11Tokens.RIGHT_SHIFT, n.getPosition ());
+	case 3:
+	    return new TokenNode (java11Tokens.RIGHT_SHIFT_UNSIGNED, n.getPosition ());
+	}
+	throw new IllegalArgumentException (path + ": " + rule.toReadableString (grammar) +
+					    " got unexpected size: " + rule.size () +
+					    ", children: " + children);
+    }
+
+    private ParseTreeNode oneOrTwoParter (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	if (rule.size () == 1)
+	    return children.get (0);
+	return new TwoPartExpression (path, rule, n, children);
+    }
+
+    private class TwoPartExpression extends ComplexTreeNode {
+	private ParseTreeNode part1;
+	private TokenNode operator;
+	private ParseTreeNode part2;
+	public TwoPartExpression (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    part1 = children.get (0);
+	    operator = (TokenNode)children.get (1);
+	    part2 = children.get (2);
+	}
+
+	@Override public Object getValue() {
+	    return part1 + " " + operator + " " + part2;
+	}
+    }
+
+    private class PreIncrementExpression extends ComplexTreeNode {
+	private ParseTreeNode expression;
+	public PreIncrementExpression (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    expression = children.get (1);
+	}
+
+	@Override public Object getValue() {
+	    return expression + "++";
+	}
+    }
+
+    private class PreDecrementExpression extends ComplexTreeNode {
+	private ParseTreeNode expression;
+	public PreDecrementExpression (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    expression = children.get (1);
+	}
+
+	@Override public Object getValue() {
+	    return expression + "--";
+	}
+    }
+
+    private class PostIncrementExpression extends ComplexTreeNode {
+	private ParseTreeNode expression;
+	public PostIncrementExpression (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    expression = children.get (0);
+	}
+
+	@Override public Object getValue() {
+	    return expression + "++";
+	}
+    }
+
+    private class PostDecrementExpression extends ComplexTreeNode {
+	private ParseTreeNode expression;
+	public PostDecrementExpression (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    expression = children.get (0);
+	}
+
+	@Override public Object getValue() {
+	    return expression + "--";
+	}
+    }
+
+    private class CastExpression extends ComplexTreeNode {
+	private ParseTreeNode baseType;
+	private List<ClassType> additionalBounds;
+	private ParseTreeNode expression;
+
+	public CastExpression (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    // starts with (
+	    int i = 1;
+	    baseType = children.get (i++);
+	    if (children.get (i) instanceof ZOMEntry) {
+		additionalBounds = new ArrayList<> ();
+		ZOMEntry z = (ZOMEntry)children.get (i++);
+		z.nodes.forEach (c -> additionalBounds.add ((ClassType)c));
+	    } else {
+		additionalBounds = Collections.emptyList ();
+	    }
+	    i++; // ')'
+	    expression = children.get (i);
+	}
+
+	@Override public Object getValue() {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append ("(").append (baseType);
+	    if (!additionalBounds.isEmpty ())
+		additionalBounds.forEach (a -> sb.append (" & ").append (a));
+	    sb.append (")").append (expression);
+	    return sb.toString ();
 	}
     }
 
