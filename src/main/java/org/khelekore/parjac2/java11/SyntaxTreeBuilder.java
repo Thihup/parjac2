@@ -122,17 +122,13 @@ public class SyntaxTreeBuilder {
 	register ("MethodBody", this::liftUp);
 	register ("InstanceInitializer", this::liftUp);
 	register ("StaticInitializer", StaticInitializer::new);
-/*
-ConstructorDeclaration:
-*/
+	register ("ConstructorDeclaration", ConstructorDeclaration::new);
 	register ("ConstructorModifier", this::liftUp);
-/*
-ConstructorDeclarator:
-*/
+	register ("ConstructorDeclarator", ConstructorDeclarator::new);
 	register ("SimpleTypeName",this::liftUp);
+	register ("ConstructorBody", ConstructorBody::new);
+	register ("ExplicitConstructorInvocation", ExplicitConstructorInvocation::new);
 /*
-ConstructorBody:
-ExplicitConstructorInvocation:
 EnumDeclaration:
 EnumBody:
 EnumConstantList:
@@ -202,9 +198,7 @@ LocalVariableDeclaration:
 	register ("EmptyStatement", this::liftUp);
 	register ("LabeledStatement", LabeledStatement::new);
 	register ("LabeledStatementNoShortIf", LabeledStatement::new);
-/*
-ExpressionStatement:
-*/
+	register ("ExpressionStatement", ExpressionStatement::new);
 	register ("StatementExpression", this::liftUp);
 /*
 IfThenStatement:
@@ -261,7 +255,9 @@ FieldAccess:
 ArrayAccess:
 MethodInvocation:
 UntypedMethodInvocation:
-ArgumentList:
+*/
+	register ("ArgumentList", ArgumentList::new);
+/*
 MethodReference:
 ArrayCreationExpression:
 DimExprs:
@@ -580,27 +576,9 @@ UnaryExpressionNotPlusMinus:
 	}
     }
 
-    private class TypeArgumentList extends ComplexTreeNode {
-	private final List<ParseTreeNode> ls;
-
+    private class TypeArgumentList extends CommaListBase {
 	public TypeArgumentList (Path path, Rule r, ParseTreeNode tal, List<ParseTreeNode> children) {
-	    super (tal.getPosition ());
-	    ParseTreeNode ta = children.get (0);
-	    if (r.size () == 1) {
-		ls = Collections.singletonList (ta);
-	    } else {
-		ZOMEntry ze = (ZOMEntry)children.get (1);
-		ls = ze.get ();
-		ls.add (0, ta);
-	    }
-	}
-
-	public List<ParseTreeNode> get () {
-	    return ls;
-	}
-
-	@Override public Object getValue () {
-	    return ls.toString ();
+	    super (path, r, tal, children);
 	}
     }
 
@@ -905,22 +883,9 @@ UnaryExpressionNotPlusMinus:
 	}
     }
 
-    private class TypeParameterList extends ComplexTreeNode {
-	private final List<TypeParameter> params;
-
+    private class TypeParameterList extends CommaListBase {
 	public TypeParameterList (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	    super (n.getPosition ());
-	    params = new ArrayList<> ();
-	    params.add ((TypeParameter)children.get (0));
-	    if (rule.size () > 1) {
-		ZOMEntry z = (ZOMEntry)children.get (1);
-		for (int i = 1; i < z.nodes.size (); i += 2)
-		    params.add ((TypeParameter)z.nodes.get (i));
-	    }
-	}
-
-	@Override public Object getValue () {
-	    return params.toString ();
+	    super (path, rule, n, children);
 	}
     }
 
@@ -1359,8 +1324,139 @@ UnaryExpressionNotPlusMinus:
 	    block = (Block)children.get (1);
 	}
 
-	@Override public Object getValue() {
+	@Override public Object getValue () {
 	    return "static " + block;
+	}
+    }
+
+    private class ConstructorDeclaration extends ClassBodyDeclaration {
+	private final List<ParseTreeNode> modifiers;
+	private final ConstructorDeclarator declarator;
+	private final Throws t;
+	private final ConstructorBody body;
+	private ConstructorDeclaration (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 0;
+	    if (children.get (i) instanceof ZOMEntry)
+		modifiers = ((ZOMEntry)children.get (i++)).get ();
+	    else
+		modifiers = Collections.emptyList ();
+	    declarator = (ConstructorDeclarator)children.get (i++);
+	    t = (rule.size () > i + 1) ? (Throws)children.get (i++) : null;
+	    body = (ConstructorBody)children.get (i);
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    if (!modifiers.isEmpty ())
+		sb.append (modifiers).append (" ");
+	    sb.append (declarator).append (" ");
+	    if (t != null)
+		sb.append (t).append (" ");
+	    sb.append (body);
+	    return sb.toString ();
+	}
+    }
+
+    private class ConstructorDeclarator extends ComplexTreeNode {
+	private TypeParameters types;
+	private String id;
+	private ReceiverParameter rp;
+	private FormalParameterList params;
+	private ConstructorDeclarator (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 0;
+	    if (rule.get (i) == grammar.getRuleGroupId ("TypeParameters")) 
+		types = (TypeParameters)children.get (i++);
+	    id = ((Identifier)children.get (i++)).getValue ();
+	    if (rule.get (i) == grammar.getRuleGroupId ("ReceiverParameter")) {
+		rp = (ReceiverParameter)children.get (i);
+		i += 2;
+	    }
+	    if (rule.get (i) == grammar.getRuleGroupId ("FormalParameterList"))
+		params = (FormalParameterList)children.get (i++);
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    if (types != null)
+		sb.append (types).append (" ");
+	    sb.append (id).append (" (");
+	    if (rp != null) {
+		sb.append (rp);
+		if (params != null)
+		    sb.append (", ");
+	    }
+	    if (params != null)
+		sb.append (params);
+	    sb.append (")");
+	    return sb.toString ();
+	}
+    }
+
+    private class ConstructorBody extends ComplexTreeNode {
+	private ExplicitConstructorInvocation eci;
+	private BlockStatements statements;
+	private ConstructorBody (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 1;
+	    if (rule.get (i) == grammar.getRuleGroupId ("ExplicitConstructorInvocation"))
+		eci = (ExplicitConstructorInvocation)children.get (i++);
+	    if (rule.get (i) == grammar.getRuleGroupId ("BlockStatements"))
+		statements = (BlockStatements)children.get (i);
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append ("{\n");
+	    if (eci != null)
+		sb.append (eci);
+	    if (statements != null)
+		sb.append (statements);
+	    sb.append ("\n}");
+	    return sb.toString ();
+	}
+    }
+
+    private class ExplicitConstructorInvocation extends ComplexTreeNode {
+	private final ParseTreeNode type; // ExpresisonName or Primary
+	private final TypeArguments types;
+	private final Token where; // this or super
+	private final ArgumentList argumentList;
+	private ExplicitConstructorInvocation (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 0;
+	    if (rule.get (i) == grammar.getRuleGroupId ("ExpressionName") ||
+		rule.get (i) == grammar.getRuleGroupId ("Primary")) {
+		type = children.get (i);
+		i += 2;
+	    } else {
+		type = null;
+	    }
+	    if (rule.get (i) == grammar.getRuleGroupId ("TypeArguments"))
+		types = (TypeArguments)children.get (i++);
+	    else
+		types = null;
+	    where = ((TokenNode)children.get (i++)).getToken ();
+	    i++; // (
+	    if (rule.get (i) == grammar.getRuleGroupId ("ArgumentList"))
+		argumentList = (ArgumentList)children.get (i);
+	    else
+		argumentList = null;
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    if (type != null)
+		sb.append (type).append (".");
+	    if (types != null)
+		sb.append (types);
+	    sb.append (where);
+	    sb.append ("(");
+	    if (argumentList != null)
+		sb.append (argumentList);
+	    sb.append (");");
+	    return sb.toString ();
 	}
     }
 
@@ -1678,6 +1774,24 @@ UnaryExpressionNotPlusMinus:
 	}
     }
 
+    private class ExpressionStatement extends ComplexTreeNode {
+	private ParseTreeNode statementExpression;
+	public ExpressionStatement (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    statementExpression = children.get (0);
+	}
+
+	@Override public Object getValue () {
+	    return statementExpression + ";";
+	}
+    }
+
+    private class ArgumentList extends CommaListBase {
+	public ArgumentList (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (path, rule, n, children);
+	}
+    }
+
     private class Assignment extends ComplexTreeNode {
 	private ParseTreeNode left;
 	private Token operator;
@@ -1822,6 +1936,29 @@ UnaryExpressionNotPlusMinus:
 	} else {
 	    return new ZOMEntry (node.getPosition (), rule.get (0), rule.getName (),
 				 new ArrayList<> (children));
+	}
+    }
+
+    private abstract class CommaListBase extends ComplexTreeNode {
+	private final List<ParseTreeNode> params;
+
+	public CommaListBase (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    params = new ArrayList<> ();
+	    params.add (children.get (0));
+	    if (rule.size () > 1) {
+		ZOMEntry z = (ZOMEntry)children.get (1);
+		for (int i = 1; i < z.nodes.size (); i += 2)
+		    params.add (z.nodes.get (i));
+	    }
+	}
+
+	public List<ParseTreeNode> get () {
+	    return params;
+	}
+
+	@Override public Object getValue () {
+	    return params.toString ();
 	}
     }
 
