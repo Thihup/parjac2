@@ -276,9 +276,7 @@ LambdaParameter:
 	register ("Assignment", Assignment::new);
 	register ("LeftHandSide", this::liftUp);
 	register ("AssignmentOperator", this::liftUp);
-/*
-ConditionalExpression:
-*/
+	register ("ConditionalExpression", this::conditionalExpression);
 	register ("ConditionalOrExpression", this::oneOrTwoParter);
 	register ("ConditionalAndExpression", this::oneOrTwoParter);
 	register ("InclusiveOrExpression", this::oneOrTwoParter);
@@ -290,14 +288,10 @@ ConditionalExpression:
 	register ("ShiftOp", this::shiftOp);
 	register ("AdditiveExpression", this::oneOrTwoParter);
 	register ("MultiplicativeExpression", this::oneOrTwoParter);
-/*
-UnaryExpression:
-*/
+	register ("UnaryExpression", this::unaryExpression);
 	register ("PreIncrementExpression", PreIncrementExpression::new);
 	register ("PreDecrementExpression", PreDecrementExpression::new);
-/*
-UnaryExpressionNotPlusMinus:
-*/
+	register ("UnaryExpressionNotPlusMinus", this::unaryExpression);
 	register ("PostfixExpression", this::liftUp);
 	register ("PostIncrementExpression", PostIncrementExpression::new);
 	register ("PostDecrementExpression", PostDecrementExpression::new);
@@ -1823,6 +1817,28 @@ UnaryExpressionNotPlusMinus:
 					    ", children: " + children);
     }
 
+    private ParseTreeNode conditionalExpression (Path path, Rule rule, ParseTreeNode n,
+						 List<ParseTreeNode> children) {
+	if (rule.size () == 1)
+	    return children.get (0);
+	return new Ternary (path, rule, n, children);
+    }
+
+    private class Ternary extends ComplexTreeNode {
+	private ParseTreeNode test;
+	private ParseTreeNode thenPart;
+	private ParseTreeNode elsePart;
+	public Ternary (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    test = children.get (0);
+	    thenPart = children.get (2);
+	    elsePart = children.get (4);
+	}
+	@Override public Object getValue () {
+	    return test + " ? " + thenPart + " : " + elsePart;
+	}
+    }
+
     private ParseTreeNode oneOrTwoParter (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	if (rule.size () == 1)
 	    return children.get (0);
@@ -1842,6 +1858,26 @@ UnaryExpressionNotPlusMinus:
 
 	@Override public Object getValue() {
 	    return part1 + " " + operator + " " + part2;
+	}
+    }
+
+    private ParseTreeNode unaryExpression (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	if (rule.size () == 1)
+	    return children.get (0);
+	return new UnaryExpression (path, rule, n, children);
+    }
+
+    private class UnaryExpression extends ComplexTreeNode {
+	private Token operator;
+	private ParseTreeNode exp;
+	public UnaryExpression (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    operator = ((TokenNode)children.get (0)).getToken ();
+	    exp = children.get (1);
+	}
+
+	@Override public Object getValue() {
+	    return operator.toString () + exp;
 	}
     }
 
