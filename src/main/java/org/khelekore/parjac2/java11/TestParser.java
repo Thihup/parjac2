@@ -72,11 +72,15 @@ public class TestParser {
     public Void test (String file) throws IOException {
 	Path filePath = Paths.get (file);
 	System.out.println ("Testing parsing of: " + filePath);
+	long start = System.nanoTime ();
 	parse (filePath, diagnostics);
+	long end = System.nanoTime ();
 	if (diagnostics.hasError ()) {
 	    Locale locale = Locale.getDefault ();
 	    diagnostics.getDiagnostics ().forEach (d -> System.err.println (d.getMessage (locale)));
 	}
+	long millis = (end - start) / 1_000_000;
+	System.out.println ("Done with parsing of: " + filePath + ", " + millis + " millis");
 	return null;
     }
 

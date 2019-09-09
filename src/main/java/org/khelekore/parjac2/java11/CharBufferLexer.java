@@ -8,7 +8,6 @@ import org.khelekore.parjac2.parser.Grammar;
 import org.khelekore.parjac2.parser.Lexer;
 import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Token;
-import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.khelekore.parjac2.parsetree.TokenNode;
 
 /** A lexer for the java language */
@@ -28,7 +27,7 @@ public class CharBufferLexer implements Lexer {
     // Text set when we get an lexer ERROR
     private String errorText;
 
-    private Token lastScannedToken = null;
+    private BitSet lastScannedTokens;
 
     // The different values we can have
     private char currentCharValue;
@@ -53,6 +52,7 @@ public class CharBufferLexer implements Lexer {
 	this.grammar = grammar;
 	this.java11Tokens = java11Tokens;
 	this.buf = buf;
+	lastScannedTokens = new BitSet (grammar.getNumberOfTokens ());
 	multiGTTTokens.set (java11Tokens.GE.getId ());
 	multiGTTTokens.set (java11Tokens.RIGHT_SHIFT_EQUAL.getId ());
 	multiGTTTokens.set (java11Tokens.RIGHT_SHIFT_UNSIGNED_EQUAL.getId ());
@@ -93,22 +93,33 @@ public class CharBufferLexer implements Lexer {
 	return currentIdentifier;
     }
 
-    @Override public ParseTreeNode getCurrentValue () {
-	if (lastScannedToken == java11Tokens.CHARACTER_LITERAL)
-	    return new CharLiteral (lastScannedToken, getCharValue (), getParsePosition ());
-	if (lastScannedToken == java11Tokens.STRING_LITERAL)
-	    return new StringLiteral (lastScannedToken, getStringValue (), getParsePosition ());
-	if (lastScannedToken == java11Tokens.INT_LITERAL)
-	    return new IntLiteral (lastScannedToken, getIntValue (), getParsePosition ());
-	if (lastScannedToken == java11Tokens.LONG_LITERAL)
-	    return new LongLiteral (lastScannedToken, getLongValue (), getParsePosition ());
-	if (lastScannedToken == java11Tokens.FLOAT_LITERAL)
-	    return new FloatLiteral (lastScannedToken, getFloatValue (), getParsePosition ());
-	if (lastScannedToken == java11Tokens.DOUBLE_LITERAL)
-	    return new DoubleLiteral (lastScannedToken, getDoubleValue (), getParsePosition ());
-	if (lastScannedToken == java11Tokens.IDENTIFIER)
-	    return new Identifier (lastScannedToken, getIdentifier (), getParsePosition ());
-	return new TokenNode (lastScannedToken, getParsePosition ());
+    @Override public TokenNode getCurrentValue () {
+	if (lastScannedTokens.get (java11Tokens.CHARACTER_LITERAL.getId ()))
+	    return new CharLiteral (java11Tokens.CHARACTER_LITERAL, getCharValue (), getParsePosition ());
+	if (lastScannedTokens.get (java11Tokens.STRING_LITERAL.getId ()))
+	    return new StringLiteral (java11Tokens.STRING_LITERAL, getStringValue (), getParsePosition ());
+	if (lastScannedTokens.get (java11Tokens.INT_LITERAL.getId ()))
+	    return new IntLiteral (java11Tokens.INT_LITERAL, getIntValue (), getParsePosition ());
+	if (lastScannedTokens.get (java11Tokens.LONG_LITERAL.getId ()))
+	    return new LongLiteral (java11Tokens.LONG_LITERAL, getLongValue (), getParsePosition ());
+	if (lastScannedTokens.get (java11Tokens.FLOAT_LITERAL.getId ()))
+	    return new FloatLiteral (java11Tokens.FLOAT_LITERAL, getFloatValue (), getParsePosition ());
+	if (lastScannedTokens.get (java11Tokens.DOUBLE_LITERAL.getId ()))
+	    return new DoubleLiteral (java11Tokens.DOUBLE_LITERAL, getDoubleValue (), getParsePosition ());
+	if (lastScannedTokens.get (java11Tokens.IDENTIFIER.getId ()))
+	    return new Identifier (java11Tokens.IDENTIFIER, getIdentifier (), getParsePosition ());
+	Token t = grammar.getToken (lastScannedTokens.nextSetBit (0));
+	return new TokenNode (t, getParsePosition ());
+    }
+
+    @Override public TokenNode toCorrectType (TokenNode n, Token wantedActualToken) {
+	if (wantedActualToken == java11Tokens.VAR) {
+	    return new TokenNode (wantedActualToken, n.getPosition ());
+	} else if (wantedActualToken == java11Tokens.TYPE_IDENTIFIER) {
+	    Identifier i = (Identifier)n;
+	    return new TypeIdentifier (wantedActualToken, i.getValue (), n.getPosition ());
+	}
+	return n;
     }
 
     @Override public ParsePosition getParsePosition () {
@@ -132,14 +143,22 @@ public class CharBufferLexer implements Lexer {
 	return tokenStartColumn;
     }
 
-    @Override public Token nextToken (BitSet wantedTokens) {
+    @Override public BitSet nextToken (BitSet wantedTokens) {
 	while (hasMoreTokens ()) {
-	    lastScannedToken = nextRealToken (wantedTokens);
-	    if (java11Tokens.isWhitespace (lastScannedToken) || java11Tokens.isComment (lastScannedToken))
+	    Token nextToken = nextRealToken (wantedTokens);
+	    if (java11Tokens.isWhitespace (nextToken) || java11Tokens.isComment (nextToken))
 		continue;
-	    return lastScannedToken;
+	    lastScannedTokens.clear ();
+	    lastScannedTokens.set (nextToken.getId ());
+	    if (nextToken == java11Tokens.VAR)
+		lastScannedTokens.set (java11Tokens.IDENTIFIER.getId ());
+	    else if (nextToken == java11Tokens.IDENTIFIER && wantedTokens.get (java11Tokens.TYPE_IDENTIFIER.getId ()))
+		lastScannedTokens.set (java11Tokens.TYPE_IDENTIFIER.getId ());
+	    return lastScannedTokens;
 	}
-	return lastScannedToken = grammar.END_OF_INPUT;
+	lastScannedTokens.clear ();
+	lastScannedTokens.set (grammar.END_OF_INPUT.getId ());
+	return lastScannedTokens;
     }
 
     private Token nextRealToken (BitSet wantedTokens) {

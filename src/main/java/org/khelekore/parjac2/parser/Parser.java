@@ -28,7 +28,7 @@ public class Parser {
     private final Set<ParsePosition> errorPositions = new HashSet<> ();
 
     private final IntHolder startPositions = new IntHolder (1024);
-    private final List<ParseTreeNode> tokenValues = new ArrayList<> ();
+    private final List<TokenNode> tokenValues = new ArrayList<> ();
     private final List<ParsePosition> parsePositions = new ArrayList<> ();
 
     // 2 ints per state: first is ruleid<<8 | dotPos, second is origin
@@ -39,7 +39,7 @@ public class Parser {
 
     // This one is reused every time we scan
     private final BitSet wantedScanTokens;
-    private Token pushbackToken = null;
+    private BitSet pushbackTokens;
 
     /** We use this to try to avoid full scanning for duplicates.
      *  If we find a hash miss then we know there is no dup, if we have a hash collision
@@ -192,23 +192,21 @@ public class Parser {
 	PredictGroup pg = predictions.get (currentPosition);
 	wantedScanTokens.or (pg.getWantedScanTokens ());
 
-	Token scannedToken = scanToken (currentPosition, wantedScanTokens);
+	BitSet scannedTokens = scanToken (currentPosition, wantedScanTokens);
 
 	startPositions.add (states.size ());
 
-	if (wantedScanTokens.get (scannedToken.getId ())) {
+	if (wantedScanTokens.intersects (scannedTokens)) {
 	    // Advance the states that can be advanced by the scanned token
-	    states.apply ((rp, o) -> advance (rp, o, scannedToken),
+	    states.apply ((rp, o) -> advance (rp, o, scannedTokens),
 			  startPositions.get (currentPosition), states.size ());
-	    pg.apply (scannedToken.getId (), rp -> advancePrediction (rp));
+	    scannedTokens.stream ().forEach (t -> pg.apply (t, rp -> advancePrediction (rp)));
 	    tokenValues.add (lexer.getCurrentValue ());
 	} else {
 	    // Try to advance by saying we got what we wanted
-	    addParserError ("Got unexpected token: '%s', expected one of: %s",
-			    scannedToken.getName (),
-			    wantedScanTokens.stream ().mapToObj (i -> "'" + grammar.getToken (i).getName () + "'")
-			    .collect (java.util.stream.Collectors.joining (", ")));
-	    pushbackToken = scannedToken;
+	    addParserError ("Got unexpected set of tokens: '%s', expected one of: %s",
+			    tokenString (scannedTokens), tokenString (wantedScanTokens));
+	    pushbackTokens = (BitSet)scannedTokens.clone ();
 	    states.apply ((rp, o) -> advanceAllTokens (rp, o),
 			  startPositions.get (currentPosition), states.size ());
 	    pg.applyAll (rp -> advancePredictionsStartingWith (rp));
@@ -228,37 +226,42 @@ public class Parser {
 	}
     }
 
-    private Token scanToken (int currentPosition, BitSet wantedTokens) {
-	if (pushbackToken != null) {
-	    Token t = pushbackToken;
-	    pushbackToken = null;
+    private BitSet scanToken (int currentPosition, BitSet wantedTokens) {
+	if (pushbackTokens != null) {
+	    BitSet t = pushbackTokens;
+	    pushbackTokens = null;
 	    return t;
 	}
-	Token t = lexer.nextToken (wantedTokens);
+	BitSet nextTokens = lexer.nextToken (wantedTokens);
 	if (DEBUG) {
-	    String sTokens =
-		wantedTokens.stream ()
-		.mapToObj (i -> grammar.getToken (i).toString ())
-		.collect (java.util.stream.Collectors.joining (", "));
-	    System.out.println ("scanToken: " + currentPosition + ", wantedTokens: "  + sTokens + ", got: " + t);
+	    String wTokens = tokenString (wantedTokens);
+	    String sTokens = tokenString (nextTokens);
+	    System.out.println ("scanToken: " + currentPosition + ", wantedTokens: "  + wTokens +
+				", got: " + sTokens);
 	}
-	return t;
+	return nextTokens;
     }
 
-    private void advance (int rulePos, int origin, Token scannedToken) {
+    private String tokenString (BitSet b) {
+	return b.stream ()
+	    .mapToObj (i -> grammar.getToken (i).toString ())
+	    .collect (java.util.stream.Collectors.joining (", ", "[", "]"));
+    }
+
+    private void advance (int rulePos, int origin, BitSet scannedTokens) {
 	int dotPos = rulePos & 0xff;
 	int rule = rulePos >> 8;
 	Rule r = grammar.getRule (rule);
 	if (dotPos >= r.size ())
 	    return;
-	if (!nextIsMatchingToken (r, dotPos, scannedToken))
+	if (!nextIsMatchingToken (r, dotPos, scannedTokens))
 	    return;
 	addState (rule, dotPos + 1, origin);
     }
 
-    private boolean nextIsMatchingToken (Rule r, int dotPos, Token scannedToken) {
+    private boolean nextIsMatchingToken (Rule r, int dotPos, BitSet scannedTokens) {
 	int tokenOrRuleId = r.get (dotPos);
-	return tokenOrRuleId == scannedToken.getId ();
+	return tokenOrRuleId > 0 && scannedTokens.get (tokenOrRuleId);
     }
 
     private void advancePrediction (int rulePos) {
@@ -356,7 +359,7 @@ public class Parser {
 		if (DEBUG)
 		    System.out.println ("Accepting token: " + grammar.getToken (p));
 		tokenDiff = 1;
-		TokenNode n = (TokenNode)getTokenValue (completedIn - 1);
+		TokenNode n = lexer.toCorrectType (getTokenValue (completedIn - 1), grammar.getToken (p));
 		Token t = n.getToken ();
 		if (t == grammar.WILDCARD) {
 		    children.add (new WildcardNode (grammar.getToken (p), n.getPosition ()));
@@ -391,7 +394,7 @@ public class Parser {
 	return new TreeInfo (st, usedTokens);
     }
 
-    private ParseTreeNode getTokenValue (int position) {
+    private TokenNode getTokenValue (int position) {
 	return tokenValues.get (position);
     }
 

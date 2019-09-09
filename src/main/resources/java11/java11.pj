@@ -1,9 +1,6 @@
 # Modified to avoid conflicts
 
 # Productions from §3 (Lexical Structure)
-TypeIdentifier:
-	'Identifier' #  but not var
-
 Literal:
 	'int_literal'
 	'long_literal'
@@ -49,10 +46,10 @@ ClassType:
 	ClassType '.' SimpleClassType
 
 SimpleClassType:
-	{Annotation} TypeIdentifier [TypeArguments]
+	{Annotation} 'TypeIdentifier' [TypeArguments]
 
 TypeVariable:
-	{Annotation} TypeIdentifier
+	{Annotation} 'TypeIdentifier'
 
 ArrayType:
 	PrimitiveType Dims
@@ -63,7 +60,7 @@ Dims:
 	{Annotation} '[' ']' {{Annotation} '[' ']'}
 
 TypeParameter:
-	{TypeParameterModifier} TypeIdentifier [TypeBound]
+	{TypeParameterModifier} 'TypeIdentifier' [TypeBound]
 
 TypeParameterModifier:
 	Annotation
@@ -103,8 +100,8 @@ PackageName:
 	PackageName '.' 'Identifier'
 
 TypeName:
-	TypeIdentifier
-	PackageOrTypeName '.' TypeIdentifier
+	'TypeIdentifier'
+	PackageOrTypeName '.' 'TypeIdentifier'
 
 ExpressionName:
 	'Identifier'
@@ -182,7 +179,7 @@ ClassDeclaration:
 	EnumDeclaration
 
 NormalClassDeclaration:
-	{ClassModifier} 'class' TypeIdentifier [TypeParameters] [Superclass] [Superinterfaces] ClassBody
+	{ClassModifier} 'class' 'TypeIdentifier' [TypeParameters] [Superclass] [Superinterfaces] ClassBody
 
 ClassModifier:
 	Annotation
@@ -266,7 +263,7 @@ UnannReferenceType:
 
 # May be class, interface or type variable
 UnannClassType:
-	TypeIdentifier [TypeArguments]
+	'TypeIdentifier' [TypeArguments]
 	# PackageName or UnannClassType
 	UnannClassType '.' SimpleClassType
 
@@ -349,7 +346,7 @@ ConstructorDeclarator:
 	[TypeParameters] SimpleTypeName '(' [ReceiverParameter ','] [FormalParameterList] ')'
 
 SimpleTypeName:
-	TypeIdentifier
+	'TypeIdentifier'
 
 ConstructorBody:
 	'{' [ExplicitConstructorInvocation] [BlockStatements] '}'
@@ -361,7 +358,7 @@ ExplicitConstructorInvocation:
 	Primary '.' [TypeArguments] 'super' '(' [ArgumentList] ')' ';'
 
 EnumDeclaration:
-	{ClassModifier} 'enum' TypeIdentifier [Superinterfaces] EnumBody
+	{ClassModifier} 'enum' 'TypeIdentifier' [Superinterfaces] EnumBody
 
 EnumBody:
 	'{' [EnumConstantList] [','] [EnumBodyDeclarations] '}'
@@ -384,7 +381,7 @@ InterfaceDeclaration:
 	AnnotationTypeDeclaration
 
 NormalInterfaceDeclaration:
-	{InterfaceModifier} 'interface' TypeIdentifier [TypeParameters] [ExtendsInterfaces] InterfaceBody
+	{InterfaceModifier} 'interface' 'TypeIdentifier' [TypeParameters] [ExtendsInterfaces] InterfaceBody
 
 InterfaceModifier:
 	Annotation
@@ -430,7 +427,7 @@ InterfaceMethodModifier:
 	'strictfp'
 
 AnnotationTypeDeclaration:
-	{InterfaceModifier} '@' 'interface' TypeIdentifier AnnotationTypeBody
+	{InterfaceModifier} '@' 'interface' 'TypeIdentifier' AnnotationTypeBody
 
 AnnotationTypeBody:
 	'{' {AnnotationTypeMemberDeclaration} '}'

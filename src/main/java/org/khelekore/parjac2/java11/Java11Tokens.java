@@ -26,6 +26,7 @@ public class Java11Tokens {
 
     // 3.8. Identifiers
     public final Token IDENTIFIER;
+    public final Token TYPE_IDENTIFIER;
     public final Token VAR;
 
     // 3.9. Keywords
@@ -188,6 +189,7 @@ public class Java11Tokens {
 
 	// 3.8. Identifiers
 	IDENTIFIER = grammar.getToken ("Identifier");
+	TYPE_IDENTIFIER = grammar.getToken ("TypeIdentifier");
 	VAR = grammar.getToken ("var");
 
 	// 3.9. Keywords
@@ -349,6 +351,7 @@ public class Java11Tokens {
 
 	restrictedKeywords.stream ().mapToObj (i -> grammar.getToken (i))
 	    .forEach (t -> nameToRestrictedKeyword.put (t.getName (), t));
+	nameToRestrictedKeyword.put (VAR.getName (), VAR);
     }
 
     private final void store (BitSet store, Token... tokens) {

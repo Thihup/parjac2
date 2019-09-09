@@ -2,7 +2,7 @@ package org.khelekore.parjac2.parser;
 
 import java.util.BitSet;
 
-import org.khelekore.parjac2.parsetree.ParseTreeNode;
+import org.khelekore.parjac2.parsetree.TokenNode;
 
 public interface Lexer {
     /** Check if there are any more tokens.
@@ -12,12 +12,17 @@ public interface Lexer {
 
     /** Scan for the next token.
      * @param wantedTokens a BitSet where each bit represents a token identifier
-     * @return the next scanned token (does not have to be one of the wanted tokens).
+     * @return the next scanned tokens (does not have to be one of the wanted tokens).
      */
-    Token nextToken (BitSet wantedTokens);
+    BitSet nextToken (BitSet wantedTokens);
 
-    /** Get the current token value */
-    ParseTreeNode getCurrentValue ();
+    /** Get the current token value
+     *  If the current token is a set of different then this may return any one of them
+     */
+    TokenNode getCurrentValue ();
+
+    /** Convert the given node to the actually wanted token */
+    TokenNode toCorrectType (TokenNode n, Token wantedActualToken);
 
     /** Get the current position.
      */

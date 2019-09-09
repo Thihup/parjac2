@@ -838,7 +838,7 @@ LambdaParameter:
 	    else
 		modifiers = Collections.emptyList ();
 	    i++; // 'class'
-	    id = ((Identifier)children.get (i++)).getValue ();
+	    id = ((TypeIdentifier)children.get (i++)).getValue ();
 	    if (children.get (i) instanceof TypeParameters)
 		typeParameters = (TypeParameters)children.get (i++);
 	    if (children.get (i) instanceof Superclass)
@@ -1040,7 +1040,7 @@ LambdaParameter:
 	    uct.types.add (sct);
 	    return uct;
 	} else {
-	    Identifier i = (Identifier)children.get (0);
+	    TypeIdentifier i = (TypeIdentifier)children.get (0);
 	    TypeArguments tas = children.size () > 1 ? (TypeArguments)children.get (1) : null;
 	    SimpleClassType sct =
 		new SimpleClassType (n.getPosition (), Collections.emptyList (), i.getValue (), tas);
