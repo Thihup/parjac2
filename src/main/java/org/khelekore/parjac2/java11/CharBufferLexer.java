@@ -150,10 +150,13 @@ public class CharBufferLexer implements Lexer {
 		continue;
 	    lastScannedTokens.clear ();
 	    lastScannedTokens.set (nextToken.getId ());
-	    if (nextToken == java11Tokens.VAR)
+	    if (nextToken == java11Tokens.VAR) {
 		lastScannedTokens.set (java11Tokens.IDENTIFIER.getId ());
-	    else if (nextToken == java11Tokens.IDENTIFIER && wantedTokens.get (java11Tokens.TYPE_IDENTIFIER.getId ()))
+	    } else if (nextToken == java11Tokens.IDENTIFIER &&
+		       wantedTokens.get (java11Tokens.TYPE_IDENTIFIER.getId ()) &&
+		       !currentIdentifier.equals ("var")) {
 		lastScannedTokens.set (java11Tokens.TYPE_IDENTIFIER.getId ());
+	    }
 	    return lastScannedTokens;
 	}
 	lastScannedTokens.clear ();
@@ -768,11 +771,15 @@ public class CharBufferLexer implements Lexer {
 	}
 	String identifier = res.toString ();
 	Token t = java11Tokens.getKeywordFromIdentifier (identifier);
-	if (t != null)
+	if (t != null) {
+	    currentIdentifier = t.getName ();
 	    return t;
+	}
 	t = java11Tokens.getRestrictedKeyWordFromIdentifier (identifier);
-	if (t != null && wantedTokens.get (t.getId ()))
+	if (t != null && wantedTokens.get (t.getId ())) {
+	    currentIdentifier = t.getName ();
 	    return t;
+	}
 	currentIdentifier = identifier;
 	return java11Tokens.IDENTIFIER;
     }
