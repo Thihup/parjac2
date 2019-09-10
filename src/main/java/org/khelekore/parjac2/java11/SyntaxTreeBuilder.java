@@ -34,7 +34,6 @@ public class SyntaxTreeBuilder {
 	register ("GOAL", this::liftUp);
 
 	// Productions from §3 (Lexical Structure)
-	register ("TypeIdentifier", this::typeIdentifier);
 
 	// Productions from §4 (Types, Values, and Variables)
 	register ("Type", this::liftUp);
@@ -334,16 +333,6 @@ LambdaParameter:
 
     private interface NodeBuilder {
 	ParseTreeNode build (Path path, Rule rule, ParseTreeNode input, List<ParseTreeNode> children);
-    }
-
-    private ParseTreeNode typeIdentifier (Path path, Rule rule, ParseTreeNode input, List<ParseTreeNode> children) {
-	Identifier i = (Identifier)children.get (0);
-	String name = i.getValue ();
-	if (name.equals ("var")) {
-	    ParsePosition pp = i.getPosition ();
-	    diagnostics.report (SourceDiagnostics.error (path, pp, "A TypeIdentifier may not be named 'var'"));
-	}
-	return i;
     }
 
     private class PrimitiveType extends ComplexTreeNode {
