@@ -762,7 +762,7 @@ LambdaParameter:
 	}
 
 	@Override public Object getValue () {
-	    return annotations + (annotations.isEmpty () ? "" : " ") + "package " + dotted (nameParts);
+	    return annotations + (annotations.isEmpty () ? "" : " ") + "package " + dotted (nameParts) + ";\n";
 	}
     }
 
