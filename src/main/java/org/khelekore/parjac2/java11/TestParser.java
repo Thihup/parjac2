@@ -22,6 +22,7 @@ import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class TestParser {
+    private final Charset charset;
     private final boolean printParseTree;
     private final boolean printSyntaxTree;
     private final Grammar grammar = new Grammar ();
@@ -36,10 +37,15 @@ public class TestParser {
 	    usage ();
 	    return;
 	}
+	Charset charset = StandardCharsets.UTF_8;
 	boolean printParseTree = false;
 	boolean printSyntaxTree = false;
 	int fileStart = 0;
-	if (args[0].equals ("-print_parse")) {
+	if (args[fileStart].equals ("-encoding") && args.length > fileStart + 1) {
+	    charset = Charset.forName (args[++fileStart]);
+	    fileStart++;
+	}
+	if (args[fileStart].equals ("-print_parse")) {
 	    printParseTree = true;
 	    fileStart++;
 	}
@@ -48,7 +54,7 @@ public class TestParser {
 	    fileStart++;
 	}
 
-	TestParser tg = new TestParser (printParseTree, printSyntaxTree);
+	TestParser tg = new TestParser (charset, printParseTree, printSyntaxTree);
 	ExecutorService es = Executors.newFixedThreadPool (Runtime.getRuntime ().availableProcessors () + 1);
 	for (int i = fileStart; i < args.length; i++) {
 	    String filename = args[i];
@@ -58,10 +64,12 @@ public class TestParser {
     }
 
     private static void usage () {
-	System.err.println ("usage: java " + TestParser.class.getName () + " [-print_parse] file_to_parse*");
+	System.err.println ("usage: java " + TestParser.class.getName () +
+			    " [-encoding <charset>] [-print_parse] file_to_parse*");
     }
 
-    public TestParser (boolean printParseTree, boolean printSyntaxTree) throws IOException {
+    public TestParser (Charset charset, boolean printParseTree, boolean printSyntaxTree) throws IOException {
+	this.charset = charset;
 	this.printParseTree = printParseTree;
 	this.printSyntaxTree = printSyntaxTree;
 	goalRule = JavaGrammarHelper.readAndValidateRules (grammar, false);
@@ -85,7 +93,7 @@ public class TestParser {
     }
 
     private void parse (Path filePath, CompilerDiagnosticCollector diagnostics) throws IOException {
-	CharBuffer input = pathToCharBuffer (filePath, StandardCharsets.ISO_8859_1);
+	CharBuffer input = pathToCharBuffer (filePath, charset);
 	CharBufferLexer lexer = new CharBufferLexer (grammar, java11Tokens, input);
 	Parser p = new Parser (grammar, filePath, predictCache, lexer, diagnostics);
 	ParseTreeNode parseTree = p.parse (goalRule);
