@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
-import org.khelekore.parjac2.SourceDiagnostics;
 import org.khelekore.parjac2.parser.Grammar;
 import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
@@ -127,16 +126,12 @@ public class SyntaxTreeBuilder {
 	register ("SimpleTypeName",this::liftUp);
 	register ("ConstructorBody", ConstructorBody::new);
 	register ("ExplicitConstructorInvocation", ExplicitConstructorInvocation::new);
-/*
-EnumDeclaration:
-EnumBody:
-EnumConstantList:
-EnumConstant:
-*/
+	register ("EnumDeclaration", EnumDeclaration::new);
+	register ("EnumBody", EnumBody::new);
+	register ("EnumConstantList", EnumConstantList::new);
+	register ("EnumConstant", EnumConstant::new);
 	register ("EnumConstantModifier", this::liftUp);
-/*
-EnumBodyDeclarations:
-*/
+	register ("EnumBodyDeclarations", EnumBodyDeclarations::new);
 
 	// Productions from §9 (Interfaces)
 	register ("InterfaceDeclaration", this::liftUp);
@@ -1439,6 +1434,151 @@ LambdaParameter:
 	    if (argumentList != null)
 		sb.append (argumentList);
 	    sb.append (");");
+	    return sb.toString ();
+	}
+    }
+
+    private class EnumDeclaration extends TypeDeclaration {
+	private final List<ParseTreeNode> modifiers;
+	private final String id;
+	private final Superinterfaces supers;
+	private final EnumBody body;
+	public EnumDeclaration (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 0;
+	    if (children.get (0) instanceof ZOMEntry) {
+		modifiers = ((ZOMEntry)children.get (i++)).get ();
+	    } else {
+		modifiers = Collections.emptyList ();
+	    }
+	    i++;
+	    id = ((Identifier)children.get (i++)).getValue ();
+	    if (rule.size () > i + 2) {
+		supers = (Superinterfaces)children.get (i++);
+	    } else {
+		supers = null;
+	    }
+	    body = (EnumBody)children.get (i);
+	}
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    if (!modifiers.isEmpty ())
+		sb.append (modifiers).append (" ");
+	    sb.append ("enum ").append (id).append (" ");
+	    if (supers != null)
+		sb.append (supers).append (" ");
+	    sb.append (body);
+	    return sb.toString ();
+	}
+    }
+
+    private class EnumBody extends ComplexTreeNode {
+	private final EnumConstantList constants;
+	private final EnumBodyDeclarations declarations;
+	public EnumBody (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 1;
+	    if (children.get (i) instanceof EnumConstantList) {
+		constants = (EnumConstantList)children.get (i++);
+	    } else {
+		constants = null;
+	    }
+	    if (rule.get (i) == java11Tokens.COMMA.getId ())
+		i++;
+	    if (children.get (i) instanceof EnumBodyDeclarations) {
+		declarations = (EnumBodyDeclarations)children.get (i);
+	    } else {
+		declarations = null;
+	    }
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append ("{");
+	    if (constants != null)
+		sb.append (constants);
+	    if (declarations != null)
+		sb.append (declarations);
+	    sb.append ("}");
+	    return sb.toString ();
+	}
+    }
+
+    private class EnumConstantList extends ComplexTreeNode {
+	private List<EnumConstant> constants;
+	public EnumConstantList (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    if (rule.size () == 1) {
+		constants = List.of ((EnumConstant)children.get (0));
+	    } else {
+		constants = new ArrayList<> ();
+		constants.add ((EnumConstant)children.get (0));
+		ZOMEntry z = (ZOMEntry)children.get (1);
+		for (int j = 1; j < z.nodes.size (); j += 2)
+		    constants.add ((EnumConstant)z.nodes.get (j));
+	    }
+	}
+
+	@Override public Object getValue () {
+	    return constants.stream ().map (ec -> ec.toString ()).collect (Collectors.joining (", "));
+	}
+    }
+
+    private class EnumConstant extends ComplexTreeNode {
+	private final List<ParseTreeNode> modifiers;
+	private final String id;
+	private final ArgumentList args;
+	private final ClassBody body;
+	public EnumConstant (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 0;
+	    if (children.get (i) instanceof ZOMEntry) {
+		modifiers = ((ZOMEntry)children.get (i++)).get ();
+	    } else {
+		modifiers = Collections.emptyList ();
+	    }
+	    id = ((Identifier)children.get (i++)).getValue ();
+	    if (rule.size () > i && rule.get (i++) == java11Tokens.LEFT_PARENTHESIS.getId ()) {
+		if (rule.size () > i && rule.get (i) != java11Tokens.RIGHT_PARENTHESIS.getId ()) {
+		    args = (ArgumentList)children.get (i++);
+		} else {
+		    args = null;
+		}
+		i++; // ')'
+	    } else {
+		args = null;
+	    }
+	    body = (rule.size () > i) ? (ClassBody)children.get (i) : null;
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    if (!modifiers.isEmpty ())
+		sb.append (modifiers).append (" ");
+	    sb.append (id);
+	    if (args != null)
+		sb.append ("(").append (args).append (")");
+	    if (body != null)
+		sb.append (body);
+	    return sb.toString ();
+	}
+    }
+
+    private class EnumBodyDeclarations extends ComplexTreeNode {
+	private List<ClassBodyDeclaration> body;
+	public EnumBodyDeclarations(Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    if (rule.size () > 1) {
+		ZOMEntry z = (ZOMEntry)children.get (1);
+		body = z.get ();
+	    }
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append (";");
+	    if (body != null)
+		sb.append (body);
 	    return sb.toString ();
 	}
     }
