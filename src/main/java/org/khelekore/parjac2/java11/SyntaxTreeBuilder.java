@@ -1453,7 +1453,7 @@ LambdaParameter:
 	    }
 	    i++;
 	    id = ((Identifier)children.get (i++)).getValue ();
-	    if (rule.size () > i + 2) {
+	    if (rule.size () > i + 1) {
 		supers = (Superinterfaces)children.get (i++);
 	    } else {
 		supers = null;
