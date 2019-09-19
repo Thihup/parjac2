@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
@@ -258,12 +259,10 @@ DimExprs:
 DimExpr:
 */
 	register ("Expression", this::liftUp);
-/*
-LambdaExpression:
-LambdaParameters:
-LambdaParameterList:
-LambdaParameter:
-*/
+	register ("LambdaExpression", LambdaExpression::new);
+	register ("LambdaParameters", this::lambdaParameters);
+	register ("LambdaParameterList", this::lambdaParameterList);
+	register ("LambdaParameter", this::lambdaParameter);
 	register ("LambdaParameterType", this::liftUp);
 	register ("LambdaBody", this::liftUp);
 	register ("AssignmentExpression", this::liftUp);
@@ -1864,7 +1863,12 @@ LambdaParameter:
 	}
 
 	@Override public Object getValue() {
-	    return "{\n" + statements + "\n}";
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append ("{");
+	    if (statements != null)
+		sb.append (statements);
+	    sb.append ("\n}");
+	    return sb.toString ();
 	}
     }
 
@@ -1912,6 +1916,152 @@ LambdaParameter:
     private class ArgumentList extends CommaListBase {
 	public ArgumentList (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	    super (path, rule, n, children);
+	}
+    }
+
+    private class LambdaExpression extends ComplexTreeNode {
+	private LambdaParameters params;
+	private ParseTreeNode body;
+
+	public LambdaExpression (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    params = (LambdaParameters)children.get (0);
+	    body = children.get (2);
+	}
+
+	@Override public Object getValue () {
+	    return params + " -> " + body;
+	}
+    }
+
+    private ParseTreeNode lambdaParameters (Path path, Rule rule, ParseTreeNode n,
+					    List<ParseTreeNode> children) {
+	switch (rule.size ()) {
+	case 1:
+	    return new IdentifierLambdaParameters (n, ((Identifier)children.get (0)).getValue ());
+	case 2:
+	    return new ListOfLambdaParameters (n, null);
+	case 3:
+	    return new ListOfLambdaParameters (n, (LambdaParameterList<?>)children.get (1));
+	default:
+	    throw new IllegalStateException ("Unhandled rule length: " + rule.toReadableString (grammar));
+	}
+    }
+
+    private class IdentifierLambdaParameters extends LambdaParameters {
+	private final String id;
+	public IdentifierLambdaParameters (ParseTreeNode n, String id) {
+	    super (n.getPosition ());
+	    this.id = id;
+	}
+
+	@Override public Object getValue () {
+	    return id;
+	}
+    }
+
+    private class ListOfLambdaParameters extends LambdaParameters {
+	private final LambdaParameterList<?> params;
+	public ListOfLambdaParameters (ParseTreeNode n, LambdaParameterList<?> params) {
+	    super (n.getPosition ());
+	    this.params = params;
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append ("(");
+	    if (params != null)
+		sb.append (params);
+	    sb.append (")");
+	    return sb.toString ();
+	}
+    }
+
+    private abstract class LambdaParameters extends ComplexTreeNode {
+	public LambdaParameters (ParsePosition pos) {
+	    super (pos);
+	}
+    }
+
+    private ParseTreeNode lambdaParameterList (Path path, Rule rule, ParseTreeNode n,
+					       List<ParseTreeNode> children) {
+	if (rule.get (0) == java11Tokens.IDENTIFIER.getId ())
+	    return new LambdaParameterList<String> (rule, n, children, i -> ((Identifier)i).getValue ());
+	return new LambdaParameterList<LambdaParameter> (rule, n, children, c -> (LambdaParameter)c);
+    }
+
+    private class LambdaParameterList<T> extends ComplexTreeNode {
+	private final List<T> params;
+	public LambdaParameterList (Rule rule, ParseTreeNode n, List<ParseTreeNode> children,
+				    Function<ParseTreeNode, T> nodeConverter) {
+	    super (n.getPosition ());
+	    if (rule.size () == 1) {
+		params = List.of (nodeConverter.apply (children.get (0)));
+	    } else {
+		params = new ArrayList<> ();
+		params.add (nodeConverter.apply (children.get (0)));
+		ZOMEntry z = (ZOMEntry)children.get (1);
+		for (int i = 1; i < z.nodes.size (); i += 2)
+		    params.add (nodeConverter.apply (z.nodes.get (i)));
+	    }
+	}
+
+	@Override public Object getValue () {
+	    return params;
+	}
+    }
+
+    private ParseTreeNode lambdaParameter (Path path, Rule rule, ParseTreeNode n,
+					   List<ParseTreeNode> children) {
+	if (rule.size () == 1)  // VariableArityParameter
+	    return new VarArgLambdaParameter (n.getPosition (), (VariableArityParameter)children.get (0));
+	int i = 0;
+	List<ParseTreeNode> modifiers = Collections.emptyList ();
+	if (rule.size () > 2)
+	    modifiers = ((ZOMEntry)children.get (i++)).get ();
+	ParseTreeNode type = children.get (i++);
+	VariableDeclaratorId vid = (VariableDeclaratorId)children.get (i);
+	return new FullTypeLambdaParameter (n.getPosition (), modifiers, type, vid);
+    }
+
+    private class VarArgLambdaParameter extends LambdaParameter {
+	private final VariableArityParameter vap;
+
+	public VarArgLambdaParameter (ParsePosition pos, VariableArityParameter vap) {
+	    super (pos);
+	    this.vap = vap;
+	}
+
+	@Override public Object getValue () {
+	    return vap;
+	}
+    }
+
+    private class FullTypeLambdaParameter extends LambdaParameter {
+	private final List<ParseTreeNode> modifiers;
+	private final ParseTreeNode type;
+	private final VariableDeclaratorId vid;
+
+	public FullTypeLambdaParameter (ParsePosition pos, List<ParseTreeNode> modifiers,
+					ParseTreeNode type, VariableDeclaratorId vid) {
+	    super (pos);
+	    this.modifiers = modifiers;
+	    this.type = type;
+	    this.vid = vid;
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    if (!modifiers.isEmpty ())
+		sb.append (modifiers).append (" ");
+	    sb.append (type).append (" ").append (vid);
+	    return sb.toString ();
+	}
+    }
+
+    private abstract class LambdaParameter extends ComplexTreeNode {
+	public LambdaParameter (ParsePosition pos) {
+	    super (pos);
 	}
     }
 
