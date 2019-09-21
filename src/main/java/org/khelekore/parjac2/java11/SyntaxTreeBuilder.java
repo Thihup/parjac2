@@ -136,18 +136,14 @@ public class SyntaxTreeBuilder {
 
 	// Productions from §9 (Interfaces)
 	register ("InterfaceDeclaration", this::liftUp);
-/*
-NormalInterfaceDeclaration:
-InterfaceModifier:
-ExtendsInterfaces:
-InterfaceBody:
-InterfaceMemberDeclaration:
-ConstantDeclaration:
-*/
+	register ("NormalInterfaceDeclaration", NormalInterfaceDeclaration::new);
+	register ("InterfaceModifier", this::liftUp);
+	register ("ExtendsInterfaces", ExtendsInterfaces::new);
+	register ("InterfaceBody", InterfaceBody::new);
+	register ("InterfaceMemberDeclaration", this::liftUp);
+	register ("ConstantDeclaration", ConstantDeclaration::new);
 	register ("ConstantModifier", this::liftUp);
-/*
-InterfaceMethodDeclaration:
-*/
+	register ("InterfaceMethodDeclaration", InterfaceMethodDeclaration::new);
 	register ("InterfaceMethodModifier", this::liftUp);
 /*
 AnnotationTypeDeclaration:
@@ -1578,6 +1574,137 @@ DimExpr:
 	    sb.append (";");
 	    if (body != null)
 		sb.append (body);
+	    return sb.toString ();
+	}
+    }
+
+    private class NormalInterfaceDeclaration extends TypeDeclaration {
+	private final List<ParseTreeNode> modifiers;
+	private final String id;
+	private final TypeParameters types;
+	private final ExtendsInterfaces extendsInterfaces;
+	private final InterfaceBody body;
+
+	public NormalInterfaceDeclaration (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 0;
+	    if (children.get (i) instanceof ZOMEntry) {
+		modifiers = ((ZOMEntry)children.get (i++)).get ();
+	    } else {
+		modifiers = Collections.emptyList ();
+	    }
+	    i++;
+	    id = ((Identifier)children.get (i++)).getValue ();
+	    if (children.get (i) instanceof TypeParameters) {
+		types = (TypeParameters)children.get (i++);
+	    } else {
+		types = null;
+	    }
+	    if (children.get (i) instanceof ExtendsInterfaces) {
+		extendsInterfaces = (ExtendsInterfaces)children.get (i++);
+	    } else {
+		extendsInterfaces = null;
+	    }
+	    body = (InterfaceBody)children.get (i);
+	}
+
+    	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    if (!modifiers.isEmpty ())
+		sb.append (modifiers).append (" ");
+	    sb.append ("interface ").append (id);
+	    if (types != null)
+		sb.append (" ").append (types);
+	    if (extendsInterfaces != null)
+		sb.append (" ").append (extendsInterfaces);
+	    sb.append (body);
+	    return sb.toString ();
+	}
+    }
+
+    private class ExtendsInterfaces extends ComplexTreeNode {
+	private final InterfaceTypeList interfaceTypes;
+	public ExtendsInterfaces (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    interfaceTypes = (InterfaceTypeList)children.get (1);
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append ("extends ").append (interfaceTypes);
+	    return sb.toString ();
+	}
+    }
+
+    private class InterfaceBody extends ComplexTreeNode {
+	private final List<ParseTreeNode> memberDeclarations;
+	public InterfaceBody (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    if (rule.size () > 2) {
+		memberDeclarations = ((ZOMEntry)children.get (1)).get ();
+	    } else {
+		memberDeclarations = Collections.emptyList ();
+	    }
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append (" {\n");
+	    if (!memberDeclarations.isEmpty ())
+		for (ParseTreeNode n : memberDeclarations)
+		    sb.append (n).append ("\n");
+	    sb.append ("}");
+	    return sb.toString ();
+	}
+    }
+
+    private class ConstantDeclaration extends ComplexTreeNode {
+	private final List<ParseTreeNode> modifiers;
+	private final ParseTreeNode type;
+	private final VariableDeclaratorList variables;
+
+	public ConstantDeclaration (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 0;
+	    if (rule.size () > 3) {
+		modifiers = ((ZOMEntry)children.get (i++)).get ();
+	    } else {
+		modifiers = Collections.emptyList ();
+	    }
+	    type = children.get (i++);
+	    variables = (VariableDeclaratorList)children.get (i++);
+	}
+
+    	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    if (!modifiers.isEmpty ())
+		sb.append (modifiers).append (" ");
+	    sb.append (type).append (" ").append (variables).append (";");
+	    return sb.toString ();
+	}
+    }
+
+    private class InterfaceMethodDeclaration extends ComplexTreeNode {
+	private final List<ParseTreeNode> modifiers;
+	private final MethodHeader header;
+	private final ParseTreeNode body;
+	public InterfaceMethodDeclaration (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 0;
+	    if (rule.size () > 2){
+		modifiers = ((ZOMEntry)children.get (i++)).get ();
+	    } else {
+		modifiers = Collections.emptyList ();
+	    }
+	    header = (MethodHeader)children.get (i++);
+	    body = children.get (i);
+	}
+
+    	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    if (!modifiers.isEmpty ())
+		sb.append (modifiers).append (" ");
+	    sb.append (header).append (body);
 	    return sb.toString ();
 	}
     }
