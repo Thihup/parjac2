@@ -94,6 +94,7 @@ public class Parser {
 		      startPositions.get (currentPosition), states.size ());
 	if (goalHolder.size () < 2) {
 	    addParserError ("Did not find any finishing state");
+	    return null;
 	} else if (goalHolder.size () > 2) {
 	    addParserError ("Found several valid parses: " + (goalHolder.size () / 2));
 	}
@@ -203,8 +204,6 @@ public class Parser {
 	    scannedTokens.stream ().forEach (t -> pg.apply (t, rp -> advancePrediction (rp)));
 	    tokenValues.add (lexer.getCurrentValue ());
 	} else {
-	    System.err.println ("states at start");
-	    printStates (currentPosition);
 	    // Try to advance by saying we got what we wanted
 	    addParserError ("Got unexpected set of tokens: '%s' with value: %s, expected one of: %s",
 			    tokenString (scannedTokens), lexer.getCurrentValue (),
@@ -214,9 +213,6 @@ public class Parser {
 			  startPositions.get (currentPosition), states.size ());
 	    pg.applyAll (rp -> advancePredictionsStartingWith (rp));
 	    tokenValues.add (new TokenNode (grammar.WILDCARD, lexer.getParsePosition ()));
-	    System.err.println ("states after");
-	    printStates (currentPosition);
-	    System.err.println ("--------------");
 	}
     }
 
@@ -285,8 +281,6 @@ public class Parser {
 	    return;
 	if (!nextIsToken (r, dotPos))
 	    return;
-	System.err.println ("Advancing rule: " + grammar.getRule (rule).toReadableString (grammar) +
-			    ", dotPos: " + dotPos);
 	addState (rule, dotPos + 1, origin);
     }
 
@@ -296,7 +290,6 @@ public class Parser {
 	Rule r = grammar.getRule (rule);
 	if (!nextIsToken (r, 0))
 	    return;
-	System.err.println ("Advancing prediction: " + grammar.getRule (rule).toReadableString (grammar));
 	addState (rule, 1, currentPosition);
     }
 

@@ -103,11 +103,9 @@ public class TestParser {
 	if (printParseTree)
 	    printTree (parseTree);
 
-	try {
 	ParseTreeNode syntaxTree = stb.build (filePath, parseTree);
 	if (printSyntaxTree)
 	    printTree (syntaxTree);
-	} catch (Throwable t) { t.printStackTrace (); }
 	return;
     }
 
