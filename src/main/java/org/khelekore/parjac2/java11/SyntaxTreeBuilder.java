@@ -169,10 +169,8 @@ public class SyntaxTreeBuilder {
 	register ("Block", Block::new);
 	register ("BlockStatements", BlockStatements::new);
 	register ("BlockStatement", this::liftUp);
-/*
-LocalVariableDeclarationStatement:
-LocalVariableDeclaration:
-*/
+	register ("LocalVariableDeclarationStatement", LocalVariableDeclarationStatement::new);
+	register ("LocalVariableDeclaration", LocalVariableDeclaration::new);
 	register ("LocalVariableType", this::liftUp);
 	register ("Statement", this::liftUp);
 	register ("StatementNoShortIf", this::liftUp);
@@ -228,23 +226,27 @@ VariableAccess:
 	register ("Primary", this::liftUp);
 /*
 PrimaryNoNewArray:
-ClassLiteral:
+*/
+	register ("ClassLiteral", ClassLiteral::new);
+/*
 ClassInstanceCreationExpression:
 UnqualifiedClassInstanceCreationExpression:
 ClassOrInterfaceTypeToInstantiate:
-TypeArgumentsOrDiamond:
+*/
+	register ("TypeArgumentsOrDiamond", this::typeArgumentsOrDiamond);
+/*
 FieldAccess:
 ArrayAccess:
 MethodInvocation:
-UntypedMethodInvocation:
 */
+	register ("UntypedMethodInvocation", UntypedMethodInvocation::new);
 	register ("ArgumentList", ArgumentList::new);
 /*
 MethodReference:
 ArrayCreationExpression:
-DimExprs:
-DimExpr:
 */
+	register ("DimExprs", DimExprs::new);
+	register ("DimExpr", DimExpr::new);
 	register ("Expression", this::liftUp);
 	register ("LambdaExpression", LambdaExpression::new);
 	register ("LambdaParameters", this::lambdaParameters);
@@ -2181,6 +2183,45 @@ DimExpr:
 	}
     }
 
+    private class LocalVariableDeclarationStatement extends ComplexTreeNode {
+	private final LocalVariableDeclaration decl;
+
+	public LocalVariableDeclarationStatement (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    decl = (LocalVariableDeclaration)children.get (0);
+	}
+
+	@Override public Object getValue() {
+	    return decl + ";";
+	}
+    }
+
+    private class LocalVariableDeclaration extends ComplexTreeNode {
+	private final List<ParseTreeNode> modifiers;
+	private final ParseTreeNode type;
+	private final VariableDeclaratorList list;
+
+	public LocalVariableDeclaration (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 0;
+	    if (rule.size () > 2) {
+		modifiers = ((ZOMEntry)children.get (i++)).get ();
+	    }  else{
+		modifiers = List.of ();
+	    }
+	    type = children.get (i++);
+	    list = (VariableDeclaratorList)children.get (i);
+	}
+
+	@Override public Object getValue() {
+	    StringBuilder sb = new StringBuilder ();
+	    if (!modifiers.isEmpty ())
+		sb.append (modifiers).append (" ");
+	    sb.append (type).append (" ").append (list);
+	    return sb.toString ();
+	}
+    }
+
     private class LabeledStatement extends ComplexTreeNode {
 	private String id;
 	private ParseTreeNode statement;
@@ -2207,9 +2248,114 @@ DimExpr:
 	}
     }
 
+    private class ClassLiteral extends ComplexTreeNode {
+	private final ParseTreeNode type;
+	private final int dims;
+	public ClassLiteral (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 0;
+	    type = children.get (i++);
+	    if (children.get (i) instanceof ZOMEntry)
+		dims = ((ZOMEntry)children.get (i++)).size ();
+	    else
+		dims = 0;
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append (type);
+	    for (int i = 0; i < dims; i++)
+		sb.append ("[]");
+	    sb.append (".class");
+	    return sb.toString ();
+	}
+    }
+
+    private ParseTreeNode typeArgumentsOrDiamond (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	if (rule.size () > 1)
+	    return new Diamond (n.getPosition ());
+	return children.get (0);
+    }
+
+    private class Diamond extends ComplexTreeNode {
+	public Diamond (ParsePosition pos) {
+	    super (pos);
+	}
+
+	@Override public Object getValue () {
+	    return "<>";
+	}
+    }
+
+    private class UntypedMethodInvocation extends ComplexTreeNode {
+	private final String methodName;
+	private final ArgumentList args;
+
+	public UntypedMethodInvocation (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    methodName = ((Identifier)children.get (0)).getValue ();
+	    if (rule.size () > 3)
+		args = (ArgumentList)children.get (2);
+	    else
+		args = null;
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append (methodName).append ("(");
+	    if (args != null)
+		sb.append (args);
+	    sb.append (")");
+	    return sb.toString ();
+	}
+    }
+
     private class ArgumentList extends CommaListBase {
 	public ArgumentList (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	    super (path, rule, n, children);
+	}
+    }
+
+    private class DimExprs extends ComplexTreeNode {
+	private final List<DimExpr> dims;
+
+	public DimExprs (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    if (rule.size () == 1) {
+		dims = List.of ((DimExpr)children.get (0));
+	    } else {
+		dims = new ArrayList<> ();
+		dims.add ((DimExpr)children.get (0));
+		ZOMEntry z = (ZOMEntry)children.get (1);
+		dims.addAll (z.get ());
+	    }
+	}
+
+	@Override public Object getValue () {
+	    return dims;
+	}
+    }
+
+    private class DimExpr extends ComplexTreeNode {
+	private final List<Annotation> annotations;
+	private final ParseTreeNode expression;
+
+	public DimExpr (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 0;
+	    if (rule.size () > 3)
+		annotations = ((ZOMEntry)children.get (i++)).get ();
+	    else
+		annotations = List.of ();
+	    expression = children.get (i + 1);
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    if (!annotations.isEmpty ())
+		sb.append (annotations);
+	    sb.append ("[").append (expression).append ("]");
+	    return sb.toString ();
 	}
     }
 
@@ -2597,6 +2743,10 @@ DimExpr:
 
 	@Override public List<ParseTreeNode> getChildren () {
 	    return nodes;
+	}
+
+	public int size () {
+	    return nodes.size ();
 	}
     }
 
