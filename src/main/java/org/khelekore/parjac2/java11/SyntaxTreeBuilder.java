@@ -145,31 +145,22 @@ public class SyntaxTreeBuilder {
 	register ("ConstantModifier", this::liftUp);
 	register ("InterfaceMethodDeclaration", InterfaceMethodDeclaration::new);
 	register ("InterfaceMethodModifier", this::liftUp);
-/*
-AnnotationTypeDeclaration:
-AnnotationTypeBody:
-*/
+	register ("AnnotationTypeDeclaration", AnnotationTypeDeclaration::new);
+	register ("AnnotationTypeBody", AnnotationTypeBody::new);
 	register ("AnnotationTypeMemberDeclaration", this::liftUp);
-/*
-AnnotationTypeElementDeclaration:
-*/
+	register ("AnnotationTypeElementDeclaration", AnnotationTypeElementDeclaration::new);
 	register ("AnnotationTypeElementModifier", this::liftUp);
 	register ("DefaultValue", DefaultValue::new);
 	register ("Annotation", this::liftUp);
 	register ("NormalAnnotation", NormalAnnotation::new);
-/*
-ElementValuePairList:
-ElementValuePair:
-*/
+	register ("ElementValuePairList", ElementValuePairList::new);
+	register ("ElementValuePair", ElementValuePair::new);
 	register ("ElementValue", this::liftUp);
-/*
-ElementValueArrayInitializer:
-ElementValueList:
-*/
+	register ("ElementValueArrayInitializer", ElementValueArrayInitializer::new);
+	register ("ElementValueList", ElementValueList::new);
 	register ("MarkerAnnotation", MarkerAnnotation::new);
-/*
-SingleElementAnnotation:
-*/
+	register ("SingleElementAnnotation", SingleElementAnnotation::new);
+
 	// Productions from §10 (Arrays)
 	register ("ArrayInitializer", ArrayInitializer::new);
 	register ("VariableInitializerList", VariableInitializerList::new);
@@ -1901,6 +1892,90 @@ DimExpr:
 	}
     }
 
+    private class AnnotationTypeDeclaration extends TypeDeclaration {
+	private final List<ParseTreeNode> modifiers;
+	private final String id;
+	private final AnnotationTypeBody body;
+
+	public AnnotationTypeDeclaration (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 0;
+	    if (children.get (i) instanceof ZOMEntry)
+		modifiers = ((ZOMEntry)children.get (i++)).get ();
+	    else
+		modifiers = List.of ();
+	    i += 2;
+	    id = ((TypeIdentifier)children.get (i++)).getValue ();
+	    body = (AnnotationTypeBody)children.get (i);
+	}
+
+	@Override public Object getValue() {
+	    StringBuilder sb = new StringBuilder ();
+	    if (!modifiers.isEmpty ())
+		sb.append (modifiers).append (" ");
+	    sb.append ("@interface ").append (id).append (body);
+	    return sb.toString ();
+	}
+    }
+
+    private class AnnotationTypeBody extends ComplexTreeNode {
+	private final List<ParseTreeNode> members;
+
+	public AnnotationTypeBody (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    if (rule.size () > 2) {
+		members = ((ZOMEntry)children.get (1)).get ();
+	    } else {
+		members = List.of ();
+	    }
+	}
+
+	@Override public Object getValue() {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append ("{");
+	    if (!members.isEmpty ())
+		sb.append (members);
+	    sb.append ("}");
+	    return sb.toString ();
+	}
+    }
+
+    private class AnnotationTypeElementDeclaration extends ComplexTreeNode {
+	private final List<ParseTreeNode> modifiers;
+	private final ParseTreeNode type;
+	private final String id;
+	private final Dims dims;
+	private final DefaultValue defaultValue;
+
+	public AnnotationTypeElementDeclaration (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 0;
+	    if (children.get (i) instanceof ZOMEntry) {
+		modifiers = ((ZOMEntry)children.get (i++)).get ();
+	    } else {
+		modifiers = List.of ();
+	    }
+	    type = children.get (i++);
+	    id = ((Identifier)children.get (i++)).getValue ();
+	    i += 2;
+	    dims = (children.get (i) instanceof Dims) ? (Dims)children.get (i++) : null;
+	    defaultValue = (children.get (i) instanceof DefaultValue) ? (DefaultValue)children.get (i++) : null;
+	}
+
+	@Override public Object getValue() {
+	    StringBuilder sb = new StringBuilder ();
+	    if (!modifiers.isEmpty ())
+		sb.append (modifiers).append (" ");
+	    sb.append (type).append (" ").append (id).append (" ()");
+	    if (dims != null)
+		sb.append (dims);
+	    if (defaultValue != null)
+		sb.append (defaultValue);
+	    sb.append (";");
+	    return sb.toString ();
+	}
+    }
+
     private class DefaultValue extends ComplexTreeNode {
 	private ParseTreeNode value;
 	public DefaultValue (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
@@ -1933,6 +2008,83 @@ DimExpr:
 	}
     }
 
+    private class ElementValuePairList extends ComplexTreeNode {
+	private final List<ElementValuePair> values;
+
+	public ElementValuePairList (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    if (rule.size () == 1) {
+		values = List.of ((ElementValuePair)children.get (0));
+	    } else {
+		values = new ArrayList<> ();
+		values.add ((ElementValuePair)children.get (0));
+		ZOMEntry z = (ZOMEntry)children.get (1);
+		for (int j = 1; j < z.nodes.size (); j += 2)
+		    values.add ((ElementValuePair)z.nodes.get (j));
+	    }
+	}
+
+	@Override public Object getValue() {
+	    return values;
+	}
+    }
+
+    private class ElementValuePair extends ComplexTreeNode {
+	private final String id;
+	private final ParseTreeNode value;
+
+	public ElementValuePair (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    id = ((Identifier)children.get (0)).getValue ();
+	    value = children.get (2);
+	}
+
+	@Override public Object getValue() {
+	    return id + " = " + value;
+	}
+    }
+
+    private class ElementValueArrayInitializer extends ComplexTreeNode {
+	private final List<ParseTreeNode> values;
+
+	public ElementValueArrayInitializer (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    if (children.get (1) instanceof ElementValueList)
+		values = ((ElementValueList)children.get (1)).values;
+	    else
+		values = null;
+	}
+
+	@Override public Object getValue() {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append ("{");
+	    if (values != null)
+		sb.append (values);
+	    sb.append ("}");
+	    return sb.toString ();
+	}
+    }
+
+    private class ElementValueList extends ComplexTreeNode {
+	private final List<ParseTreeNode> values;
+
+	public ElementValueList (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    if (rule.size () == 1) {
+		values = List.of (children.get (0));
+	    } else {
+		values = new ArrayList<> ();
+		values.add (children.get (0));
+		ZOMEntry z = (ZOMEntry)children.get (1);
+		for (int j = 1; j < z.nodes.size (); j += 2)
+		    values.add (z.nodes.get (j));
+	    }
+	}
+	@Override public Object getValue() {
+	    return values;
+	}
+    }
+
     private class MarkerAnnotation extends Annotation {
 	private TypeName typename;
 	public MarkerAnnotation (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
@@ -1942,6 +2094,21 @@ DimExpr:
 
 	@Override public Object getValue() {
 	    return "@" + typename;
+	}
+    }
+
+    private class SingleElementAnnotation extends Annotation {
+	private TypeName typename;
+	private ParseTreeNode value;
+
+	public SingleElementAnnotation (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    this.typename = (TypeName)children.get (1);
+	    value = children.get (3);
+	}
+
+	@Override public Object getValue() {
+	    return "@" + typename + "(" + value + ")";
 	}
     }
 
