@@ -243,8 +243,8 @@ MethodInvocation:
 	register ("ArgumentList", ArgumentList::new);
 /*
 MethodReference:
-ArrayCreationExpression:
 */
+	register ("ArrayCreationExpression", ArrayCreationExpression::new);
 	register ("DimExprs", DimExprs::new);
 	register ("DimExpr", DimExpr::new);
 	register ("Expression", this::liftUp);
@@ -287,8 +287,9 @@ ArrayCreationExpression:
 
     public ParseTreeNode build (Path path, ParseTreeNode root) {
 	List<ParseTreeNode> children = root.getChildren ();
-	List<ParseTreeNode> convertedChildren =
-	    children.stream ().map (c -> build (path, c)).collect (Collectors.toList ());
+	List<ParseTreeNode> convertedChildren = new ArrayList<> (children.size ());
+	for (ParseTreeNode c : children)
+	    convertedChildren.add (build (path, c));
 	ParseTreeNode n = convert (path, root, convertedChildren);
 	return n;
     }
@@ -2313,6 +2314,35 @@ ArrayCreationExpression:
     private class ArgumentList extends CommaListBase {
 	public ArgumentList (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	    super (path, rule, n, children);
+	}
+    }
+
+    private class ArrayCreationExpression extends ComplexTreeNode {
+	private final ComplexTreeNode type;
+	private final DimExprs dimExprs;
+	private final Dims dims;
+	private final ArrayInitializer initializer;
+
+	public ArrayCreationExpression (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 1;
+	    type = (ComplexTreeNode)children.get (i++);
+	    dimExprs = (children.get (i) instanceof DimExprs) ? (DimExprs)children.get (i++) : null;
+	    dims = (children.size () > i) ? (Dims)children.get (i++) : null;
+	    initializer = (children.size () > i) ? (ArrayInitializer)children.get (i++) : null;
+	}
+
+	@Override public Object getValue() {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append ("new ");
+	    sb.append (type);
+	    if (dimExprs != null)
+		sb.append (dimExprs);
+	    if (dims != null)
+		sb.append (dims);
+	    if (initializer != null)
+		sb.append (initializer);
+	    return sb.toString ();
 	}
     }
 
