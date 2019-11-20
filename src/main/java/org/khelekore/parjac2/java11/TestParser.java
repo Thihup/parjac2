@@ -93,6 +93,7 @@ public class TestParser {
     }
 
     private void parse (Path filePath, CompilerDiagnosticCollector diagnostics) throws IOException {
+	try {
 	CharBuffer input = pathToCharBuffer (filePath, charset);
 	CharBufferLexer lexer = new CharBufferLexer (grammar, java11Tokens, input);
 	Parser p = new Parser (grammar, filePath, predictCache, lexer, diagnostics);
@@ -106,6 +107,7 @@ public class TestParser {
 	ParseTreeNode syntaxTree = stb.build (filePath, parseTree);
 	if (printSyntaxTree)
 	    printTree (syntaxTree);
+	} catch (Throwable t) { t.printStackTrace (); }
 	return;
     }
 

@@ -228,11 +228,9 @@ VariableAccess:
 PrimaryNoNewArray:
 */
 	register ("ClassLiteral", ClassLiteral::new);
-/*
-ClassInstanceCreationExpression:
-UnqualifiedClassInstanceCreationExpression:
-ClassOrInterfaceTypeToInstantiate:
-*/
+	register ("ClassInstanceCreationExpression", ClassInstanceCreationExpression::new);
+	register ("UnqualifiedClassInstanceCreationExpression", UnqualifiedClassInstanceCreationExpression::new);
+	register ("ClassOrInterfaceTypeToInstantiate", ClassOrInterfaceTypeToInstantiate::new);
 	register ("TypeArgumentsOrDiamond", this::typeArgumentsOrDiamond);
 /*
 FieldAccess:
@@ -241,9 +239,7 @@ MethodInvocation:
 */
 	register ("UntypedMethodInvocation", UntypedMethodInvocation::new);
 	register ("ArgumentList", ArgumentList::new);
-/*
-MethodReference:
-*/
+	register ("MethodReference", this::methodReference);
 	register ("ArrayCreationExpression", ArrayCreationExpression::new);
 	register ("DimExprs", DimExprs::new);
 	register ("DimExpr", DimExpr::new);
@@ -2272,6 +2268,130 @@ MethodReference:
 	}
     }
 
+    private class ClassInstanceCreationExpression extends ComplexTreeNode {
+	private ExpressionName name;
+	private ParseTreeNode primary;
+	private UnqualifiedClassInstanceCreationExpression exp;
+
+	public ClassInstanceCreationExpression (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    ParseTreeNode tn = children.get (0);
+	    if (children.size () > 1) {
+		if (tn instanceof ExpressionName) {
+		    name = (ExpressionName)tn;
+		} else {
+		    primary = tn;
+		}
+		exp = (UnqualifiedClassInstanceCreationExpression)children.get (2);
+	    } else {
+		exp = (UnqualifiedClassInstanceCreationExpression)tn;
+	    }
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    if (name != null)
+		sb.append (name).append (".");
+	    if (primary != null)
+		sb.append (primary).append (".");
+	    sb.append (exp);
+	    return sb.toString ();
+	}
+    }
+
+    private class UnqualifiedClassInstanceCreationExpression extends ComplexTreeNode {
+	private final TypeArguments types;
+	private final ClassOrInterfaceTypeToInstantiate type;
+	private final ArgumentList args;
+	private final ClassBody body;
+
+	public UnqualifiedClassInstanceCreationExpression (Path path, Rule rule, ParseTreeNode n,
+							   List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 1;
+	    types = (children.get (i) instanceof TypeArguments) ? (TypeArguments)children.get (i++) : null;
+	    type = (ClassOrInterfaceTypeToInstantiate)children.get (i++);
+	    i++;
+	    args = (children.get (i) instanceof ArgumentList) ? (ArgumentList)children.get (i++) : null;
+	    i++;
+	    body = (rule.size () > i) ? (ClassBody)children.get (i) : null;
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append ("new ");
+	    if (types != null)
+		sb.append (types);
+	    sb.append (type);
+	    sb.append ("(");
+	    if (args != null)
+		sb.append (args);
+	    sb.append (")");
+	    if (body != null)
+		sb.append (body);
+	    return sb.toString ();
+	}
+    }
+
+    private class ClassOrInterfaceTypeToInstantiate extends ComplexTreeNode {
+	private final List<AnnotatedIdentifier> ids;
+	private final ParseTreeNode types;
+
+	public ClassOrInterfaceTypeToInstantiate (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    ids = new ArrayList<> ();
+	    int i = 0;
+	    List<Annotation> annotations = List.of ();
+	    if (children.get (i) instanceof ZOMEntry)
+		annotations = getAnnotations ((ZOMEntry)children.get (i++));
+	    Identifier id = (Identifier)children.get (i++);
+	    ids.add (new AnnotatedIdentifier (annotations, id));
+	    if (children.get (i) instanceof ZOMEntry) {
+		ZOMEntry z = (ZOMEntry)children.get (i++);
+		List<ParseTreeNode> ls = z.getChildren ();
+		for (int j = 0; j < ls.size (); j += 2) {
+		    ParseTreeNode ptn = ls.get (j + 1);
+		    if (ptn instanceof ZOMEntry) {
+			annotations = getAnnotations ((ZOMEntry)ptn);
+			id = (Identifier)children.get (++j);
+		    } else {
+			id = (Identifier)ptn;
+		    }
+		    ids.add (new AnnotatedIdentifier (annotations, id));
+		}
+	    }
+	    types = (rule.size () > i) ? children.get (i) : null;
+	}
+
+	private List<Annotation> getAnnotations (ZOMEntry z) {
+	    return z.get ();
+	}
+
+    	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    for (AnnotatedIdentifier ai : ids) {
+		if (sb.length () > 0)
+		    sb.append (".");
+		if (!ai.annotations.isEmpty ())
+		    sb.append (ai.annotations).append (" ");
+		sb.append (ai.id);
+	    }
+	    if (types != null)
+		sb.append (types);
+	    return sb.toString ();
+	}
+    }
+
+    private class AnnotatedIdentifier {
+	private final List<Annotation> annotations;
+	private final String id;
+
+	public AnnotatedIdentifier (List<Annotation> annotations, Identifier id) {
+	    this.annotations = annotations;
+	    this.id = id.getValue ();
+	}
+    }
+
     private ParseTreeNode typeArgumentsOrDiamond (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	if (rule.size () > 1)
 	    return new Diamond (n.getPosition ());
@@ -2317,6 +2437,75 @@ MethodReference:
 	}
     }
 
+    private ParseTreeNode methodReference (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	if (rule.get (rule.size () - 1) == java11Tokens.IDENTIFIER.getId ()) {
+	    if (rule.size () > 4)
+		return new SuperMethodReference (rule, n, children);
+	    return new NormalMethodReference (rule, n, children);
+	} else { // NEW
+	    return new ConstructorMethodReference (rule, n, children);
+	}
+    }
+
+    private class SuperMethodReference extends ComplexTreeNode {
+	private final ParseTreeNode type;
+	private final TypeArguments types;
+	private final String id;
+	public SuperMethodReference (Rule r, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    type = children.get (0);
+	    types = r.size () > 5 ? (TypeArguments)children.get (4) : null;
+	    id = ((Identifier)children.get (children.size () - 1)).getValue ();
+	}
+
+	@Override public Object getValue() {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append (type).append (".super::");
+	    if (types != null)
+		sb.append (types);
+	    sb.append (id);
+	    return sb.toString ();
+	}
+    }
+    private class NormalMethodReference extends ComplexTreeNode {
+	private final ParseTreeNode type;
+	private final TypeArguments types;
+	private final String id;
+	public NormalMethodReference (Rule r, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    type = children.get (0);
+	    types = r.size () > 3 ? (TypeArguments)children.get (2) : null;
+	    id = ((Identifier)children.get (children.size () - 1)).getValue ();
+	}
+
+	@Override public Object getValue() {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append (type).append ("::");
+	    if (types != null)
+		sb.append (types);
+	    sb.append (id);
+	    return sb.toString ();
+	}
+    }
+    private class ConstructorMethodReference extends ComplexTreeNode {
+	private final ParseTreeNode type;
+	private final TypeArguments types;
+	public ConstructorMethodReference (Rule r, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    type = children.get (0);
+	    types = r.size () > 3 ? (TypeArguments)children.get (2) : null;
+	}
+
+	@Override public Object getValue() {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append (type).append ("::");
+	    if (types != null)
+		sb.append (types);
+	    sb.append ("new");
+	    return sb.toString ();
+	}
+    }
+
     private class ArrayCreationExpression extends ComplexTreeNode {
 	private final ComplexTreeNode type;
 	private final DimExprs dimExprs;
@@ -2332,7 +2521,7 @@ MethodReference:
 	    initializer = (children.size () > i) ? (ArrayInitializer)children.get (i++) : null;
 	}
 
-	@Override public Object getValue() {
+	@Override public Object getValue () {
 	    StringBuilder sb = new StringBuilder ();
 	    sb.append ("new ");
 	    sb.append (type);
