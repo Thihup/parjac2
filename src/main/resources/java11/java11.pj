@@ -741,8 +741,8 @@ ArgumentList:
 	Expression {',' Expression}
 
 MethodReference:
-	ExpressionName '::' [TypeArguments] 'Identifier'
 	Primary '::' [TypeArguments] 'Identifier'
+	# We can't differ between ExpressionName and ReferenceType
 	ReferenceType '::' [TypeArguments] 'Identifier'
 	'super' '::' [TypeArguments] 'Identifier'
 	TypeName '.' 'super' '::' [TypeArguments] 'Identifier'
