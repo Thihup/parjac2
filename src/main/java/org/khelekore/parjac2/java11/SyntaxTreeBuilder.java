@@ -2346,7 +2346,7 @@ MethodInvocation:
 		annotations = getAnnotations ((ZOMEntry)children.get (i++));
 	    Identifier id = (Identifier)children.get (i++);
 	    ids.add (new AnnotatedIdentifier (annotations, id));
-	    if (children.get (i) instanceof ZOMEntry) {
+	    if (children.size () > i && children.get (i) instanceof ZOMEntry) {
 		ZOMEntry z = (ZOMEntry)children.get (i++);
 		List<ParseTreeNode> ls = z.getChildren ();
 		for (int j = 0; j < ls.size (); j += 2) {
