@@ -183,8 +183,8 @@ public class SyntaxTreeBuilder {
 	register ("IfThenStatement", IfThenStatement::new);
 	register ("IfThenElseStatement", IfThenStatement::new);
 	register ("IfThenElseStatementNoShortIf", IfThenStatement::new);
+	register ("AssertStatement", AssertStatement::new);
 /*
-AssertStatement:
 SwitchStatement:
 SwitchBlock:
 SwitchLabels:
@@ -2260,6 +2260,25 @@ PrimaryNoNewArray:
 	    sb.append ("if (").append (exp).append (") ").append (ifStatement);
 	    if (elseStatement != null)
 		sb.append (" else ").append (elseStatement);
+	    return sb.toString ();
+	}
+    }
+
+    private class AssertStatement extends ComplexTreeNode {
+	private final ParseTreeNode expression1;
+	private final ParseTreeNode expression2;
+
+	public AssertStatement (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    expression1 = children.get (1);
+	    expression2 = (rule.size () > 3) ? children.get (3) : null;
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append ("assert ").append (expression1);
+	    if (expression2 != null)
+		sb.append (" : ").append (expression2);
 	    return sb.toString ();
 	}
     }
