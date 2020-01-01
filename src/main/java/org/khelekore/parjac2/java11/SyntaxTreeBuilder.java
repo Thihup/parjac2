@@ -220,8 +220,8 @@ TryWithResourcesStatement:
 ResourceSpecification:
 ResourceList:
 Resource:
-VariableAccess:
 */
+	register ("VariableAccess", this::liftUp);
 	// Productions from §15 (Expressions)
 	register ("Primary", this::liftUp);
 /*
@@ -232,9 +232,9 @@ PrimaryNoNewArray:
 	register ("UnqualifiedClassInstanceCreationExpression", UnqualifiedClassInstanceCreationExpression::new);
 	register ("ClassOrInterfaceTypeToInstantiate", ClassOrInterfaceTypeToInstantiate::new);
 	register ("TypeArgumentsOrDiamond", this::typeArgumentsOrDiamond);
+	register ("FieldAccess", FieldAccess::new);
+	register ("ArrayAccess", ArrayAccess::new);
 /*
-FieldAccess:
-ArrayAccess:
 MethodInvocation:
 */
 	register ("UntypedMethodInvocation", UntypedMethodInvocation::new);
@@ -2405,6 +2405,51 @@ MethodInvocation:
 
 	@Override public Object getValue () {
 	    return "<>";
+	}
+    }
+
+    private class FieldAccess extends ComplexTreeNode {
+	private final ParseTreeNode from;
+	private final boolean isSuper;
+	private final String id;
+
+	public FieldAccess (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    if (rule.get (0) != java11Tokens.SUPER.getId ()) {
+		from = children.get (0);
+		isSuper = rule.size () > 3;
+	    } else {
+		from = null;
+		isSuper = true;
+	    }
+	    id = ((Identifier)children.get (children.size () - 1)).getValue ();
+	}
+
+    	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    if (from != null)
+		sb.append (from).append (".");
+	    if (isSuper)
+		sb.append ("super");
+	    sb.append (".").append (id);
+	    return sb.toString ();
+	}
+    }
+
+    private class ArrayAccess extends ComplexTreeNode {
+	private final ParseTreeNode from;
+	private final ParseTreeNode expression;
+
+	public ArrayAccess (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    from = children.get (0);
+	    expression = children.get (2);
+	}
+
+    	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append (from).append ("[").append (expression).append ("]");
+	    return sb.toString ();
 	}
     }
 
