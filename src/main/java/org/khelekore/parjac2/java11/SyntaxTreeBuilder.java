@@ -34,6 +34,7 @@ public class SyntaxTreeBuilder {
 	register ("GOAL", this::liftUp);
 
 	// Productions from §3 (Lexical Structure)
+	register ("Literal", this::liftUp);
 
 	// Productions from §4 (Types, Values, and Variables)
 	register ("Type", this::liftUp);
