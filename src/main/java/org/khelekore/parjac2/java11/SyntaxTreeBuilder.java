@@ -234,9 +234,7 @@ PrimaryNoNewArray:
 	register ("TypeArgumentsOrDiamond", this::typeArgumentsOrDiamond);
 	register ("FieldAccess", FieldAccess::new);
 	register ("ArrayAccess", ArrayAccess::new);
-/*
-MethodInvocation:
-*/
+	register ("MethodInvocation", this::methodInvocation);
 	register ("UntypedMethodInvocation", UntypedMethodInvocation::new);
 	register ("ArgumentList", ArgumentList::new);
 	register ("MethodReference", this::methodReference);
@@ -2449,6 +2447,61 @@ MethodInvocation:
     	@Override public Object getValue () {
 	    StringBuilder sb = new StringBuilder ();
 	    sb.append (from).append ("[").append (expression).append ("]");
+	    return sb.toString ();
+	}
+    }
+
+    private ComplexTreeNode methodInvocation (Path path, Rule rule, ParseTreeNode n,
+					      List<ParseTreeNode> children) {
+	ParsePosition pos = children.get (0).getPosition ();
+	if (rule.size () == 1) {
+	    return new MethodInvocation (pos, null, false, null, (UntypedMethodInvocation)children.get (0));
+	}
+	ParseTreeNode on = null;
+	boolean isSuper = false;
+
+	int i = 0;
+	if (rule.get (0) == java11Tokens.SUPER.getId ()) {  // super.<types>mi
+	    on = null;
+	    isSuper = true;
+	    i += 2;
+	} else if (rule.size () > 4) {  // Type.super.<types>mi
+	    on = children.get (0);
+	    isSuper = true;
+	    i += 4;
+	} else { // Name.<types>mi or Primary.<types>mi
+	    on = children.get (0);
+	    i += 2;
+	}
+	TypeArguments types = rule.size () > i + 1 ? (TypeArguments)children.get (i) : null;
+	UntypedMethodInvocation mi = (UntypedMethodInvocation)children.get (children.size () - 1);
+	return new MethodInvocation (pos, on, isSuper, types, mi);
+    }
+
+    private class MethodInvocation extends ComplexTreeNode {
+	private ParseTreeNode on;
+	private boolean isSuper;
+	private TypeArguments types;
+	private UntypedMethodInvocation mi;
+
+	public MethodInvocation (ParsePosition pos, ParseTreeNode on, boolean isSuper,
+				 TypeArguments types, UntypedMethodInvocation mi) {
+	    super (pos);
+	    this.on = on;
+	    this.types = types;
+	    this.isSuper = isSuper;
+	    this.mi = mi;
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    if (on != null)
+		sb.append (on).append (".");
+	    if (isSuper)
+		sb.append ("super.");
+	    if (types != null)
+		sb.append (types);
+	    sb.append (mi);
 	    return sb.toString ();
 	}
     }
