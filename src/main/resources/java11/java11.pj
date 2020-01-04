@@ -578,7 +578,10 @@ SwitchStatement:
 	'switch' '(' Expression ')' SwitchBlock
 
 SwitchBlock:
-	'{' {SwitchLabel [BlockStatements]} '}'
+	'{' {SwitchBlockStatementGroup} {SwitchLabel} '}'
+
+SwitchBlockStatementGroup:
+	SwitchLabels BlockStatements
 
 SwitchLabels:
 	SwitchLabel {SwitchLabel}

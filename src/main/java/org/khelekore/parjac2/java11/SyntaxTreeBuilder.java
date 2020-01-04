@@ -25,7 +25,8 @@ public class SyntaxTreeBuilder {
     private final CompilerDiagnosticCollector diagnostics;
     private final Map<String, NodeBuilder> nodeBuilders;
 
-    public SyntaxTreeBuilder (Java11Tokens java11Tokens, Grammar grammar, CompilerDiagnosticCollector diagnostics) {
+    public SyntaxTreeBuilder (Java11Tokens java11Tokens, Grammar grammar,
+			      CompilerDiagnosticCollector diagnostics) {
 	this.java11Tokens = java11Tokens;
 	this.grammar = grammar;
 	this.diagnostics = diagnostics;
@@ -185,11 +186,12 @@ public class SyntaxTreeBuilder {
 	register ("IfThenElseStatement", IfThenStatement::new);
 	register ("IfThenElseStatementNoShortIf", IfThenStatement::new);
 	register ("AssertStatement", AssertStatement::new);
+	register ("SwitchStatement", SwitchStatement::new);
+	register ("SwitchBlock", SwitchBlock::new);
+	register ("SwitchBlockStatementGroup", SwitchBlockStatementGroup::new);
+	register ("SwitchLabels", SwitchLabels::new);
+	register ("SwitchLabel", this::switchLabel);
 /*
-SwitchStatement:
-SwitchBlock:
-SwitchLabels:
-SwitchLabel:
 WhileStatement:
 WhileStatementNoShortIf:
 DoStatement:
@@ -2284,6 +2286,137 @@ PrimaryNoNewArray:
 	}
     }
 
+    private class SwitchStatement extends ComplexTreeNode {
+	private final ParseTreeNode expression;
+	private final SwitchBlock block;
+
+	public SwitchStatement (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    expression = children.get (2);
+	    block = (SwitchBlock)children.get (4);
+	}
+
+	@Override public Object getValue () {
+	    return "switch (" + expression + ")" + block;
+	}
+    }
+
+    private class SwitchBlock extends ComplexTreeNode {
+	private List<SwitchBlockStatementGroup> ls;
+	private List<SwitchLabel> trailingLabels;
+
+	public SwitchBlock (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    ls = new ArrayList<> ();
+	    trailingLabels = new ArrayList<> ();
+	    if (rule.size () > 3) {
+		ZOMEntry z1 = (ZOMEntry)children.get (1);
+		System.err.println ("got a z1: " + z1);
+		ZOMEntry z2 = (ZOMEntry)children.get (1);
+		System.err.println ("got a z2: " + z2);
+	    } else if (rule.size () > 2) {
+		ZOMEntry z1 = (ZOMEntry)children.get (1);
+		System.err.println ("got a z1: " + z1);
+	    }
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append ("{");
+	    for (SwitchBlockStatementGroup g : ls)
+		sb.append (g.toString ());
+	    for (SwitchLabel l : trailingLabels)
+		sb.append (l.toString ());
+	    sb.append ("}");
+	    return sb.toString ();
+	}
+    }
+
+    private class SwitchBlockStatementGroup extends ComplexTreeNode {
+	private List<SwitchLabel> labels;
+	private BlockStatements statements;
+
+	public SwitchBlockStatementGroup (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 0;
+	    SwitchLabel l = (SwitchLabel)children.get (i++);
+	    if (rule.size () > 2) {
+		ZOMEntry z = (ZOMEntry)children.get (i++);
+		labels = new ArrayList<> ();
+		labels.add (l);
+		labels.addAll (z.get ());
+	    } else {
+		labels = List.of (l);
+	    }
+	    statements = (BlockStatements)children.get (i);
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    for (SwitchLabel l : labels)
+		sb.append (l).append (" ");
+	    sb.append (statements);
+	    return sb.toString ();
+	}
+    }
+
+    private class SwitchLabels extends ComplexTreeNode {
+	private List<SwitchLabel> labels;
+
+	public SwitchLabels (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    if (rule.size () == 1) {
+		labels = List.of ((SwitchLabel)children.get (0));
+	    } else {
+		labels = new ArrayList<> ();
+		labels.add ((SwitchLabel)children.get (0));
+		ZOMEntry z = (ZOMEntry)children.get (1);
+		labels.addAll (z.get ());
+	    }
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    for (SwitchLabel l : labels)
+		sb.append (l.getValue ().toString ()).append ("\n");
+	    return sb.toString ();
+	}
+    }
+
+    private ComplexTreeNode switchLabel (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	if (rule.size () == 2)
+	    return new DefaultLabel (n.getPosition ());
+	return new CaseLabel (n.getPosition (), children.get (1));
+    }
+
+    private abstract class SwitchLabel extends ComplexTreeNode {
+	public SwitchLabel (ParsePosition pos) {
+	    super (pos);
+	}
+    }
+
+    private class DefaultLabel extends SwitchLabel {
+	public DefaultLabel (ParsePosition pos) {
+	    super (pos);
+	}
+
+	@Override public Object getValue () {
+	    return "default:";
+	}
+    }
+
+    private class CaseLabel extends SwitchLabel {
+	private final ParseTreeNode expression;
+	public CaseLabel (ParsePosition pos, ParseTreeNode expression) {
+	    super (pos);
+	    this.expression = expression;
+	}
+
+	@Override public Object getValue () {
+	    return "case " + expression  + ":";
+	}
+    }
+
     private class ClassLiteral extends ComplexTreeNode {
 	private final ParseTreeNode type;
 	private final int dims;
@@ -2312,7 +2445,8 @@ PrimaryNoNewArray:
 	private ParseTreeNode primary;
 	private UnqualifiedClassInstanceCreationExpression exp;
 
-	public ClassInstanceCreationExpression (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	public ClassInstanceCreationExpression (Path path, Rule rule, ParseTreeNode n,
+						List<ParseTreeNode> children) {
 	    super (n.getPosition ());
 	    ParseTreeNode tn = children.get (0);
 	    if (children.size () > 1) {
