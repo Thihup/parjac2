@@ -191,17 +191,13 @@ public class SyntaxTreeBuilder {
 	register ("SwitchBlockStatementGroup", SwitchBlockStatementGroup::new);
 	register ("SwitchLabels", SwitchLabels::new);
 	register ("SwitchLabel", this::switchLabel);
-/*
-WhileStatement:
-WhileStatementNoShortIf:
-DoStatement:
-*/
+	register  ("WhileStatement", WhileStatement::new);
+	register ("WhileStatementNoShortIf", WhileStatement::new);
+	register ("DoStatement", DoStatement::new);
 	register ("ForStatement", this::liftUp);
 	register ("ForStatementNoShortIf", this::liftUp);
-/*
-BasicForStatement:
-BasicForStatementNoShortIf:
-*/
+	register ("BasicForStatement", BasicForStatement::new);
+	register ("BasicForStatementNoShortIf", BasicForStatement::new);
 	register ("ForInit", this::liftUp);
 	register ("ForUpdate", this::liftUp);
 /*
@@ -2436,6 +2432,70 @@ PrimaryNoNewArray:
 	    for (int i = 0; i < dims; i++)
 		sb.append ("[]");
 	    sb.append (".class");
+	    return sb.toString ();
+	}
+    }
+
+    private class WhileStatement extends ComplexTreeNode {
+	private final ParseTreeNode expression;
+	private final ParseTreeNode statement;
+
+	public WhileStatement (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    expression = children.get (2);
+	    statement = children.get (4);
+	}
+
+	@Override public Object getValue () {
+	    return "while (" + expression + ") " + statement;
+	}
+    }
+
+    private class DoStatement extends ComplexTreeNode {
+	private final ParseTreeNode statement;
+	private final ParseTreeNode expression;
+
+	public DoStatement (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    statement = children.get (1);
+	    expression = children.get (4);
+	}
+
+	@Override public Object getValue () {
+	    return "do " + statement + " while (" + expression + ");";
+	}
+    }
+
+    private class BasicForStatement extends ComplexTreeNode {
+	private final ParseTreeNode forInit;
+	private final ParseTreeNode expression;
+	private final ParseTreeNode forUpdate;
+	private final ParseTreeNode statement;
+
+	public BasicForStatement (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 2;
+	    forInit = grammar.isRule (rule.get (i)) ? children.get (i++) : null;
+	    i++;
+	    expression = grammar.isRule (rule.get (i)) ? children.get (i++) : null;
+	    i++;
+	    forUpdate = grammar.isRule (rule.get (i)) ? children.get (i++) : null;
+	    i++;
+	    statement = children.get (i);
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append ("for (");
+	    if (forInit != null)
+		sb.append (forInit);
+	    sb.append ("; ");
+	    if (expression != null)
+		sb.append (expression);
+	    sb.append ("; ");
+	    if (forUpdate != null)
+		sb.append (forUpdate);
+	    sb.append (") ").append (statement);
 	    return sb.toString ();
 	}
     }
