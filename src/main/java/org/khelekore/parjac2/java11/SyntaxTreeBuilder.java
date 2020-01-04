@@ -200,8 +200,8 @@ public class SyntaxTreeBuilder {
 	register ("BasicForStatementNoShortIf", BasicForStatement::new);
 	register ("ForInit", this::liftUp);
 	register ("ForUpdate", this::liftUp);
+	register ("StatementExpressionList", StatementExpressionList::new);
 /*
-StatementExpressionList:
 EnhancedForStatement:
 EnhancedForStatementNoShortIf:
 BreakStatement:
@@ -2497,6 +2497,12 @@ PrimaryNoNewArray:
 		sb.append (forUpdate);
 	    sb.append (") ").append (statement);
 	    return sb.toString ();
+	}
+    }
+
+    private class StatementExpressionList extends CommaListBase {
+	public StatementExpressionList (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (path, rule, n, children);
 	}
     }
 
