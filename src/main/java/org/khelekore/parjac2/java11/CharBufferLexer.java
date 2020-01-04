@@ -769,7 +769,7 @@ public class CharBufferLexer implements Lexer {
 		break;
 	    }
 	}
-	String identifier = res.toString ();
+	String identifier = res.toString ().intern ();
 	Token t = java11Tokens.getKeywordFromIdentifier (identifier);
 	if (t != null) {
 	    currentIdentifier = t.getName ();
