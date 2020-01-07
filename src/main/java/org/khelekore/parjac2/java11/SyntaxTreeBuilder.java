@@ -203,18 +203,20 @@ public class SyntaxTreeBuilder {
 	register ("StatementExpressionList", StatementExpressionList::new);
 	register ("EnhancedForStatement", EnhancedForStatement::new);
 	register ("EnhancedForStatementNoShortIf", EnhancedForStatement::new);
+	register ("BreakStatement", BreakStatement::new);
+	register ("ContinueStatement", ContinueStatement::new);
+	register ("ReturnStatement", ReturnStatement::new);
+	register ("ThrowStatement", ThrowStatement::new);
+	register ("SynchronizedStatement", SynchronizedStatement::new);
 /*
-BreakStatement:
-ContinueStatement:
-ReturnStatement:
-ThrowStatement:
-SynchronizedStatement:
 TryStatement:
 Catches:
 CatchClause:
 CatchFormalParameter:
 CatchType:
-Finally:
+*/
+	register ("Finally", Finally::new);
+/*
 TryWithResourcesStatement:
 ResourceSpecification:
 ResourceList:
@@ -2533,6 +2535,86 @@ PrimaryNoNewArray:
 	    sb.append (type).append (" ").append (id).append (" : ").append (expression).append (")")
 		.append (statement);
 	    return sb.toString ();
+	}
+    }
+
+    private class BreakStatement extends ComplexTreeNode {
+	private final String id;
+
+	public BreakStatement (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    id = rule.size () > 2 ? ((Identifier)children.get (1)).getValue () : null;
+	}
+
+	@Override public Object getValue () {
+	    return id != null ? "break " + id + ";" : "break;";
+	}
+    }
+
+    private class ContinueStatement extends ComplexTreeNode {
+	private final String id;
+
+	public ContinueStatement (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    id = rule.size () > 2 ? ((Identifier)children.get (1)).getValue () : null;
+	}
+
+	@Override public Object getValue () {
+	    return id != null ? "continue " + id + ";" : "continue;";
+	}
+    }
+
+    private class ReturnStatement extends ComplexTreeNode {
+	private final ParseTreeNode expression;
+
+	public ReturnStatement (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    expression = rule.size () > 2 ? children.get (1) : null;
+	}
+
+	@Override public Object getValue () {
+	    return expression != null ? "return " + expression + ";" : "return;";
+	}
+    }
+
+    private class ThrowStatement extends ComplexTreeNode {
+	private final ParseTreeNode expression;
+
+	public ThrowStatement (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    expression = children.get (1);
+	}
+
+	@Override public Object getValue () {
+	    return "throw " + expression + ";";
+	}
+    }
+
+    private class SynchronizedStatement extends ComplexTreeNode {
+	private final ParseTreeNode expression;
+	private final Block block;
+
+	public SynchronizedStatement (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    expression = children.get (2);
+	    block = (Block)children.get (4);
+	}
+
+	@Override public Object getValue () {
+	    return "synchronized (" + expression + ")" + block;
+	}
+    }
+
+    private class Finally extends ComplexTreeNode {
+	private final Block block;
+
+	public Finally (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    block = (Block)children.get (1);
+	}
+
+	@Override public Object getValue () {
+	    return "finally " + block;
 	}
     }
 
