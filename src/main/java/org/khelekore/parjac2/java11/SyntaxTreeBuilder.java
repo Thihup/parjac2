@@ -191,7 +191,7 @@ public class SyntaxTreeBuilder {
 	register ("SwitchBlockStatementGroup", SwitchBlockStatementGroup::new);
 	register ("SwitchLabels", SwitchLabels::new);
 	register ("SwitchLabel", this::switchLabel);
-	register  ("WhileStatement", WhileStatement::new);
+	register ("WhileStatement", WhileStatement::new);
 	register ("WhileStatementNoShortIf", WhileStatement::new);
 	register ("DoStatement", DoStatement::new);
 	register ("ForStatement", this::liftUp);
@@ -201,9 +201,9 @@ public class SyntaxTreeBuilder {
 	register ("ForInit", this::liftUp);
 	register ("ForUpdate", this::liftUp);
 	register ("StatementExpressionList", StatementExpressionList::new);
+	register ("EnhancedForStatement", EnhancedForStatement::new);
+	register ("EnhancedForStatementNoShortIf", EnhancedForStatement::new);
 /*
-EnhancedForStatement:
-EnhancedForStatementNoShortIf:
 BreakStatement:
 ContinueStatement:
 ReturnStatement:
@@ -2504,6 +2504,35 @@ PrimaryNoNewArray:
     private class StatementExpressionList extends CommaListBase {
 	public StatementExpressionList (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	    super (path, rule, n, children);
+	}
+    }
+
+    private class EnhancedForStatement extends ComplexTreeNode {
+	private List<ParseTreeNode> modifiers;
+	private ParseTreeNode type;
+	private VariableDeclaratorId id;
+	private ParseTreeNode expression;
+	private ParseTreeNode statement;
+
+	public EnhancedForStatement (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 2;
+	    modifiers = rule.size () > 8 ? ((ZOMEntry)children.get (i++)).get () : List.of ();
+	    type = children.get (i++);
+	    id = (VariableDeclaratorId)children.get (i++);
+	    i++; // :
+	    expression = children.get (i++);
+	    i++;
+	    statement = children.get (i);
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append ("for (");
+	    modifiers.forEach (m -> sb.append (m).append (" "));
+	    sb.append (type).append (" ").append (id).append (" : ").append (expression).append (")")
+		.append (statement);
+	    return sb.toString ();
 	}
     }
 
