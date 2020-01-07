@@ -717,11 +717,12 @@ PrimaryNoNewArray:
 		ZOMEntry z = (ZOMEntry)children.get (i++);
 		annotations = z.get ();
 	    }
+	    i++;
 	    nameParts = new ArrayList<> ();
-	    String firstPart = ((Identifier)children.get (i + 1)).getValue ();
+	    String firstPart = ((Identifier)children.get (i++)).getValue ();
 	    nameParts.add (firstPart);
 	    if (children.size () > i + 1) {
-		ZOMEntry z = (ZOMEntry)children.get (i + 2);
+		ZOMEntry z = (ZOMEntry)children.get (i);
 		for (int j = 1; j < z.nodes.size (); j += 2)
 		    nameParts.add (((Identifier)z.nodes.get (j)).getValue ());
 	    }
