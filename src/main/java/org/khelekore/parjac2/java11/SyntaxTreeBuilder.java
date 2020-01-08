@@ -208,18 +208,16 @@ public class SyntaxTreeBuilder {
 	register ("ReturnStatement", ReturnStatement::new);
 	register ("ThrowStatement", ThrowStatement::new);
 	register ("SynchronizedStatement", SynchronizedStatement::new);
-/*
-TryStatement:
-Catches:
-CatchClause:
-CatchFormalParameter:
-CatchType:
-*/
+	register ("TryStatement", this::tryStatement);
+	register ("Catches", Catches::new);
+	register ("CatchClause", CatchClause::new);
+	register ("CatchFormalParameter", CatchFormalParameter::new);
+	register ("CatchType", CatchType::new);
 	register ("Finally", Finally::new);
+	register ("TryWithResourcesStatement", TryStatement::new);
+	register ("ResourceSpecification", ResourceSpecification::new);
+	register ("ResourceList", ResourceList::new);
 /*
-TryWithResourcesStatement:
-ResourceSpecification:
-ResourceList:
 Resource:
 */
 	register ("VariableAccess", this::liftUp);
@@ -448,9 +446,9 @@ PrimaryNoNewArray:
 		annotations.add (Collections.emptyList ());
 	    if (rule.size () > i + 2) {
 		ZOMEntry z = (ZOMEntry)children.get (i + 2);
-		for (int j = 0; j < z.nodes.size (); j += 2) {
+		for (int j = 0, e = z.nodes.size (); j < e; j += 2) {
 		    if (z.nodes.get (j) instanceof ZOMEntry)
-			annotations.add (((ZOMEntry)z.nodes.get (j++)).get ());
+			annotations.add (((ZOMEntry)z.get (j++)).get ());
 		    else
 			annotations.add (Collections.emptyList ());
 		}
@@ -725,8 +723,8 @@ PrimaryNoNewArray:
 	    nameParts.add (firstPart);
 	    if (children.size () > i + 1) {
 		ZOMEntry z = (ZOMEntry)children.get (i);
-		for (int j = 1; j < z.nodes.size (); j += 2)
-		    nameParts.add (((Identifier)z.nodes.get (j)).getValue ());
+		for (int j = 1, e = z.nodes.size (); j < e; j += 2)
+		    nameParts.add (((Identifier)z.get (j)).getValue ());
 	    }
 	}
 
@@ -885,8 +883,8 @@ PrimaryNoNewArray:
 	    types.add ((ClassType)children.get (0));
 	    if (children.size () > 1) {
 		ZOMEntry z = (ZOMEntry)children.get (1);
-		for (int i = 1; i < z.nodes.size (); i += 2)
-		    types.add ((ClassType)z.nodes.get (i));
+		for (int i = 1, e = z.nodes.size (); i < e; i += 2)
+		    types.add ((ClassType)z.get (i));
 	    }
 	}
 
@@ -949,8 +947,8 @@ PrimaryNoNewArray:
 	    declarators.add ((VariableDeclarator)children.get (0));
 	    if (rule.size () > 1) {
 		ZOMEntry z = (ZOMEntry)children.get (1);
-		for (int i = 1; i < z.nodes.size (); i += 2)
-		    declarators.add ((VariableDeclarator)z.nodes.get (i));
+		for (int i = 1, e = z.nodes.size (); i < e; i += 2)
+		    declarators.add ((VariableDeclarator)z.get (i));
 	    }
 	}
 
@@ -1008,13 +1006,12 @@ PrimaryNoNewArray:
 	    SimpleClassType sct = (SimpleClassType)children.get (2);
 	    uct.types.add (sct);
 	    return uct;
-	} else {
-	    TypeIdentifier i = (TypeIdentifier)children.get (0);
-	    TypeArguments tas = children.size () > 1 ? (TypeArguments)children.get (1) : null;
-	    SimpleClassType sct =
-		new SimpleClassType (n.getPosition (), Collections.emptyList (), i.getValue (), tas);
-	    return new UnannClassType (sct);
 	}
+	TypeIdentifier i = (TypeIdentifier)children.get (0);
+	TypeArguments tas = children.size () > 1 ? (TypeArguments)children.get (1) : null;
+	SimpleClassType sct =
+	    new SimpleClassType (n.getPosition (), Collections.emptyList (), i.getValue (), tas);
+	return new UnannClassType (sct);
     }
 
     private class UnannClassType extends ComplexTreeNode {
@@ -1173,8 +1170,8 @@ PrimaryNoNewArray:
 	    params.add ((FormalParameterBase)children.get (0));
 	    if (rule.size () > 1) {
 		ZOMEntry z = (ZOMEntry)children.get (1);
-		for (int i = 1; i < z.nodes.size (); i += 2)
-		    params.add ((FormalParameterBase)z.nodes.get (i));
+		for (int i = 1, e = z.nodes.size (); i < e; i += 2)
+		    params.add ((FormalParameterBase)z.get (i));
 	    }
 	}
 
@@ -1266,8 +1263,8 @@ PrimaryNoNewArray:
 	    types.add ((ClassType)children.get (0));
 	    if (rule.size () > 1) {
 		ZOMEntry z = (ZOMEntry)children.get (1);
-		for (int i = 1; i < z.nodes.size (); i += 2)
-		    types.add ((ClassType)z.nodes.get (i));
+		for (int i = 1, e = z.nodes.size (); i < e; i += 2)
+		    types.add ((ClassType)z.get (i));
 	    }
 	}
 
@@ -1499,8 +1496,8 @@ PrimaryNoNewArray:
 		constants = new ArrayList<> ();
 		constants.add ((EnumConstant)children.get (0));
 		ZOMEntry z = (ZOMEntry)children.get (1);
-		for (int j = 1; j < z.nodes.size (); j += 2)
-		    constants.add ((EnumConstant)z.nodes.get (j));
+		for (int j = 1, e = z.nodes.size (); j < e; j += 2)
+		    constants.add ((EnumConstant)z.get (j));
 	    }
 	}
 
@@ -1728,8 +1725,8 @@ PrimaryNoNewArray:
 	    identifiers.add (((Identifier)children.get (i++)).getValue ());
 	    if (children.get (i) instanceof ZOMEntry) {
 		ZOMEntry z = (ZOMEntry)children.get (i++);
-		for (int j = 1; j < z.nodes.size (); j += 2)
-		    identifiers.add (((Identifier)z.nodes.get (j)).getValue ());
+		for (int j = 1, e = z.nodes.size (); j < e; j += 2)
+		    identifiers.add (((Identifier)z.get (j)).getValue ());
 	    }
 	    i++; // '{'
 	    if (children.get (i) instanceof ZOMEntry)
@@ -1863,8 +1860,8 @@ PrimaryNoNewArray:
 		exportedTo.add ((S)children.get (3));
 		if (r.size () > 5) {
 		    ZOMEntry z = (ZOMEntry)children.get (4);
-		    for (int i = 1; i < z.nodes.size (); i += 2)
-			exportedTo.add ((S)z.nodes.get (i));
+		    for (int i = 1, e = z.nodes.size (); i < e; i += 2)
+			exportedTo.add ((S)z.get (i));
 		}
 	    }
 	}
@@ -2018,8 +2015,8 @@ PrimaryNoNewArray:
 		values = new ArrayList<> ();
 		values.add ((ElementValuePair)children.get (0));
 		ZOMEntry z = (ZOMEntry)children.get (1);
-		for (int j = 1; j < z.nodes.size (); j += 2)
-		    values.add ((ElementValuePair)z.nodes.get (j));
+		for (int j = 1, e = z.nodes.size (); j < e; j += 2)
+		    values.add ((ElementValuePair)z.get (j));
 	    }
 	}
 
@@ -2075,8 +2072,8 @@ PrimaryNoNewArray:
 		values = new ArrayList<> ();
 		values.add (children.get (0));
 		ZOMEntry z = (ZOMEntry)children.get (1);
-		for (int j = 1; j < z.nodes.size (); j += 2)
-		    values.add (z.nodes.get (j));
+		for (int j = 1, e = z.nodes.size (); j < e; j += 2)
+		    values.add (z.get (j));
 	    }
 	}
 	@Override public Object getValue() {
@@ -2138,8 +2135,8 @@ PrimaryNoNewArray:
 	    variableInitializers.add (children.get (0));
 	    if (rule.size () > 2) {
 		ZOMEntry z = (ZOMEntry)children.get (1);
-		for (int j = 1; j < z.nodes.size (); j += 2)
-		    variableInitializers.add (z.nodes.get (j));
+		for (int j = 1, e = z.nodes.size (); j < e; j += 2)
+		    variableInitializers.add (z.get (j));
 	    }
 	}
 
@@ -2605,6 +2602,126 @@ PrimaryNoNewArray:
 	}
     }
 
+    private ParseTreeNode tryStatement (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	if (rule.size () == 1)
+	    return children.get (0);
+	return new TryStatement (path, rule, n, children);
+    }
+
+    private class TryStatement extends ComplexTreeNode {
+	private final ResourceList resources;
+	private final Block block;
+	private final Catches catches;
+	private final Finally finallyBlock;
+
+	public TryStatement (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 1;
+	    if (children.get (i) instanceof ResourceSpecification) {
+		ResourceSpecification rs = (ResourceSpecification)children.get (i++);
+		resources = rs.resources;
+	    } else {
+		resources = null;
+	    }
+	    block = (Block)children.get (i++);
+	    if (rule.size () >  i && children.get (i) instanceof Catches) {
+		catches = (Catches)children.get (i++);
+	    } else {
+		catches = null;
+	    }
+	    if (rule.size () >  i && children.get (i) instanceof Finally) {
+		finallyBlock = (Finally)children.get (i);
+	    } else {
+		finallyBlock = null;
+	    }
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append ("try");
+	    if (resources != null)
+		sb.append ("(").append (resources).append (")");
+	    sb.append (" ").append (block);
+	    if (catches != null)
+		sb.append (catches);
+	    if (finallyBlock != null)
+		sb.append (finallyBlock);
+	    return sb.toString ();
+	}
+    }
+
+    private class Catches extends ListBase {
+	public Catches (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (path, rule, n, children, 0, 1);
+	}
+    }
+
+    private class CatchClause extends ComplexTreeNode {
+	private final CatchFormalParameter param;
+	private final Block block;
+
+	public CatchClause (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    param = (CatchFormalParameter)children.get (2);
+	    block = (Block)children.get (4);
+	}
+
+	@Override public Object getValue () {
+	    return "catch (" + param + ")" + block;
+	}
+    }
+
+    private class CatchFormalParameter extends ComplexTreeNode {
+	private final List<ParseTreeNode> variableModifiers;
+	private final CatchType type;
+	private final VariableDeclaratorId vid;
+
+	public CatchFormalParameter (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 0;
+	    variableModifiers = rule.size () > 2 ? ((ZOMEntry)children.get (i++)).get () : List.of ();
+	    type = (CatchType)children.get (i++);
+	    vid = (VariableDeclaratorId)children.get (i);
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    if (!variableModifiers.isEmpty ())
+		sb.append (variableModifiers).append (" ");
+	    sb.append (type).append (" ").append (vid);
+	    return sb.toString ();
+	}
+    }
+
+    private class CatchType extends ComplexTreeNode {
+	private final UnannClassType firstType;
+	private final List<ClassType> otherTypes;
+
+	private CatchType (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    firstType = (UnannClassType)children.get (0);
+	    if (rule.size () > 1) {
+		ZOMEntry z = (ZOMEntry)children.get (1);
+		otherTypes = new ArrayList<> ();
+		for (int j = 1, e = z.nodes.size (); j < e; j += 2)
+		    otherTypes.add ((ClassType)z.get (j));
+	    } else {
+		otherTypes = List.of ();
+	    }
+	}
+
+	@Override public Object getValue () {
+	    if (otherTypes.isEmpty ())
+		return firstType.toString ();
+
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append (firstType);
+	    for (ClassType c : otherTypes)
+		sb.append (" | ").append (c);
+	    return sb.toString ();
+	}
+    }
+
     private class Finally extends ComplexTreeNode {
 	private final Block block;
 
@@ -2615,6 +2732,24 @@ PrimaryNoNewArray:
 
 	@Override public Object getValue () {
 	    return "finally " + block;
+	}
+    }
+
+    private class ResourceSpecification extends ComplexTreeNode {
+	private final ResourceList resources;
+	public ResourceSpecification (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    resources = (ResourceList)children.get (1);
+	}
+
+	@Override public Object getValue () {
+	    return "(" + resources + ")";
+	}
+    }
+
+    private class ResourceList extends CommaListBase {
+	public ResourceList (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (path, rule, n, children);
 	}
     }
 
@@ -2815,7 +2950,6 @@ PrimaryNoNewArray:
 
 	int i = 0;
 	if (rule.get (0) == java11Tokens.SUPER.getId ()) {  // super.<types>mi
-	    on = null;
 	    isSuper = true;
 	    i += 2;
 	} else if (rule.size () > 4) {  // Type.super.<types>mi
@@ -3364,16 +3498,23 @@ PrimaryNoNewArray:
 	}
     }
 
-    private abstract class CommaListBase extends ComplexTreeNode {
+    private abstract class CommaListBase extends ListBase {
+	public CommaListBase (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (path, rule, n, children, 1, 2);
+	}
+    }
+
+    private abstract class ListBase extends ComplexTreeNode {
 	private final List<ParseTreeNode> params;
 
-	public CommaListBase (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	public ListBase (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children,
+			      int start, int every) {
 	    super (n.getPosition ());
 	    params = new ArrayList<> ();
 	    params.add (children.get (0));
 	    if (rule.size () > 1) {
 		ZOMEntry z = (ZOMEntry)children.get (1);
-		for (int i = 1; i < z.nodes.size (); i += 2)
+		for (int i = start, e = z.nodes.size (); i < e; i += every)
 		    params.add (z.nodes.get (i));
 	    }
 	}
@@ -3413,6 +3554,10 @@ PrimaryNoNewArray:
 
 	@Override public List<ParseTreeNode> getChildren () {
 	    return nodes;
+	}
+
+	public ParseTreeNode get (int i) {
+	    return nodes.get (i);
 	}
 
 	public int size () {
