@@ -55,7 +55,7 @@ public class TestParser {
 	}
 
 	TestParser tg = new TestParser (charset, printParseTree, printSyntaxTree);
-	ExecutorService es = Executors.newFixedThreadPool (Runtime.getRuntime ().availableProcessors () + 1);
+	ExecutorService es = Executors.newFixedThreadPool (Runtime.getRuntime ().availableProcessors ());
 	for (int i = fileStart; i < args.length; i++) {
 	    String filename = args[i];
 	    es.submit (() -> tg.test(filename));
