@@ -972,7 +972,7 @@ public class SyntaxTreeBuilder {
 	    StringBuilder sb = new StringBuilder ();
 	    sb.append (id);
 	    if (initializer != null)
-		sb.append (" = ").append (initializer);
+		sb.append (" = ").append (initializer.getValue ());
 	    return sb.toString ();
 	}
     }
@@ -2154,7 +2154,6 @@ public class SyntaxTreeBuilder {
 	    sb.append ("{");
 	    if (statements != null)
 		sb.append (statements);
-	    sb.append ("\n}");
 	    return sb.toString ();
 	}
     }
@@ -2170,7 +2169,9 @@ public class SyntaxTreeBuilder {
 	}
 
 	@Override public Object getValue() {
-	    return statements;
+	    StringBuilder sb = new StringBuilder ();
+	    statements.forEach (s -> sb.append (s).append ("\n"));
+	    return sb.toString ();
 	}
     }
 
@@ -3396,7 +3397,7 @@ public class SyntaxTreeBuilder {
 	}
 
 	@Override public Object getValue() {
-	    return left + " " + operator + " " + right;
+	    return left + " " + operator.getName () + " " + right.getValue ();
 	}
     }
 
