@@ -584,7 +584,7 @@ SwitchBlockStatementGroup:
 	SwitchLabels BlockStatements
 
 SwitchLabels:
-	SwitchLabel {SwitchLabel}
+	{SwitchLabel} SwitchLabel
 
 SwitchLabel:
 	# ConstantExpression may be EnumConstantName
