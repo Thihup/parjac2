@@ -217,15 +217,12 @@ public class SyntaxTreeBuilder {
 	register ("TryWithResourcesStatement", TryStatement::new);
 	register ("ResourceSpecification", ResourceSpecification::new);
 	register ("ResourceList", ResourceList::new);
-/*
-Resource:
-*/
+	register ("Resource", this::resource);
 	register ("VariableAccess", this::liftUp);
+
 	// Productions from §15 (Expressions)
 	register ("Primary", this::liftUp);
-/*
-PrimaryNoNewArray:
-*/
+	register ("PrimaryNoNewArray", this::primaryNoNewArray);
 	register ("ClassLiteral", ClassLiteral::new);
 	register ("ClassInstanceCreationExpression", ClassInstanceCreationExpression::new);
 	register ("UnqualifiedClassInstanceCreationExpression", UnqualifiedClassInstanceCreationExpression::new);
@@ -2413,29 +2410,6 @@ PrimaryNoNewArray:
 	}
     }
 
-    private class ClassLiteral extends ComplexTreeNode {
-	private final ParseTreeNode type;
-	private final int dims;
-	public ClassLiteral (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	    super (n.getPosition ());
-	    int i = 0;
-	    type = children.get (i++);
-	    if (children.get (i) instanceof ZOMEntry)
-		dims = ((ZOMEntry)children.get (i++)).size ();
-	    else
-		dims = 0;
-	}
-
-	@Override public Object getValue () {
-	    StringBuilder sb = new StringBuilder ();
-	    sb.append (type);
-	    for (int i = 0; i < dims; i++)
-		sb.append ("[]");
-	    sb.append (".class");
-	    return sb.toString ();
-	}
-    }
-
     private class WhileStatement extends ComplexTreeNode {
 	private final ParseTreeNode expression;
 	private final ParseTreeNode statement;
@@ -2750,6 +2724,106 @@ PrimaryNoNewArray:
     private class ResourceList extends CommaListBase {
 	public ResourceList (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	    super (path, rule, n, children);
+	}
+    }
+
+    private ParseTreeNode resource (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	if (rule.size () == 1)
+	    return new SimpleResource (children.get (0));
+	return new Resource (path, rule, n, children);
+    }
+
+    private class SimpleResource extends ComplexTreeNode {
+	private final ParseTreeNode t; // ExpressionName or FieldAccess
+	public SimpleResource (ParseTreeNode t) {
+	    super (t.getPosition ());
+	    this.t = t;
+	}
+
+	@Override public Object getValue () {
+	    return t.getValue ();
+	}
+    }
+
+    private class Resource extends ComplexTreeNode {
+	private List<ParseTreeNode> modifiers;
+	private ParseTreeNode type;
+	private String id;
+	private ParseTreeNode expression;
+
+	public Resource (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 0;
+	    modifiers = rule.size () > 4 ? ((ZOMEntry)children.get (i++)).get () : List.of ();
+	    type = children.get (i++);
+	    id = ((Identifier)children.get (i++)).getValue ();
+	    i++;
+	    expression = children.get (i);
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    if (!modifiers.isEmpty ())
+		modifiers.forEach (m -> sb.append (m).append (" "));
+	    sb.append (type).append (id).append (" = ").append (expression);
+	    return sb.toString ();
+	}
+    }
+
+    private ParseTreeNode primaryNoNewArray (Path path, Rule rule, ParseTreeNode n,
+					     List<ParseTreeNode> children) {
+	if (rule.get (0) == java11Tokens.THIS.getId ())
+	    return new ThisPrimary (n);
+	if (rule.size () == 1)
+	    return children.get (0);
+	if (rule.get (0) == java11Tokens.LEFT_PARENTHESIS.getId ())
+	    return children.get (1);
+	return new DottedThis (children.get (0));
+    }
+
+    private class ThisPrimary extends ComplexTreeNode {
+	public ThisPrimary (ParseTreeNode n) {
+	    super (n.getPosition ());
+	}
+
+	@Override public Object getValue () {
+	    return "this";
+	}
+    }
+
+    private class DottedThis extends ComplexTreeNode {
+	private final ParseTreeNode type;
+
+	public DottedThis (ParseTreeNode type) {
+	    super (type.getPosition ());
+	    this.type = type;
+	}
+
+	@Override public Object getValue () {
+	    return type + ".this";
+	}
+    }
+
+    private class ClassLiteral extends ComplexTreeNode {
+	private final ParseTreeNode type;
+	private final int dims;
+	public ClassLiteral (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	    super (n.getPosition ());
+	    int i = 0;
+	    type = children.get (i++);
+	    if (children.get (i) instanceof ZOMEntry)
+		dims = ((ZOMEntry)children.get (i++)).size ();
+	    else
+		dims = 0;
+	}
+
+	@Override public Object getValue () {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append (type);
+	    for (int i = 0; i < dims; i++)
+		sb.append ("[]");
+	    sb.append (".class");
+	    return sb.toString ();
 	}
     }
 
