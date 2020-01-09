@@ -2303,14 +2303,18 @@ public class SyntaxTreeBuilder {
 	    super (n.getPosition ());
 	    ls = new ArrayList<> ();
 	    trailingLabels = new ArrayList<> ();
-	    if (rule.size () > 3) {
-		ZOMEntry z1 = (ZOMEntry)children.get (1);
-		System.err.println ("got a z1: " + z1);
-		ZOMEntry z2 = (ZOMEntry)children.get (1);
-		System.err.println ("got a z2: " + z2);
-	    } else if (rule.size () > 2) {
-		ZOMEntry z1 = (ZOMEntry)children.get (1);
-		System.err.println ("got a z1: " + z1);
+	    int i = 1;
+	    if (children.get (i) instanceof ZOMEntry) {
+		ZOMEntry z = (ZOMEntry)children.get (i++);
+		if (z.getInternalGroupId () == grammar.getRuleGroupId ("SwitchBlockStatementGroup")) {
+		    ls = z.get ();
+		} else {
+		    trailingLabels = z.get ();
+		}
+	    }
+	    if (children.get (i) instanceof ZOMEntry) {
+		ZOMEntry z = (ZOMEntry)children.get (i);
+		trailingLabels = z.get ();
 	    }
 	}
 
@@ -2332,17 +2336,9 @@ public class SyntaxTreeBuilder {
 
 	public SwitchBlockStatementGroup (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	    super (n.getPosition ());
-	    int i = 0;
-	    SwitchLabel l = (SwitchLabel)children.get (i++);
-	    if (rule.size () > 2) {
-		ZOMEntry z = (ZOMEntry)children.get (i++);
-		labels = new ArrayList<> ();
-		labels.add (l);
-		labels.addAll (z.get ());
-	    } else {
-		labels = List.of (l);
-	    }
-	    statements = (BlockStatements)children.get (i);
+	    SwitchLabels l = (SwitchLabels)children.get (0);
+	    labels = l.labels;
+	    statements = (BlockStatements)children.get (1);
 	}
 
 	@Override public Object getValue () {
@@ -2363,9 +2359,9 @@ public class SyntaxTreeBuilder {
 		labels = List.of ((SwitchLabel)children.get (0));
 	    } else {
 		labels = new ArrayList<> ();
-		labels.add ((SwitchLabel)children.get (0));
-		ZOMEntry z = (ZOMEntry)children.get (1);
+		ZOMEntry z = (ZOMEntry)children.get (0);
 		labels.addAll (z.get ());
+		labels.add ((SwitchLabel)children.get (1));
 	    }
 	}
 
@@ -2407,7 +2403,7 @@ public class SyntaxTreeBuilder {
 	}
 
 	@Override public Object getValue () {
-	    return "case " + expression  + ":";
+	    return "case " + expression.getValue ()  + ":";
 	}
     }
 
@@ -2545,7 +2541,7 @@ public class SyntaxTreeBuilder {
 	}
 
 	@Override public Object getValue () {
-	    return expression != null ? "return " + expression + ";" : "return;";
+	    return expression != null ? "return " + expression.getValue () + ";" : "return;";
 	}
     }
 
