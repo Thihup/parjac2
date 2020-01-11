@@ -53,9 +53,14 @@ public class TestParser {
 	    printSyntaxTree = true;
 	    fileStart++;
 	}
+	int numThreads = Runtime.getRuntime ().availableProcessors ();
+	if (args[fileStart].equals ("-single_threaded")) {
+	    numThreads = 1;
+	    fileStart++;
+	}
 
 	TestParser tg = new TestParser (charset, printParseTree, printSyntaxTree);
-	ExecutorService es = Executors.newFixedThreadPool (Runtime.getRuntime ().availableProcessors ());
+	ExecutorService es = Executors.newFixedThreadPool (numThreads);
 	for (int i = fileStart; i < args.length; i++) {
 	    String filename = args[i];
 	    es.submit (() -> tg.test(filename));
