@@ -29,7 +29,7 @@ public class TestParser {
     private final Java11Tokens java11Tokens = new Java11Tokens (grammar);
     private final PredictCache predictCache = new PredictCache (grammar);
     private final CompilerDiagnosticCollector diagnostics = new CompilerDiagnosticCollector ();
-    private final SyntaxTreeBuilder stb = new SyntaxTreeBuilder (java11Tokens, grammar, diagnostics);
+    private final SyntaxTreeBuilder stb = new SyntaxTreeBuilder (java11Tokens, grammar);
     private final Rule goalRule;
 
     public static void main (String[] args) throws IOException {

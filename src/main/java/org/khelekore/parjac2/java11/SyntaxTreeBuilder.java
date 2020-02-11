@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.parser.Grammar;
 import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
@@ -22,14 +21,11 @@ import org.khelekore.parjac2.parsetree.TokenNode;
 public class SyntaxTreeBuilder {
     private final Java11Tokens java11Tokens;
     private final Grammar grammar;
-    private final CompilerDiagnosticCollector diagnostics;
     private final Map<String, NodeBuilder> nodeBuilders;
 
-    public SyntaxTreeBuilder (Java11Tokens java11Tokens, Grammar grammar,
-			      CompilerDiagnosticCollector diagnostics) {
+    public SyntaxTreeBuilder (Java11Tokens java11Tokens, Grammar grammar) {
 	this.java11Tokens = java11Tokens;
 	this.grammar = grammar;
-	this.diagnostics = diagnostics;
 	nodeBuilders = new HashMap<> ();
 
 	register ("GOAL", this::liftUp);
