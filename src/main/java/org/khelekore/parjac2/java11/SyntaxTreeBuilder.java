@@ -2147,9 +2147,10 @@ public class SyntaxTreeBuilder {
 
 	@Override public Object getValue() {
 	    StringBuilder sb = new StringBuilder ();
-	    sb.append ("{");
+	    sb.append ("{\n");
 	    if (statements != null)
 		sb.append (statements);
+	    sb.append ("}");
 	    return sb.toString ();
 	}
     }
@@ -2245,7 +2246,7 @@ public class SyntaxTreeBuilder {
 	    super (n.getPosition ());
 	    exp = children.get (2);
 	    ifStatement = children.get (4);
-	    elseStatement = rule.size () > 5 ? children.get (5) : null;
+	    elseStatement = rule.size () > 6 ? children.get (6) : null;
 	}
 
 	@Override public Object getValue () {
