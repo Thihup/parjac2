@@ -10,6 +10,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 public class EnumBody extends SyntaxTreeNode {
     private final EnumConstantList constants;
     private final EnumBodyDeclarations declarations;
+
     public EnumBody (Path path, Java11Tokens java11Tokens, Rule rule,
 		     ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());

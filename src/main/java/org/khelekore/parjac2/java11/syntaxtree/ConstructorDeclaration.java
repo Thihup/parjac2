@@ -7,7 +7,7 @@ import java.util.List;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
-public class ConstructorDeclaration extends ClassBodyDeclaration {
+public class ConstructorDeclaration extends SyntaxTreeNode {
     private final List<ParseTreeNode> modifiers;
     private final ConstructorDeclarator declarator;
     private final Throws t;
