@@ -49,7 +49,6 @@ public class Compiler {
 	if (diagnostics.hasError ())
 	    return;
 
-	/*
 	runTimed (() -> scanClassPaths (), "Scanning classpath");
 	checkSemantics (trees);
 	if (diagnostics.hasError ())
@@ -62,7 +61,6 @@ public class Compiler {
 	    return;
 
 	runTimed (() -> writeClasses (trees), "Writing classes");
-	*/
     }
 
     private void setupSourceProvider (SourceProvider sourceProvider) {
@@ -102,6 +100,26 @@ public class Compiler {
 	    diagnostics.report (new NoSourceDiagnostics ("Failed to read: %s: %s", path, e));
 	    return null;
 	}
+    }
+
+    private void scanClassPaths () {
+	// TODO: implement
+    }
+
+    private void checkSemantics (List<ParseTreeNode> trees) {
+	// TODO: implement
+    }
+
+    private void optimize (List<ParseTreeNode> trees) {
+	// TODO: implement
+    }
+
+    private void createOutputDirectories (List<ParseTreeNode> trees, BytecodeWriter classWriter) {
+	// TODO: implement
+    }
+
+    private void writeClasses (List<ParseTreeNode> trees) {
+	// TODO: implement
     }
 
     private <T> T runTimed (CompilationStep<T> cs, String type) {
