@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -12,7 +11,7 @@ public class TypeBound extends SyntaxTreeNode {
     private ClassType base;
     private List<ClassType> additionalBounds;
 
-    public TypeBound (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public TypeBound (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	base = (ClassType)children.get (1);
 	if (rule.size () > 2) {

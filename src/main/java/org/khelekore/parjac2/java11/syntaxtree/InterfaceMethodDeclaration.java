@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 
@@ -11,7 +10,7 @@ public class InterfaceMethodDeclaration extends SyntaxTreeNode {
     private final List<ParseTreeNode> modifiers;
     private final MethodHeader header;
     private final ParseTreeNode body;
-    public InterfaceMethodDeclaration (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public InterfaceMethodDeclaration (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
 	if (rule.size () > 2){

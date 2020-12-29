@@ -1,10 +1,9 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 
-import org.khelekore.parjac2.parser.Grammar;
+import org.khelekore.parjac2.java11.Context;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
@@ -15,12 +14,11 @@ public class MethodHeader extends SyntaxTreeNode {
     private MethodDeclarator methodDeclarator;
     private Throws t;
 
-    public MethodHeader (Path path, Grammar grammar, Rule rule,
-			 ParseTreeNode n, List<ParseTreeNode> children) {
+    public MethodHeader (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
 	annotations = Collections.emptyList ();
-	if (rule.get (0) == grammar.getRuleGroupId ("TypeParameters")) {
+	if (rule.get (0) == ctx.getGrammar ().getRuleGroupId ("TypeParameters")) {
 	    types = (TypeParameters)children.get (i++);
 	    if (children.get (i) instanceof Multiple)
 		annotations = ((Multiple)children.get (i++)).get ();

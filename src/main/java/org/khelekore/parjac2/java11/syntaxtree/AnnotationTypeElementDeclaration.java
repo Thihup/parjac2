@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.List;
 
 import org.khelekore.parjac2.java11.Identifier;
@@ -14,7 +13,7 @@ public class AnnotationTypeElementDeclaration extends SyntaxTreeNode {
     private final Dims dims;
     private final DefaultValue defaultValue;
 
-    public AnnotationTypeElementDeclaration (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public AnnotationTypeElementDeclaration (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
 	if (children.get (i) instanceof Multiple) {

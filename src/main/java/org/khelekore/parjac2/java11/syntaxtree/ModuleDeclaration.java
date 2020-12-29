@@ -1,12 +1,11 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.khelekore.parjac2.java11.Context;
 import org.khelekore.parjac2.java11.Identifier;
-import org.khelekore.parjac2.java11.Java11Tokens;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
@@ -16,8 +15,7 @@ public class ModuleDeclaration extends SyntaxTreeNode {
     private List<String> identifiers;
     private List<ModuleDirective> directives;
 
-    public ModuleDeclaration (Path path, Java11Tokens java11Tokens, Rule rule,
-			      ParseTreeNode n, List<ParseTreeNode> children) {
+    public ModuleDeclaration (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
 	if (children.get (i) instanceof Multiple)
@@ -25,7 +23,7 @@ public class ModuleDeclaration extends SyntaxTreeNode {
 	else
 	    annotations = Collections.emptyList ();
 
-	isOpen = (rule.get (i) == java11Tokens.OPEN.getId ());
+	isOpen = (rule.get (i) == ctx.getTokens ().OPEN.getId ());
 	if (isOpen)
 	    i++;
 

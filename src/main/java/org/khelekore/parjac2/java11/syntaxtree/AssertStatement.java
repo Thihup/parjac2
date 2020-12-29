@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
@@ -10,7 +9,7 @@ public class AssertStatement extends SyntaxTreeNode {
     private final ParseTreeNode expression1;
     private final ParseTreeNode expression2;
 
-    public AssertStatement (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public AssertStatement (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	expression1 = children.get (1);
 	expression2 = (rule.size () > 3) ? children.get (3) : null;

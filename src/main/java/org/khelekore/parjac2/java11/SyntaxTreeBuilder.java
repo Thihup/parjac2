@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.khelekore.parjac2.CompilationException;
+import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.java11.syntaxtree.*;
 import org.khelekore.parjac2.parser.Grammar;
 import org.khelekore.parjac2.parser.ParsePosition;
@@ -16,11 +18,13 @@ import org.khelekore.parjac2.parsetree.RuleNode;
 import org.khelekore.parjac2.parsetree.TokenNode;
 
 public class SyntaxTreeBuilder {
+    private final CompilerDiagnosticCollector diagnostics;
     private final Java11Tokens java11Tokens;
     private final Grammar grammar;
-    private final Map<String, NodeBuilder> nodeBuilders;
+    private final Map<String, ContextNodeBuilder> nodeBuilders;
 
-    public SyntaxTreeBuilder (Java11Tokens java11Tokens, Grammar grammar) {
+    public SyntaxTreeBuilder (CompilerDiagnosticCollector diagnostics, Java11Tokens java11Tokens, Grammar grammar) {
+	this.diagnostics = diagnostics;
 	this.java11Tokens = java11Tokens;
 	this.grammar = grammar;
 	nodeBuilders = new HashMap<> ();
@@ -118,7 +122,6 @@ public class SyntaxTreeBuilder {
 	register ("StaticInitializer", StaticInitializer::new);
 	register ("ConstructorDeclaration", ConstructorDeclaration::new);
 	register ("ConstructorModifier", this::liftUp);
-	// TODO: grammar...
 	register ("ConstructorDeclarator", ConstructorDeclarator::new);
 	register ("SimpleTypeName",this::liftUp);
 	register ("ConstructorBody", ConstructorBody::new);
@@ -265,28 +268,29 @@ public class SyntaxTreeBuilder {
 	register ("ConstantExpression", this::liftUp);
     }
 
-    private final void register (String name, NodeBuilder nb) {
+    private final void register (String name, ContextNodeBuilder nb) {
 	nodeBuilders.put (name, nb);
     }
 
-    private final void register (String name, GrammarNodeBuilder nb) {
-	nodeBuilders.put (name, (p, r, i, c) -> nb.build (p, grammar, r, i, c));
-    }
-
-    private final void register (String name, TokenNodeBuilder nb) {
-	nodeBuilders.put (name, (p, r, i, c) -> nb.build (p, java11Tokens, r, i, c));
+    private final void register (String name, SimpleNodeBuilder snb) {
+	nodeBuilders.put (name, (ctx, r, n, c) -> snb.build (r, n, c));
     }
 
     public ParseTreeNode build (Path path, ParseTreeNode root) {
+	Context ctx = new Context (java11Tokens, grammar, diagnostics, path);
+	return build (ctx, root);
+    }
+
+    private ParseTreeNode build (Context ctx, ParseTreeNode root) {
 	List<ParseTreeNode> children = root.getChildren ();
 	List<ParseTreeNode> convertedChildren = new ArrayList<> (children.size ());
 	for (ParseTreeNode c : children)
-	    convertedChildren.add (build (path, c));
-	ParseTreeNode n = convert (path, root, convertedChildren);
+	    convertedChildren.add (build (ctx, c));
+	ParseTreeNode n = convert (ctx, root, convertedChildren);
 	return n;
     }
 
-    private ParseTreeNode convert (Path path, ParseTreeNode node, List<ParseTreeNode> children) {
+    private ParseTreeNode convert (Context ctx, ParseTreeNode node, List<ParseTreeNode> children) {
 	if (node.isToken ()) {
 	    return node;
 	}
@@ -296,9 +300,9 @@ public class SyntaxTreeBuilder {
 	if (rule.getName ().startsWith ("_ZOM")) {
 	    node = buildZom (rule, node, children);
 	} else {
-	    NodeBuilder nb = nodeBuilders.get (rule.getName ());
+	    ContextNodeBuilder nb = nodeBuilders.get (rule.getName ());
 	    if (nb != null) {
-		node = nb.build (path, rule, rn, children);
+		node = nb.build (ctx, rule, rn, children);
 	    } else {
 		// Children may be changed so need to update to new node
 		node = new RuleNode (rule, children);
@@ -307,21 +311,15 @@ public class SyntaxTreeBuilder {
 	return node;
     }
 
-    private interface NodeBuilder {
-	ParseTreeNode build (Path path, Rule rule, ParseTreeNode input, List<ParseTreeNode> children);
+    private interface ContextNodeBuilder {
+	ParseTreeNode build (Context ctx, Rule rule, ParseTreeNode input, List<ParseTreeNode> children);
     }
 
-    private interface GrammarNodeBuilder {
-	ParseTreeNode build (Path path, Grammar grammar, Rule rule,
-			     ParseTreeNode input, List<ParseTreeNode> children);
+    private interface SimpleNodeBuilder {
+	ParseTreeNode build (Rule rule, ParseTreeNode input, List<ParseTreeNode> children);
     }
 
-    private interface TokenNodeBuilder {
-	ParseTreeNode build (Path path, Java11Tokens java11Tokens, Rule rule,
-			     ParseTreeNode input, List<ParseTreeNode> children);
-    }
-
-    private ParseTreeNode classType (Path path, Rule rule, ParseTreeNode ct, List<ParseTreeNode> children) {
+    private ParseTreeNode classType (Context ctx, Rule rule, ParseTreeNode ct, List<ParseTreeNode> children) {
 	if (rule.size () == 1) {
 	    List<SimpleClassType> ls = new ArrayList<> ();
 	    ls.add ((SimpleClassType)children.get (0));
@@ -335,11 +333,11 @@ public class SyntaxTreeBuilder {
 	return new ClassType (ct.getPosition (), ls);
     }
 
-    private ParseTreeNode additionalBound (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    private ParseTreeNode additionalBound (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	return children.get (1);
     }
 
-    private ParseTreeNode unannClassType (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    private ParseTreeNode unannClassType (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	if (rule.size () == 3) {
 	    UnannClassType uct = (UnannClassType)children.get (0);
 	    SimpleClassType sct = (SimpleClassType)children.get (2);
@@ -348,53 +346,53 @@ public class SyntaxTreeBuilder {
 	}
 	TypeIdentifier i = (TypeIdentifier)children.get (0);
 	TypeArguments tas = children.size () > 1 ? (TypeArguments)children.get (1) : null;
-	SimpleClassType sct =
-	    new SimpleClassType (n.getPosition (), Collections.emptyList (), i.getValue (), tas);
+	SimpleClassType sct = new SimpleClassType (n.getPosition (), i.getValue (), tas);
 	return new UnannClassType (sct);
     }
 
-    private ParseTreeNode formalParameter (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    private ParseTreeNode formalParameter (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	if (rule.size () > 1)
-	    return new FormalParameter (path, rule, n, children);
+	    return new FormalParameter (rule, n, children);
 	return children.get (0); // lift it up
     }
 
-    private ParseTreeNode moduleDirective (Path path, Rule r, ParseTreeNode n, List<ParseTreeNode> children) {
-	if (r.get (0) == java11Tokens.REQUIRES.getId ()) {
-	    return new RequiresDirective (r, n, children);
-	} else if (r.get (0) == java11Tokens.EXPORTS.getId ()) {
-	    return new ExportsDirective (r, n, children);
-	} else if (r.get (0) == java11Tokens.OPENS.getId ()) {
-	    return new OpensDirective (r, n, children);
-	} else if (r.get (0) == java11Tokens.USES.getId ()) {
-	    return new UsesDirective (r, n, children);
-	} else if (r.get (0) == java11Tokens.PROVIDES.getId ()) {
-	    return new ProvidesDirective (r, n, children);
+    private ParseTreeNode moduleDirective (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	int ruleId = rule.get (0);
+	if (ruleId == java11Tokens.REQUIRES.getId ()) {
+	    return new RequiresDirective (rule, n, children);
+	} else if (ruleId == java11Tokens.EXPORTS.getId ()) {
+	    return new ExportsDirective (rule, n, children);
+	} else if (ruleId == java11Tokens.OPENS.getId ()) {
+	    return new OpensDirective (rule, n, children);
+	} else if (ruleId == java11Tokens.USES.getId ()) {
+	    return new UsesDirective (rule, n, children);
+	} else if (ruleId == java11Tokens.PROVIDES.getId ()) {
+	    return new ProvidesDirective (rule, n, children);
 	} else {
-	    throw new IllegalArgumentException ("Type: " + r.get (0) + ", " + r.toReadableString (grammar));
+	    ctx.error (n.getPosition (), "Unhandled rule: %d, %s", ruleId, rule.toReadableString (grammar));
+	    throw new CompilationException ();
 	}
     }
 
-    private SyntaxTreeNode switchLabel (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    private SyntaxTreeNode switchLabel (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	if (rule.size () == 2)
 	    return new DefaultLabel (n.getPosition ());
 	return new CaseLabel (n.getPosition (), children.get (1));
     }
 
-    private ParseTreeNode tryStatement (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    private ParseTreeNode tryStatement (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	if (rule.size () == 1)
 	    return children.get (0);
-	return new TryStatement (path, rule, n, children);
+	return new TryStatement (rule, n, children);
     }
 
-    private ParseTreeNode resource (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    private ParseTreeNode resource (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	if (rule.size () == 1)
 	    return new SimpleResource (children.get (0));
-	return new Resource (path, rule, n, children);
+	return new Resource (rule, n, children);
     }
 
-    private ParseTreeNode primaryNoNewArray (Path path, Rule rule, ParseTreeNode n,
-					     List<ParseTreeNode> children) {
+    private ParseTreeNode primaryNoNewArray (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	if (rule.get (0) == java11Tokens.THIS.getId ())
 	    return new ThisPrimary (n);
 	if (rule.size () == 1)
@@ -404,15 +402,13 @@ public class SyntaxTreeBuilder {
 	return new DottedThis (children.get (0));
     }
 
-    private ParseTreeNode typeArgumentsOrDiamond (Path path, Rule rule, ParseTreeNode n,
-						  List<ParseTreeNode> children) {
+    private ParseTreeNode typeArgumentsOrDiamond (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	if (rule.size () > 1)
 	    return new Diamond (n.getPosition ());
 	return children.get (0);
     }
 
-    private SyntaxTreeNode methodInvocation (Path path, Rule rule, ParseTreeNode n,
-					      List<ParseTreeNode> children) {
+    private SyntaxTreeNode methodInvocation (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	ParsePosition pos = children.get (0).getPosition ();
 	if (rule.size () == 1) {
 	    return new MethodInvocation (pos, null, false, null, (UntypedMethodInvocation)children.get (0));
@@ -437,7 +433,7 @@ public class SyntaxTreeBuilder {
 	return new MethodInvocation (pos, on, isSuper, types, mi);
     }
 
-    private ParseTreeNode methodReference (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    private ParseTreeNode methodReference (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	if (rule.get (rule.size () - 1) == java11Tokens.IDENTIFIER.getId ()) {
 	    if (rule.size () > 4)
 		return new SuperMethodReference (rule, n, children);
@@ -447,8 +443,7 @@ public class SyntaxTreeBuilder {
 	}
     }
 
-    private ParseTreeNode lambdaParameters (Path path, Rule rule, ParseTreeNode n,
-					    List<ParseTreeNode> children) {
+    private ParseTreeNode lambdaParameters (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	switch (rule.size ()) {
 	case 1: // x ->
 	    // TODO: rewrite to (x) -> so we can remove one case
@@ -462,15 +457,13 @@ public class SyntaxTreeBuilder {
 	}
     }
 
-    private ParseTreeNode lambdaParameterList (Path path, Rule rule, ParseTreeNode n,
-					       List<ParseTreeNode> children) {
+    private ParseTreeNode lambdaParameterList (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	if (rule.get (0) == java11Tokens.IDENTIFIER.getId ())
 	    return new LambdaParameterList<String> (rule, n, children, i -> ((Identifier)i).getValue ());
 	return new LambdaParameterList<LambdaParameter> (rule, n, children, c -> (LambdaParameter)c);
     }
 
-    private ParseTreeNode lambdaParameter (Path path, Rule rule, ParseTreeNode n,
-					   List<ParseTreeNode> children) {
+    private ParseTreeNode lambdaParameter (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	if (rule.size () == 1)  // VariableArityParameter
 	    return new VarArgLambdaParameter (n.getPosition (), (VariableArityParameter)children.get (0));
 	int i = 0;
@@ -482,7 +475,7 @@ public class SyntaxTreeBuilder {
 	return new FullTypeLambdaParameter (n.getPosition (), modifiers, type, vid);
     }
 
-    private ParseTreeNode shiftOp (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    private ParseTreeNode shiftOp (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	switch (rule.size ()) {
 	case 1:
 	    return children.get (0);
@@ -491,31 +484,30 @@ public class SyntaxTreeBuilder {
 	case 3:
 	    return new TokenNode (java11Tokens.RIGHT_SHIFT_UNSIGNED, n.getPosition ());
 	}
-	throw new IllegalArgumentException (path + ": " + rule.toReadableString (grammar) +
-					    " got unexpected size: " + rule.size () +
-					    ", children: " + children);
+	ctx.error (n.getPosition (), "%s got unexpected size %d, children: %d",
+		   rule.toReadableString (grammar), rule.size (), children);
+	    throw new CompilationException ();
     }
 
-    private ParseTreeNode conditionalExpression (Path path, Rule rule, ParseTreeNode n,
-						 List<ParseTreeNode> children) {
+    private ParseTreeNode conditionalExpression (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	if (rule.size () == 1)
 	    return children.get (0);
-	return new Ternary (path, rule, n, children);
+	return new Ternary (rule, n, children);
     }
 
-    private ParseTreeNode oneOrTwoParter (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    private ParseTreeNode oneOrTwoParter (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	if (rule.size () == 1)
 	    return children.get (0);
-	return new TwoPartExpression (path, rule, n, children);
+	return new TwoPartExpression (rule, n, children);
     }
 
-    private ParseTreeNode unaryExpression (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    private ParseTreeNode unaryExpression (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	if (rule.size () == 1)
 	    return children.get (0);
-	return new UnaryExpression (path, rule, n, children);
+	return new UnaryExpression (rule, n, children);
     }
 
-    private ParseTreeNode liftUp (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    private ParseTreeNode liftUp (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	return children.get (0);
     }
 

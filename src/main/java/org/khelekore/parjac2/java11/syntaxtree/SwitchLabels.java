@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,7 +9,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 public class SwitchLabels extends SyntaxTreeNode {
     private List<SwitchLabel> labels;
 
-    public SwitchLabels (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public SwitchLabels (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	if (rule.size () == 1) {
 	    labels = List.of ((SwitchLabel)children.get (0));

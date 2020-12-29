@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
@@ -10,7 +9,7 @@ public class Ternary extends SyntaxTreeNode {
     private ParseTreeNode test;
     private ParseTreeNode thenPart;
     private ParseTreeNode elsePart;
-    public Ternary (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public Ternary (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	test = children.get (0);
 	thenPart = children.get (2);

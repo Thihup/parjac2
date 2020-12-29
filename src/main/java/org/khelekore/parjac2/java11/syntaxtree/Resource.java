@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.List;
 
 import org.khelekore.parjac2.java11.Identifier;
@@ -13,7 +12,7 @@ public class Resource extends SyntaxTreeNode {
     private String id;
     private ParseTreeNode expression;
 
-    public Resource (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public Resource (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
 	modifiers = rule.size () > 4 ? ((Multiple)children.get (i++)).get () : List.of ();

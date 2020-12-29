@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 
@@ -11,7 +10,7 @@ public class MethodDeclaration extends SyntaxTreeNode {
     private List<ParseTreeNode> modifiers;
     private MethodHeader header;
     private ParseTreeNode body; // Block or ;
-    public MethodDeclaration (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public MethodDeclaration (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
 	modifiers = (rule.size () > 2) ? ((Multiple)children.get (i++)).get () : Collections.emptyList ();

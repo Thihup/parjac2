@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 
@@ -13,7 +12,7 @@ public class TypeParameter extends SyntaxTreeNode {
     private String id;
     private TypeBound bound;
 
-    public TypeParameter (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public TypeParameter (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
 	if (children.get (i) instanceof Multiple) {

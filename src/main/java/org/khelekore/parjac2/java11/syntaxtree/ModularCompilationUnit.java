@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 
@@ -11,7 +10,7 @@ public class ModularCompilationUnit extends SyntaxTreeNode {
     private List<ImportDeclaration> imports;
     private ModuleDeclaration moduleDeclaration;
 
-    public ModularCompilationUnit (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public ModularCompilationUnit (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
 	imports = (rule.size () > 1) ? ((Multiple)children.get (i++)).get () : Collections.emptyList ();

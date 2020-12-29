@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.List;
 
 import org.khelekore.parjac2.java11.Identifier;
@@ -11,7 +10,7 @@ public class UntypedMethodInvocation extends SyntaxTreeNode {
     private final String methodName;
     private final ArgumentList args;
 
-    public UntypedMethodInvocation (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public UntypedMethodInvocation (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	methodName = ((Identifier)children.get (0)).getValue ();
 	if (rule.size () > 3)

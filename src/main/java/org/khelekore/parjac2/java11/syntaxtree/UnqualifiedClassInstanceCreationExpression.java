@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
@@ -12,8 +11,7 @@ public class UnqualifiedClassInstanceCreationExpression extends SyntaxTreeNode {
     private final ArgumentList args;
     private final ClassBody body;
 
-    public UnqualifiedClassInstanceCreationExpression (Path path, Rule rule, ParseTreeNode n,
-						       List<ParseTreeNode> children) {
+    public UnqualifiedClassInstanceCreationExpression (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 1;
 	types = (children.get (i) instanceof TypeArguments) ? (TypeArguments)children.get (i++) : null;

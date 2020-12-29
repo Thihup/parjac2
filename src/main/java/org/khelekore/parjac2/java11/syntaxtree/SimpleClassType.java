@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -15,7 +14,7 @@ public class SimpleClassType extends SyntaxTreeNode {
     private final String id;
     private final TypeArguments typeArguments;
 
-    public SimpleClassType (Path path, Rule rule, ParseTreeNode sct, List<ParseTreeNode> children) {
+    public SimpleClassType (Rule rule, ParseTreeNode sct, List<ParseTreeNode> children) {
 	super (sct.getPosition ());
 	int i = 0;
 	ParseTreeNode n = children.get (i++);
@@ -29,9 +28,9 @@ public class SimpleClassType extends SyntaxTreeNode {
 	typeArguments = rule.size () > i ? (TypeArguments)children.get (i) : null;
     }
 
-    public SimpleClassType (ParsePosition pos, List<Annotation> annotations, String id, TypeArguments tas) {
+    public SimpleClassType (ParsePosition pos, String id, TypeArguments tas) {
 	super (pos);
-	this.annotations = annotations;
+	this.annotations = Collections.emptyList ();
 	this.id = id;
 	this.typeArguments = tas;
     }

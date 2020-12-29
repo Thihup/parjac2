@@ -1,18 +1,16 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.List;
 
-import org.khelekore.parjac2.parser.Grammar;
+import org.khelekore.parjac2.java11.Context;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class ArrayInitializer extends SyntaxTreeNode {
     private final  VariableInitializerList variableList;
-    public ArrayInitializer (Path path, Grammar grammar, Rule rule,
-			     ParseTreeNode n, List<ParseTreeNode> children) {
+    public ArrayInitializer (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
-	if (rule.get (1) == grammar.getRuleGroupId ("VariableInitializerList"))
+	if (rule.get (1) == ctx.getGrammar ().getRuleGroupId ("VariableInitializerList"))
 	    variableList = (VariableInitializerList)children.get (1);
 	else
 	    variableList = null;

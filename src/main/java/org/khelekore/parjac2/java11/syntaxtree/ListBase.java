@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,7 +9,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 public abstract class ListBase extends SyntaxTreeNode {
     private final List<ParseTreeNode> params;
 
-    public ListBase (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children,
+    public ListBase (Rule rule, ParseTreeNode n, List<ParseTreeNode> children,
 		     int start, int every) {
 	super (n.getPosition ());
 	params = new ArrayList<> ();

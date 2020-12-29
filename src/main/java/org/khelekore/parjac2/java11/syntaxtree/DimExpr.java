@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
@@ -10,7 +9,7 @@ public class DimExpr extends SyntaxTreeNode {
     private final List<Annotation> annotations;
     private final ParseTreeNode expression;
 
-    public DimExpr (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public DimExpr (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
 	if (rule.size () > 3)

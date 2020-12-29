@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.khelekore.parjac2.CompilationException;
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.NoSourceDiagnostics;
 import org.khelekore.parjac2.parser.Grammar;
@@ -34,7 +35,7 @@ public class Compiler {
 	this.goalRule = goalRule;
 	this.settings = settings;
 	this.predictCache = new PredictCache (grammar);
-	stb = new SyntaxTreeBuilder (java11Tokens, grammar);
+	stb = new SyntaxTreeBuilder (diagnostics, java11Tokens, grammar);
     }
 
     public void compile () {
@@ -93,6 +94,8 @@ public class Compiler {
 	    if (settings.getDebug () && settings.getReportTime ())
 		reportTime ("Parsing " + path, start, end);
 	    return syntaxTree;
+	} catch (CompilationException e) {
+	    return null; // diagnostics should already have the problems
 	} catch (MalformedInputException e) {
 	    diagnostics.report (new NoSourceDiagnostics ("Failed to decode text: %s, wrong encoding?", path));
 	    return null;

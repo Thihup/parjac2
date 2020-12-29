@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 
@@ -13,7 +12,7 @@ public class PrimitiveType extends SyntaxTreeNode {
     private List<Annotation> annotations;
     private Token type;
 
-    public PrimitiveType (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public PrimitiveType (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	if (rule.size () > 1) {
 	    annotations = ((Multiple)children.get (0)).get ();

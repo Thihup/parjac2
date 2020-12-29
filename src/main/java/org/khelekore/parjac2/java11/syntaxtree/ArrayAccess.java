@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
@@ -10,7 +9,7 @@ public class ArrayAccess extends SyntaxTreeNode {
     private final ParseTreeNode from;
     private final ParseTreeNode expression;
 
-    public ArrayAccess (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public ArrayAccess (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	from = children.get (0);
 	expression = children.get (2);

@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.List;
 
 import org.khelekore.parjac2.java11.Identifier;
@@ -11,7 +10,7 @@ public class VariableDeclaratorId extends SyntaxTreeNode {
     private String id;
     private Dims dims;
 
-    public VariableDeclaratorId (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public VariableDeclaratorId (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	id = ((Identifier)children.get (0)).getValue ();
 	if (rule.size () > 1)

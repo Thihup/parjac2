@@ -1,10 +1,9 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.khelekore.parjac2.parser.Grammar;
+import org.khelekore.parjac2.java11.Context;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
@@ -12,15 +11,14 @@ public class SwitchBlock extends SyntaxTreeNode {
     private List<SwitchBlockStatementGroup> ls;
     private List<SwitchLabel> trailingLabels;
 
-    public SwitchBlock (Path path, Grammar grammar, Rule rule,
-			ParseTreeNode n, List<ParseTreeNode> children) {
+    public SwitchBlock (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	ls = new ArrayList<> ();
 	trailingLabels = new ArrayList<> ();
 	int i = 1;
 	if (children.get (i) instanceof Multiple) {
 	    Multiple z = (Multiple)children.get (i++);
-	    if (z.getInternalGroupId () == grammar.getRuleGroupId ("SwitchBlockStatementGroup")) {
+	    if (z.getInternalGroupId () == ctx.getGrammar ().getRuleGroupId ("SwitchBlockStatementGroup")) {
 		ls = z.get ();
 	    } else {
 		trailingLabels = z.get ();

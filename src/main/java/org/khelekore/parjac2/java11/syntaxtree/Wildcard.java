@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 
@@ -11,7 +10,7 @@ public class Wildcard extends SyntaxTreeNode {
     private final List<Annotation> annotations;
     private final WildcardBounds bounds;
 
-    public Wildcard (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public Wildcard (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
 	if (children.get (0) instanceof Multiple)

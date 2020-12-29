@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,7 +8,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class InterfaceTypeList extends SyntaxTreeNode {
     private List<ClassType> types;
-    public InterfaceTypeList (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public InterfaceTypeList (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	types = new ArrayList<> ();
 	types.add ((ClassType)children.get (0));

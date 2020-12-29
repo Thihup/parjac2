@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,7 +9,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 public class ElementValuePairList extends SyntaxTreeNode {
     private final List<ElementValuePair> values;
 
-    public ElementValuePairList (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public ElementValuePairList (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	if (rule.size () == 1) {
 	    values = List.of ((ElementValuePair)children.get (0));

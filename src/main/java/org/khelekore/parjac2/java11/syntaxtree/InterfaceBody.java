@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,7 +34,7 @@ public class InterfaceBody extends SyntaxTreeNode {
 	distributor.put (TokenNode.class, (ib, n) -> {/*nothing*/}); // ';'
     }
 
-    public InterfaceBody (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public InterfaceBody (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	if (rule.size () > 2) {
 	    declarations = ((Multiple)children.get (1)).get ();

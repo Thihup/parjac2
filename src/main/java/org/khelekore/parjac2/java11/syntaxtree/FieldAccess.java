@@ -1,10 +1,9 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.List;
 
+import org.khelekore.parjac2.java11.Context;
 import org.khelekore.parjac2.java11.Identifier;
-import org.khelekore.parjac2.java11.Java11Tokens;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
@@ -13,10 +12,9 @@ public class FieldAccess extends SyntaxTreeNode {
     private final boolean isSuper;
     private final String id;
 
-    public FieldAccess (Path path, Java11Tokens java11Tokens, Rule rule,
-			ParseTreeNode n, List<ParseTreeNode> children) {
+    public FieldAccess (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
-	if (rule.get (0) != java11Tokens.SUPER.getId ()) {
+	if (rule.get (0) != ctx.getTokens ().SUPER.getId ()) {
 	    from = children.get (0);
 	    isSuper = rule.size () > 3;
 	} else {

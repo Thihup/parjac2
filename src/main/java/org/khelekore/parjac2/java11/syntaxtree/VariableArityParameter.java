@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 
@@ -13,7 +12,7 @@ public class VariableArityParameter extends FormalParameterBase {
     private final ParseTreeNode type;
     private final List<Annotation> annotations;
     private final String id;
-    public VariableArityParameter (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public VariableArityParameter (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
 	modifiers = (children.get (i) instanceof Multiple) ?

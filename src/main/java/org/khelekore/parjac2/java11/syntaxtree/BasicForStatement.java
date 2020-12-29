@@ -1,9 +1,8 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.List;
 
-import org.khelekore.parjac2.parser.Grammar;
+import org.khelekore.parjac2.java11.Context;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
@@ -13,16 +12,15 @@ public class BasicForStatement extends SyntaxTreeNode {
     private final ParseTreeNode forUpdate;
     private final ParseTreeNode statement;
 
-    public BasicForStatement (Path path, Grammar grammar, Rule rule,
-			      ParseTreeNode n, List<ParseTreeNode> children) {
+    public BasicForStatement (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	// for' '(' [ForInit] ';' [Expression] ';' [ForUpdate] ')' Statement
 	int i = 2;
-	forInit = grammar.isRule (rule.get (i)) ? children.get (i++) : null;
+	forInit = ctx.getGrammar ().isRule (rule.get (i)) ? children.get (i++) : null;
 	i++;  // ';'
-	expression = grammar.isRule (rule.get (i)) ? children.get (i++) : null;
+	expression = ctx.getGrammar ().isRule (rule.get (i)) ? children.get (i++) : null;
 	i++;  // ';'
-	forUpdate = grammar.isRule (rule.get (i)) ? children.get (i++) : null;
+	forUpdate = ctx.getGrammar ().isRule (rule.get (i)) ? children.get (i++) : null;
 	i++;  // ';'
 	statement = children.get (i);
     }

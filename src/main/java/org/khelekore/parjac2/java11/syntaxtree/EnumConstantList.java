@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -10,7 +9,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class EnumConstantList extends SyntaxTreeNode {
     private List<EnumConstant> constants;
-    public EnumConstantList (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public EnumConstantList (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	if (rule.size () == 1) {
 	    constants = List.of ((EnumConstant)children.get (0));

@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,7 +8,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class BlockStatements extends SyntaxTreeNode {
     private List<ParseTreeNode> statements;
-    public BlockStatements (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public BlockStatements (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	statements = new ArrayList<> ();
 	statements.add (children.get (0));

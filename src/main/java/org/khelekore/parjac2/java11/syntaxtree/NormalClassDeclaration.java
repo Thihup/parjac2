@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 
@@ -16,7 +15,7 @@ public class NormalClassDeclaration extends TypeDeclaration {
     private Superinterfaces superInterfaces;
     private ClassBody classBody;
 
-    public NormalClassDeclaration (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public NormalClassDeclaration (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
 	if (children.get (i) instanceof Multiple)

@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 
@@ -12,7 +11,7 @@ public class ConstructorDeclaration extends SyntaxTreeNode {
     private final ConstructorDeclarator declarator;
     private final Throws t;
     private final ConstructorBody body;
-    public ConstructorDeclaration (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public ConstructorDeclaration (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
 	if (children.get (i) instanceof Multiple)

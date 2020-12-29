@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -9,7 +8,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class Superinterfaces extends SyntaxTreeNode {
     private List<ClassType> types;
-    public Superinterfaces (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public Superinterfaces (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	InterfaceTypeList l = (InterfaceTypeList)children.get (1);
 	types = l.getTypes ();

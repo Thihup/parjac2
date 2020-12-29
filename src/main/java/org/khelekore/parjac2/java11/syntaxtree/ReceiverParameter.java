@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 
@@ -13,7 +12,7 @@ public class ReceiverParameter extends SyntaxTreeNode {
     private ParseTreeNode type;
     private String id;
 
-    public ReceiverParameter (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public ReceiverParameter (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
 	if (children.get (i) instanceof Multiple)

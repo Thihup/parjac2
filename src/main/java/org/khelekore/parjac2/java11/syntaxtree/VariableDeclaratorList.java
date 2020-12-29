@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,7 +9,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 public class VariableDeclaratorList extends SyntaxTreeNode {
     private List<VariableDeclarator> declarators;
 
-    public VariableDeclaratorList (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public VariableDeclaratorList (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	declarators = new ArrayList<> ();
 	declarators.add ((VariableDeclarator)children.get (0));

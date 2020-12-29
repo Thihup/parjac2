@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,7 +10,7 @@ public class CatchType extends SyntaxTreeNode {
     private final UnannClassType firstType;
     private final List<ClassType> otherTypes;
 
-    public CatchType (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public CatchType (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	firstType = (UnannClassType)children.get (0);
 	if (rule.size () > 1) {

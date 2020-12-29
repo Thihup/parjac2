@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,7 +11,7 @@ public class ClassOrInterfaceTypeToInstantiate extends SyntaxTreeNode {
     private final List<AnnotatedIdentifier> ids;
     private final ParseTreeNode types;
 
-    public ClassOrInterfaceTypeToInstantiate (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public ClassOrInterfaceTypeToInstantiate (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	ids = new ArrayList<> ();
 	int i = 0;

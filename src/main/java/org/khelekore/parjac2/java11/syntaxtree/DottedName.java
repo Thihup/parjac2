@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,7 +10,7 @@ import org.khelekore.parjac2.util.StringHelper;
 
 public class DottedName extends SyntaxTreeNode {
     private final List<String> nameParts;
-    public DottedName (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public DottedName (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	if (rule.size () == 1) {
 	    nameParts = new ArrayList<> ();

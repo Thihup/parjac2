@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 
@@ -12,7 +11,7 @@ public class TypeVariable extends SyntaxTreeNode {
     private List<Annotation> annotations;
     private String id;
 
-    public TypeVariable (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public TypeVariable (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	if (rule.size () > 1) {
 	    annotations = ((Multiple)children.get (0)).get ();

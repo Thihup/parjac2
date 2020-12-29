@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -11,7 +10,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 public class Dims extends SyntaxTreeNode {
     // one list of annotations per dim
     List<List<ParseTreeNode>> annotations;
-    public Dims (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public Dims (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	annotations = new ArrayList<> ();
 	int i = 0;

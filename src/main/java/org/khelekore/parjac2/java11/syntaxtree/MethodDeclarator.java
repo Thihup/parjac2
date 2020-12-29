@@ -1,10 +1,9 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.List;
 
+import org.khelekore.parjac2.java11.Context;
 import org.khelekore.parjac2.java11.Identifier;
-import org.khelekore.parjac2.parser.Grammar;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
@@ -14,16 +13,15 @@ public class MethodDeclarator extends SyntaxTreeNode {
     private FormalParameterList params;
     private Dims dims;
 
-    public MethodDeclarator (Path path, Grammar grammar, Rule rule,
-			     ParseTreeNode n, List<ParseTreeNode> children) {
+    public MethodDeclarator (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	id = ((Identifier)children.get (0)).getValue ();
 	int i = 2;
-	if (rule.get (i) == grammar.getRuleGroupId ("ReceiverParameter")) {
+	if (rule.get (i) == ctx.getGrammar ().getRuleGroupId ("ReceiverParameter")) {
 	    rp = (ReceiverParameter)children.get (i);
 	    i += 2;
 	}
-	if (rule.get (i) == grammar.getRuleGroupId ("FormalParameterList"))
+	if (rule.get (i) == ctx.getGrammar ().getRuleGroupId ("FormalParameterList"))
 	    params = (FormalParameterList)children.get (i++);
 	i++;
 	if (rule.size () > i)

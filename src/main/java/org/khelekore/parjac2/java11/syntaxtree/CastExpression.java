@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -13,7 +12,7 @@ public class CastExpression extends SyntaxTreeNode {
     private List<ClassType> additionalBounds;
     private ParseTreeNode expression;
 
-    public CastExpression (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public CastExpression (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	// starts with (
 	int i = 1;

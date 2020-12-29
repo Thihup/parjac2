@@ -1,9 +1,8 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.List;
 
-import org.khelekore.parjac2.java11.Java11Tokens;
+import org.khelekore.parjac2.java11.Context;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
@@ -11,8 +10,7 @@ public class EnumBody extends SyntaxTreeNode {
     private final EnumConstantList constants;
     private final EnumBodyDeclarations declarations;
 
-    public EnumBody (Path path, Java11Tokens java11Tokens, Rule rule,
-		     ParseTreeNode n, List<ParseTreeNode> children) {
+    public EnumBody (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 1;
 	if (children.get (i) instanceof EnumConstantList) {
@@ -20,7 +18,7 @@ public class EnumBody extends SyntaxTreeNode {
 	} else {
 	    constants = null;
 	}
-	if (rule.get (i) == java11Tokens.COMMA.getId ())
+	if (rule.get (i) == ctx.getTokens ().COMMA.getId ())
 	    i++;
 	if (children.get (i) instanceof EnumBodyDeclarations) {
 	    declarations = (EnumBodyDeclarations)children.get (i);

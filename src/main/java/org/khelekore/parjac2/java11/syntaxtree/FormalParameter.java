@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 
@@ -13,7 +12,7 @@ public class FormalParameter extends FormalParameterBase {
     private final VariableDeclaratorId var;
 
     // since we have the formalParameter method we do not have to care about VariableArityParameter
-    public FormalParameter (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public FormalParameter (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
 	modifiers = (rule.size () > 2) ? ((Multiple)children.get (i++)).get () : Collections.emptyList ();

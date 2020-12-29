@@ -1,9 +1,8 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.List;
 
-import org.khelekore.parjac2.parser.Grammar;
+import org.khelekore.parjac2.java11.Context;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parser.Token;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -14,24 +13,23 @@ public class ExplicitConstructorInvocation extends SyntaxTreeNode {
     private final TypeArguments types;
     private final Token where; // this or super
     private final ArgumentList argumentList;
-    public ExplicitConstructorInvocation (Path path, Grammar grammar, Rule rule,
-					  ParseTreeNode n, List<ParseTreeNode> children) {
+    public ExplicitConstructorInvocation (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
-	if (rule.get (i) == grammar.getRuleGroupId ("ExpressionName") ||
-	    rule.get (i) == grammar.getRuleGroupId ("Primary")) {
+	if (rule.get (i) == ctx.getGrammar ().getRuleGroupId ("ExpressionName") ||
+	    rule.get (i) == ctx.getGrammar ().getRuleGroupId ("Primary")) {
 	    type = children.get (i);
 	    i += 2;
 	} else {
 	    type = null;
 	}
-	if (rule.get (i) == grammar.getRuleGroupId ("TypeArguments"))
+	if (rule.get (i) == ctx.getGrammar ().getRuleGroupId ("TypeArguments"))
 	    types = (TypeArguments)children.get (i++);
 	else
 	    types = null;
 	where = ((TokenNode)children.get (i++)).getToken ();
 	i++; // (
-	if (rule.get (i) == grammar.getRuleGroupId ("ArgumentList"))
+	if (rule.get (i) == ctx.getGrammar ().getRuleGroupId ("ArgumentList"))
 	    argumentList = (ArgumentList)children.get (i);
 	else
 	    argumentList = null;

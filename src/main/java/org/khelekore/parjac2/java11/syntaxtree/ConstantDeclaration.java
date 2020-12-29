@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 
@@ -12,7 +11,7 @@ public class ConstantDeclaration extends SyntaxTreeNode {
     private final ParseTreeNode type;
     private final VariableDeclaratorList variables;
 
-    public ConstantDeclaration (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public ConstantDeclaration (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
 	if (rule.size () > 3) {

@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 
@@ -12,7 +11,7 @@ public class FieldDeclaration extends SyntaxTreeNode {
     private ParseTreeNode type;
     private VariableDeclaratorList list;
 
-    public FieldDeclaration (Path path, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public FieldDeclaration (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
 	modifiers = (rule.size () > 3) ? ((Multiple)children.get (i++)).get () : Collections.emptyList ();
