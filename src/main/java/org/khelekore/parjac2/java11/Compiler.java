@@ -26,6 +26,7 @@ public class Compiler {
     private final CompilationArguments settings;
     private final PredictCache predictCache;
     private final SyntaxTreeBuilder stb;
+    private final ClassInformationProvider cip;
 
     public Compiler (CompilerDiagnosticCollector diagnostics, Grammar grammar,
 		     Java11Tokens java11Tokens, Rule goalRule, CompilationArguments settings) {
@@ -36,6 +37,7 @@ public class Compiler {
 	this.settings = settings;
 	this.predictCache = new PredictCache (grammar);
 	stb = new SyntaxTreeBuilder (diagnostics, java11Tokens, grammar);
+	cip = new ClassInformationProvider (diagnostics, settings);
     }
 
     public void compile () {
@@ -50,10 +52,18 @@ public class Compiler {
 	if (diagnostics.hasError ())
 	    return;
 
-	runTimed (() -> scanClassPaths (), "Scanning classpath");
+	runTimed (() -> cip.scanClassPath (), "Scanning classpath");
+	if (diagnostics.hasError ())
+	    return;
+	if (settings.getReportTime ())
+	    System.out.format ("Found %d classes in classpaths\n", cip.getClasspathEntrySize ());
+
+	runTimed (() -> addTypes (trees), "Collecting compiled types");
+
 	checkSemantics (trees);
 	if (diagnostics.hasError ())
 	    return;
+
 	optimize (trees);
 
 	runTimed (() -> createOutputDirectories (trees, settings.getClassWriter()),
@@ -105,8 +115,8 @@ public class Compiler {
 	}
     }
 
-    private void scanClassPaths () {
-	// TODO: implement
+    private void addTypes (List<ParseTreeNode> trees) {
+	trees.parallelStream ().forEach (t -> cip.addTypes (t));
     }
 
     private void checkSemantics (List<ParseTreeNode> trees) {
