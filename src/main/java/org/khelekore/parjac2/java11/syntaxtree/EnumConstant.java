@@ -13,6 +13,7 @@ public class EnumConstant extends SyntaxTreeNode {
     private final String id;
     private final ArgumentList args;
     private final ClassBody body;
+
     public EnumConstant (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
