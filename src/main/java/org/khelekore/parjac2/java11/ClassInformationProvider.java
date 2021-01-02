@@ -13,6 +13,8 @@ import java.util.jar.JarFile;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.NoSourceDiagnostics;
+import org.khelekore.parjac2.java11.syntaxtree.OrdinaryCompilationUnit;
+import org.khelekore.parjac2.java11.syntaxtree.TypeDeclaration;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class ClassInformationProvider {
@@ -176,7 +178,30 @@ public class ClassInformationProvider {
 
     private class CompiledTypesHolder {
 
+	// full class name to declaration, name only has '.' as separator, no / or $
+	private Map<String, TypeDeclaration> foundClasses = new HashMap<> ();
+
 	public void addTypes (ParseTreeNode n) {
+	    // We get OrdinaryCompilationUnit or ModularCompilationUnit
+	    if (!(n instanceof OrdinaryCompilationUnit))
+		return;
+	    try {
+		OrdinaryCompilationUnit ocu = (OrdinaryCompilationUnit)n;
+		String packageName = ocu.getPackageName ();
+		for (TypeDeclaration td : ocu.getTypes ()) {
+		    addType (packageName, td);
+		}
+	    } catch (ClassCastException e) {
+		System.err.println (n.toString ());
+		e.printStackTrace ();
+		System.exit (-1);
+	    }
+	}
+
+	private void addType (String namePrefix, TypeDeclaration td) {
+	    String fullName = namePrefix.isEmpty () ? td.getName () : (namePrefix + "." + td.getName ());
+	    foundClasses.put (fullName, td);
+	    td.getInnerClasses ().forEach (i -> addType (fullName, i));
 	}
     }
 }

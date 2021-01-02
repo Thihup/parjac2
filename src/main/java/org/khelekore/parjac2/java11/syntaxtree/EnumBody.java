@@ -37,4 +37,8 @@ public class EnumBody extends SyntaxTreeNode {
 	sb.append ("}");
 	return sb.toString ();
     }
+
+    public List<TypeDeclaration> getInnerClasses () {
+	return declarations == null ? List.of () : declarations.getInnerClasses ();
+    }
 }

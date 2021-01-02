@@ -1,5 +1,6 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -26,10 +27,18 @@ public class OrdinaryCompilationUnit extends SyntaxTreeNode {
 	else
 	    imports = Collections.emptyList ();
 
-	if (rule.size () > i)
-	    types = ((Multiple)children.get (i++)).<TypeDeclaration>get ();
-	else
+	if (rule.size () > i) {
+	    Multiple m = (Multiple)children.get (i++);
+	    types = new ArrayList<> ();
+	    for (ParseTreeNode c : m.getChildren ()) {
+		if (c instanceof TypeDeclaration)
+		    types.add ((TypeDeclaration)c);
+		else
+		    ctx.warning (c.getPosition (), "Empty type / Extra ';'");
+	    }
+	} else {
 	    types = Collections.emptyList ();
+	}
     }
 
     private boolean isZomImports (Grammar grammar, ParseTreeNode n) {
@@ -50,5 +59,15 @@ public class OrdinaryCompilationUnit extends SyntaxTreeNode {
 	for (TypeDeclaration type : types)
 	    sb.append (type).append ("\n");
 	return sb.toString ();
+    }
+
+    public String getPackageName () {
+	if (packageDeclarataion == null)
+	    return "";
+	return packageDeclarataion.getName ();
+    }
+
+    public List<TypeDeclaration> getTypes () {
+	return types;
     }
 }

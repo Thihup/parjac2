@@ -16,20 +16,19 @@ public class InterfaceBody extends SyntaxTreeNode {
 
     private List<ParseTreeNode> constantDeclarations = new ArrayList<> ();
     private List<ParseTreeNode> interfaceMethodDeclarations = new ArrayList<> ();
-    private List<ParseTreeNode> classDeclarations = new ArrayList<> ();
-    private List<ParseTreeNode> interfaceDeclarations = new ArrayList<> ();
+    private List<TypeDeclaration> classDeclarations = new ArrayList<> ();
 
+    // inner classes, enums, interfaces and annotations
     private static Map<Class<?>, BiConsumer<InterfaceBody, ParseTreeNode>> distributor = new HashMap<> ();
 
     static {
 	distributor.put (ConstantDeclaration.class, (ib, n) -> ib.constantDeclarations.add (n));
 	distributor.put (InterfaceMethodDeclaration.class, (ib, n) -> ib.interfaceMethodDeclarations.add (n));
 
-	distributor.put (NormalClassDeclaration.class, (ib, n) -> ib.classDeclarations.add (n));
-	distributor.put (EnumDeclaration.class, (ib, n) -> ib.classDeclarations.add (n));
-
-	distributor.put (NormalInterfaceDeclaration.class, (ib, n) -> ib.interfaceDeclarations.add (n));
-	distributor.put (AnnotationTypeDeclaration.class, (ib, n) -> ib.interfaceDeclarations.add (n));
+	distributor.put (NormalClassDeclaration.class, (ib, n) -> ib.classDeclarations.add ((TypeDeclaration)n));
+	distributor.put (EnumDeclaration.class, (ib, n) -> ib.classDeclarations.add ((TypeDeclaration)n));
+	distributor.put (NormalInterfaceDeclaration.class, (ib, n) -> ib.classDeclarations.add ((TypeDeclaration)n));
+	distributor.put (AnnotationTypeDeclaration.class, (ib, n) -> ib.classDeclarations.add ((TypeDeclaration)n));
 
 	distributor.put (TokenNode.class, (ib, n) -> {/*nothing*/}); // ';'
     }
@@ -59,5 +58,9 @@ public class InterfaceBody extends SyntaxTreeNode {
 
     private static void handleBadType (InterfaceBody cb, ParseTreeNode n) {
 	throw new IllegalStateException ("Unhandled type: " + n.getClass () + ": " + n);
+    }
+
+    public List<TypeDeclaration> getInnerClasses () {
+	return classDeclarations;
     }
 }

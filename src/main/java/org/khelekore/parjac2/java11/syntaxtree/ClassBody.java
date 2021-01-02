@@ -19,8 +19,9 @@ public class ClassBody extends SyntaxTreeNode {
     protected List<ParseTreeNode> constructorDeclarations = new ArrayList<> ();
     protected List<ParseTreeNode> fieldDeclarations = new ArrayList<> ();
     protected List<ParseTreeNode> methodDeclarations = new ArrayList<> ();
-    protected List<ParseTreeNode> classDeclarations = new ArrayList<> ();
-    protected List<ParseTreeNode> interfaceDeclarations = new ArrayList<> ();
+
+    // inner classes, enums, interfaces and annotations
+    protected List<TypeDeclaration> classDeclarations = new ArrayList<> ();
 
     private static Map<Class<?>, BiConsumer<ClassBody, ParseTreeNode>> distributor = new HashMap<> ();
 
@@ -31,11 +32,10 @@ public class ClassBody extends SyntaxTreeNode {
 	distributor.put (FieldDeclaration.class, (cb, n) -> cb.fieldDeclarations.add (n));
 	distributor.put (MethodDeclaration.class, (cb, n) -> cb.methodDeclarations.add (n));
 
-	distributor.put (NormalClassDeclaration.class, (cb, n) -> cb.classDeclarations.add (n));
-	distributor.put (EnumDeclaration.class, (cb, n) -> cb.classDeclarations.add (n));
-
-	distributor.put (NormalInterfaceDeclaration.class, (cb, n) -> cb.interfaceDeclarations.add (n));
-	distributor.put (AnnotationTypeDeclaration.class, (cb, n) -> cb.interfaceDeclarations.add (n));
+	distributor.put (NormalClassDeclaration.class, (cb, n) -> cb.classDeclarations.add ((TypeDeclaration)n));
+	distributor.put (EnumDeclaration.class, (cb, n) -> cb.classDeclarations.add ((TypeDeclaration)n));
+	distributor.put (NormalInterfaceDeclaration.class, (cb, n) -> cb.classDeclarations.add ((TypeDeclaration)n));
+	distributor.put (AnnotationTypeDeclaration.class, (cb, n) -> cb.classDeclarations.add ((TypeDeclaration)n));
 
 	distributor.put (TokenNode.class, (cb, n) -> {/*nothing*/}); // ';'
     }
@@ -64,5 +64,9 @@ public class ClassBody extends SyntaxTreeNode {
 
     private static void handleBadType (ClassBody cb, ParseTreeNode n) {
 	throw new IllegalStateException ("Unhandled type: " + n.getClass () + ": " + n);
+    }
+
+    public List<TypeDeclaration> getInnerClasses () {
+	return classDeclarations;
     }
 }

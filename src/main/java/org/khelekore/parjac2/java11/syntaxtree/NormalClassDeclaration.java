@@ -13,7 +13,7 @@ public class NormalClassDeclaration extends TypeDeclaration {
     private TypeParameters typeParameters;
     private Superclass superClass;
     private Superinterfaces superInterfaces;
-    private ClassBody classBody;
+    private ClassBody body;
 
     public NormalClassDeclaration (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
@@ -30,7 +30,7 @@ public class NormalClassDeclaration extends TypeDeclaration {
 	    superClass = (Superclass)children.get (i++);
 	if (children.get (i) instanceof Superinterfaces)
 	    superInterfaces = (Superinterfaces)children.get (i++);
-	classBody = (ClassBody)children.get (i++);
+	body = (ClassBody)children.get (i++);
     }
 
     @Override public Object getValue () {
@@ -44,7 +44,15 @@ public class NormalClassDeclaration extends TypeDeclaration {
 	    sb.append (superClass).append (" ");
 	if (superInterfaces != null)
 	    sb.append (superInterfaces).append (" ");
-	sb.append (classBody);
+	sb.append (body);
 	return sb.toString ();
+    }
+
+    @Override public String getName () {
+	return id;
+    }
+
+    @Override public List<TypeDeclaration> getInnerClasses () {
+	return body.getInnerClasses ();
     }
 }

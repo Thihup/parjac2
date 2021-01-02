@@ -40,4 +40,8 @@ public class Context {
     public void error (ParsePosition pos, String format, Object... args) {
 	diagnostics.report (SourceDiagnostics.error (path, pos, format, args));
     }
+
+    public void warning (ParsePosition pos, String format, Object... args) {
+	diagnostics.report (SourceDiagnostics.warning (path, pos, format, args));
+    }
 }

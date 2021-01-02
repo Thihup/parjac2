@@ -12,6 +12,7 @@ public class EnumDeclaration extends TypeDeclaration {
     private final String id;
     private final Superinterfaces supers;
     private final EnumBody body;
+
     public EnumDeclaration (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
@@ -38,5 +39,13 @@ public class EnumDeclaration extends TypeDeclaration {
 	    sb.append (supers).append (" ");
 	sb.append (body);
 	return sb.toString ();
+    }
+
+    @Override public String getName () {
+	return id;
+    }
+
+    @Override public List<TypeDeclaration> getInnerClasses () {
+	return body.getInnerClasses ();
     }
 }

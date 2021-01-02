@@ -30,4 +30,12 @@ public class AnnotationTypeDeclaration extends TypeDeclaration {
 	sb.append ("@interface ").append (id).append (body);
 	return sb.toString ();
     }
+
+    @Override public String getName () {
+	return id;
+    }
+
+    @Override public List<TypeDeclaration> getInnerClasses () {
+	return body.getInnerClasses ();
+    }
 }

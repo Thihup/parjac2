@@ -3,6 +3,7 @@ package org.khelekore.parjac2.java11.syntaxtree;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.khelekore.parjac2.java11.Identifier;
 import org.khelekore.parjac2.parser.Rule;
@@ -12,6 +13,7 @@ import org.khelekore.parjac2.util.StringHelper;
 public class PackageDeclaration extends SyntaxTreeNode {
     private final List<Annotation> annotations;
     private final List<String> nameParts;
+    private final String dottedName;
 
     public PackageDeclaration (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
@@ -31,10 +33,15 @@ public class PackageDeclaration extends SyntaxTreeNode {
 	    for (int j = 1, e = z.size (); j < e; j += 2)
 		nameParts.add (((Identifier)z.get (j)).getValue ());
 	}
+	dottedName = nameParts.stream ().collect (Collectors.joining ("."));
     }
 
     @Override public Object getValue () {
 	return annotations + (annotations.isEmpty () ? "" : " ") +
 	    "package " + StringHelper.dotted (nameParts) + ";\n";
+    }
+
+    public String getName () {
+	return dottedName;
     }
 }
