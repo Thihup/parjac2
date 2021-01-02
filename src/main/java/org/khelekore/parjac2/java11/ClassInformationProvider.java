@@ -45,6 +45,8 @@ public class ClassInformationProvider {
     private class ClassResourceHolder {
 	private final Path ctSym;
 	private final List<Path> classPathEntries;
+
+	// full class name to information, name only has '.' as separator, no / or $
 	private Map<String, ClasspathClassInformation> foundClasses = new HashMap<> ();
 
 	public ClassResourceHolder (CompilationArguments settings) {
@@ -120,6 +122,7 @@ public class ClassInformationProvider {
 	    if (name.endsWith (type)) {
 		name = name.substring (0, name.length () - type.length ());
 		name = name.replace (dirSeparator, '.');
+		name = name.replace ('$', '.');
 		foundClasses.put (name, r);
 	    }
 	}
