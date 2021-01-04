@@ -38,6 +38,7 @@ public class ClassBody extends SyntaxTreeNode {
     }
 
     private void findInnerClasses (ParseTreeNode n) {
+	// We do a depth first search for classes.
 	int foundClassId = 0;
 	Deque<ParseTreeNode> dq = new ArrayDeque<> ();
 	dq.addFirst (n);
@@ -49,8 +50,10 @@ public class ClassBody extends SyntaxTreeNode {
 		classDeclarations.add (ac);
 	    }
 	    int end = dq.size ();
+	    // since we we want to add all the child nodes first in deque we first add them last
+	    // and them move them first so that things end up in wanted order
 	    f.visitChildNodes (cn -> dq.addLast (cn));
-	    int diff = dq.size () - end;
+	    int diff = dq.size () - end; // we added this many child nodes
 	    for (int i = 0; i < diff; i++)
 		dq.addFirst (dq.removeLast ());
 	}
