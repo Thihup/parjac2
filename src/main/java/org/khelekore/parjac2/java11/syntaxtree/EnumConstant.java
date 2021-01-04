@@ -9,7 +9,7 @@ import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
-public class EnumConstant extends SyntaxTreeNode {
+public class EnumConstant extends AnonymousClass {
     private final List<ParseTreeNode> modifiers;
     private final String id;
     private final ArgumentList args;
@@ -51,7 +51,17 @@ public class EnumConstant extends SyntaxTreeNode {
 
     @Override public void visitChildNodes (NodeVisitor v) {
 	modifiers.forEach (v::accept);
-	v.accept (args);
-	v.accept (body);
+	if (args != null)
+	    v.accept (args);
+	if (body != null)
+	    v.accept (body);
+    }
+
+    public boolean hasBody () {
+	return body != null;
+    }
+
+    @Override public List<TypeDeclaration> getInnerClasses () {
+	return body == null ? List.of () : body.getInnerClasses ();
     }
 }

@@ -30,6 +30,7 @@ public class UntypedMethodInvocation extends SyntaxTreeNode {
     }
 
     @Override public void visitChildNodes (NodeVisitor v) {
-	v.accept (args);
+	if (args != null)
+	    v.accept (args);
     }
 }

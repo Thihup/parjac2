@@ -43,6 +43,7 @@ public class SimpleClassType extends SyntaxTreeNode {
 
     @Override public void visitChildNodes (NodeVisitor v) {
 	annotations.forEach (v::accept);
-	v.accept (typeArguments);
+	if (typeArguments != null)
+	    v.accept (typeArguments);
     }
 }

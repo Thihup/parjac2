@@ -1,7 +1,9 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
@@ -31,6 +33,38 @@ public class ClassBody extends SyntaxTreeNode {
 	td.addMapping (FieldDeclaration.class, fieldDeclarations);
 	td.addMapping (MethodDeclaration.class, methodDeclarations);
 	declarations.forEach (td::distribute);
+
+	declarations.forEach (this::findInnerClasses);
+    }
+
+    private void findInnerClasses (ParseTreeNode n) {
+	int foundClassId = 0;
+	Deque<ParseTreeNode> dq = new ArrayDeque<> ();
+	dq.addFirst (n);
+	while (!dq.isEmpty ()) {
+	    ParseTreeNode f = dq.removeFirst ();
+	    if (isAnonymousClass (f)) {
+		AnonymousClass ac = (AnonymousClass)f;
+		ac.setAnonymousClassname (Integer.toString (++foundClassId));
+		classDeclarations.add (ac);
+	    }
+	    int end = dq.size ();
+	    f.visitChildNodes (cn -> dq.addLast (cn));
+	    int diff = dq.size () - end;
+	    for (int i = 0; i < diff; i++)
+		dq.addFirst (dq.removeLast ());
+	}
+    }
+
+    private boolean isAnonymousClass (ParseTreeNode f) {
+	if (f instanceof UnqualifiedClassInstanceCreationExpression) {
+	    UnqualifiedClassInstanceCreationExpression u = (UnqualifiedClassInstanceCreationExpression)f;
+	    return u.hasBody ();
+	} else if (f instanceof EnumConstant) {
+	    EnumConstant e = (EnumConstant)f;
+	    return e.hasBody ();
+	}
+	return false;
     }
 
     protected boolean hasDeclarations (Rule rule) {

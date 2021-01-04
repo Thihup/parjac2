@@ -6,7 +6,7 @@ import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
-public class UnqualifiedClassInstanceCreationExpression extends SyntaxTreeNode {
+public class UnqualifiedClassInstanceCreationExpression extends AnonymousClass {
     private final TypeArguments types;
     private final ClassOrInterfaceTypeToInstantiate type;
     private final ArgumentList args;
@@ -46,5 +46,13 @@ public class UnqualifiedClassInstanceCreationExpression extends SyntaxTreeNode {
 	    v.accept (args);
 	if (body != null)
 	    v.accept (body);
+    }
+
+    public boolean hasBody () {
+	return body != null;
+    }
+
+    @Override public List<TypeDeclaration> getInnerClasses () {
+	return body == null ? List.of () : body.getInnerClasses ();
     }
 }

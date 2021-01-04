@@ -56,6 +56,7 @@ public class ExplicitConstructorInvocation extends SyntaxTreeNode {
 	    v.accept (type);
 	if (types != null)
 	    v.accept (types);
-	v.accept (argumentList);
+	if (argumentList != null)
+	    v.accept (argumentList);
     }
 }

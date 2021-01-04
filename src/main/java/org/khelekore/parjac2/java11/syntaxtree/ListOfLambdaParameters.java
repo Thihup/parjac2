@@ -21,6 +21,7 @@ public class ListOfLambdaParameters extends LambdaParameters {
     }
 
     @Override public void visitChildNodes (NodeVisitor v) {
-	v.accept (params);
+	if (params != null)
+	    v.accept (params);
     }
 }

@@ -19,6 +19,7 @@ public class ReturnStatement extends SyntaxTreeNode {
     }
 
     @Override public void visitChildNodes (NodeVisitor v) {
-	v.accept (expression);
+	if (expression != null)
+	    v.accept (expression);
     }
 }

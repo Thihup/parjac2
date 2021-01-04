@@ -8,6 +8,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class Block extends SyntaxTreeNode {
     private final BlockStatements statements;
+
     public Block (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	statements = (rule.size () > 2) ? (BlockStatements)children.get (1) : null;
@@ -23,6 +24,7 @@ public class Block extends SyntaxTreeNode {
     }
 
     @Override public void visitChildNodes (NodeVisitor v) {
-	v.accept (statements);
+	if (statements != null)
+	    v.accept (statements);
     }
 }

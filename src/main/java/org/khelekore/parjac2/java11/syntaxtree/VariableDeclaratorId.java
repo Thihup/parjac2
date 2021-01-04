@@ -27,6 +27,7 @@ public class VariableDeclaratorId extends SyntaxTreeNode {
     }
 
     @Override public void visitChildNodes (NodeVisitor v) {
-	v.accept (dims);
+	if (dims != null)
+	    v.accept (dims);
     }
 }

@@ -36,6 +36,7 @@ public class FieldAccess extends SyntaxTreeNode {
     }
 
     @Override public void visitChildNodes (NodeVisitor v) {
-	v.accept (from);
+	if (from != null)
+	    v.accept (from);
     }
 }
