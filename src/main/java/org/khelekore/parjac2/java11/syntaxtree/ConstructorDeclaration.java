@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class ConstructorDeclaration extends SyntaxTreeNode {
@@ -11,6 +12,7 @@ public class ConstructorDeclaration extends SyntaxTreeNode {
     private final ConstructorDeclarator declarator;
     private final Throws t;
     private final ConstructorBody body;
+
     public ConstructorDeclaration (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
@@ -32,5 +34,13 @@ public class ConstructorDeclaration extends SyntaxTreeNode {
 	    sb.append (t).append (" ");
 	sb.append (body);
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	modifiers.forEach (v::accept);
+	v.accept (declarator);
+	if (t != null)
+	    v.accept (t);
+	v.accept (body);
     }
 }

@@ -1,5 +1,6 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class DottedThis extends SyntaxTreeNode {
@@ -12,5 +13,9 @@ public class DottedThis extends SyntaxTreeNode {
 
     @Override public Object getValue () {
 	return type + ".this";
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	v.accept (type);
     }
 }

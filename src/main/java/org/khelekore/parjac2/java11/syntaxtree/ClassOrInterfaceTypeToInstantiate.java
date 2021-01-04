@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.khelekore.parjac2.java11.Identifier;
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class ClassOrInterfaceTypeToInstantiate extends SyntaxTreeNode {
@@ -19,7 +20,7 @@ public class ClassOrInterfaceTypeToInstantiate extends SyntaxTreeNode {
 	if (children.get (i) instanceof Multiple)
 	    annotations = getAnnotations ((Multiple)children.get (i++));
 	Identifier id = (Identifier)children.get (i++);
-	ids.add (new AnnotatedIdentifier (annotations, id));
+	ids.add (new AnnotatedIdentifier (n.getPosition (), annotations, id));
 	if (children.size () > i && children.get (i) instanceof Multiple) {
 	    Multiple z = (Multiple)children.get (i++);
 	    List<ParseTreeNode> ls = z.getChildren ();
@@ -29,9 +30,10 @@ public class ClassOrInterfaceTypeToInstantiate extends SyntaxTreeNode {
 		    annotations = getAnnotations ((Multiple)ptn);
 		    id = (Identifier)children.get (++j);
 		} else {
+		    annotations = List.of ();
 		    id = (Identifier)ptn;
 		}
-		ids.add (new AnnotatedIdentifier (annotations, id));
+		ids.add (new AnnotatedIdentifier (ptn.getPosition (), annotations, id));
 	    }
 	}
 	types = (rule.size () > i) ? children.get (i) : null;
@@ -46,12 +48,16 @@ public class ClassOrInterfaceTypeToInstantiate extends SyntaxTreeNode {
 	for (AnnotatedIdentifier ai : ids) {
 	    if (sb.length () > 0)
 		sb.append (".");
-	    if (!ai.getAnnotations ().isEmpty ())
-		sb.append (ai.getAnnotations ()).append (" ");
-	    sb.append (ai.getId ());
+	    sb.append (ai.getValue ());
 	}
 	if (types != null)
 	    sb.append (types);
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	ids.forEach (v::accept);
+	if (types != null)
+	    v.accept (types);
     }
 }

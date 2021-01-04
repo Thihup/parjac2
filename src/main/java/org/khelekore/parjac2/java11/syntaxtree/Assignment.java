@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parser.Token;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.khelekore.parjac2.parsetree.TokenNode;
 
@@ -21,5 +22,10 @@ public class Assignment extends SyntaxTreeNode {
 
     @Override public Object getValue() {
 	return left + " " + operator.getName () + " " + right.getValue ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	v.accept (left);
+	v.accept (right);
     }
 }

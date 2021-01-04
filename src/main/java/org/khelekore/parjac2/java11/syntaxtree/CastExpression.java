@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class CastExpression extends SyntaxTreeNode {
@@ -35,5 +36,11 @@ public class CastExpression extends SyntaxTreeNode {
 	    additionalBounds.forEach (a -> sb.append (" & ").append (a));
 	sb.append (")").append (expression);
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	v.accept (baseType);
+	additionalBounds.forEach (v::accept);
+	v.accept (expression);
     }
 }

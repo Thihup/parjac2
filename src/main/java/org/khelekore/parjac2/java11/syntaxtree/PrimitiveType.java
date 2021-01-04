@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parser.Token;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.khelekore.parjac2.parsetree.TokenNode;
 
@@ -29,5 +30,9 @@ public class PrimitiveType extends SyntaxTreeNode {
 	    sb.append (annotations).append (" ");
 	sb.append (type);
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	annotations.forEach (v::accept);
     }
 }

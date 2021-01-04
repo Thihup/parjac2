@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public abstract class PackageNameTo<T extends DottedName, S extends DottedName> extends ModuleDirective {
@@ -35,6 +36,11 @@ public abstract class PackageNameTo<T extends DottedName, S extends DottedName> 
 	}
 	sb.append (";");
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	v.accept (packageName);
+	exportedTo.forEach (v::accept);
     }
 
     protected abstract String getType ();

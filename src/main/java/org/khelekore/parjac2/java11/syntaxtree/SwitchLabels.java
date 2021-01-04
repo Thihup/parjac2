@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class SwitchLabels extends SyntaxTreeNode {
@@ -30,5 +31,9 @@ public class SwitchLabels extends SyntaxTreeNode {
 
     public List<SwitchLabel> getLabels () {
 	return labels;
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	labels.forEach (v::accept);
     }
 }

@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.khelekore.parjac2.java11.Identifier;
 import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class SimpleClassType extends SyntaxTreeNode {
@@ -38,5 +39,10 @@ public class SimpleClassType extends SyntaxTreeNode {
     @Override public Object getValue () {
 	String a = annotations.stream ().map (x -> x.toString ()).collect (Collectors.joining (" "));
 	return a + id + (typeArguments != null ? typeArguments : "");
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	annotations.forEach (v::accept);
+	v.accept (typeArguments);
     }
 }

@@ -3,6 +3,7 @@ package org.khelekore.parjac2.java11.syntaxtree;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class SwitchBlockStatementGroup extends SyntaxTreeNode {
@@ -22,5 +23,10 @@ public class SwitchBlockStatementGroup extends SyntaxTreeNode {
 	    sb.append (l).append (" ");
 	sb.append (statements);
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	labels.forEach (v::accept);
+	v.accept (statements);
     }
 }

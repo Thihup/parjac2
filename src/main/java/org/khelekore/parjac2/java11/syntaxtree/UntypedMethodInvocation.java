@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.khelekore.parjac2.java11.Identifier;
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class UntypedMethodInvocation extends SyntaxTreeNode {
@@ -26,5 +27,9 @@ public class UntypedMethodInvocation extends SyntaxTreeNode {
 	    sb.append (args);
 	sb.append (")");
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	v.accept (args);
     }
 }

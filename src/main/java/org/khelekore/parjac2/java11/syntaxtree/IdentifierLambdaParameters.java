@@ -1,5 +1,6 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class IdentifierLambdaParameters extends LambdaParameters {
@@ -11,5 +12,9 @@ public class IdentifierLambdaParameters extends LambdaParameters {
 
     @Override public Object getValue () {
 	return id;
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	// nothing
     }
 }

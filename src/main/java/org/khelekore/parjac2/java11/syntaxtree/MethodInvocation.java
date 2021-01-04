@@ -1,6 +1,7 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
 import org.khelekore.parjac2.parser.ParsePosition;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class MethodInvocation extends SyntaxTreeNode {
@@ -28,5 +29,13 @@ public class MethodInvocation extends SyntaxTreeNode {
 	    sb.append (types);
 	sb.append (mi);
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	if (on != null)
+	    v.accept (on);
+	if (types != null)
+	    v.accept (types);
+	v.accept (mi);
     }
 }

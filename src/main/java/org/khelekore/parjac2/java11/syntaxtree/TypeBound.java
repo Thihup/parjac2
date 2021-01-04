@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class TypeBound extends SyntaxTreeNode {
@@ -29,5 +30,10 @@ public class TypeBound extends SyntaxTreeNode {
 	for (ClassType c : additionalBounds)
 	    sb.append (" & ").append (c);
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	v.accept (base);
+	additionalBounds.forEach (v::accept);
     }
 }

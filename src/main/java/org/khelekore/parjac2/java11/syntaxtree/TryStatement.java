@@ -3,6 +3,7 @@ package org.khelekore.parjac2.java11.syntaxtree;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class TryStatement extends SyntaxTreeNode {
@@ -44,5 +45,15 @@ public class TryStatement extends SyntaxTreeNode {
 	if (finallyBlock != null)
 	    sb.append (finallyBlock);
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	if (resources != null)
+	    v.accept (resources);
+	v.accept (block);
+	if (catches != null)
+	    v.accept (catches);
+	if (finallyBlock != null)
+	    v.accept (finallyBlock);
     }
 }

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import org.khelekore.parjac2.parser.ParsePosition;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class Multiple extends SyntaxTreeNode {
@@ -32,6 +33,10 @@ public class Multiple extends SyntaxTreeNode {
 
     @Override public List<ParseTreeNode> getChildren () {
 	return nodes;
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	nodes.forEach (v::accept);
     }
 
     public void addAll (List<ParseTreeNode> newNodes) {

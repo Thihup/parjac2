@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.khelekore.parjac2.java11.Context;
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class SwitchBlock extends SyntaxTreeNode {
@@ -39,5 +40,10 @@ public class SwitchBlock extends SyntaxTreeNode {
 	    sb.append (l.toString ());
 	sb.append ("}");
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	ls.forEach (v::accept);
+	trailingLabels.forEach (v::accept);
     }
 }

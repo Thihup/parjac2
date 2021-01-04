@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
-import java.util.Collections;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.ParsePosition;
@@ -26,7 +25,7 @@ public abstract class SyntaxTreeNode implements ParseTreeNode {
     }
 
     @Override public List<ParseTreeNode> getChildren () {
-	return Collections.emptyList ();
+	throw new IllegalStateException ("Not implemented");
     }
 
     @Override public ParsePosition getPosition () {

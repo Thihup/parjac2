@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class BlockStatements extends SyntaxTreeNode {
@@ -20,5 +21,9 @@ public class BlockStatements extends SyntaxTreeNode {
 	StringBuilder sb = new StringBuilder ();
 	statements.forEach (s -> sb.append (s).append ("\n"));
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	statements.forEach (v::accept);
     }
 }

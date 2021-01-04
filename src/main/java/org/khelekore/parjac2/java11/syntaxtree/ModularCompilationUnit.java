@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class ModularCompilationUnit extends SyntaxTreeNode {
@@ -25,5 +26,10 @@ public class ModularCompilationUnit extends SyntaxTreeNode {
 	}
 	sb.append (moduleDeclaration);
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	imports.forEach (v::accept);
+	v.accept (moduleDeclaration);
     }
 }

@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.khelekore.parjac2.java11.Identifier;
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class BreakStatement extends SyntaxTreeNode {
@@ -16,5 +17,9 @@ public class BreakStatement extends SyntaxTreeNode {
 
     @Override public Object getValue () {
 	return id != null ? "break " + id + ";" : "break;";
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	// nothing
     }
 }

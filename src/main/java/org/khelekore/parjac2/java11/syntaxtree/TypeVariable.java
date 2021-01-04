@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.khelekore.parjac2.java11.Identifier;
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class TypeVariable extends SyntaxTreeNode {
@@ -28,5 +29,9 @@ public class TypeVariable extends SyntaxTreeNode {
 	    sb.append (annotations).append (" ");
 	sb.append (id);
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	annotations.forEach (v::accept);
     }
 }

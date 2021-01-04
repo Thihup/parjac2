@@ -41,6 +41,10 @@ public class RuleNode implements ParseTreeNode {
 	return rule;
     }
 
+    @Override public void visitChildNodes (NodeVisitor v) {
+	children.forEach (v::accept);
+    }
+
     @Override public String toString () {
 	return rule + ":"  + children;
     }

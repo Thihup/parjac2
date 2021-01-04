@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.khelekore.parjac2.java11.Identifier;
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class VariableArityParameter extends FormalParameterBase {
@@ -12,6 +13,7 @@ public class VariableArityParameter extends FormalParameterBase {
     private final ParseTreeNode type;
     private final List<Annotation> annotations;
     private final String id;
+
     public VariableArityParameter (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
@@ -33,5 +35,11 @@ public class VariableArityParameter extends FormalParameterBase {
 	    sb.append (annotations).append (" ");
 	sb.append ("...").append (id);
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	modifiers.forEach (v::accept);
+	v.accept (type);
+	annotations.forEach (v::accept);
     }
 }

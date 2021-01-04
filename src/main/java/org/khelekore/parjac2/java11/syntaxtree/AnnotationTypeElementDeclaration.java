@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.khelekore.parjac2.java11.Identifier;
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class AnnotationTypeElementDeclaration extends SyntaxTreeNode {
@@ -39,5 +40,14 @@ public class AnnotationTypeElementDeclaration extends SyntaxTreeNode {
 	    sb.append (defaultValue);
 	sb.append (";");
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	modifiers.forEach (v::accept);
+	v.accept (type);
+	if (dims != null)
+	    v.accept (dims);
+	if (defaultValue != null)
+	    v.accept (defaultValue);
     }
 }

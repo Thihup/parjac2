@@ -3,6 +3,7 @@ package org.khelekore.parjac2.java11.syntaxtree;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class ClassInstanceCreationExpression extends SyntaxTreeNode {
@@ -33,5 +34,13 @@ public class ClassInstanceCreationExpression extends SyntaxTreeNode {
 	    sb.append (primary).append (".");
 	sb.append (exp);
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	if (name != null)
+	    v.accept (name);
+	if (primary != null)
+	    v.accept (primary);
+	v.accept (exp);
     }
 }

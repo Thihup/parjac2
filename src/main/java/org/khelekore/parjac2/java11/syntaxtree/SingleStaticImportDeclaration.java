@@ -4,11 +4,13 @@ import java.util.List;
 
 import org.khelekore.parjac2.java11.Identifier;
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class SingleStaticImportDeclaration extends ImportDeclaration {
     private TypeName typename;
     private String id;
+
     public SingleStaticImportDeclaration (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	this.typename = (TypeName)children.get (2);
@@ -17,5 +19,9 @@ public class SingleStaticImportDeclaration extends ImportDeclaration {
 
     @Override public Object getValue () {
 	return "import static " + typename + "." + id + ";";
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	v.accept (typename);
     }
 }

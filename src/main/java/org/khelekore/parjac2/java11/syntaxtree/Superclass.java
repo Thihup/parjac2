@@ -3,6 +3,7 @@ package org.khelekore.parjac2.java11.syntaxtree;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class Superclass extends SyntaxTreeNode {
@@ -14,5 +15,9 @@ public class Superclass extends SyntaxTreeNode {
 
     @Override public Object getValue () {
 	return "extends " + type;
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	v.accept (type);
     }
 }

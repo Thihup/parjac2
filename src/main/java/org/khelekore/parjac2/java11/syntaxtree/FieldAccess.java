@@ -5,6 +5,7 @@ import java.util.List;
 import org.khelekore.parjac2.java11.Context;
 import org.khelekore.parjac2.java11.Identifier;
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class FieldAccess extends SyntaxTreeNode {
@@ -32,5 +33,9 @@ public class FieldAccess extends SyntaxTreeNode {
 	    sb.append ("super");
 	sb.append (".").append (id);
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	v.accept (from);
     }
 }

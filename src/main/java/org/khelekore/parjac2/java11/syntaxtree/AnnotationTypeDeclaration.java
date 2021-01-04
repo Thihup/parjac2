@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.khelekore.parjac2.java11.TypeIdentifier;
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class AnnotationTypeDeclaration extends TypeDeclaration {
@@ -29,6 +30,11 @@ public class AnnotationTypeDeclaration extends TypeDeclaration {
 	    sb.append (modifiers).append (" ");
 	sb.append ("@interface ").append (id).append (body);
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	modifiers.forEach (v::accept);
+	v.accept (body);
     }
 
     @Override public String getName () {

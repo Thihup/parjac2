@@ -1,6 +1,7 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
 import org.khelekore.parjac2.parser.ParsePosition;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class CaseLabel extends SwitchLabel {
@@ -12,5 +13,9 @@ public class CaseLabel extends SwitchLabel {
 
     @Override public Object getValue () {
 	return "case " + expression.getValue ()  + ":";
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	v.accept (expression);
     }
 }

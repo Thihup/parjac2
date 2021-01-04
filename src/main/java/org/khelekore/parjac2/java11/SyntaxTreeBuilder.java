@@ -459,8 +459,8 @@ public class SyntaxTreeBuilder {
 
     private ParseTreeNode lambdaParameterList (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	if (rule.get (0) == java11Tokens.IDENTIFIER.getId ())
-	    return new LambdaParameterList<String> (rule, n, children, i -> ((Identifier)i).getValue ());
-	return new LambdaParameterList<LambdaParameter> (rule, n, children, c -> (LambdaParameter)c);
+	    return LambdaParameterList.forIdentifier (rule, n, children, i -> ((Identifier)i).getValue ());
+	return LambdaParameterList.forParameters (rule, n, children, c -> (LambdaParameter)c);
     }
 
     private ParseTreeNode lambdaParameter (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {

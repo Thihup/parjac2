@@ -5,6 +5,7 @@ import java.util.List;
 import org.khelekore.parjac2.java11.Context;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parser.Token;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.khelekore.parjac2.parsetree.TokenNode;
 
@@ -13,6 +14,7 @@ public class ExplicitConstructorInvocation extends SyntaxTreeNode {
     private final TypeArguments types;
     private final Token where; // this or super
     private final ArgumentList argumentList;
+
     public ExplicitConstructorInvocation (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
@@ -47,5 +49,13 @@ public class ExplicitConstructorInvocation extends SyntaxTreeNode {
 	    sb.append (argumentList);
 	sb.append (");");
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	if (type != null)
+	    v.accept (type);
+	if (types != null)
+	    v.accept (types);
+	v.accept (argumentList);
     }
 }

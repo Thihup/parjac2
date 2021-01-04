@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class Dims extends SyntaxTreeNode {
@@ -37,5 +38,9 @@ public class Dims extends SyntaxTreeNode {
 	    sb.append ("[]");
 	}
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	annotations.forEach (ls -> ls.forEach (v::accept));
     }
 }

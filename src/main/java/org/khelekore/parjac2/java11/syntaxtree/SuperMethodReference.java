@@ -4,12 +4,14 @@ import java.util.List;
 
 import org.khelekore.parjac2.java11.Identifier;
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class SuperMethodReference extends SyntaxTreeNode {
     private final ParseTreeNode type;
     private final TypeArguments types;
     private final String id;
+
     public SuperMethodReference (Rule r, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	type = children.get (0);
@@ -24,5 +26,10 @@ public class SuperMethodReference extends SyntaxTreeNode {
 	    sb.append (types);
 	sb.append (id);
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	v.accept (type);
+	v.accept (types);
     }
 }

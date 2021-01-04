@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class EnumConstantList extends SyntaxTreeNode {
@@ -24,5 +25,9 @@ public class EnumConstantList extends SyntaxTreeNode {
 
     @Override public Object getValue () {
 	return constants.stream ().map (ec -> ec.toString ()).collect (Collectors.joining (", "));
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	constants.forEach (v::accept);
     }
 }

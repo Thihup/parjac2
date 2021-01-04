@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class DimExprs extends SyntaxTreeNode {
@@ -23,5 +24,9 @@ public class DimExprs extends SyntaxTreeNode {
 
     @Override public Object getValue () {
 	return dims;
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	dims.forEach (v::accept);
     }
 }

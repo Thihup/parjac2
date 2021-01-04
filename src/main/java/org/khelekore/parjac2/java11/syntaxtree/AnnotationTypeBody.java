@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.khelekore.parjac2.util.TypeDistributor;
 
@@ -34,6 +35,10 @@ public class AnnotationTypeBody extends SyntaxTreeNode {
 	    sb.append (declarations);
 	sb.append ("}");
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	declarations.forEach (v::accept);
     }
 
     public List<TypeDeclaration> getInnerClasses () {

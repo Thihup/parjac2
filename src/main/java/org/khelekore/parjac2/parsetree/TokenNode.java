@@ -42,6 +42,10 @@ public class TokenNode implements ParseTreeNode {
 	return Collections.emptyList ();
     }
 
+    @Override public void visitChildNodes (NodeVisitor v) {
+	// empty
+    }
+
     @Override public String toString () {
 	return token.getName ();
     }

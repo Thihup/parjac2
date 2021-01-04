@@ -3,6 +3,7 @@ package org.khelekore.parjac2.java11.syntaxtree;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class AssertStatement extends SyntaxTreeNode {
@@ -21,5 +22,11 @@ public class AssertStatement extends SyntaxTreeNode {
 	if (expression2 != null)
 	    sb.append (" : ").append (expression2);
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	v.accept (expression1);
+	if (expression2 != null)
+	    v.accept (expression2);
     }
 }

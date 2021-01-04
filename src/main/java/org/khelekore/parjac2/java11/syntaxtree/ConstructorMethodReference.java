@@ -3,11 +3,13 @@ package org.khelekore.parjac2.java11.syntaxtree;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class ConstructorMethodReference extends SyntaxTreeNode {
     private final ParseTreeNode type;
     private final TypeArguments types;
+
     public ConstructorMethodReference (Rule r, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	type = children.get (0);
@@ -21,5 +23,11 @@ public class ConstructorMethodReference extends SyntaxTreeNode {
 	    sb.append (types);
 	sb.append ("new");
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	v.accept (type);
+	if (types != null)
+	    v.accept (types);
     }
 }

@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import org.khelekore.parjac2.java11.Identifier;
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.khelekore.parjac2.util.StringHelper;
 
@@ -39,6 +40,10 @@ public class PackageDeclaration extends SyntaxTreeNode {
     @Override public Object getValue () {
 	return annotations + (annotations.isEmpty () ? "" : " ") +
 	    "package " + StringHelper.dotted (nameParts) + ";\n";
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	annotations.forEach (v::accept);
     }
 
     public String getName () {

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class CatchType extends SyntaxTreeNode {
@@ -32,5 +33,10 @@ public class CatchType extends SyntaxTreeNode {
 	for (ClassType c : otherTypes)
 	    sb.append (" | ").append (c);
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	v.accept (firstType);
+	otherTypes.forEach (v::accept);
     }
 }

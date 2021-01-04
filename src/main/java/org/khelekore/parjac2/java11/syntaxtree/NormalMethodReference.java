@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.khelekore.parjac2.java11.Identifier;
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class NormalMethodReference extends SyntaxTreeNode {
@@ -24,5 +25,10 @@ public class NormalMethodReference extends SyntaxTreeNode {
 	    sb.append (types);
 	sb.append (id);
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	v.accept (type);
+	v.accept (types);
     }
 }

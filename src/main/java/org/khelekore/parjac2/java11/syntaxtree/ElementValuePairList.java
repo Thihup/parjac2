@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class ElementValuePairList extends SyntaxTreeNode {
@@ -24,5 +25,9 @@ public class ElementValuePairList extends SyntaxTreeNode {
 
     @Override public Object getValue() {
 	return values;
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	values.forEach (v::accept);
     }
 }

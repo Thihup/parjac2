@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.khelekore.parjac2.java11.Identifier;
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class NormalInterfaceDeclaration extends TypeDeclaration {
@@ -56,5 +57,14 @@ public class NormalInterfaceDeclaration extends TypeDeclaration {
 
     @Override public List<TypeDeclaration> getInnerClasses () {
 	return body.getInnerClasses ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	modifiers.forEach (v::accept);
+	if (types != null)
+	    v.accept (types);
+	if (extendsInterfaces != null)
+	    v.accept (extendsInterfaces);
+	v.accept (body);
     }
 }

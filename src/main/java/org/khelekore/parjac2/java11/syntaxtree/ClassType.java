@@ -3,6 +3,7 @@ package org.khelekore.parjac2.java11.syntaxtree;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.ParsePosition;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 
 public class ClassType extends SyntaxTreeNode {
     private final List<SimpleClassType> types;
@@ -14,6 +15,10 @@ public class ClassType extends SyntaxTreeNode {
 
     @Override public Object getValue () {
 	return types.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	types.forEach (v::accept);
     }
 
     public List<SimpleClassType> getTypes () {

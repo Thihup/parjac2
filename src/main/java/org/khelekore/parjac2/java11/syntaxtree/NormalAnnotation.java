@@ -3,6 +3,7 @@ package org.khelekore.parjac2.java11.syntaxtree;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class NormalAnnotation extends Annotation {
@@ -16,5 +17,11 @@ public class NormalAnnotation extends Annotation {
 
     @Override public Object getValue() {
 	return "@" + typename + "(" + (elementValuePairList != null ? elementValuePairList : "") + ")";
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	v.accept (typename);
+	if (elementValuePairList != null)
+	    v.accept (elementValuePairList);
     }
 }

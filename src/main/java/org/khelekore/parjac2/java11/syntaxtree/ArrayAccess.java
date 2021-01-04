@@ -3,6 +3,7 @@ package org.khelekore.parjac2.java11.syntaxtree;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class ArrayAccess extends SyntaxTreeNode {
@@ -19,5 +20,10 @@ public class ArrayAccess extends SyntaxTreeNode {
 	StringBuilder sb = new StringBuilder ();
 	sb.append (from).append ("[").append (expression).append ("]");
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	v.accept (from);
+	v.accept (expression);
     }
 }

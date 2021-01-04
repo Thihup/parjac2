@@ -3,6 +3,7 @@ package org.khelekore.parjac2.java11.syntaxtree;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.ParsePosition;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class FullTypeLambdaParameter extends LambdaParameter {
@@ -24,5 +25,11 @@ public class FullTypeLambdaParameter extends LambdaParameter {
 	    sb.append (modifiers).append (" ");
 	sb.append (type).append (" ").append (vid);
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	modifiers.forEach (v::accept);
+	v.accept (type);
+	v.accept (vid);
     }
 }

@@ -17,4 +17,6 @@ public interface ParseTreeNode {
     List<ParseTreeNode> getChildren ();
     /** Get the parse position for this node of the tree. */
     ParsePosition getPosition ();
+    /** Visit the child nodes */
+    void visitChildNodes (NodeVisitor v);
 }

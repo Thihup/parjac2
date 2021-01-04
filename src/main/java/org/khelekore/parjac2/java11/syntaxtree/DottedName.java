@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.khelekore.parjac2.java11.Identifier;
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.khelekore.parjac2.util.StringHelper;
 
@@ -24,5 +25,9 @@ public class DottedName extends SyntaxTreeNode {
 
     @Override public Object getValue() {
 	return StringHelper.dotted (nameParts);
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	// empty
     }
 }

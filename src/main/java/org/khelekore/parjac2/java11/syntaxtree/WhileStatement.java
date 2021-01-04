@@ -3,6 +3,7 @@ package org.khelekore.parjac2.java11.syntaxtree;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class WhileStatement extends SyntaxTreeNode {
@@ -17,5 +18,10 @@ public class WhileStatement extends SyntaxTreeNode {
 
     @Override public Object getValue () {
 	return "while (" + expression + ") " + statement;
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	v.accept (expression);
+	v.accept (statement);
     }
 }

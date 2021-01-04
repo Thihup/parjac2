@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.khelekore.parjac2.java11.Context;
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class EnumBody extends SyntaxTreeNode {
@@ -36,6 +37,13 @@ public class EnumBody extends SyntaxTreeNode {
 	    sb.append (declarations);
 	sb.append ("}");
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	if (constants != null)
+	    v.accept (constants);
+	if (declarations != null)
+	    v.accept (declarations);
     }
 
     public List<TypeDeclaration> getInnerClasses () {

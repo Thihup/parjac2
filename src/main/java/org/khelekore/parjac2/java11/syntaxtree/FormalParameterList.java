@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class FormalParameterList extends SyntaxTreeNode {
@@ -21,5 +22,9 @@ public class FormalParameterList extends SyntaxTreeNode {
 
     @Override public Object getValue() {
 	return params;
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	params.forEach (v::accept);
     }
 }

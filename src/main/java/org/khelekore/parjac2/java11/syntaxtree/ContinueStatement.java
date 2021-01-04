@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.khelekore.parjac2.java11.Identifier;
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class ContinueStatement extends SyntaxTreeNode {
@@ -16,5 +17,9 @@ public class ContinueStatement extends SyntaxTreeNode {
 
     @Override public Object getValue () {
 	return id != null ? "continue " + id + ";" : "continue;";
+    }
+
+    @Override public void visitChildNodes(NodeVisitor v) {
+	// nothing
     }
 }

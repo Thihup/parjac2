@@ -5,6 +5,7 @@ import java.util.List;
 import org.khelekore.parjac2.java11.Context;
 import org.khelekore.parjac2.java11.Identifier;
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class MethodDeclarator extends SyntaxTreeNode {
@@ -39,5 +40,14 @@ public class MethodDeclarator extends SyntaxTreeNode {
 	if (dims != null)
 	    sb.append (dims);
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	if (rp != null)
+	    v.accept (rp);
+	if (params != null)
+	    v.accept (params);
+	if (dims != null)
+	    v.accept (dims);
     }
 }

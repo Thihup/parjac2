@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.khelekore.parjac2.util.TypeDistributor;
 
@@ -42,6 +43,10 @@ public class ClassBody extends SyntaxTreeNode {
 	declarations.forEach (d -> sb.append (d).append ("\n"));
 	sb.append ("}\n");
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	declarations.forEach (v::accept);
     }
 
     public List<TypeDeclaration> getInnerClasses () {

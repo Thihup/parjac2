@@ -7,6 +7,7 @@ import java.util.List;
 import org.khelekore.parjac2.java11.Context;
 import org.khelekore.parjac2.parser.Grammar;
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class OrdinaryCompilationUnit extends SyntaxTreeNode {
@@ -59,6 +60,13 @@ public class OrdinaryCompilationUnit extends SyntaxTreeNode {
 	for (TypeDeclaration type : types)
 	    sb.append (type).append ("\n");
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	if (packageDeclarataion != null)
+	    v.accept (packageDeclarataion);
+	imports.forEach (v::accept);
+	types.forEach (v::accept);
     }
 
     public String getPackageName () {

@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.khelekore.parjac2.java11.Context;
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class BasicForStatement extends SyntaxTreeNode {
@@ -38,5 +39,15 @@ public class BasicForStatement extends SyntaxTreeNode {
 	    sb.append (forUpdate);
 	sb.append (") ").append (statement);
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	if (forInit != null)
+	    v.accept (forInit);
+	if (expression != null)
+	    v.accept (expression);
+	if (forUpdate != null)
+	    v.accept (forUpdate);
+	v.accept (statement);
     }
 }

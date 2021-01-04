@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class VariableDeclaratorList extends SyntaxTreeNode {
@@ -26,5 +27,9 @@ public class VariableDeclaratorList extends SyntaxTreeNode {
 	for (int i = 1; i < declarators.size (); i++)
 	    sb.append (", ").append (declarators.get (i));
 	return sb.toString ();
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	declarators.forEach (v::accept);
     }
 }

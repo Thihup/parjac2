@@ -3,6 +3,8 @@ package org.khelekore.parjac2.java11.syntaxtree;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.khelekore.parjac2.parsetree.NodeVisitor;
+
 public class UnannClassType extends SyntaxTreeNode {
     private List<SimpleClassType> types;
 
@@ -18,5 +20,9 @@ public class UnannClassType extends SyntaxTreeNode {
 
     public void add (SimpleClassType sct) {
 	types.add (sct);
+    }
+
+    @Override public void visitChildNodes (NodeVisitor v) {
+	types.forEach (v::accept);
     }
 }
