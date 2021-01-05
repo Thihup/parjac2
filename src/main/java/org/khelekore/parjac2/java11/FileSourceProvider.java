@@ -20,7 +20,7 @@ import org.khelekore.parjac2.NoSourceDiagnostics;
 public class FileSourceProvider implements SourceProvider {
     private final List<Path> srcDirs;
     private final Charset encoding;
-    private List<Path> paths = null;
+    private List<DirAndPath> paths = null;
 
     public FileSourceProvider (List<Path> srcDirs, Charset encoding) {
 	this.srcDirs = srcDirs;
@@ -43,6 +43,7 @@ public class FileSourceProvider implements SourceProvider {
 	try {
 	    paths.addAll (Files.walk (p, FileVisitOption.FOLLOW_LINKS).
 			  filter (FileSourceProvider::isJavaFile).
+			  map (f -> new DirAndPath (p, f)).
 			  collect (Collectors.toList ()));
 	} catch (IOException e) {
 	    diagnostics.report (new NoSourceDiagnostics ("Failed to get files from: %s", p));
@@ -54,7 +55,7 @@ public class FileSourceProvider implements SourceProvider {
 	return p.getFileName ().toString ().endsWith (".java");
     }
 
-    @Override public Collection<Path> getSourcePaths () {
+    @Override public Collection<DirAndPath> getSourcePaths () {
 	return paths;
     }
 

@@ -12,7 +12,7 @@ public interface SourceProvider {
     void setup (CompilerDiagnosticCollector diagnostics) throws IOException;
 
     /** Get all the input paths */
-    Collection<Path> getSourcePaths ();
+    Collection<DirAndPath> getSourcePaths ();
 
     /** Get the source data for a given input path */
     CharBuffer getInput (Path path) throws IOException;

@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +54,22 @@ public class ClassInformationProvider {
 
     public int getCompiledModuleCount () {
 	return cth.getCompiledModuleCount ();
+    }
+
+    public Collection<TypeDeclaration> getCompiledClasses () {
+	return cth.getCompiledClasses ();
+    }
+
+    public Collection<ModuleDeclaration> getCompiledModules () {
+	return cth.getCompiledModules ();
+    }
+
+    public String getPackageName (TypeDeclaration td) {
+	return cth.getPackageName (td);
+    }
+
+    public String getFileName (TypeDeclaration td) {
+	return cth.getFileName (td);
     }
 
     private class ClassResourceHolder {
@@ -191,6 +208,8 @@ public class ClassInformationProvider {
 
 	// full class name to declaration, name only has '.' as separator, no / or $
 	private Map<String, TypeDeclaration> foundClasses = new ConcurrentHashMap<> ();
+	private Map<TypeDeclaration, String> typeToPackagename = new ConcurrentHashMap<> ();
+	private Map<TypeDeclaration, String> typeToFullName = new ConcurrentHashMap<> ();
 	private Map<String, ModuleDeclaration> foundModules = new ConcurrentHashMap<> ();
 
 	public void addTypes (ParseTreeNode n) {
@@ -199,7 +218,7 @@ public class ClassInformationProvider {
 		OrdinaryCompilationUnit ocu = (OrdinaryCompilationUnit)n;
 		String packageName = ocu.getPackageName ();
 		for (TypeDeclaration td : ocu.getTypes ()) {
-		    addType (packageName, td);
+		    addType (packageName, packageName, "", td);
 		}
 	    } else if (n instanceof ModularCompilationUnit) {
 		ModularCompilationUnit mcu = (ModularCompilationUnit)n;
@@ -208,10 +227,13 @@ public class ClassInformationProvider {
 	    }
 	}
 
-	private void addType (String namePrefix, TypeDeclaration td) {
+	private void addType (String packageName, String namePrefix, String classPrefix, TypeDeclaration td) {
 	    String fullName = namePrefix.isEmpty () ? td.getName () : (namePrefix + "." + td.getName ());
 	    foundClasses.put (fullName, td);
-	    td.getInnerClasses ().forEach (i -> addType (fullName, i));
+	    typeToPackagename.put (td, packageName);
+	    String className = classPrefix.isEmpty () ? td.getName () : (classPrefix + "$" + td.getName ());
+	    typeToFullName.put (td, className);
+	    td.getInnerClasses ().forEach (i -> addType (packageName, fullName, className, i));
 	}
 
 	public int getCompiledClassCount () {
@@ -220,6 +242,22 @@ public class ClassInformationProvider {
 
 	public int getCompiledModuleCount () {
 	    return foundModules.size ();
+	}
+
+	public Collection<TypeDeclaration> getCompiledClasses () {
+	    return foundClasses.values ();
+	}
+
+	public Collection<ModuleDeclaration> getCompiledModules () {
+	    return foundModules.values ();
+	}
+
+	public String getPackageName (TypeDeclaration td) {
+	    return typeToPackagename.get (td);
+	}
+
+	public String getFileName (TypeDeclaration td) {
+	    return typeToFullName.get (td);
 	}
     }
 }

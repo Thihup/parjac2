@@ -1,5 +1,6 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -12,6 +13,7 @@ import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class ModuleDeclaration extends SyntaxTreeNode {
+    private Path relativePath;
     private List<Annotation> annotations;
     private boolean isOpen;
     private List<String> identifiers;
@@ -19,6 +21,7 @@ public class ModuleDeclaration extends SyntaxTreeNode {
 
     public ModuleDeclaration (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
+	relativePath = ctx.getRelativePath ();
 	int i = 0;
 	if (children.get (i) instanceof Multiple)
 	    annotations = ((Multiple)children.get (i++)).get ();
@@ -74,5 +77,9 @@ public class ModuleDeclaration extends SyntaxTreeNode {
 
     public String getDottedName () {
 	return identifiers.stream ().collect (Collectors.joining ("."));
+    }
+
+    public Path getRelativePath () {
+	return relativePath;
     }
 }

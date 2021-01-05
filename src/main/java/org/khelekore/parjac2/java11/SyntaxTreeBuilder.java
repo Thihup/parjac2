@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.java11;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -276,8 +275,8 @@ public class SyntaxTreeBuilder {
 	nodeBuilders.put (name, (ctx, r, n, c) -> snb.build (r, n, c));
     }
 
-    public ParseTreeNode build (Path path, ParseTreeNode root) {
-	Context ctx = new Context (java11Tokens, grammar, diagnostics, path);
+    public ParseTreeNode build (DirAndPath dirAndPath, ParseTreeNode root) {
+	Context ctx = new Context (java11Tokens, grammar, diagnostics, dirAndPath);
 	return build (ctx, root);
     }
 

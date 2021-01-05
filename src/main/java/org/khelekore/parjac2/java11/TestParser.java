@@ -109,7 +109,8 @@ public class TestParser {
 	if (printParseTree)
 	    printTree (parseTree);
 
-	ParseTreeNode syntaxTree = stb.build (filePath, parseTree);
+	DirAndPath dirAndPath = new DirAndPath (filePath.getParent (), filePath);
+	ParseTreeNode syntaxTree = stb.build (dirAndPath, parseTree);
 	if (printSyntaxTree)
 	    printTree (syntaxTree);
 	} catch (Throwable t) { t.printStackTrace (); }

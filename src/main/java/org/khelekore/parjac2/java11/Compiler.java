@@ -1,15 +1,20 @@
 package org.khelekore.parjac2.java11;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.CharBuffer;
 import java.nio.charset.MalformedInputException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.khelekore.parjac2.CompilationException;
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.NoSourceDiagnostics;
+import org.khelekore.parjac2.java11.syntaxtree.ModuleDeclaration;
+import org.khelekore.parjac2.java11.syntaxtree.TypeDeclaration;
 import org.khelekore.parjac2.parser.Grammar;
 import org.khelekore.parjac2.parser.Parser;
 import org.khelekore.parjac2.parser.PredictCache;
@@ -69,19 +74,19 @@ public class Compiler {
 
 	optimize (trees);
 
-	runTimed (() -> createOutputDirectories (trees, settings.getClassWriter()),
+	runTimed (() -> createOutputDirectories (settings.getClassWriter()),
 		  "Creating output directories");
 	if (diagnostics.hasError ())
 	    return;
 
-	runTimed (() -> writeClasses (trees), "Writing classes");
+	runTimed (() -> writeClasses (settings.getClassWriter()), "Writing classes");
     }
 
     private void setupSourceProvider (SourceProvider sourceProvider) {
 	try {
 	    sourceProvider.setup (diagnostics);
 	} catch (IOException e) {
-	    diagnostics.report (new NoSourceDiagnostics ("Failed to setup SourceProvider: ", sourceProvider));
+	    diagnostics.report (new NoSourceDiagnostics ("Failed to setup SourceProvider: %s", sourceProvider));
 	}
     }
 
@@ -93,27 +98,28 @@ public class Compiler {
 	    collect (Collectors.toList ());
     }
 
-    private ParseTreeNode parse (SourceProvider sourceProvider, Path path) {
+    private ParseTreeNode parse (SourceProvider sourceProvider, DirAndPath dirAndPath) {
+	Path file = dirAndPath.getFile ();
 	try {
 	    long start = System.nanoTime ();
 	    if (settings.getDebug ())
-		System.out.println ("parsing: " + path);
-	    CharBuffer charBuf = sourceProvider.getInput (path);
+		System.out.println ("parsing: " + file);
+	    CharBuffer charBuf = sourceProvider.getInput (file);
 	    CharBufferLexer lexer = new CharBufferLexer (grammar, java11Tokens, charBuf);
-	    Parser parser = new Parser (grammar, path, predictCache, lexer, diagnostics);
+	    Parser parser = new Parser (grammar, file, predictCache, lexer, diagnostics);
 	    ParseTreeNode tree = parser.parse (goalRule);
-	    ParseTreeNode syntaxTree = stb.build (path, tree);
+	    ParseTreeNode syntaxTree = stb.build (dirAndPath, tree);
 	    long end = System.nanoTime ();
 	    if (settings.getDebug () && settings.getReportTime ())
-		reportTime ("Parsing " + path, start, end);
+		reportTime ("Parsing " + file, start, end);
 	    return syntaxTree;
 	} catch (CompilationException e) {
 	    return null; // diagnostics should already have the problems
 	} catch (MalformedInputException e) {
-	    diagnostics.report (new NoSourceDiagnostics ("Failed to decode text: %s, wrong encoding?", path));
+	    diagnostics.report (new NoSourceDiagnostics ("Failed to decode text: %s, wrong encoding?", file));
 	    return null;
 	} catch (IOException e) {
-	    diagnostics.report (new NoSourceDiagnostics ("Failed to read: %s: %s", path, e));
+	    diagnostics.report (new NoSourceDiagnostics ("Failed to read: %s: %s", file, e));
 	    return null;
 	}
     }
@@ -130,12 +136,61 @@ public class Compiler {
 	// TODO: implement
     }
 
-    private void createOutputDirectories (List<ParseTreeNode> trees, BytecodeWriter classWriter) {
-	// TODO: implement
+    private void createOutputDirectories (BytecodeWriter classWriter) {
+	Set<Path> dirs = cip.getCompiledClasses ().stream ().map (t -> getPath (t)).collect (Collectors.toSet ());
+	dirs.addAll (cip.getCompiledModules ().stream ().map (m -> getPath (m)).collect (Collectors.toSet ()));
+	for (Path dir : dirs) {
+	    try {
+		classWriter.createDirectory (dir);
+	    } catch (IOException e) {
+		diagnostics.report (new NoSourceDiagnostics ("Failed to create output directory: %s", dir));
+		return;
+	    }
+	}
     }
 
-    private void writeClasses (List<ParseTreeNode> trees) {
-	// TODO: implement
+    private void writeClasses (BytecodeWriter classWriter) {
+	cip.getCompiledClasses ().parallelStream ().forEach (td -> writeClass (classWriter, td));
+	cip.getCompiledModules ().parallelStream ().forEach (td -> writeModule (classWriter, td));
+    }
+
+    private void writeClass (BytecodeWriter classWriter, TypeDeclaration td) {
+	Path p = getPath (td);
+	String filename = cip.getFileName (td) + ".class";
+	Path result = p.resolve (filename);
+
+	// TODO: this is not full class data :-)
+	byte[] data = {(byte)0xca, (byte)0xfe, (byte)0xba, (byte)0xbe};
+	write (classWriter, result, data);
+    }
+
+    private void writeModule (BytecodeWriter classWriter, ModuleDeclaration m) {
+	Path p = getPath (m);
+	String filename = "module-info.class";
+	Path result = p.resolve (filename);
+	// TODO: this is not correct module data :-)
+	byte[] data = {(byte)0xca, (byte)0xfe, (byte)0xba, (byte)0xbe};
+	write (classWriter, result, data);
+    }
+
+    private Path getPath (TypeDeclaration t) {
+	String packageName = cip.getPackageName (t);
+	String path = packageName.replace ('.', File.separatorChar);
+	return Paths.get (path);
+    }
+
+    private Path getPath (ModuleDeclaration m) {
+	Path p = m.getRelativePath ().getParent ();
+	return p == null ? p = Paths.get (".") : p;
+    }
+
+    private void write (BytecodeWriter classWriter, Path path, byte[] data) {
+	try {
+	    classWriter.write (path, data);
+	} catch (IOException e) {
+	    diagnostics.report (new NoSourceDiagnostics ("Failed to create output file: %s: %s", path, e));
+	    return;
+	}
     }
 
     private <T> T runTimed (CompilationStep<T> cs, String type) {

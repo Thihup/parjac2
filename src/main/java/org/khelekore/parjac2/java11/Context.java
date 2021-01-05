@@ -11,14 +11,14 @@ public class Context {
     private final Java11Tokens java11Tokens;
     private final Grammar grammar;
     private final CompilerDiagnosticCollector diagnostics;
-    private final Path path;
+    private final DirAndPath dirAndPath;
 
     public Context (Java11Tokens java11Tokens, Grammar grammar,
-		    CompilerDiagnosticCollector diagnostics, Path path) {
+		    CompilerDiagnosticCollector diagnostics, DirAndPath dirAndPath) {
 	this.java11Tokens = java11Tokens;
 	this.grammar = grammar;
 	this.diagnostics = diagnostics;
-	this.path = path;
+	this.dirAndPath = dirAndPath;
     }
 
     public Java11Tokens getTokens () {
@@ -34,14 +34,18 @@ public class Context {
     }
 
     public Path getPath () {
-	return path;
+	return dirAndPath.getFile ();
+    }
+
+    public Path getRelativePath () {
+	return dirAndPath.getRelativePath ();
     }
 
     public void error (ParsePosition pos, String format, Object... args) {
-	diagnostics.report (SourceDiagnostics.error (path, pos, format, args));
+	diagnostics.report (SourceDiagnostics.error (dirAndPath.getFile (), pos, format, args));
     }
 
     public void warning (ParsePosition pos, String format, Object... args) {
-	diagnostics.report (SourceDiagnostics.warning (path, pos, format, args));
+	diagnostics.report (SourceDiagnostics.warning (dirAndPath.getFile (), pos, format, args));
     }
 }
