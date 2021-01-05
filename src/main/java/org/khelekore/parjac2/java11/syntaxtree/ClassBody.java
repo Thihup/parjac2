@@ -48,14 +48,15 @@ public class ClassBody extends SyntaxTreeNode {
 		AnonymousClass ac = (AnonymousClass)f;
 		ac.setAnonymousClassname (Integer.toString (++foundClassId));
 		classDeclarations.add (ac);
+	    } else {
+		int end = dq.size ();
+		// since we we want to add all the child nodes first in deque we first add them last
+		// and them move them first so that things end up in wanted order
+		f.visitChildNodes (cn -> dq.addLast (cn));
+		int diff = dq.size () - end; // we added this many child nodes
+		for (int i = 0; i < diff; i++)
+		    dq.addFirst (dq.removeLast ());
 	    }
-	    int end = dq.size ();
-	    // since we we want to add all the child nodes first in deque we first add them last
-	    // and them move them first so that things end up in wanted order
-	    f.visitChildNodes (cn -> dq.addLast (cn));
-	    int diff = dq.size () - end; // we added this many child nodes
-	    for (int i = 0; i < diff; i++)
-		dq.addFirst (dq.removeLast ());
 	}
     }
 

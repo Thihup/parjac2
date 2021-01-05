@@ -8,11 +8,14 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.NoSourceDiagnostics;
+import org.khelekore.parjac2.java11.syntaxtree.ModularCompilationUnit;
+import org.khelekore.parjac2.java11.syntaxtree.ModuleDeclaration;
 import org.khelekore.parjac2.java11.syntaxtree.OrdinaryCompilationUnit;
 import org.khelekore.parjac2.java11.syntaxtree.TypeDeclaration;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -42,6 +45,14 @@ public class ClassInformationProvider {
 
     public void addTypes (ParseTreeNode n) {
 	cth.addTypes (n);
+    }
+
+    public int getCompiledClassCount () {
+	return cth.getCompiledClassCount ();
+    }
+
+    public int getCompiledModuleCount () {
+	return cth.getCompiledModuleCount ();
     }
 
     private class ClassResourceHolder {
@@ -179,22 +190,21 @@ public class ClassInformationProvider {
     private class CompiledTypesHolder {
 
 	// full class name to declaration, name only has '.' as separator, no / or $
-	private Map<String, TypeDeclaration> foundClasses = new HashMap<> ();
+	private Map<String, TypeDeclaration> foundClasses = new ConcurrentHashMap<> ();
+	private Map<String, ModuleDeclaration> foundModules = new ConcurrentHashMap<> ();
 
 	public void addTypes (ParseTreeNode n) {
 	    // We get OrdinaryCompilationUnit or ModularCompilationUnit
-	    if (!(n instanceof OrdinaryCompilationUnit))
-		return;
-	    try {
+	    if (n instanceof OrdinaryCompilationUnit) {
 		OrdinaryCompilationUnit ocu = (OrdinaryCompilationUnit)n;
 		String packageName = ocu.getPackageName ();
 		for (TypeDeclaration td : ocu.getTypes ()) {
 		    addType (packageName, td);
 		}
-	    } catch (ClassCastException e) {
-		System.err.println (n.toString ());
-		e.printStackTrace ();
-		System.exit (-1);
+	    } else if (n instanceof ModularCompilationUnit) {
+		ModularCompilationUnit mcu = (ModularCompilationUnit)n;
+		// TODO: not sure if dotted name is correct here
+		foundModules.put (mcu.getModule ().getDottedName (), mcu.getModule ());
 	    }
 	}
 
@@ -202,6 +212,14 @@ public class ClassInformationProvider {
 	    String fullName = namePrefix.isEmpty () ? td.getName () : (namePrefix + "." + td.getName ());
 	    foundClasses.put (fullName, td);
 	    td.getInnerClasses ().forEach (i -> addType (fullName, i));
+	}
+
+	public int getCompiledClassCount () {
+	    return foundClasses.size ();
+	}
+
+	public int getCompiledModuleCount () {
+	    return foundModules.size ();
 	}
     }
 }

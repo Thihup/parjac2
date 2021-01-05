@@ -32,4 +32,8 @@ public class ModularCompilationUnit extends SyntaxTreeNode {
 	imports.forEach (v::accept);
 	v.accept (moduleDeclaration);
     }
+
+    public ModuleDeclaration getModule () {
+	return moduleDeclaration;
+    }
 }

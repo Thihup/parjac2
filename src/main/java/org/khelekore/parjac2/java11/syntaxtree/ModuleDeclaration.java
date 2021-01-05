@@ -3,6 +3,7 @@ package org.khelekore.parjac2.java11.syntaxtree;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.khelekore.parjac2.java11.Context;
 import org.khelekore.parjac2.java11.Identifier;
@@ -65,5 +66,13 @@ public class ModuleDeclaration extends SyntaxTreeNode {
     @Override public void visitChildNodes (NodeVisitor v) {
 	annotations.forEach (v::accept);
 	directives.forEach (v::accept);
+    }
+
+    public List<String> getNameParts () {
+	return identifiers;
+    }
+
+    public String getDottedName () {
+	return identifiers.stream ().collect (Collectors.joining ("."));
     }
 }
