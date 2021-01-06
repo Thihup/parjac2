@@ -44,8 +44,8 @@ public class ClassInformationProvider {
 	return crh.getClasspathEntrySize ();
     }
 
-    public void addTypes (ParseTreeNode n) {
-	cth.addTypes (n);
+    public void addTypes (ParseTreeNode n, Path origin) {
+	cth.addTypes (n, origin);
     }
 
     public int getCompiledClassCount () {
@@ -70,6 +70,10 @@ public class ClassInformationProvider {
 
     public String getFileName (TypeDeclaration td) {
 	return cth.getFileName (td);
+    }
+
+    public Path getOriginFile (TypeDeclaration td) {
+	return cth.getOriginFile (td);
     }
 
     private class ClassResourceHolder {
@@ -207,18 +211,23 @@ public class ClassInformationProvider {
     private class CompiledTypesHolder {
 
 	// full class name to declaration, name only has '.' as separator, no / or $
+	// foo.bar.Baz$Qas -> TD
 	private Map<String, TypeDeclaration> foundClasses = new ConcurrentHashMap<> ();
+	// TD -> foo.bar
 	private Map<TypeDeclaration, String> typeToPackagename = new ConcurrentHashMap<> ();
+	// TD -> Baz$Qaz
 	private Map<TypeDeclaration, String> typeToFullName = new ConcurrentHashMap<> ();
+	// TD -> foo/bar/Baz.java
+	private Map<TypeDeclaration, Path> typeToOrigin = new ConcurrentHashMap<> ();
 	private Map<String, ModuleDeclaration> foundModules = new ConcurrentHashMap<> ();
 
-	public void addTypes (ParseTreeNode n) {
+	public void addTypes (ParseTreeNode n, Path origin) {
 	    // We get OrdinaryCompilationUnit or ModularCompilationUnit
 	    if (n instanceof OrdinaryCompilationUnit) {
 		OrdinaryCompilationUnit ocu = (OrdinaryCompilationUnit)n;
 		String packageName = ocu.getPackageName ();
 		for (TypeDeclaration td : ocu.getTypes ()) {
-		    addType (packageName, packageName, "", td);
+		    addType (packageName, packageName, "", td, origin);
 		}
 	    } else if (n instanceof ModularCompilationUnit) {
 		ModularCompilationUnit mcu = (ModularCompilationUnit)n;
@@ -227,13 +236,15 @@ public class ClassInformationProvider {
 	    }
 	}
 
-	private void addType (String packageName, String namePrefix, String classPrefix, TypeDeclaration td) {
+	private void addType (String packageName, String namePrefix, String classPrefix,
+			      TypeDeclaration td, Path origin) {
 	    String fullName = namePrefix.isEmpty () ? td.getName () : (namePrefix + "." + td.getName ());
 	    foundClasses.put (fullName, td);
 	    typeToPackagename.put (td, packageName);
+	    typeToOrigin.put (td, origin);
 	    String className = classPrefix.isEmpty () ? td.getName () : (classPrefix + "$" + td.getName ());
 	    typeToFullName.put (td, className);
-	    td.getInnerClasses ().forEach (i -> addType (packageName, fullName, className, i));
+	    td.getInnerClasses ().forEach (i -> addType (packageName, fullName, className, i, origin));
 	}
 
 	public int getCompiledClassCount () {
@@ -258,6 +269,10 @@ public class ClassInformationProvider {
 
 	public String getFileName (TypeDeclaration td) {
 	    return typeToFullName.get (td);
+	}
+
+	public Path getOriginFile (TypeDeclaration td) {
+	    return typeToOrigin.get (td);
 	}
     }
 }

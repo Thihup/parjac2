@@ -53,7 +53,7 @@ public class Compiler {
 	if (settings.getReportTime ())
 	    System.out.format ("Found %d source files\n", sourceProvider.getSourcePaths ().size ());
 
-	List<ParseTreeNode> trees = runTimed (() -> parse (sourceProvider), "Parsing");
+	List<ParsedEntry> trees = runTimed (() -> parse (sourceProvider), "Parsing");
 	if (diagnostics.hasError ())
 	    return;
 
@@ -90,7 +90,7 @@ public class Compiler {
 	}
     }
 
-    private List<ParseTreeNode> parse (SourceProvider sourceProvider) {
+    private List<ParsedEntry> parse (SourceProvider sourceProvider) {
 	return
 	    sourceProvider.getSourcePaths ().parallelStream ().
 	    map (p -> parse (sourceProvider, p)).
@@ -98,7 +98,7 @@ public class Compiler {
 	    collect (Collectors.toList ());
     }
 
-    private ParseTreeNode parse (SourceProvider sourceProvider, DirAndPath dirAndPath) {
+    private ParsedEntry parse (SourceProvider sourceProvider, DirAndPath dirAndPath) {
 	Path file = dirAndPath.getFile ();
 	try {
 	    long start = System.nanoTime ();
@@ -112,7 +112,7 @@ public class Compiler {
 	    long end = System.nanoTime ();
 	    if (settings.getDebug () && settings.getReportTime ())
 		reportTime ("Parsing " + file, start, end);
-	    return syntaxTree;
+	    return new ParsedEntry (dirAndPath, syntaxTree);
 	} catch (CompilationException e) {
 	    return null; // diagnostics should already have the problems
 	} catch (MalformedInputException e) {
@@ -124,15 +124,15 @@ public class Compiler {
 	}
     }
 
-    private void addTypes (List<ParseTreeNode> trees) {
-	trees.parallelStream ().forEach (t -> cip.addTypes (t));
+    private void addTypes (List<ParsedEntry> trees) {
+	trees.parallelStream ().forEach (t -> cip.addTypes (t.getRoot (), t.getOrigin ()));
     }
 
-    private void checkSemantics (List<ParseTreeNode> trees) {
+    private void checkSemantics (List<ParsedEntry> trees) {
 	// TODO: implement
     }
 
-    private void optimize (List<ParseTreeNode> trees) {
+    private void optimize (List<ParsedEntry> trees) {
 	// TODO: implement
     }
 
@@ -159,9 +159,14 @@ public class Compiler {
 	String filename = cip.getFileName (td) + ".class";
 	Path result = p.resolve (filename);
 
+	byte[] data = generateClass (cip.getOriginFile (td), td);
 	// TODO: this is not full class data :-)
-	byte[] data = {(byte)0xca, (byte)0xfe, (byte)0xba, (byte)0xbe};
 	write (classWriter, result, data);
+    }
+
+    private byte[] generateClass (Path origin, TypeDeclaration td) {
+	BytecodeGenerator g = new BytecodeGenerator (origin, td);
+	return g.generate ();
     }
 
     private void writeModule (BytecodeWriter classWriter, ModuleDeclaration m) {
