@@ -575,17 +575,18 @@ public class CharBufferLexer implements Lexer {
     private Token readZero () {
 	if (buf.hasRemaining ()) {
 	    char c = nextChar ();
+	    c = Character.toLowerCase (c);
 	    if (c == 'x') {
 		return readNumber (new StringBuilder (), 16, false);
 	    } else if (c == 'b') {
 		return readNumber (new StringBuilder (), 2, false);
-	    } else if (c == 'l' || c == 'L') {
+	    } else if (c == 'l') {
 		currentIntValue = BigInteger.ZERO;
 		return java11Tokens.LONG_LITERAL;
-	    } else if (c == 'd' || c == 'D') {
+	    } else if (c == 'd') {
 		currentDoubleValue = 0.0;
 		return java11Tokens.DOUBLE_LITERAL;
-	    } else if (c == 'f' || c == 'F') {
+	    } else if (c == 'f') {
 		currentDoubleValue = 0.0;
 		return java11Tokens.FLOAT_LITERAL;
 	    } else if (c == '_' || (c >= '0' && c <= '7')) {
