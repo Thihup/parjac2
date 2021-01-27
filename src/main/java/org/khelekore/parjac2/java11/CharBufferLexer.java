@@ -167,104 +167,109 @@ public class CharBufferLexer implements Lexer {
     private Token nextRealToken (BitSet wantedTokens) {
 	tokenStartPosition = buf.position ();
 	tokenStartColumn = currentColumn;
-	if (buf.hasRemaining ()) {
-	    char c = nextChar ();
-	    switch (c) {
+	try {
+	    if (buf.hasRemaining ()) {
+		char c = nextChar ();
+		switch (c) {
 
-	    // whitespace
-	    case ' ':
-	    case '\t':
-	    case '\f':
-		return readWhitespace ();
+		    // whitespace
+		case ' ':
+		case '\t':
+		case '\f':
+		    return readWhitespace ();
 
-	    // newlines
-	    case '\n':
-		return handleLF ();
-	    case '\r':
-		return handleCR ();
+		    // newlines
+		case '\n':
+		    return handleLF ();
+		case '\r':
+		    return handleCR ();
 
-	     // sub
-	    case '\u001a':
-		return java11Tokens.SUB;
+		    // sub
+		case '\u001a':
+		    return java11Tokens.SUB;
 
-	    // separators
-	    case '(':
-		return java11Tokens.LEFT_PARENTHESIS;
-	    case ')':
-		return java11Tokens.RIGHT_PARENTHESIS;
-	    case '{':
-		return java11Tokens.LEFT_CURLY;
-	    case '}':
-		return java11Tokens.RIGHT_CURLY;
-	    case '[':
-		return java11Tokens.LEFT_BRACKET;
-	    case ']':
-		return java11Tokens.RIGHT_BRACKET;
-	    case ';':
-		return java11Tokens.SEMICOLON;
-	    case ',':
-		return java11Tokens.COMMA;
-	    case '.':
-		return handleDot ();
-	    case '@':
-		return java11Tokens.AT;
-	    case ':':  // : is an operator, :: is a separator
-		return handleColon ();
+		    // separators
+		case '(':
+		    return java11Tokens.LEFT_PARENTHESIS;
+		case ')':
+		    return java11Tokens.RIGHT_PARENTHESIS;
+		case '{':
+		    return java11Tokens.LEFT_CURLY;
+		case '}':
+		    return java11Tokens.RIGHT_CURLY;
+		case '[':
+		    return java11Tokens.LEFT_BRACKET;
+		case ']':
+		    return java11Tokens.RIGHT_BRACKET;
+		case ';':
+		    return java11Tokens.SEMICOLON;
+		case ',':
+		    return java11Tokens.COMMA;
+		case '.':
+		    return handleDot ();
+		case '@':
+		    return java11Tokens.AT;
+		case ':':  // : is an operator, :: is a separator
+		    return handleColon ();
 
-	    // operators (and comments)
-	    case '=':
-		return handleEquals ();
-	    case '>':
-		return handleGT (wantedTokens.intersects (multiGTTTokens));
-	    case '<':
-		return handleLT ();
-	    case '!':
-		return handleExtraEqual (java11Tokens.NOT, java11Tokens.NOT_EQUAL);
-	    case '~':
-		return java11Tokens.TILDE;
-	    case '?':
-		return java11Tokens.QUESTIONMARK;
-	    case '+':
-		return handleDoubleOrEqual (c, java11Tokens.PLUS, java11Tokens.INCREMENT, java11Tokens.PLUS_EQUAL);
-	    case '-':
-		return handleMinus ();
-	    case '*':
-		return handleExtraEqual (java11Tokens.MULTIPLY, java11Tokens.MULTIPLY_EQUAL);
-	    case '/':
-		return handleSlash ();
-	    case '%':
-		return handleExtraEqual (java11Tokens.REMAINDER, java11Tokens.REMAINDER_EQUAL);
-	    case '&':
-		return handleDoubleOrEqual (c, java11Tokens.AND, java11Tokens.LOGICAL_AND, java11Tokens.BIT_AND_EQUAL);
-	    case '|':
-		return handleDoubleOrEqual (c, java11Tokens.OR, java11Tokens.LOGICAL_OR, java11Tokens.BIT_OR_EQUAL);
-	    case '^':
-		return handleExtraEqual (java11Tokens.XOR, java11Tokens.BIT_XOR_EQUAL);
+		    // operators (and comments)
+		case '=':
+		    return handleEquals ();
+		case '>':
+		    return handleGT (wantedTokens.intersects (multiGTTTokens));
+		case '<':
+		    return handleLT ();
+		case '!':
+		    return handleExtraEqual (java11Tokens.NOT, java11Tokens.NOT_EQUAL);
+		case '~':
+		    return java11Tokens.TILDE;
+		case '?':
+		    return java11Tokens.QUESTIONMARK;
+		case '+':
+		    return handleDoubleOrEqual (c, java11Tokens.PLUS, java11Tokens.INCREMENT, java11Tokens.PLUS_EQUAL);
+		case '-':
+		    return handleMinus ();
+		case '*':
+		    return handleExtraEqual (java11Tokens.MULTIPLY, java11Tokens.MULTIPLY_EQUAL);
+		case '/':
+		    return handleSlash ();
+		case '%':
+		    return handleExtraEqual (java11Tokens.REMAINDER, java11Tokens.REMAINDER_EQUAL);
+		case '&':
+		    return handleDoubleOrEqual (c, java11Tokens.AND, java11Tokens.LOGICAL_AND, java11Tokens.BIT_AND_EQUAL);
+		case '|':
+		    return handleDoubleOrEqual (c, java11Tokens.OR, java11Tokens.LOGICAL_OR, java11Tokens.BIT_OR_EQUAL);
+		case '^':
+		    return handleExtraEqual (java11Tokens.XOR, java11Tokens.BIT_XOR_EQUAL);
 
-	    case '\'':
-		return readCharacterLiteral ();
-	    case '"':
-		return readStringLiteral ();
+		case '\'':
+		    return readCharacterLiteral ();
+		case '"':
+		    return readStringLiteral ();
 
-	    case '0':
-		return readZero ();
-	    case '1':
-	    case '2':
-	    case '3':
-	    case '4':
-	    case '5':
-	    case '6':
-	    case '7':
-	    case '8':
-	    case '9':
-		return readDecimalNumber (c);
-	    default:
-		if (Character.isJavaIdentifierStart (c))
-		    return readIdentifier (c, wantedTokens);
+		case '0':
+		    return readZero ();
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9':
+		    return readDecimalNumber (c);
+		default:
+		    if (Character.isJavaIdentifierStart (c))
+			return readIdentifier (c, wantedTokens);
 
-		errorText = "Illegal character: " + c + "(0x" + Integer.toHexString (c) + ")";
-		return grammar.ERROR;
+		    errorText = "Illegal character: " + c + "(0x" + Integer.toHexString (c) + ")";
+		    return grammar.ERROR;
+		}
 	    }
+	} catch (InvalidUnicodeEscape e) {
+	    errorText = e.getMessage ();
+	    return grammar.ERROR;
 	}
 	hasSentEOI = true;
 	return grammar.END_OF_INPUT;
@@ -807,6 +812,9 @@ public class CharBufferLexer implements Lexer {
 			buf.position (p);
 			currentColumn += 4;
 			c = (char)hv;
+		    } else {
+			throw new InvalidUnicodeEscape ("Unicode escape sequence requires 4 hexadecimal " +
+							"digits, got: " + sb);
 		    }
 		}
 	    }
@@ -836,5 +844,11 @@ public class CharBufferLexer implements Lexer {
 	    p++;
 	cb.limit (p);
 	return cb.toString ();
+    }
+
+    private class InvalidUnicodeEscape extends RuntimeException {
+	public InvalidUnicodeEscape (String msg) {
+	    super (msg);
+	}
     }
 }

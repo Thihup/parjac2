@@ -27,4 +27,7 @@ public interface Lexer {
     /** Get the current position.
      */
     ParsePosition getParsePosition ();
+
+    /** Get the last produced error, if any */
+    String getError ();
 }

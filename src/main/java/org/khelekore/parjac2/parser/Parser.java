@@ -18,7 +18,8 @@ import org.khelekore.parjac2.util.IntHolder;
 
 public class Parser {
 
-    private final boolean DEBUG = false;
+    private static final boolean DEBUG = false;
+    private static final int MAX_ERRORS = 10;
 
     private final Grammar grammar;
     private final Path path;
@@ -194,8 +195,12 @@ public class Parser {
 	wantedScanTokens.or (pg.getWantedScanTokens ());
 
 	BitSet scannedTokens = scanToken (currentPosition, wantedScanTokens);
-
 	startPositions.add (states.size ());
+	if (scannedTokens.get (grammar.ERROR.getId ())) {
+	    addParserError ("Lexer returned error: " + lexer.getError ());
+	    errorCount = MAX_ERRORS + 1;
+	    return;
+	}
 
 	if (wantedScanTokens.intersects (scannedTokens)) {
 	    // Advance the states that can be advanced by the scanned token
@@ -326,7 +331,7 @@ public class Parser {
 
     private boolean tooManyErrors () {
 	// make sure we try to fix a few things before we bail
-	return errorCount > 10;
+	return errorCount > MAX_ERRORS;
     }
 
     private void findFinished (int rulePos, int origin, Rule goalRule, IntHolder goalHolder) {
