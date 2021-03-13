@@ -15,6 +15,7 @@ import java.util.jar.JarFile;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.NoSourceDiagnostics;
+import org.khelekore.parjac2.java11.syntaxtree.AnonymousClass;
 import org.khelekore.parjac2.java11.syntaxtree.ModularCompilationUnit;
 import org.khelekore.parjac2.java11.syntaxtree.ModuleDeclaration;
 import org.khelekore.parjac2.java11.syntaxtree.OrdinaryCompilationUnit;
@@ -244,6 +245,14 @@ public class ClassInformationProvider {
 	    typeToOrigin.put (td, origin);
 	    String className = classPrefix.isEmpty () ? td.getName () : (classPrefix + "$" + td.getName ());
 	    typeToFullName.put (td, className);
+
+	    int foundClassId = 0;
+	    for (TypeDeclaration i : td.getInnerClasses ()) {
+		if (i instanceof AnonymousClass) {
+		    AnonymousClass ac = (AnonymousClass)i;
+		    ac.setAnonymousClassname (Integer.toString (++foundClassId));
+		}
+	    }
 	    td.getInnerClasses ().forEach (i -> addType (packageName, fullName, className, i, origin));
 	}
 

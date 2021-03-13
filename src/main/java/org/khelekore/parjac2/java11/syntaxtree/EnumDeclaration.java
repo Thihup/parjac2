@@ -31,6 +31,7 @@ public class EnumDeclaration extends TypeDeclaration {
 	}
 	body = (EnumBody)children.get (i);
     }
+
     @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	if (!modifiers.isEmpty ())

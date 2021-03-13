@@ -24,7 +24,8 @@ public class EnumConstant extends AnonymousClass {
 	    modifiers = Collections.emptyList ();
 	}
 	id = ((Identifier)children.get (i++)).getValue ();
-	if (rule.size () > i && rule.get (i++) == ctx.getTokens ().LEFT_PARENTHESIS.getId ()) {
+	if (rule.size () > i && rule.get (i) == ctx.getTokens ().LEFT_PARENTHESIS.getId ()) {
+	    i++;
 	    if (rule.size () > i && rule.get (i) != ctx.getTokens ().RIGHT_PARENTHESIS.getId ()) {
 		args = (ArgumentList)children.get (i++);
 	    } else {

@@ -1,5 +1,6 @@
 package org.khelekore.parjac2.java11.syntaxtree;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.khelekore.parjac2.java11.Context;
@@ -10,6 +11,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 public class EnumBody extends SyntaxTreeNode {
     private final EnumConstantList constants;
     private final EnumBodyDeclarations declarations;
+    private List<TypeDeclaration> innerClasses;
 
     public EnumBody (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
@@ -26,6 +28,10 @@ public class EnumBody extends SyntaxTreeNode {
 	} else {
 	    declarations = null;
 	}
+	innerClasses = new ArrayList<> ();
+	constants.getConstants ().stream ().filter (EnumConstant::hasBody).forEach (innerClasses::add);
+	if (declarations != null)
+	    innerClasses.addAll (declarations.getInnerClasses ());
     }
 
     @Override public Object getValue () {
@@ -47,6 +53,6 @@ public class EnumBody extends SyntaxTreeNode {
     }
 
     public List<TypeDeclaration> getInnerClasses () {
-	return declarations == null ? List.of () : declarations.getInnerClasses ();
+	return innerClasses;
     }
 }

@@ -14,7 +14,9 @@ public class BytecodeGenerator {
 	CLASS_FLAGS (Opcodes.ACC_SUPER),
 	ENUM_FLAGS (Opcodes.ACC_FINAL | Opcodes.ACC_ENUM),
 	INTERFACE_FLAGS (Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT),
-	ANNOTATION_FLAGS (Opcodes.ACC_ANNOTATION | Opcodes.ACC_INTERFACE);
+	ANNOTATION_FLAGS (Opcodes.ACC_ANNOTATION | Opcodes.ACC_INTERFACE),
+	ENUM_CONSTANT_FLAGS (Opcodes.ACC_FINAL),
+	ANONYMOUS_CLASS_FLAGS (Opcodes.ACC_SUPER);
 
 	private int flags;
 
@@ -39,7 +41,12 @@ public class BytecodeGenerator {
 	} else if (c == AnnotationTypeDeclaration.class) {
 	    return generateInterface ((AnnotationTypeDeclaration)td);
 	} else if (c == UnqualifiedClassInstanceCreationExpression.class) {
+	    return generateAnonymousClass ((UnqualifiedClassInstanceCreationExpression)td);
 	} else if (c == EnumConstant.class) {
+	    EnumConstant ec = (EnumConstant)td;
+	    if (ec.hasBody ()) {
+		return generateEnumConstant (ec);
+	    }
 	} else {
 	    System.err.println ("Unhandled class: " + c.getName ());
 	}
@@ -64,6 +71,15 @@ public class BytecodeGenerator {
 	String[] superInterfaces = new String[] { "java/lang/annotation/Annotation" };
 	return generateClass (at, ImplicitClassFlags.ANNOTATION_FLAGS, null,
 			      "java/lang/Object", superInterfaces);
+    }
+
+    private byte[] generateEnumConstant (EnumConstant ec) {
+	// TODO: extend the enum
+	return generateClass (ec, ImplicitClassFlags.ENUM_CONSTANT_FLAGS, null, "java/lang/Object", null);
+    }
+
+    private byte[] generateAnonymousClass (UnqualifiedClassInstanceCreationExpression ac) {
+	return generateClass (ac, ImplicitClassFlags.ANONYMOUS_CLASS_FLAGS, null, "java/lang/Object", null);
     }
 
     private byte[] generateClass (TypeDeclaration tdt, ImplicitClassFlags icf,

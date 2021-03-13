@@ -30,4 +30,8 @@ public class EnumConstantList extends SyntaxTreeNode {
     @Override public void visitChildNodes (NodeVisitor v) {
 	constants.forEach (v::accept);
     }
+
+    public List<EnumConstant> getConstants () {
+	return constants;
+    }
 }

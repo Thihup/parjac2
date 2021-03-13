@@ -39,14 +39,12 @@ public class ClassBody extends SyntaxTreeNode {
 
     private void findInnerClasses (ParseTreeNode n) {
 	// We do a depth first search for classes.
-	int foundClassId = 0;
 	Deque<ParseTreeNode> dq = new ArrayDeque<> ();
 	dq.addFirst (n);
 	while (!dq.isEmpty ()) {
 	    ParseTreeNode f = dq.removeFirst ();
 	    if (isAnonymousClass (f)) {
 		AnonymousClass ac = (AnonymousClass)f;
-		ac.setAnonymousClassname (Integer.toString (++foundClassId));
 		classDeclarations.add (ac);
 	    } else {
 		int end = dq.size ();
