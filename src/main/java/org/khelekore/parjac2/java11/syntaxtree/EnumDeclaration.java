@@ -56,4 +56,9 @@ public class EnumDeclaration extends TypeDeclaration {
     @Override public List<TypeDeclaration> getInnerClasses () {
 	return body.getInnerClasses ();
     }
+
+    @Override public int getFlags () {
+	// TODO: fill in from modifiers
+	return 0;
+    }
 }

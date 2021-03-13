@@ -14,4 +14,7 @@ public abstract class TypeDeclaration extends SyntaxTreeNode {
 
     /** Get all the inner classes, enums, interfaces and annotations */
     public abstract List<TypeDeclaration> getInnerClasses ();
+
+    /** Get the flags for this class */
+    public abstract int getFlags ();
 }

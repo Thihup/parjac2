@@ -58,7 +58,7 @@ public class CharBufferLexer implements Lexer {
 	multiGTTTokens.set (java11Tokens.RIGHT_SHIFT_UNSIGNED_EQUAL.getId ());
     }
 
-    public String getError () {
+    @Override public String getError () {
 	return errorText;
     }
 
@@ -847,6 +847,8 @@ public class CharBufferLexer implements Lexer {
     }
 
     private class InvalidUnicodeEscape extends RuntimeException {
+	private static final long serialVersionUID = 1L;
+
 	public InvalidUnicodeEscape (String msg) {
 	    super (msg);
 	}

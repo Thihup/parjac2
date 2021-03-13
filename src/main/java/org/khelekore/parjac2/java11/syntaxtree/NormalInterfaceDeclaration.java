@@ -67,4 +67,9 @@ public class NormalInterfaceDeclaration extends TypeDeclaration {
 	    v.accept (extendsInterfaces);
 	v.accept (body);
     }
+
+    @Override public int getFlags () {
+	// TODO: fill in from modifiers
+	return 0;
+    }
 }

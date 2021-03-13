@@ -64,4 +64,9 @@ public class EnumConstant extends AnonymousClass {
     @Override public List<TypeDeclaration> getInnerClasses () {
 	return body == null ? List.of () : body.getInnerClasses ();
     }
+
+    @Override public int getFlags () {
+	// TODO: fill in flags
+	return 0;
+    }
 }
