@@ -10,6 +10,19 @@ public class BytecodeGenerator {
     private final Path origin;
     private final TypeDeclaration td;
 
+    private enum ImplicitClassFlags {
+	CLASS_FLAGS (Opcodes.ACC_SUPER),
+	ENUM_FLAGS (Opcodes.ACC_FINAL | Opcodes.ACC_ENUM),
+	INTERFACE_FLAGS (Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT),
+	ANNOTATION_FLAGS (Opcodes.ACC_ANNOTATION | Opcodes.ACC_INTERFACE);
+
+	private int flags;
+
+	private ImplicitClassFlags (int flags) {
+	    this.flags = flags;
+	}
+    }
+
     public BytecodeGenerator (Path origin, TypeDeclaration td) {
 	this.origin = origin;
 	this.td = td;
@@ -34,41 +47,30 @@ public class BytecodeGenerator {
     }
 
     private byte[] generateClass (NormalClassDeclaration c) {
-	ClassWriter cw = new ClassWriter (ClassWriter.COMPUTE_FRAMES);
-	int flags = c.getFlags () | Opcodes.ACC_SUPER;
-	cw.visit (Opcodes.V11, flags, td.getName (), null, "java/lang/Object", null);
-	if (origin != null)
-	    cw.visitSource (origin.getFileName ().toString (), null);
-        cw.visitEnd ();
-	return cw.toByteArray ();
+	// TODO: set signature and interfaces
+	return generateClass (c, ImplicitClassFlags.CLASS_FLAGS, null, "java/lang/Object", null);
     }
 
     private byte[] generateClass (EnumDeclaration e) {
-	ClassWriter cw = new ClassWriter (ClassWriter.COMPUTE_FRAMES);
-	int flags = e.getFlags () | Opcodes.ACC_FINAL | Opcodes.ACC_ENUM;
 	String signature = "Ljava/lang/Enum<L" + e.getName () + ";>;";
-	cw.visit (Opcodes.V11, flags, td.getName (), signature, "java/lang/Enum", null);
-	if (origin != null)
-	    cw.visitSource (origin.getFileName ().toString (), null);
-        cw.visitEnd ();
-	return cw.toByteArray ();
+	return generateClass (e, ImplicitClassFlags.ENUM_FLAGS, signature, "java/lang/Enum", null);
     }
 
     private byte[] generateInterface (NormalInterfaceDeclaration i) {
-	ClassWriter cw = new ClassWriter (ClassWriter.COMPUTE_FRAMES);
-	int flags = i.getFlags () | Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT;
-	cw.visit (Opcodes.V11, flags, i.getName (), null, "java/lang/Object", null);
-	if (origin != null)
-	    cw.visitSource (origin.getFileName ().toString (), null);
-        cw.visitEnd ();
-	return cw.toByteArray ();
+	return generateClass (i, ImplicitClassFlags.INTERFACE_FLAGS, null, "java/lang/Object", null);
     }
 
     private byte[] generateInterface (AnnotationTypeDeclaration at) {
+	String[] superInterfaces = new String[] { "java/lang/annotation/Annotation" };
+	return generateClass (at, ImplicitClassFlags.ANNOTATION_FLAGS, null,
+			      "java/lang/Object", superInterfaces);
+    }
+
+    private byte[] generateClass (TypeDeclaration tdt, ImplicitClassFlags icf,
+				  String signature, String superType, String[] superInterfaces) {
 	ClassWriter cw = new ClassWriter (ClassWriter.COMPUTE_FRAMES);
-	int flags = at.getFlags () | Opcodes.ACC_ANNOTATION | Opcodes.ACC_INTERFACE;
-	cw.visit (Opcodes.V11, flags, at.getName (), null, "java/lang/Object",
-		  new String[] { "java/lang/annotation/Annotation" });
+	int flags = td.getFlags () | icf.flags;
+	cw.visit (Opcodes.V11, flags, td.getName (), signature, superType, superInterfaces);
 	if (origin != null)
 	    cw.visitSource (origin.getFileName ().toString (), null);
         cw.visitEnd ();
