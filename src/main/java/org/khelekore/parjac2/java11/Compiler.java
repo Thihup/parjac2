@@ -64,6 +64,8 @@ public class Compiler {
 	    System.out.format ("Found %d classes in classpaths\n", cip.getClasspathEntrySize ());
 
 	runTimed (() -> addTypes (trees), "Collecting compiled types");
+	if (diagnostics.hasError ())
+	    return;
 	if (settings.getReportTime ())
 	    System.out.format ("Found %d classes and %d modules to compile\n",
 			       cip.getCompiledClassCount (), cip.getCompiledModuleCount ());
