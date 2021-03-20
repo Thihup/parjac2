@@ -110,6 +110,8 @@ public class Compiler {
 	    CharBufferLexer lexer = new CharBufferLexer (grammar, java11Tokens, charBuf);
 	    Parser parser = new Parser (grammar, file, predictCache, lexer, diagnostics);
 	    ParseTreeNode tree = parser.parse (goalRule);
+	    if (diagnostics.hasError ())
+		return null;
 	    ParseTreeNode syntaxTree = stb.build (dirAndPath, tree);
 	    long end = System.nanoTime ();
 	    if (settings.getDebug () && settings.getReportTime ())
