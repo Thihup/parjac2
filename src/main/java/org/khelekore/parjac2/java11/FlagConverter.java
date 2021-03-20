@@ -34,4 +34,16 @@ public class FlagConverter {
     public Token getToken (int value) {
 	return valueToToken.get (value);
     }
+
+    public String getTokenNameString (int mask) {
+	StringBuilder sb = new StringBuilder ();
+	while (mask > 0) {
+	    int first = Integer.lowestOneBit (mask);
+	    mask &= ~first;
+	    if (sb.length () > 0)
+		sb.append (", ");
+	    sb.append (getToken (first).getName ());
+	}
+	return sb.toString ();
+    }
 }

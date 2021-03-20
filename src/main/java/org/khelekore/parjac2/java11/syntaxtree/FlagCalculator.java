@@ -11,7 +11,7 @@ import org.khelekore.parjac2.parsetree.TokenNode;
 
 public class FlagCalculator {
     private final int baseValue;
-    private Combination addDefaultUnless;
+    private List<Combination> addDefaultUnless = new ArrayList<> ();
     private List<Integer> invalidCombinations = new ArrayList<> ();
 
     public FlagCalculator (int baseValue) {
@@ -19,7 +19,7 @@ public class FlagCalculator {
     }
 
     public void addDefaultUnless (int value, int flagMask) {
-	addDefaultUnless = new Combination (value, flagMask);
+	addDefaultUnless.add (new Combination (value, flagMask));
     }
 
     // Add invalid combination, only one of the bits may be set at any time
@@ -42,8 +42,9 @@ public class FlagCalculator {
 	    }
 	}
 	flags |= baseValue;
-	if (addDefaultUnless != null && !addDefaultUnless.hasFlags (flags))
-	    flags |= addDefaultUnless.value;
+	for (Combination c : addDefaultUnless)
+	    if (!c.hasFlags (flags))
+		flags |= c.value;
 
 	if (!modifiers.isEmpty ()) {
 	    for (Integer ic : invalidCombinations) {
@@ -52,24 +53,12 @@ public class FlagCalculator {
 		if (bits > 1) {
 		    ctx.error (pos,
 			       "Invalid modifier combination, only one of (%s) is allowed",
-			       getFlagString (ctx, clash));
+			       ctx.getTokenNameString (clash));
 		}
 	    }
 	}
 
 	return flags;
-    }
-
-    private String getFlagString (Context ctx, int mask) {
-	StringBuilder sb = new StringBuilder ();
-	while (mask > 0) {
-	    int first = Integer.lowestOneBit (mask);
-	    mask &= ~first;
-	    if (sb.length () > 0)
-		sb.append (", ");
-	    sb.append (ctx.getToken (first).getName ());
-	}
-	return sb.toString ();
     }
 
     private static class Combination {

@@ -53,6 +53,10 @@ public class Context {
 	return flagConverter.getToken (value);
     }
 
+    public String getTokenNameString (int mask) {
+	return flagConverter.getTokenNameString (mask);
+    }
+
     public void error (ParsePosition pos, String format, Object... args) {
 	diagnostics.report (SourceDiagnostics.error (dirAndPath.getFile (), pos, format, args));
     }

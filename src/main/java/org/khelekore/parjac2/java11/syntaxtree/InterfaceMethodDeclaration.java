@@ -18,6 +18,8 @@ public class InterfaceMethodDeclaration extends SyntaxTreeNode {
     private static FlagCalculator flagCalculator = new FlagCalculator (0);
     static {
 	flagCalculator.addDefaultUnless (Opcodes.ACC_PUBLIC, Opcodes.ACC_PRIVATE);
+	flagCalculator.addDefaultUnless (Opcodes.ACC_ABSTRACT,
+					 Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC); // |Opcodes.DEFAULT);
 
 	flagCalculator.addInvalid (Opcodes.ACC_PUBLIC | Opcodes.ACC_PRIVATE);
 	flagCalculator.addInvalid (Opcodes.ACC_ABSTRACT | Opcodes.ACC_STATIC); // | Opcodes.ACC_DEFAULT);
