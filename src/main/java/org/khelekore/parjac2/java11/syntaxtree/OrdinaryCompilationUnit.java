@@ -62,6 +62,15 @@ public class OrdinaryCompilationUnit extends SyntaxTreeNode {
 	return sb.toString ();
     }
 
+    @Override public List<ParseTreeNode> getChildren () {
+	List<ParseTreeNode> ret = new ArrayList<> ();
+	if (packageDeclarataion != null)
+	    ret.add (packageDeclarataion);
+	ret.addAll (imports);
+	ret.addAll (types);
+	return ret;
+    }
+
     @Override public void visitChildNodes (NodeVisitor v) {
 	if (packageDeclarataion != null)
 	    v.accept (packageDeclarataion);

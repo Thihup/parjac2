@@ -51,4 +51,8 @@ public class MethodHeader extends SyntaxTreeNode {
 	if (t != null)
 	    v.accept (t);
     }
+
+    public String getName () {
+	return methodDeclarator.getName ();
+    }
 }

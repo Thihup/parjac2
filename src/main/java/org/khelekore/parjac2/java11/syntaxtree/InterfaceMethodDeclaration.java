@@ -22,8 +22,8 @@ public class InterfaceMethodDeclaration extends SyntaxTreeNode {
 					 Flags.ACC_PRIVATE | Flags.ACC_STATIC | Flags.ACC_DEFAULT);
 
 	flagCalculator.addInvalid (Flags.ACC_PUBLIC | Flags.ACC_PRIVATE);
-	flagCalculator.addInvalid (Flags.ACC_ABSTRACT | Flags.ACC_STATIC | Flags.ACC_DEFAULT);
-	flagCalculator.addInvalid (Flags.ACC_PRIVATE | Flags.ACC_ABSTRACT);
+	flagCalculator.addInvalid (Flags.ACC_ABSTRACT | Flags.ACC_DEFAULT | Flags.ACC_STATIC);
+	flagCalculator.addInvalid (Flags.ACC_PRIVATE | Flags.ACC_ABSTRACT | Flags.ACC_DEFAULT);
 	flagCalculator.addInvalid (Flags.ACC_ABSTRACT | Flags.ACC_STRICT);
     }
 
@@ -37,7 +37,9 @@ public class InterfaceMethodDeclaration extends SyntaxTreeNode {
 	}
 	header = (MethodHeader)children.get (i++);
 	body = children.get (i);
-	flags = flagCalculator.calculate (ctx, modifiers, header.getPosition ());
+	flags = flagCalculator.calculate (ctx, modifiers, getPosition ());
+	if ((flags & Flags.ACC_DEFAULT) > 0 && !(body instanceof Block))
+	    ctx.error (getPosition (), "Default method requires a Block body");
     }
 
     @Override public Object getValue () {

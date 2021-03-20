@@ -50,4 +50,8 @@ public class MethodDeclarator extends SyntaxTreeNode {
 	if (dims != null)
 	    v.accept (dims);
     }
+
+    public String getName () {
+	return id;
+    }
 }

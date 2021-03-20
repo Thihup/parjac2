@@ -14,12 +14,14 @@ public class FlagConverter {
     public FlagConverter (Java11Tokens tokens) {
 	store (tokens.ABSTRACT, ACC_ABSTRACT);
 	store (tokens.FINAL, ACC_FINAL);
+	store (tokens.NATIVE, ACC_NATIVE);
 	store (tokens.PRIVATE, ACC_PRIVATE);
 	store (tokens.PROTECTED, ACC_PROTECTED);
 	store (tokens.PUBLIC, ACC_PUBLIC);
 	store (tokens.STATIC, ACC_STATIC);
 	store (tokens.STRICTFP, ACC_STRICT);
 	store (tokens.DEFAULT, ACC_DEFAULT);
+	store (tokens.SYNCHRONIZED, ACC_SYNCHRONIZED);
     }
 
     private void store (Token t, int value) {

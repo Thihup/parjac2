@@ -13,6 +13,7 @@ public class FlagCalculator {
     private final int baseValue;
     private List<Combination> addDefaultUnless = new ArrayList<> ();
     private List<Integer> invalidCombinations = new ArrayList<> ();
+    private List<Combination> invalidIf = new ArrayList<> ();
 
     public FlagCalculator (int baseValue) {
 	this.baseValue = baseValue;
@@ -25,6 +26,10 @@ public class FlagCalculator {
     // Add invalid combination, only one of the bits may be set at any time
     public void addInvalid (int flagMask) {
 	invalidCombinations.add (flagMask);
+    }
+
+    public void addInvalidIf (int trigger, int mask) {
+	invalidIf.add (new Combination (trigger, mask));
     }
 
     public int calculate (Context ctx, List<ParseTreeNode> modifiers, ParsePosition pos) {
@@ -49,11 +54,19 @@ public class FlagCalculator {
 	if (!modifiers.isEmpty ()) {
 	    for (Integer ic : invalidCombinations) {
 		int clash = flags & ic;
-		int bits = Integer.bitCount (clash);
-		if (bits > 1) {
-		    ctx.error (pos,
-			       "Invalid modifier combination, only one of (%s) is allowed",
+		if (Integer.bitCount (clash) > 1) {
+		    ctx.error (pos, "Invalid modifier combination, only one of (%s) is allowed",
 			       ctx.getTokenNameString (clash));
+		}
+	    }
+
+	    for (Combination c : invalidIf) {
+		if ((flags & c.value) > 0) {
+		    int clash = flags & c.flagMask;
+		    if (Integer.bitCount (clash) > 0) {
+			ctx.error (pos, "Invalid modifier combination, (%s) not allowed while %s",
+				   ctx.getTokenNameString (clash), ctx.getToken (c.value).getName ());
+		    }
 		}
 	    }
 	}
