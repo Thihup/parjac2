@@ -108,9 +108,13 @@ public class Compiler {
 		System.out.println ("parsing: " + file);
 	    CharBuffer charBuf = sourceProvider.getInput (file);
 	    CharBufferLexer lexer = new CharBufferLexer (grammar, java11Tokens, charBuf);
-	    Parser parser = new Parser (grammar, file, predictCache, lexer, diagnostics);
+
+	    // Use our own here, we do not want to stop other classes from being parsed.
+	    CompilerDiagnosticCollector collector = new CompilerDiagnosticCollector ();
+	    Parser parser = new Parser (grammar, file, predictCache, lexer, collector);
 	    ParseTreeNode tree = parser.parse (goalRule);
-	    if (diagnostics.hasError ())
+	    diagnostics.addAll (collector);
+	    if (collector.hasError ())
 		return null;
 	    ParseTreeNode syntaxTree = stb.build (dirAndPath, tree);
 	    long end = System.nanoTime ();

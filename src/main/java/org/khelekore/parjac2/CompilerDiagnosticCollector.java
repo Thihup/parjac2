@@ -27,6 +27,12 @@ public class CompilerDiagnosticCollector implements DiagnosticListener<Path> {
 	list.add (diagnostic);
     }
 
+    public void addAll (CompilerDiagnosticCollector other) {
+	list.addAll (other.list);
+	hasError |= other.hasError;
+	hasWarning |= other.hasWarning;
+    }
+
     public boolean hasError () {
 	return hasError;
     }
