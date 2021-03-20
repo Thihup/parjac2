@@ -21,11 +21,13 @@ public class SyntaxTreeBuilder {
     private final Java11Tokens java11Tokens;
     private final Grammar grammar;
     private final Map<String, ContextNodeBuilder> nodeBuilders;
+    private final FlagConverter flagConverter;
 
     public SyntaxTreeBuilder (CompilerDiagnosticCollector diagnostics, Java11Tokens java11Tokens, Grammar grammar) {
 	this.diagnostics = diagnostics;
 	this.java11Tokens = java11Tokens;
 	this.grammar = grammar;
+	this.flagConverter = new FlagConverter (java11Tokens);
 	nodeBuilders = new HashMap<> ();
 
 	register ("GOAL", this::liftUp);
@@ -276,7 +278,7 @@ public class SyntaxTreeBuilder {
     }
 
     public ParseTreeNode build (DirAndPath dirAndPath, ParseTreeNode root) {
-	Context ctx = new Context (java11Tokens, grammar, diagnostics, dirAndPath);
+	Context ctx = new Context (java11Tokens, grammar, diagnostics, dirAndPath, flagConverter);
 	return build (ctx, root);
     }
 

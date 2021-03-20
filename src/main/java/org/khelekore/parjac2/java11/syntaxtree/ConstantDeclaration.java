@@ -5,10 +5,8 @@ import java.util.List;
 
 import org.khelekore.parjac2.java11.Context;
 import org.khelekore.parjac2.parser.Rule;
-import org.khelekore.parjac2.parser.Token;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
-import org.khelekore.parjac2.parsetree.TokenNode;
 import org.objectweb.asm.Opcodes;
 
 public class ConstantDeclaration extends SyntaxTreeNode {
@@ -17,6 +15,9 @@ public class ConstantDeclaration extends SyntaxTreeNode {
     private final VariableDeclaratorList variables;
 
     private int flags;
+
+    private static FlagCalculator flagCalculator =
+	new FlagCalculator (Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL + Opcodes.ACC_STATIC);
 
     public ConstantDeclaration (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
@@ -28,30 +29,7 @@ public class ConstantDeclaration extends SyntaxTreeNode {
 	}
 	type = children.get (i++);
 	variables = (VariableDeclaratorList)children.get (i++);
-	setFlags (ctx);
-    }
-
-    private void setFlags (Context ctx) {
-	flags = 0;
-	for (ParseTreeNode m : modifiers) {
-	    int modifierFlag = 0;
-	    if (m instanceof TokenNode) {
-		TokenNode tn = (TokenNode)m;
-		Token t = tn.getToken ();
-		if (t == ctx.getTokens ().PUBLIC)
-		    modifierFlag = Opcodes.ACC_PUBLIC;
-		else if (t == ctx.getTokens ().FINAL)
-		    modifierFlag = Opcodes.ACC_FINAL;
-		else if (t == ctx.getTokens ().STATIC)
-		    modifierFlag = Opcodes.ACC_STATIC;
-		else
-		    ctx.error (tn.getPosition (), "Unknown token: %s", t.getName ());
-		if ((flags & modifierFlag) != 0)
-		    ctx.error (tn.getPosition (), "Duplicate modifier %s found", t.getName ());
-		flags |= modifierFlag;
-	    }
-	}
-	flags |= Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL + Opcodes.ACC_STATIC;
+	flags = flagCalculator.calculate (ctx, modifiers, n.getPosition ());
     }
 
     @Override public Object getValue () {

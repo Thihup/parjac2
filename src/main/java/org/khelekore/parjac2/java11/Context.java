@@ -6,19 +6,23 @@ import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.SourceDiagnostics;
 import org.khelekore.parjac2.parser.Grammar;
 import org.khelekore.parjac2.parser.ParsePosition;
+import org.khelekore.parjac2.parser.Token;
 
 public class Context {
     private final Java11Tokens java11Tokens;
     private final Grammar grammar;
     private final CompilerDiagnosticCollector diagnostics;
     private final DirAndPath dirAndPath;
+    private final FlagConverter flagConverter;
 
     public Context (Java11Tokens java11Tokens, Grammar grammar,
-		    CompilerDiagnosticCollector diagnostics, DirAndPath dirAndPath) {
+		    CompilerDiagnosticCollector diagnostics, DirAndPath dirAndPath,
+		    FlagConverter flagConverter) {
 	this.java11Tokens = java11Tokens;
 	this.grammar = grammar;
 	this.diagnostics = diagnostics;
 	this.dirAndPath = dirAndPath;
+	this.flagConverter = flagConverter;
     }
 
     public Java11Tokens getTokens () {
@@ -39,6 +43,14 @@ public class Context {
 
     public Path getRelativePath () {
 	return dirAndPath.getRelativePath ();
+    }
+
+    public int getFlagValue (Token t) {
+	return flagConverter.getValue (t);
+    }
+
+    public Token getToken (int value) {
+	return flagConverter.getToken (value);
     }
 
     public void error (ParsePosition pos, String format, Object... args) {
