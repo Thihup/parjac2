@@ -5,7 +5,7 @@ import java.util.Map;
 
 import org.khelekore.parjac2.parser.Token;
 
-import static org.objectweb.asm.Opcodes.*;
+import static org.khelekore.parjac2.java11.Flags.*;
 
 public class FlagConverter {
     private Map<Token, Integer> tokenToValue = new HashMap<> ();
@@ -19,6 +19,7 @@ public class FlagConverter {
 	store (tokens.PUBLIC, ACC_PUBLIC);
 	store (tokens.STATIC, ACC_STATIC);
 	store (tokens.STRICTFP, ACC_STRICT);
+	store (tokens.DEFAULT, ACC_DEFAULT);
     }
 
     private void store (Token t, int value) {

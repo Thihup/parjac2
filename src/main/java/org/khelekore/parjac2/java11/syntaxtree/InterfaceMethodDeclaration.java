@@ -4,27 +4,27 @@ import java.util.Collections;
 import java.util.List;
 
 import org.khelekore.parjac2.java11.Context;
+import org.khelekore.parjac2.java11.Flags;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
-import org.objectweb.asm.Opcodes;
 
 public class InterfaceMethodDeclaration extends SyntaxTreeNode {
     private final List<ParseTreeNode> modifiers;
     private final MethodHeader header;
-    private final ParseTreeNode body;
+    private final ParseTreeNode body; // either ';' or a Block.
     private int flags;
 
     private static FlagCalculator flagCalculator = new FlagCalculator (0);
     static {
-	flagCalculator.addDefaultUnless (Opcodes.ACC_PUBLIC, Opcodes.ACC_PRIVATE);
-	flagCalculator.addDefaultUnless (Opcodes.ACC_ABSTRACT,
-					 Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC); // |Opcodes.DEFAULT);
+	flagCalculator.addDefaultUnless (Flags.ACC_PUBLIC, Flags.ACC_PRIVATE);
+	flagCalculator.addDefaultUnless (Flags.ACC_ABSTRACT,
+					 Flags.ACC_PRIVATE | Flags.ACC_STATIC | Flags.ACC_DEFAULT);
 
-	flagCalculator.addInvalid (Opcodes.ACC_PUBLIC | Opcodes.ACC_PRIVATE);
-	flagCalculator.addInvalid (Opcodes.ACC_ABSTRACT | Opcodes.ACC_STATIC); // | Opcodes.ACC_DEFAULT);
-	flagCalculator.addInvalid (Opcodes.ACC_PRIVATE | Opcodes.ACC_ABSTRACT);
-	flagCalculator.addInvalid (Opcodes.ACC_ABSTRACT | Opcodes.ACC_STRICT);
+	flagCalculator.addInvalid (Flags.ACC_PUBLIC | Flags.ACC_PRIVATE);
+	flagCalculator.addInvalid (Flags.ACC_ABSTRACT | Flags.ACC_STATIC | Flags.ACC_DEFAULT);
+	flagCalculator.addInvalid (Flags.ACC_PRIVATE | Flags.ACC_ABSTRACT);
+	flagCalculator.addInvalid (Flags.ACC_ABSTRACT | Flags.ACC_STRICT);
     }
 
     public InterfaceMethodDeclaration (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
