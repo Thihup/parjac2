@@ -103,11 +103,10 @@ public class TestParser {
 	CharBufferLexer lexer = new CharBufferLexer (grammar, java11Tokens, input);
 	Parser p = new Parser (grammar, filePath, predictCache, lexer, diagnostics);
 	ParseTreeNode parseTree = p.parse (goalRule);
+	if (printParseTree && parseTree != null)
+	    printTree (parseTree);
 	if (diagnostics.hasError ())
 	    return;
-
-	if (printParseTree)
-	    printTree (parseTree);
 
 	DirAndPath dirAndPath = new DirAndPath (filePath.getParent (), filePath);
 	ParseTreeNode syntaxTree = stb.build (dirAndPath, parseTree);
