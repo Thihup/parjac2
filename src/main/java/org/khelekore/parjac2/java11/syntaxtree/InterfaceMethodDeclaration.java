@@ -38,8 +38,14 @@ public class InterfaceMethodDeclaration extends SyntaxTreeNode {
 	header = (MethodHeader)children.get (i++);
 	body = children.get (i);
 	flags = flagCalculator.calculate (ctx, modifiers, getPosition ());
-	if ((flags & Flags.ACC_DEFAULT) > 0 && !(body instanceof Block))
-	    ctx.error (getPosition (), "Default method requires a Block body");
+	int clash = flags & (Flags.ACC_DEFAULT | Flags.ACC_PRIVATE | Flags.ACC_STATIC);
+	if (clash > 0 &&
+	    !(body instanceof Block))
+	    ctx.error (getPosition (), "Method marked as %s requires a body",
+		       ctx.getTokenNameString (clash));
+	if ((flags & Flags.ACC_ABSTRACT) > 0 && body instanceof Block)
+	    ctx.error (getPosition (), "Abstract method may not have a body");
+
     }
 
     @Override public Object getValue () {
