@@ -3,6 +3,7 @@ package org.khelekore.parjac2.java11.syntaxtree;
 import java.util.Collections;
 import java.util.List;
 
+import org.khelekore.parjac2.java11.Context;
 import org.khelekore.parjac2.java11.Identifier;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
@@ -13,8 +14,11 @@ public class EnumDeclaration extends TypeDeclaration {
     private final String id;
     private final Superinterfaces supers;
     private final EnumBody body;
+    private int flags;
 
-    public EnumDeclaration (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    private static FlagCalculator flagCalculator = FlagCalculator.SIMPLE_ACCESS;
+
+    public EnumDeclaration (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
 	if (children.get (0) instanceof Multiple) {
@@ -30,6 +34,7 @@ public class EnumDeclaration extends TypeDeclaration {
 	    supers = null;
 	}
 	body = (EnumBody)children.get (i);
+	flags = flagCalculator.calculate (ctx, modifiers, getPosition ());
     }
 
     @Override public Object getValue () {
@@ -59,7 +64,6 @@ public class EnumDeclaration extends TypeDeclaration {
     }
 
     @Override public int getFlags () {
-	// TODO: fill in from modifiers
-	return 0;
+	return flags;
     }
 }

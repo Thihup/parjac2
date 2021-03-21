@@ -3,6 +3,7 @@ package org.khelekore.parjac2.java11.syntaxtree;
 import java.util.Collections;
 import java.util.List;
 
+import org.khelekore.parjac2.java11.Context;
 import org.khelekore.parjac2.java11.TypeIdentifier;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
@@ -15,8 +16,11 @@ public class NormalClassDeclaration extends TypeDeclaration {
     private Superclass superClass;
     private Superinterfaces superInterfaces;
     private ClassBody body;
+    private int flags;
 
-    public NormalClassDeclaration (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    private static FlagCalculator flagCalculator = FlagCalculator.SIMPLE_ACCESS;
+
+    public NormalClassDeclaration (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
 	if (children.get (i) instanceof Multiple)
@@ -32,6 +36,7 @@ public class NormalClassDeclaration extends TypeDeclaration {
 	if (children.get (i) instanceof Superinterfaces)
 	    superInterfaces = (Superinterfaces)children.get (i++);
 	body = (ClassBody)children.get (i++);
+	flags = flagCalculator.calculate (ctx, modifiers, getPosition ());
     }
 
     @Override public Object getValue () {
@@ -69,7 +74,6 @@ public class NormalClassDeclaration extends TypeDeclaration {
     }
 
     @Override public int getFlags () {
-	// TODO: fill in from modifiers
-	return 0;
+	return flags;
     }
 }

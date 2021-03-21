@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.khelekore.parjac2.java11.Context;
+import org.khelekore.parjac2.java11.Flags;
 import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Token;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -14,6 +15,11 @@ public class FlagCalculator {
     private List<Combination> addDefaultUnless = new ArrayList<> ();
     private List<Integer> invalidCombinations = new ArrayList<> ();
     private List<Combination> invalidIf = new ArrayList<> ();
+
+    public static final FlagCalculator SIMPLE_ACCESS = new FlagCalculator (0);
+    static {
+	SIMPLE_ACCESS.addInvalid (Flags.ACC_PUBLIC | Flags.ACC_PROTECTED | Flags.ACC_PRIVATE);
+    }
 
     public FlagCalculator (int baseValue) {
 	this.baseValue = baseValue;
