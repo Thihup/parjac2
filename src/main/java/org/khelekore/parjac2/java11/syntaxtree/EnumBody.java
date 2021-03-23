@@ -55,4 +55,8 @@ public class EnumBody extends SyntaxTreeNode {
     public List<TypeDeclaration> getInnerClasses () {
 	return innerClasses;
     }
+
+    public void setParents (EnumDeclaration ed) {
+	constants.getConstants ().forEach (c -> c.setParent (ed));
+    }
 }

@@ -15,6 +15,7 @@ public class EnumConstant extends AnonymousClass {
     private final String id;
     private final ArgumentList args;
     private final ClassBody body;
+    private EnumDeclaration ed;
 
     public EnumConstant (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
@@ -69,5 +70,13 @@ public class EnumConstant extends AnonymousClass {
 
     @Override public int getFlags () {
 	return Flags.ACC_FINAL;
+    }
+
+    public void setParent (EnumDeclaration ed) {
+	this.ed = ed;
+    }
+
+    public EnumDeclaration getParent () {
+	return ed;
     }
 }

@@ -173,7 +173,7 @@ public class Compiler {
     }
 
     private byte[] generateClass (Path origin, TypeDeclaration td) {
-	BytecodeGenerator g = new BytecodeGenerator (origin, td, cip.getFullClassName (td));
+	BytecodeGenerator g = new BytecodeGenerator (origin, td, cip);
 	return g.generate ();
     }
 

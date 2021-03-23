@@ -9,6 +9,7 @@ import org.khelekore.parjac2.java11.syntaxtree.*;
 public class BytecodeGenerator {
     private final Path origin;
     private final TypeDeclaration td;
+    private final ClassInformationProvider cip;
     private final String name;
 
     private enum ImplicitClassFlags {
@@ -26,10 +27,11 @@ public class BytecodeGenerator {
 	}
     }
 
-    public BytecodeGenerator (Path origin, TypeDeclaration td, String name) {
+    public BytecodeGenerator (Path origin, TypeDeclaration td, ClassInformationProvider cip) {
 	this.origin = origin;
 	this.td = td;
-	this.name = name;
+	this.cip = cip;
+	this.name = cip.getFullClassName (td);
     }
 
     public byte[] generate () {
@@ -77,7 +79,9 @@ public class BytecodeGenerator {
 
     private byte[] generateEnumConstant (EnumConstant ec) {
 	// TODO: extend the enum
-	return generateClass (ec, ImplicitClassFlags.ENUM_CONSTANT_FLAGS, null, "java/lang/Object", null);
+	EnumDeclaration ed = ec.getParent ();
+	String parentName = cip.getFullClassName (ed);
+	return generateClass (ec, ImplicitClassFlags.ENUM_CONSTANT_FLAGS, null, parentName, null);
     }
 
     private byte[] generateAnonymousClass (UnqualifiedClassInstanceCreationExpression ac) {

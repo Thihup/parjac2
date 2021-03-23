@@ -33,6 +33,7 @@ public class EnumDeclaration extends TypeDeclaration {
 	    supers = null;
 	}
 	body = (EnumBody)children.get (i);
+	body.setParents (this);
 	flags = flagCalculator.calculate (ctx, modifiers, getPosition ());
     }
 
