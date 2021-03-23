@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.khelekore.parjac2.java11.Context;
+import org.khelekore.parjac2.java11.Flags;
 import org.khelekore.parjac2.java11.Identifier;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
@@ -67,7 +68,6 @@ public class EnumConstant extends AnonymousClass {
     }
 
     @Override public int getFlags () {
-	// TODO: fill in flags
-	return 0;
+	return Flags.ACC_FINAL;
     }
 }

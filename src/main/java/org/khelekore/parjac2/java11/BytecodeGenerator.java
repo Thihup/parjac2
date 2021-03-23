@@ -9,6 +9,7 @@ import org.khelekore.parjac2.java11.syntaxtree.*;
 public class BytecodeGenerator {
     private final Path origin;
     private final TypeDeclaration td;
+    private final String name;
 
     private enum ImplicitClassFlags {
 	CLASS_FLAGS (Opcodes.ACC_SUPER),
@@ -25,9 +26,10 @@ public class BytecodeGenerator {
 	}
     }
 
-    public BytecodeGenerator (Path origin, TypeDeclaration td) {
+    public BytecodeGenerator (Path origin, TypeDeclaration td, String name) {
 	this.origin = origin;
 	this.td = td;
+	this.name = name;
     }
 
     public byte[] generate () {
@@ -59,7 +61,7 @@ public class BytecodeGenerator {
     }
 
     private byte[] generateClass (EnumDeclaration e) {
-	String signature = "Ljava/lang/Enum<L" + e.getName () + ";>;";
+	String signature = "Ljava/lang/Enum<L" + name + ";>;";
 	return generateClass (e, ImplicitClassFlags.ENUM_FLAGS, signature, "java/lang/Enum", null);
     }
 
@@ -86,7 +88,7 @@ public class BytecodeGenerator {
 				  String signature, String superType, String[] superInterfaces) {
 	ClassWriter cw = new ClassWriter (ClassWriter.COMPUTE_FRAMES);
 	int flags = td.getFlags () | icf.flags;
-	cw.visit (Opcodes.V11, flags, td.getName (), signature, superType, superInterfaces);
+	cw.visit (Opcodes.V11, flags, name, signature, superType, superInterfaces);
 	if (origin != null)
 	    cw.visitSource (origin.getFileName ().toString (), null);
         cw.visitEnd ();

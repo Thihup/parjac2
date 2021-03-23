@@ -15,7 +15,6 @@ public class NormalInterfaceDeclaration extends TypeDeclaration {
     private final TypeParameters types;
     private final ExtendsInterfaces extendsInterfaces;
     private final InterfaceBody body;
-    private int flags;
 
     private static FlagCalculator flagCalculator = FlagCalculator.SIMPLE_ACCESS;
 
@@ -71,9 +70,5 @@ public class NormalInterfaceDeclaration extends TypeDeclaration {
 	if (extendsInterfaces != null)
 	    v.accept (extendsInterfaces);
 	v.accept (body);
-    }
-
-    @Override public int getFlags () {
-	return flags;
     }
 }

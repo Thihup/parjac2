@@ -69,6 +69,10 @@ public class ClassInformationProvider {
 	return cth.getPackageName (td);
     }
 
+    public String getFullClassName (TypeDeclaration td) {
+	return cth.getFullClassName (td);
+    }
+
     public String getFileName (TypeDeclaration td) {
 	return cth.getFileName (td);
     }
@@ -212,7 +216,7 @@ public class ClassInformationProvider {
     private class CompiledTypesHolder {
 
 	// full class name to declaration, name only has '.' as separator, no / or $
-	// foo.bar.Baz$Qas -> TD
+	// foo.bar.Baz.Qas -> TD
 	private Map<String, TypeDeclaration> foundClasses = new ConcurrentHashMap<> ();
 	// TD -> foo.bar
 	private Map<TypeDeclaration, String> typeToPackagename = new ConcurrentHashMap<> ();
@@ -274,6 +278,14 @@ public class ClassInformationProvider {
 
 	public String getPackageName (TypeDeclaration td) {
 	    return typeToPackagename.get (td);
+	}
+
+	public String getFullClassName (TypeDeclaration td) {
+	    String pn = getPackageName (td);
+	    String cn = typeToFullName.get (td);
+	    if (pn.isEmpty ())
+		return cn;
+	    return pn + "." + cn;
 	}
 
 	public String getFileName (TypeDeclaration td) {

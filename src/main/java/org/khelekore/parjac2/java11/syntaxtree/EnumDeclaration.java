@@ -14,7 +14,6 @@ public class EnumDeclaration extends TypeDeclaration {
     private final String id;
     private final Superinterfaces supers;
     private final EnumBody body;
-    private int flags;
 
     private static FlagCalculator flagCalculator = FlagCalculator.SIMPLE_ACCESS;
 
@@ -61,9 +60,5 @@ public class EnumDeclaration extends TypeDeclaration {
 
     @Override public List<TypeDeclaration> getInnerClasses () {
 	return body.getInnerClasses ();
-    }
-
-    @Override public int getFlags () {
-	return flags;
     }
 }

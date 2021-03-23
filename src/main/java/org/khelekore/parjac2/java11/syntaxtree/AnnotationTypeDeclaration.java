@@ -12,7 +12,6 @@ public class AnnotationTypeDeclaration extends TypeDeclaration {
     private final List<ParseTreeNode> modifiers;
     private final String id;
     private final AnnotationTypeBody body;
-    private int flags;
 
     private static FlagCalculator flagCalculator = FlagCalculator.SIMPLE_ACCESS;
 
@@ -48,9 +47,5 @@ public class AnnotationTypeDeclaration extends TypeDeclaration {
 
     @Override public List<TypeDeclaration> getInnerClasses () {
 	return body.getInnerClasses ();
-    }
-
-    @Override public int getFlags () {
-	return flags;
     }
 }

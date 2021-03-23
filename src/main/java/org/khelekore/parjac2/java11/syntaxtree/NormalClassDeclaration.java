@@ -16,7 +16,6 @@ public class NormalClassDeclaration extends TypeDeclaration {
     private Superclass superClass;
     private Superinterfaces superInterfaces;
     private ClassBody body;
-    private int flags;
 
     private static FlagCalculator flagCalculator = FlagCalculator.SIMPLE_ACCESS;
 
@@ -71,9 +70,5 @@ public class NormalClassDeclaration extends TypeDeclaration {
 
     @Override public List<TypeDeclaration> getInnerClasses () {
 	return body.getInnerClasses ();
-    }
-
-    @Override public int getFlags () {
-	return flags;
     }
 }

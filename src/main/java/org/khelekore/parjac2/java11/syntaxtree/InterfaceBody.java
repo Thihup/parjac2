@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.khelekore.parjac2.java11.Context;
+import org.khelekore.parjac2.java11.Flags;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -16,7 +18,7 @@ public class InterfaceBody extends SyntaxTreeNode {
     private List<ParseTreeNode> interfaceMethodDeclarations = new ArrayList<> ();
     private List<TypeDeclaration> classDeclarations = new ArrayList<> ();
 
-    public InterfaceBody (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public InterfaceBody (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	if (rule.size () > 2) {
 	    declarations = ((Multiple)children.get (1)).get ();
@@ -28,6 +30,17 @@ public class InterfaceBody extends SyntaxTreeNode {
 	td.addMapping (ConstantDeclaration.class, constantDeclarations);
 	td.addMapping (InterfaceMethodDeclaration.class, interfaceMethodDeclarations);
 	declarations.forEach (td::distribute);
+
+	for (TypeDeclaration i : classDeclarations) {
+	    int flags = i.getFlags ();
+	    int clash = flags & (Flags.ACC_PRIVATE | Flags.ACC_PROTECTED);
+	    if (clash > 0) {
+		ctx.error (i.getPosition (), "Interface member type may not be %s",
+			   ctx.getTokenNameString (clash));
+	    }
+	    flags |= Flags.ACC_PUBLIC | Flags.ACC_STATIC;
+	    i.setFlags (flags);
+	}
     }
 
     @Override public Object getValue () {
