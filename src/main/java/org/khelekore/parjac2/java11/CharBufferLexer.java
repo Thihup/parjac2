@@ -113,9 +113,9 @@ public class CharBufferLexer implements Lexer {
     }
 
     @Override public TokenNode toCorrectType (TokenNode n, Token wantedActualToken) {
-	if (wantedActualToken == java11Tokens.VAR) {
+	if (wantedActualToken == java11Tokens.VAR)
 	    return new TokenNode (wantedActualToken, n.getPosition ());
-	} else if (wantedActualToken == java11Tokens.TYPE_IDENTIFIER) {
+	if (wantedActualToken == java11Tokens.TYPE_IDENTIFIER && n instanceof Identifier) {
 	    Identifier i = (Identifier)n;
 	    return new TypeIdentifier (wantedActualToken, i.getValue (), n.getPosition ());
 	}

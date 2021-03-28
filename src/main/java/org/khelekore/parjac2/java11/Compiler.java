@@ -13,13 +13,16 @@ import java.util.stream.Collectors;
 import org.khelekore.parjac2.CompilationException;
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.NoSourceDiagnostics;
+import org.khelekore.parjac2.SourceDiagnostics;
 import org.khelekore.parjac2.java11.syntaxtree.ModuleDeclaration;
 import org.khelekore.parjac2.java11.syntaxtree.TypeDeclaration;
 import org.khelekore.parjac2.parser.Grammar;
 import org.khelekore.parjac2.parser.Parser;
 import org.khelekore.parjac2.parser.PredictCache;
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parser.Token;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
+import org.khelekore.parjac2.parsetree.WildcardNode;
 
 /** The actual compiler
  */
@@ -113,9 +116,16 @@ public class Compiler {
 	    CompilerDiagnosticCollector collector = new CompilerDiagnosticCollector ();
 	    Parser parser = new Parser (grammar, file, predictCache, lexer, collector);
 	    ParseTreeNode tree = parser.parse (goalRule);
-	    diagnostics.addAll (collector);
-	    if (collector.hasError ())
+	    if (collector.hasError ()) {
+		if (tree != null) {
+		    // Translate to more readable errors
+		    addWildcardErrors (file, tree);
+		    return null;
+		}
+		// we could not build a tree, so return the raw parse problems as is
+		diagnostics.addAll (collector);
 		return null;
+	    }
 	    ParseTreeNode syntaxTree = stb.build (dirAndPath, tree);
 	    long end = System.nanoTime ();
 	    if (settings.getDebug () && settings.getReportTime ())
@@ -130,6 +140,16 @@ public class Compiler {
 	    diagnostics.report (new NoSourceDiagnostics ("Failed to read: %s: %s", file, e));
 	    return null;
 	}
+    }
+
+    private void addWildcardErrors (Path path, ParseTreeNode node) {
+	if (node instanceof WildcardNode) {
+	    WildcardNode w = (WildcardNode)node;
+	    Token t = w.getToken ();
+	    diagnostics.report (SourceDiagnostics.error (path, node.getPosition (),
+							 "Expected %s", t.getName ()));
+	}
+	node.visitChildNodes (n -> addWildcardErrors (path, n));
     }
 
     private void addTypes (List<ParsedEntry> trees) {
