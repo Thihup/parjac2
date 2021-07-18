@@ -29,7 +29,8 @@ public class EnumBody extends SyntaxTreeNode {
 	    declarations = null;
 	}
 	innerClasses = new ArrayList<> ();
-	constants.getConstants ().stream ().filter (EnumConstant::hasBody).forEach (innerClasses::add);
+	if (constants != null)
+	    constants.getConstants ().stream ().filter (EnumConstant::hasBody).forEach (innerClasses::add);
 	if (declarations != null)
 	    innerClasses.addAll (declarations.getInnerClasses ());
     }
@@ -57,6 +58,7 @@ public class EnumBody extends SyntaxTreeNode {
     }
 
     public void setParents (EnumDeclaration ed) {
-	constants.getConstants ().forEach (c -> c.setParent (ed));
+	if (constants != null)
+	    constants.getConstants ().forEach (c -> c.setParent (ed));
     }
 }

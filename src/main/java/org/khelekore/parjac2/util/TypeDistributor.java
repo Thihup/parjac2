@@ -23,7 +23,7 @@ public class TypeDistributor {
 	addMapping (c, t -> { /* nothing */ });
     }
 
-    private <T> void addMapping (Class<?> cls, Consumer<T> c) {
+    public <T> void addMapping (Class<?> cls, Consumer<T> c) {
 	mappings.put (cls, c);
     }
 

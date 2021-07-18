@@ -30,4 +30,24 @@ public class VariableDeclarator extends SyntaxTreeNode {
 	if (initializer != null)
 	    v.accept (initializer);
     }
+
+    public String getName () {
+	return id.getName ();
+    }
+
+    public boolean isArray () {
+	return id.isArray ();
+    }
+
+    public Dims getDims () {
+	return id.getDims ();
+    }
+
+    public boolean hasInitializer () {
+	return initializer != null;
+    }
+
+    public ParseTreeNode getInitializer () {
+	return initializer;
+    }
 }

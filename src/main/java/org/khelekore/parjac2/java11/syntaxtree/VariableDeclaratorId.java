@@ -30,4 +30,16 @@ public class VariableDeclaratorId extends SyntaxTreeNode {
 	if (dims != null)
 	    v.accept (dims);
     }
+
+    public String getName () {
+	return id;
+    }
+
+    public boolean isArray () {
+	return dims != null;
+    }
+
+    public Dims getDims () {
+	return dims;
+    }
 }

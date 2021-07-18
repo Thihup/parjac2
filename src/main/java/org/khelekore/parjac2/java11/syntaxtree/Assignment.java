@@ -20,6 +20,13 @@ public class Assignment extends SyntaxTreeNode {
 	right = children.get (2);
     }
 
+    public Assignment (ParseTreeNode left, Token operator, ParseTreeNode right) {
+	super (left.getPosition ());
+	this.left = left;
+	this.operator = operator;
+	this.right = right;
+    }
+
     @Override public Object getValue() {
 	return left + " " + operator.getName () + " " + right.getValue ();
     }

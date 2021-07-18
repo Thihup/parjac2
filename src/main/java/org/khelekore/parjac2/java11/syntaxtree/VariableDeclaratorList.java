@@ -21,7 +21,7 @@ public class VariableDeclaratorList extends SyntaxTreeNode {
 	}
     }
 
-    @Override public Object getValue() {
+    @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	sb.append (declarators.get (0));
 	for (int i = 1; i < declarators.size (); i++)
@@ -31,5 +31,9 @@ public class VariableDeclaratorList extends SyntaxTreeNode {
 
     @Override public void visitChildNodes (NodeVisitor v) {
 	declarators.forEach (v::accept);
+    }
+
+    public List<VariableDeclarator> getDeclarators () {
+	return declarators;
     }
 }

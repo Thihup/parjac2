@@ -30,6 +30,7 @@ public class SuperMethodReference extends SyntaxTreeNode {
 
     @Override public void visitChildNodes (NodeVisitor v) {
 	v.accept (type);
-	v.accept (types);
+	if (types != null)
+	    v.accept (types);
     }
 }

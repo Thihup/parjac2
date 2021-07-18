@@ -39,6 +39,10 @@ public class FieldDeclaration extends SyntaxTreeNode {
 	v.accept (list);
     }
 
+    public List<VariableDeclarator> getVariableDeclarators () {
+	return list.getDeclarators ();
+    }
+
     public int getFlags () {
 	return flags;
     }

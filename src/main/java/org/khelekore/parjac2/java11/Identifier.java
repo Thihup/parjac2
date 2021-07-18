@@ -7,6 +7,9 @@ import org.khelekore.parjac2.parsetree.TokenNode;
 public class Identifier extends TokenNode {
     private final String value;
 
+    /**
+     * @param token the type of identifier this is, typically Identifier or TypeIdentifier
+     */
     public Identifier (Token token, String value, ParsePosition pos) {
 	super (token, pos);
 	this.value = value;

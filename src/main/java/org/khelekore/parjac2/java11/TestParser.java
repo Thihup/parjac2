@@ -131,9 +131,11 @@ public class TestParser {
     private void printTree (ParseTreeNode n, String indent) {
 	System.out.print (indent);
 	System.out.print (n.getId () + " " + n.getPosition ().toShortString ());
-	if (n.getValue () != null)
-	    System.out.print (" (" + n.getValue () + ")");
+	Object v;
+	if (n.isToken () && (v = n.getValue ()) != null) {
+	    System.out.print (" " + v);
+	}
 	System.out.println ();
-	n.getChildren ().forEach (c -> printTree (c, indent + " "));
+	n.visitChildNodes (c -> printTree (c, indent + " "));
     }
 }

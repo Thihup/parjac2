@@ -308,11 +308,12 @@ public class Parser {
 
 	int bitPos = Math.abs ((arp ^ origin) % STATE_HASH_SIZE);
 	if (hashOfStates.get (bitPos)) {
-	    if (errorCount == 0 && // When we try all options we will get dups
-		states.checkFor (arp, origin, startPositions.get (currentPosition), states.size ())) {
-		System.out.println ("Dup found for: " + grammar.getRule (rule).toReadableString(grammar) +
-				    ", dotPos: " + dotPos);
-		printStates (currentPosition);
+	    if (states.checkFor (arp, origin, startPositions.get (currentPosition), states.size ())) {
+		if (errorCount == 0) {// When we try all options we will get dups
+		    System.out.println ("Dup found for: " + grammar.getRule (rule).toReadableString(grammar) +
+					", dotPos: " + dotPos);
+		    printStates (currentPosition);
+		}
 		return;
 	    }
 	}
