@@ -1,9 +1,11 @@
 package org.khelekore.parjac2.parser;
 
 import java.nio.file.Path;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -353,53 +355,129 @@ public class Parser {
 	// TOOD: both start the same way
 	int rule = rulePos >> 8;
 	Rule r = grammar.getRule (rule);
+	Deque<ChildCollector> queue = new ArrayDeque<> ();
+	debugRecursionStep (r, origin, completedIn);
+	queue.addLast (new ChildCollector (r, origin, completedIn, endPos));
+	// Call method with the queue so that we do nto have to care about the input fields
+	return generateParseTree (queue);
+    }
+
+    /** Manual recursion on a deque to avoid stack overflos. Pick things from the back.
+     */
+    private TreeInfo generateParseTree (Deque<ChildCollector> queue) {
+	while (!queue.isEmpty ()) {
+	    ChildCollector c = queue.getLast ();
+	    if (c.isComplete ()) {
+		queue.removeLast ();       // pop the recursion stack
+		TreeInfo ti = c.complete ();
+		if (queue.isEmpty ())      // we are done
+		    return ti;
+		queue.getLast ().add (ti); // not done, add a child to the parent
+	    } else {
+		int currentRulePos = c.getRulePos ();
+		int p = c.r.get (currentRulePos);
+		if (grammar.isToken (p)) {
+		    c.addToken (p);
+		} else {
+		    // push a recursion step for the new current rule
+		    queue.addLast (c.getChildCollector (currentRulePos, p));
+		}
+	    }
+	}
+	throw new RuntimeException ("Failed to complete the top node");
+    }
+
+    private void debugRecursionStep (Rule r, int origin, int completedIn) {
 	if (DEBUG) {
-	    System.out.println ("generateParseTree: rule: " + r.toReadableString(grammar) +
+	    System.out.println ("generateParseTree: rule: " + r.toReadableString (grammar) +
 				", origin: " + origin + ", completedIn: " + completedIn);
 	    printStates (completedIn);
 	}
-	int usedTokens = 0;
-	List<ParseTreeNode> children = new ArrayList<> (r.size ());
-	for (int i = r.size () - 1; i >= 0; i--) {
-	    int tokenDiff = 0;
-	    int p = r.get (i);
-	    if (grammar.isToken (p)) {
-		if (DEBUG)
-		    System.out.println ("Accepting token: " + grammar.getToken (p));
-		tokenDiff = 1;
-		TokenNode n = lexer.toCorrectType (getTokenValue (completedIn - 1), grammar.getToken (p));
-		Token t = n.getToken ();
-		if (t == grammar.WILDCARD) {
-		    children.add (new WildcardNode (grammar.getToken (p), n.getPosition ()));
-		} else {
-		    children.add (n);
-		}
+    }
+
+    private class ChildCollector {
+	private final Rule r;
+	private final int origin;
+	private int completedIn;
+	private int endPos;
+	private final List<ParseTreeNode> children = new ArrayList<> ();
+	private int usedTokens;
+
+	public ChildCollector (Rule r, int origin, int completedIn, int endPos) {
+	    this.r = r;
+	    this.origin = origin;
+	    this.completedIn = completedIn;
+	    this.endPos = endPos;
+	}
+
+	@Override public String toString () {
+	    return getClass ().getSimpleName () + "{" + r + ", origin: " + origin +
+		", completedIn: " + completedIn + ", endPos: " + endPos + ", usedTokens: " + usedTokens + "}";
+	}
+
+	public boolean isComplete () {
+	    return r.size () == children.size ();
+	}
+
+	public TreeInfo complete () {
+	    Collections.reverse (children);
+	    ParseTreeNode st = new RuleNode (r, children);
+	    return new TreeInfo (st, usedTokens);
+	}
+
+	public void addToken (int token) {
+	    if (DEBUG)
+		System.out.println ("Accepting token: " + grammar.getToken (token));
+	    TokenNode n = lexer.toCorrectType (getTokenValue (completedIn - 1), grammar.getToken (token));
+	    Token t = n.getToken ();
+	    if (t == grammar.WILDCARD) {
+		add (new WildcardNode (grammar.getToken (token), n.getPosition ()));
 	    } else {
-		if (DEBUG)
-		    System.out.println ("Trying to find rule: " + grammar.getRuleGroupName (p));
-		int originLEQ = i == 0 ? origin : completedIn;
-		int originGEQ = origin + i;
-		int ihPos = findCompleted (p, completedIn, originLEQ, originGEQ, endPos);
-		if (ihPos < 0) {
-		    System.err.println ("Failed to find completed: " + grammar.getRuleGroupName (p) +
-					" for: " + r.toReadableString (grammar));
-		    addParserError ("Failed to find completed: %s for %s",
-				    grammar.getRuleGroupName (p),
-				    r.toReadableString (grammar));
-		    return null;
-		}
-		TreeInfo ti = generateParseTree (states.get (ihPos), states.get (ihPos + 1), completedIn, ihPos);
-		tokenDiff = ti.usedTokens;
-		children.add (ti.node);
+		add (n);
 	    }
+	}
+
+	public void add (TreeInfo ti) {
+	    children.add (ti.node);
+	    update (ti.usedTokens);
+	}
+
+	public void add (ParseTreeNode n) {
+	    children.add (n);
+	    update (1);
+	}
+
+	private void update (int tokenDiff) {
 	    usedTokens += tokenDiff;
 	    completedIn -= tokenDiff;
 	    if (tokenDiff > 0)
 		endPos = startPositions.get (completedIn + 1);
 	}
-	Collections.reverse (children);
-	ParseTreeNode st = new RuleNode (r, children);
-	return new TreeInfo (st, usedTokens);
+
+	public ChildCollector getChildCollector (int currentRulePos, int ruleId) {
+	    if (DEBUG)
+		System.out.println ("Trying to find rule: " + grammar.getRuleGroupName (ruleId));
+	    int originLEQ = currentRulePos == 0 ? origin : completedIn;
+	    int originGEQ = origin + currentRulePos;
+	    int ihPos = findCompleted (ruleId, completedIn, originLEQ, originGEQ, endPos);
+	    if (ihPos < 0) {
+		System.err.println ("Failed to find completed: " + grammar.getRuleGroupName (ruleId) +
+				    " for: " + r.toReadableString (grammar));
+		addParserError ("Failed to find completed: %s for %s",
+				grammar.getRuleGroupName (ruleId),
+				r.toReadableString (grammar));
+		return null;
+	    }
+	    int cruleId = states.get (ihPos) >> 8;
+	    Rule crule = grammar.getRule (cruleId);
+	    int origin = states.get (ihPos + 1);
+	    debugRecursionStep (crule, origin, completedIn);
+	    return new ChildCollector (crule, origin, completedIn, ihPos);
+	}
+
+	public int getRulePos () {
+	    return r.size () - 1 - children.size ();
+	}
     }
 
     private TokenNode getTokenValue (int position) {
