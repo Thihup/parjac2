@@ -18,12 +18,12 @@ import org.khelekore.parjac2.parsetree.TokenNode;
 
 public class SyntaxTreeBuilder {
     private final CompilerDiagnosticCollector diagnostics;
-    private final Java11Tokens java11Tokens;
+    private final JavaTokens java11Tokens;
     private final Grammar grammar;
     private final Map<String, ContextNodeBuilder> nodeBuilders;
     private final FlagConverter flagConverter;
 
-    public SyntaxTreeBuilder (CompilerDiagnosticCollector diagnostics, Java11Tokens java11Tokens, Grammar grammar) {
+    public SyntaxTreeBuilder (CompilerDiagnosticCollector diagnostics, JavaTokens java11Tokens, Grammar grammar) {
 	this.diagnostics = diagnostics;
 	this.java11Tokens = java11Tokens;
 	this.grammar = grammar;

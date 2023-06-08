@@ -8,7 +8,7 @@ import java.util.List;
 
 import org.khelekore.parjac2.javacompiler.Context;
 import org.khelekore.parjac2.javacompiler.Identifier;
-import org.khelekore.parjac2.javacompiler.Java11Tokens;
+import org.khelekore.parjac2.javacompiler.JavaTokens;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -42,7 +42,7 @@ public class ClassBody extends SyntaxTreeNode {
 	declarations.forEach (this::findInnerClasses);
     }
 
-    private void handleFields (Java11Tokens java11Tokens, ParseTreeNode t, List<ParseTreeNode> initList) {
+    private void handleFields (JavaTokens java11Tokens, ParseTreeNode t, List<ParseTreeNode> initList) {
 	FieldDeclaration fd = (FieldDeclaration)t;
 	List<VariableDeclarator> ls = fd.getVariableDeclarators ();
 	for (VariableDeclarator vd : ls) {

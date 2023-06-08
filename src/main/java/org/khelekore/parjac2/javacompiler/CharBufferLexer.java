@@ -13,7 +13,7 @@ import org.khelekore.parjac2.parsetree.TokenNode;
 /** A lexer for the java language */
 public class CharBufferLexer implements Lexer {
     private final Grammar grammar;
-    private final Java11Tokens java11Tokens;
+    private final JavaTokens java11Tokens;
     // We use the position for keeping track of where we are
     private final CharBuffer buf;
     private boolean hasSentEOI = false;
@@ -48,7 +48,7 @@ public class CharBufferLexer implements Lexer {
 
     private final BitSet multiGTTTokens = new BitSet ();
 
-    public CharBufferLexer (Grammar grammar, Java11Tokens java11Tokens, CharBuffer buf) {
+    public CharBufferLexer (Grammar grammar, JavaTokens java11Tokens, CharBuffer buf) {
 	this.grammar = grammar;
 	this.java11Tokens = java11Tokens;
 	this.buf = buf;

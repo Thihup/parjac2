@@ -19,7 +19,7 @@ import org.khelekore.parjac2.parser.Rule;
 public class BatchCompiler {
     private final CompilerDiagnosticCollector diagnostics;
     private final Grammar grammar = new Grammar ();
-    private final Java11Tokens java11Tokens = new Java11Tokens (grammar);
+    private final JavaTokens java11Tokens = new JavaTokens (grammar);
 
     public static void main (String[] args) throws IOException {
 	if (args.length == 0) {

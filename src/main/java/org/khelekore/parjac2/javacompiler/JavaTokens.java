@@ -7,7 +7,7 @@ import java.util.Map;
 import org.khelekore.parjac2.parser.Grammar;
 import org.khelekore.parjac2.parser.Token;
 
-public class Java11Tokens {
+public class JavaTokens {
 
     // 3.4. Line Terminators
     public final Token LF;
@@ -170,7 +170,7 @@ public class Java11Tokens {
     private final Map<String, Token> nameToKeyword = new HashMap<> ();
     private final Map<String, Token> nameToRestrictedKeyword = new HashMap<> ();
 
-    public Java11Tokens (Grammar grammar) {
+    public JavaTokens (Grammar grammar) {
 
 	// 3.4. Line Terminators
 	LF = grammar.getToken ("LF");          // \n

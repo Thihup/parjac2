@@ -29,7 +29,7 @@ import org.khelekore.parjac2.parsetree.WildcardNode;
 public class Compiler {
     private final CompilerDiagnosticCollector diagnostics;
     private final Grammar grammar;
-    private final Java11Tokens java11Tokens;
+    private final JavaTokens java11Tokens;
     private final Rule goalRule;
     private final CompilationArguments settings;
     private final PredictCache predictCache;
@@ -37,7 +37,7 @@ public class Compiler {
     private final ClassInformationProvider cip;
 
     public Compiler (CompilerDiagnosticCollector diagnostics, Grammar grammar,
-		     Java11Tokens java11Tokens, Rule goalRule, CompilationArguments settings) {
+		     JavaTokens java11Tokens, Rule goalRule, CompilationArguments settings) {
 	this.diagnostics = diagnostics;
 	this.grammar = grammar;
 	this.java11Tokens = java11Tokens;

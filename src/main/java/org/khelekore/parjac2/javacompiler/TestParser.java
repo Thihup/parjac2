@@ -26,7 +26,7 @@ public class TestParser {
     private final boolean printParseTree;
     private final boolean printSyntaxTree;
     private final Grammar grammar = new Grammar ();
-    private final Java11Tokens java11Tokens = new Java11Tokens (grammar);
+    private final JavaTokens java11Tokens = new JavaTokens (grammar);
     private final PredictCache predictCache = new PredictCache (grammar);
     private final CompilerDiagnosticCollector diagnostics = new CompilerDiagnosticCollector ();
     private final SyntaxTreeBuilder stb = new SyntaxTreeBuilder (diagnostics, java11Tokens, grammar);

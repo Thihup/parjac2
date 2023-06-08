@@ -11,7 +11,7 @@ public class FlagConverter {
     private Map<Token, Integer> tokenToValue = new HashMap<> ();
     private Map<Integer, Token> valueToToken = new HashMap<> ();
 
-    public FlagConverter (Java11Tokens tokens) {
+    public FlagConverter (JavaTokens tokens) {
 	store (tokens.ABSTRACT, ACC_ABSTRACT);
 	store (tokens.FINAL, ACC_FINAL);
 	store (tokens.NATIVE, ACC_NATIVE);
