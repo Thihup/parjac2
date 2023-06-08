@@ -27,7 +27,6 @@ public class JavaTokens {
     // 3.8. Identifiers
     public final Token IDENTIFIER;
     public final Token TYPE_IDENTIFIER;
-    public final Token VAR;
 
     // 3.9. Keywords
     public final Token ABSTRACT;
@@ -82,17 +81,23 @@ public class JavaTokens {
     public final Token VOLATILE;
     public final Token WHILE;
 
-    // restricted keywords
+    // Contextual keywords
     public final Token EXPORTS;
     public final Token MODULE;
+    public final Token NON_SEALED;
     public final Token OPEN;
     public final Token OPENS;
+    public final Token PERMITS;
     public final Token PROVIDES;
+    public final Token RECORD;
     public final Token REQUIRES;
+    public final Token SEALED;
     public final Token TO;
     public final Token TRANSITIVE;
     public final Token USES;
+    public final Token VAR;
     public final Token WITH;
+    public final Token YIELD;
 
     // 3.10. Literals
     public final Token INT_LITERAL;
@@ -101,6 +106,7 @@ public class JavaTokens {
     public final Token DOUBLE_LITERAL;
     public final Token CHARACTER_LITERAL;
     public final Token STRING_LITERAL;
+    public final Token TEXT_BLOCK;
     public final Token NULL;
     public final Token TRUE;
     public final Token FALSE;
@@ -162,13 +168,13 @@ public class JavaTokens {
     private final BitSet whitespaces = new BitSet ();
     private final BitSet comments = new BitSet ();
     private final BitSet keywords = new BitSet ();
-    private final BitSet restrictedKeywords = new BitSet ();
+    private final BitSet contextualKeywords = new BitSet ();
     private final BitSet literals = new BitSet ();
     private final BitSet separators = new BitSet ();
     private final BitSet operators = new BitSet ();
 
     private final Map<String, Token> nameToKeyword = new HashMap<> ();
-    private final Map<String, Token> nameToRestrictedKeyword = new HashMap<> ();
+    private final Map<String, Token> nameToContextualKeyword = new HashMap<> ();
 
     public JavaTokens (Grammar grammar) {
 
@@ -192,7 +198,7 @@ public class JavaTokens {
 	TYPE_IDENTIFIER = grammar.getToken ("TypeIdentifier");
 	VAR = grammar.getToken ("var");
 
-	// 3.9. Keywords
+	// 3.9. Reserved Keywords
 	ABSTRACT = grammar.getToken ("abstract");
 	ASSERT = grammar.getToken ("assert");
 	BOOLEAN = grammar.getToken ("boolean");
@@ -245,17 +251,22 @@ public class JavaTokens {
 	VOLATILE = grammar.getToken ("volatile");
 	WHILE = grammar.getToken ("while");
 
-	// restricted keywords for module directives
+	// Contextual keywords for module directives
 	EXPORTS = grammar.getToken ("exports");
 	MODULE = grammar.getToken ("module");
+	NON_SEALED = grammar.getToken ("non-sealed");
 	OPEN = grammar.getToken ("open");
 	OPENS = grammar.getToken ("opens");
+	PERMITS = grammar.getToken ("permits");
 	PROVIDES = grammar.getToken ("provides");
+	RECORD = grammar.getToken ("record");
 	REQUIRES = grammar.getToken ("requires");
+	SEALED = grammar.getToken ("sealed");
 	TO = grammar.getToken ("to");
 	TRANSITIVE = grammar.getToken ("transitive");
 	USES = grammar.getToken ("uses");
 	WITH = grammar.getToken ("with");
+	YIELD = grammar.getToken ("yield");
 
 	// 3.10. Literals
 	INT_LITERAL = grammar.getToken  ("int_literal");
@@ -264,6 +275,7 @@ public class JavaTokens {
 	DOUBLE_LITERAL = grammar.getToken  ("double_literal");
 	CHARACTER_LITERAL = grammar.getToken  ("character_literal");
 	STRING_LITERAL = grammar.getToken  ("string_literal");
+	TEXT_BLOCK = grammar.getToken ("text_block");
 	NULL = grammar.getToken  ("null");
 	TRUE = grammar.getToken  ("true");
 	FALSE = grammar.getToken  ("false");
@@ -330,10 +342,10 @@ public class JavaTokens {
 	       NATIVE, NEW, PACKAGE, PRIVATE, PROTECTED, PUBLIC, RETURN, SHORT, STATIC, STRICTFP,
 	       SUPER, SWITCH, SYNCHRONIZED, THIS, THROW, THROWS, TRANSIENT, TRY, UNDERSCORE, VOID,
 	       VOLATILE, WHILE);
-	store (restrictedKeywords, EXPORTS, MODULE, OPEN, OPENS, PROVIDES, REQUIRES,
-	       TO, TRANSITIVE, USES, WITH);
+	store (contextualKeywords, EXPORTS, MODULE, NON_SEALED, OPEN, OPENS, PERMITS, PROVIDES,
+	       RECORD, REQUIRES, SEALED, TO, TRANSITIVE, USES, WITH, YIELD);
 	store (literals, INT_LITERAL, LONG_LITERAL, FLOAT_LITERAL, DOUBLE_LITERAL,
-	       CHARACTER_LITERAL, STRING_LITERAL, NULL, TRUE, FALSE);
+	       CHARACTER_LITERAL, STRING_LITERAL, TEXT_BLOCK, NULL, TRUE, FALSE);
 	store (separators, LEFT_PARENTHESIS, RIGHT_PARENTHESIS, LEFT_CURLY, RIGHT_CURLY,
 	       LEFT_BRACKET, RIGHT_BRACKET, SEMICOLON, COMMA, DOT, ELLIPSIS, AT, DOUBLE_COLON);
 	store (operators, EQUAL, GT, LT, NOT, TILDE, QUESTIONMARK, COLON, ARROW, DOUBLE_EQUAL,
@@ -349,9 +361,8 @@ public class JavaTokens {
 	nameToKeyword.put (TRUE.getName (), TRUE);
 	nameToKeyword.put (FALSE.getName (), FALSE);
 
-	restrictedKeywords.stream ().mapToObj (i -> grammar.getToken (i))
-	    .forEach (t -> nameToRestrictedKeyword.put (t.getName (), t));
-	nameToRestrictedKeyword.put (VAR.getName (), VAR);
+	contextualKeywords.stream ().mapToObj (i -> grammar.getToken (i))
+	    .forEach (t -> nameToContextualKeyword.put (t.getName (), t));
     }
 
     private final void store (BitSet store, Token... tokens) {
@@ -388,7 +399,7 @@ public class JavaTokens {
 	return nameToKeyword.get (id);
     }
 
-    public Token getRestrictedKeyWordFromIdentifier (String id) {
-	return nameToRestrictedKeyword.get (id);
+    public Token getContextualKeyWordFromIdentifier (String id) {
+	return nameToContextualKeyword.get (id);
     }
 }
