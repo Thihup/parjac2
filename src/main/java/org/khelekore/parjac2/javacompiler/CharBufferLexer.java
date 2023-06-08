@@ -13,7 +13,7 @@ import org.khelekore.parjac2.parsetree.TokenNode;
 /** A lexer for the java language */
 public class CharBufferLexer implements Lexer {
     private final Grammar grammar;
-    private final JavaTokens java11Tokens;
+    private final JavaTokens javaTokens;
     // We use the position for keeping track of where we are
     private final CharBuffer buf;
     private boolean hasSentEOI = false;
@@ -50,7 +50,7 @@ public class CharBufferLexer implements Lexer {
 
     public CharBufferLexer (Grammar grammar, JavaTokens java11Tokens, CharBuffer buf) {
 	this.grammar = grammar;
-	this.java11Tokens = java11Tokens;
+	this.javaTokens = java11Tokens;
 	this.buf = buf;
 	lastScannedTokens = new BitSet (grammar.getNumberOfTokens ());
 	multiGTTTokens.set (java11Tokens.GE.getId ());
@@ -94,28 +94,28 @@ public class CharBufferLexer implements Lexer {
     }
 
     @Override public TokenNode getCurrentValue () {
-	if (lastScannedTokens.get (java11Tokens.CHARACTER_LITERAL.getId ()))
-	    return new CharLiteral (java11Tokens.CHARACTER_LITERAL, getCharValue (), getParsePosition ());
-	if (lastScannedTokens.get (java11Tokens.STRING_LITERAL.getId ()))
-	    return new StringLiteral (java11Tokens.STRING_LITERAL, getStringValue (), getParsePosition ());
-	if (lastScannedTokens.get (java11Tokens.INT_LITERAL.getId ()))
-	    return new IntLiteral (java11Tokens.INT_LITERAL, getIntValue (), getParsePosition ());
-	if (lastScannedTokens.get (java11Tokens.LONG_LITERAL.getId ()))
-	    return new LongLiteral (java11Tokens.LONG_LITERAL, getLongValue (), getParsePosition ());
-	if (lastScannedTokens.get (java11Tokens.FLOAT_LITERAL.getId ()))
-	    return new FloatLiteral (java11Tokens.FLOAT_LITERAL, getFloatValue (), getParsePosition ());
-	if (lastScannedTokens.get (java11Tokens.DOUBLE_LITERAL.getId ()))
-	    return new DoubleLiteral (java11Tokens.DOUBLE_LITERAL, getDoubleValue (), getParsePosition ());
-	if (lastScannedTokens.get (java11Tokens.IDENTIFIER.getId ()))
-	    return new Identifier (java11Tokens.IDENTIFIER, getIdentifier (), getParsePosition ());
+	if (lastScannedTokens.get (javaTokens.CHARACTER_LITERAL.getId ()))
+	    return new CharLiteral (javaTokens.CHARACTER_LITERAL, getCharValue (), getParsePosition ());
+	if (lastScannedTokens.get (javaTokens.STRING_LITERAL.getId ()))
+	    return new StringLiteral (javaTokens.STRING_LITERAL, getStringValue (), getParsePosition ());
+	if (lastScannedTokens.get (javaTokens.INT_LITERAL.getId ()))
+	    return new IntLiteral (javaTokens.INT_LITERAL, getIntValue (), getParsePosition ());
+	if (lastScannedTokens.get (javaTokens.LONG_LITERAL.getId ()))
+	    return new LongLiteral (javaTokens.LONG_LITERAL, getLongValue (), getParsePosition ());
+	if (lastScannedTokens.get (javaTokens.FLOAT_LITERAL.getId ()))
+	    return new FloatLiteral (javaTokens.FLOAT_LITERAL, getFloatValue (), getParsePosition ());
+	if (lastScannedTokens.get (javaTokens.DOUBLE_LITERAL.getId ()))
+	    return new DoubleLiteral (javaTokens.DOUBLE_LITERAL, getDoubleValue (), getParsePosition ());
+	if (lastScannedTokens.get (javaTokens.IDENTIFIER.getId ()))
+	    return new Identifier (javaTokens.IDENTIFIER, getIdentifier (), getParsePosition ());
 	Token t = grammar.getToken (lastScannedTokens.nextSetBit (0));
 	return new TokenNode (t, getParsePosition ());
     }
 
     @Override public TokenNode toCorrectType (TokenNode n, Token wantedActualToken) {
-	if (wantedActualToken == java11Tokens.VAR)
+	if (wantedActualToken == javaTokens.VAR)
 	    return new TokenNode (wantedActualToken, n.getPosition ());
-	if (wantedActualToken == java11Tokens.TYPE_IDENTIFIER && n instanceof Identifier) {
+	if (wantedActualToken == javaTokens.TYPE_IDENTIFIER && n instanceof Identifier) {
 	    Identifier i = (Identifier)n;
 	    return new TypeIdentifier (wantedActualToken, i.getValue (), n.getPosition ());
 	}
@@ -146,16 +146,16 @@ public class CharBufferLexer implements Lexer {
     @Override public BitSet nextToken (BitSet wantedTokens) {
 	while (hasMoreTokens ()) {
 	    Token nextToken = nextRealToken (wantedTokens);
-	    if (java11Tokens.isWhitespace (nextToken) || java11Tokens.isComment (nextToken))
+	    if (javaTokens.isWhitespace (nextToken) || javaTokens.isComment (nextToken))
 		continue;
 	    lastScannedTokens.clear ();
 	    lastScannedTokens.set (nextToken.getId ());
-	    if (nextToken == java11Tokens.VAR) {
-		lastScannedTokens.set (java11Tokens.IDENTIFIER.getId ());
-	    } else if (nextToken == java11Tokens.IDENTIFIER &&
-		       wantedTokens.get (java11Tokens.TYPE_IDENTIFIER.getId ()) &&
+	    if (nextToken == javaTokens.VAR) {
+		lastScannedTokens.set (javaTokens.IDENTIFIER.getId ());
+	    } else if (nextToken == javaTokens.IDENTIFIER &&
+		       wantedTokens.get (javaTokens.TYPE_IDENTIFIER.getId ()) &&
 		       !currentIdentifier.equals ("var")) {
-		lastScannedTokens.set (java11Tokens.TYPE_IDENTIFIER.getId ());
+		lastScannedTokens.set (javaTokens.TYPE_IDENTIFIER.getId ());
 	    }
 	    return lastScannedTokens;
 	}
@@ -186,29 +186,29 @@ public class CharBufferLexer implements Lexer {
 
 		    // sub
 		case '\u001a':
-		    return java11Tokens.SUB;
+		    return javaTokens.SUB;
 
 		    // separators
 		case '(':
-		    return java11Tokens.LEFT_PARENTHESIS;
+		    return javaTokens.LEFT_PARENTHESIS;
 		case ')':
-		    return java11Tokens.RIGHT_PARENTHESIS;
+		    return javaTokens.RIGHT_PARENTHESIS;
 		case '{':
-		    return java11Tokens.LEFT_CURLY;
+		    return javaTokens.LEFT_CURLY;
 		case '}':
-		    return java11Tokens.RIGHT_CURLY;
+		    return javaTokens.RIGHT_CURLY;
 		case '[':
-		    return java11Tokens.LEFT_BRACKET;
+		    return javaTokens.LEFT_BRACKET;
 		case ']':
-		    return java11Tokens.RIGHT_BRACKET;
+		    return javaTokens.RIGHT_BRACKET;
 		case ';':
-		    return java11Tokens.SEMICOLON;
+		    return javaTokens.SEMICOLON;
 		case ',':
-		    return java11Tokens.COMMA;
+		    return javaTokens.COMMA;
 		case '.':
 		    return handleDot ();
 		case '@':
-		    return java11Tokens.AT;
+		    return javaTokens.AT;
 		case ':':  // : is an operator, :: is a separator
 		    return handleColon ();
 
@@ -220,27 +220,27 @@ public class CharBufferLexer implements Lexer {
 		case '<':
 		    return handleLT ();
 		case '!':
-		    return handleExtraEqual (java11Tokens.NOT, java11Tokens.NOT_EQUAL);
+		    return handleExtraEqual (javaTokens.NOT, javaTokens.NOT_EQUAL);
 		case '~':
-		    return java11Tokens.TILDE;
+		    return javaTokens.TILDE;
 		case '?':
-		    return java11Tokens.QUESTIONMARK;
+		    return javaTokens.QUESTIONMARK;
 		case '+':
-		    return handleDoubleOrEqual (c, java11Tokens.PLUS, java11Tokens.INCREMENT, java11Tokens.PLUS_EQUAL);
+		    return handleDoubleOrEqual (c, javaTokens.PLUS, javaTokens.INCREMENT, javaTokens.PLUS_EQUAL);
 		case '-':
 		    return handleMinus ();
 		case '*':
-		    return handleExtraEqual (java11Tokens.MULTIPLY, java11Tokens.MULTIPLY_EQUAL);
+		    return handleExtraEqual (javaTokens.MULTIPLY, javaTokens.MULTIPLY_EQUAL);
 		case '/':
 		    return handleSlash ();
 		case '%':
-		    return handleExtraEqual (java11Tokens.REMAINDER, java11Tokens.REMAINDER_EQUAL);
+		    return handleExtraEqual (javaTokens.REMAINDER, javaTokens.REMAINDER_EQUAL);
 		case '&':
-		    return handleDoubleOrEqual (c, java11Tokens.AND, java11Tokens.LOGICAL_AND, java11Tokens.BIT_AND_EQUAL);
+		    return handleDoubleOrEqual (c, javaTokens.AND, javaTokens.LOGICAL_AND, javaTokens.BIT_AND_EQUAL);
 		case '|':
-		    return handleDoubleOrEqual (c, java11Tokens.OR, java11Tokens.LOGICAL_OR, java11Tokens.BIT_OR_EQUAL);
+		    return handleDoubleOrEqual (c, javaTokens.OR, javaTokens.LOGICAL_OR, javaTokens.BIT_OR_EQUAL);
 		case '^':
-		    return handleExtraEqual (java11Tokens.XOR, java11Tokens.BIT_XOR_EQUAL);
+		    return handleExtraEqual (javaTokens.XOR, javaTokens.BIT_XOR_EQUAL);
 
 		case '\'':
 		    return readCharacterLiteral ();
@@ -288,22 +288,22 @@ public class CharBufferLexer implements Lexer {
 		break;
 	    }
 	}
-	return java11Tokens.WHITESPACE;
+	return javaTokens.WHITESPACE;
     }
 
     private Token handleLF () { // easy case
 	nextLine ();
-	return java11Tokens.LF;
+	return javaTokens.LF;
     }
 
     private Token handleCR () { // might be a CR or CRLF
-	Token tt = handleOneExtra (java11Tokens.CR, '\n', java11Tokens.CRLF);
+	Token tt = handleOneExtra (javaTokens.CR, '\n', javaTokens.CRLF);
 	nextLine ();
 	return tt;
     }
 
     private Token handleDot () {
-	Token tt = java11Tokens.DOT;
+	Token tt = javaTokens.DOT;
 	if (buf.hasRemaining ()) {
 	    buf.mark ();
 	    char c2 = nextChar ();
@@ -311,7 +311,7 @@ public class CharBufferLexer implements Lexer {
 		if (buf.hasRemaining ()) {
 		    char c3 = nextChar ();
 		    if (c3 == '.')
-			return java11Tokens.ELLIPSIS;
+			return javaTokens.ELLIPSIS;
 		}
 	    } else if (c2 >= '0' && c2 <= '9') {
 		StringBuilder value = new StringBuilder ();
@@ -325,11 +325,11 @@ public class CharBufferLexer implements Lexer {
     }
 
     private Token handleColon () {
-	return handleOneExtra (java11Tokens.COLON, ':', java11Tokens.DOUBLE_COLON);
+	return handleOneExtra (javaTokens.COLON, ':', javaTokens.DOUBLE_COLON);
     }
 
     private Token handleEquals () {
-	return handleOneExtra (java11Tokens.EQUAL, '=', java11Tokens.DOUBLE_EQUAL);
+	return handleOneExtra (javaTokens.EQUAL, '=', javaTokens.DOUBLE_EQUAL);
     }
 
     private Token handleExtraEqual (Token base, Token extra) {
@@ -352,15 +352,15 @@ public class CharBufferLexer implements Lexer {
 
     private Token handleMinus () {
 	// -, --, -=, ->
-	Token tt = java11Tokens.MINUS;
+	Token tt = javaTokens.MINUS;
 	if (buf.hasRemaining ()) {
 	    char c = nextChar ();
 	    if (c == '-')
-		tt = java11Tokens.DECREMENT;
+		tt = javaTokens.DECREMENT;
 	    else if (c == '=')
-		tt = java11Tokens.MINUS_EQUAL;
+		tt = javaTokens.MINUS_EQUAL;
 	    else if (c == '>')
-		tt = java11Tokens.ARROW;
+		tt = javaTokens.ARROW;
 	    else
 		pushBack ();
 	}
@@ -369,11 +369,11 @@ public class CharBufferLexer implements Lexer {
 
     private Token handleSlash () {
 	// /, /=, //, /* ... */
-	Token tt = java11Tokens.DIVIDE;
+	Token tt = javaTokens.DIVIDE;
 	if (buf.hasRemaining ()) {
 	    char c = nextChar ();
 	    if (c == '=')
-		tt = java11Tokens.DIVIDE_EQUAL;
+		tt = javaTokens.DIVIDE_EQUAL;
 	    else if (c == '/')
 		tt = readOffOneLineComment ();
 	    else if (c == '*')
@@ -392,7 +392,7 @@ public class CharBufferLexer implements Lexer {
 		break;
 	    }
 	}
-	return java11Tokens.END_OF_LINE_COMMENT;
+	return javaTokens.END_OF_LINE_COMMENT;
     }
 
     private Token readOffMultiLineComment () {
@@ -400,7 +400,7 @@ public class CharBufferLexer implements Lexer {
 	while (buf.hasRemaining ()) {
 	    char c = nextChar ();
 	    if (previousWasStar && c == '/')
-		return java11Tokens.TRADITIONAL_COMMENT;
+		return javaTokens.TRADITIONAL_COMMENT;
 	    previousWasStar = (c == '*');
 	    if (c == '\n')
 		handleLF ();
@@ -413,15 +413,15 @@ public class CharBufferLexer implements Lexer {
 
     private Token handleLT () {
 	// <, <=, <<, <<=
-	return handleLTGT ('<', java11Tokens.LT, java11Tokens.LE,
-			   java11Tokens.LEFT_SHIFT, java11Tokens.LEFT_SHIFT_EQUAL);
+	return handleLTGT ('<', javaTokens.LT, javaTokens.LE,
+			   javaTokens.LEFT_SHIFT, javaTokens.LEFT_SHIFT_EQUAL);
     }
 
     private Token handleGT (boolean multiCharsAllowed) {
 	// We would like to handle: >, >=, >>, >>=, >>>, >>>=
 	// but due to grammar being conflicting we only do
 	// > and >=, >>= and >>>=
-	Token tt = java11Tokens.GT;
+	Token tt = javaTokens.GT;
 
 	if (multiCharsAllowed && buf.hasRemaining ()) {
 	    // Save state for column and char start
@@ -429,17 +429,17 @@ public class CharBufferLexer implements Lexer {
 	    char c = nextChar ();
 	    int lcs = lastCharStart;
 	    if (c == '=') {
-		return java11Tokens.GE;
+		return javaTokens.GE;
 	    } else if (c == '>') {
 		if (buf.hasRemaining ()) {
 		    char d = nextChar ();
 		    if (d == '=') {
-			return java11Tokens.RIGHT_SHIFT_EQUAL;
+			return javaTokens.RIGHT_SHIFT_EQUAL;
 		    } else if (d == '>') {
 			if (buf.hasRemaining ()) {
 			    char e = nextChar ();
 			    if (e == '=')
-				return java11Tokens.RIGHT_SHIFT_UNSIGNED_EQUAL;
+				return javaTokens.RIGHT_SHIFT_UNSIGNED_EQUAL;
 			}
 		    }
 		}
@@ -480,7 +480,7 @@ public class CharBufferLexer implements Lexer {
 
     private Token readCharacterLiteral () {
 	String s =
-	    handleString ('\'', java11Tokens.CHARACTER_LITERAL, "Character literal not closed");
+	    handleString ('\'', javaTokens.CHARACTER_LITERAL, "Character literal not closed");
 	if (s == null)
 	    return grammar.ERROR;
 	int len = s.length ();
@@ -491,16 +491,16 @@ public class CharBufferLexer implements Lexer {
 	    return grammar.ERROR;
 	}
 	currentCharValue = s.charAt (0);
-	return java11Tokens.CHARACTER_LITERAL;
+	return javaTokens.CHARACTER_LITERAL;
     }
 
     private Token readStringLiteral () {
 	String s =
-	    handleString ('"', java11Tokens.STRING_LITERAL, "String literal not closed");
+	    handleString ('"', javaTokens.STRING_LITERAL, "String literal not closed");
 	if (s == null)
 	    return grammar.ERROR;
 	currentStringValue = s;
-	return java11Tokens.STRING_LITERAL;
+	return javaTokens.STRING_LITERAL;
     }
 
     private String handleString (char end, Token base, String newlineError) {
@@ -587,13 +587,13 @@ public class CharBufferLexer implements Lexer {
 		return readNumber (new StringBuilder (), 2, false);
 	    } else if (c == 'l') {
 		currentIntValue = BigInteger.ZERO;
-		return java11Tokens.LONG_LITERAL;
+		return javaTokens.LONG_LITERAL;
 	    } else if (c == 'd') {
 		currentDoubleValue = 0.0;
-		return java11Tokens.DOUBLE_LITERAL;
+		return javaTokens.DOUBLE_LITERAL;
 	    } else if (c == 'f') {
 		currentDoubleValue = 0.0;
-		return java11Tokens.FLOAT_LITERAL;
+		return javaTokens.FLOAT_LITERAL;
 	    } else if (c == '_' || (c >= '0' && c <= '7')) {
 		StringBuilder value = new StringBuilder ();
 		value.append (c);
@@ -606,12 +606,12 @@ public class CharBufferLexer implements Lexer {
 	    } else {
 		currentIntValue = BigInteger.ZERO;
 		pushBack ();
-		return java11Tokens.INT_LITERAL;
+		return javaTokens.INT_LITERAL;
 	    }
 	} else {
 	    currentIntValue = BigInteger.ZERO;
 	}
-	return java11Tokens.INT_LITERAL;
+	return javaTokens.INT_LITERAL;
     }
 
     private Token readDecimalNumber (char start) {
@@ -627,7 +627,7 @@ public class CharBufferLexer implements Lexer {
     private Token readNumber (StringBuilder value, int radix, boolean hasSeenDot) {
 	boolean lastWasUnderscore = false;
 	boolean hasSeenExponent = false;
-	Token type = java11Tokens.INT_LITERAL;
+	Token type = javaTokens.INT_LITERAL;
 	char minChar = '0';
 	char maxChar = (char)(minChar + Math.min (10, radix));
 	while (buf.hasRemaining ()) {
@@ -640,13 +640,13 @@ public class CharBufferLexer implements Lexer {
 	    } else if (c == '_') { // skip it
 		lastWasUnderscore = true;
 	    } else if (c == 'd' || c == 'D') {
-		type = java11Tokens.DOUBLE_LITERAL;
+		type = javaTokens.DOUBLE_LITERAL;
 		break;
 	    } else if (c == 'f' || c == 'F') {
-		type = java11Tokens.FLOAT_LITERAL;
+		type = javaTokens.FLOAT_LITERAL;
 		break;
 	    } else if (c == 'l' || c == 'L') {
-		type = java11Tokens.LONG_LITERAL;
+		type = javaTokens.LONG_LITERAL;
 		break;
 	    } else if (c == '.' && !hasSeenDot && (radix == 10 || radix == 16)) {
 		hasSeenDot = true;
@@ -670,9 +670,9 @@ public class CharBufferLexer implements Lexer {
 	    return grammar.ERROR;
 	}
 
-	if ((hasSeenDot || hasSeenExponent) && type != java11Tokens.FLOAT_LITERAL)
-	    type = java11Tokens.DOUBLE_LITERAL;
-	if (type == java11Tokens.INT_LITERAL || type == java11Tokens.LONG_LITERAL)
+	if ((hasSeenDot || hasSeenExponent) && type != javaTokens.FLOAT_LITERAL)
+	    type = javaTokens.DOUBLE_LITERAL;
+	if (type == javaTokens.INT_LITERAL || type == javaTokens.LONG_LITERAL)
 	    return intValue (value.toString (), radix, type);
 	return doubleValue (value.toString (), radix, type);
     }
@@ -730,7 +730,7 @@ public class CharBufferLexer implements Lexer {
 	try {
 	    currentIntValue = new BigInteger (text, radix);
 	    BigInteger maxAllowed;
-	    if (type == java11Tokens.INT_LITERAL)
+	    if (type == javaTokens.INT_LITERAL)
 		maxAllowed = radix == 10 ? MAX_INT_LITERAL : MAX_UINT_LITERAL;
 	    else
 		maxAllowed = radix == 10 ? MAX_LONG_LITERAL : MAX_ULONG_LITERAL;
@@ -750,7 +750,7 @@ public class CharBufferLexer implements Lexer {
 	if (radix == 16)
 	    text = "0x" + text;
 	try {
-	    if (type == java11Tokens.DOUBLE_LITERAL)
+	    if (type == javaTokens.DOUBLE_LITERAL)
 		currentDoubleValue = Double.parseDouble (text);
 	    else
 		currentFloatValue = Float.parseFloat (text);
@@ -776,18 +776,18 @@ public class CharBufferLexer implements Lexer {
 	    }
 	}
 	String identifier = res.toString ().intern ();
-	Token t = java11Tokens.getKeywordFromIdentifier (identifier);
+	Token t = javaTokens.getKeywordFromIdentifier (identifier);
 	if (t != null) {
 	    currentIdentifier = t.getName ();
 	    return t;
 	}
-	t = java11Tokens.getRestrictedKeyWordFromIdentifier (identifier);
+	t = javaTokens.getContextualKeyWordFromIdentifier (identifier);
 	if (t != null && wantedTokens.get (t.getId ())) {
 	    currentIdentifier = t.getName ();
 	    return t;
 	}
 	currentIdentifier = identifier;
-	return java11Tokens.IDENTIFIER;
+	return javaTokens.IDENTIFIER;
     }
 
     private char nextChar () {
