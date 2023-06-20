@@ -245,7 +245,7 @@ public class CharBufferLexer implements Lexer {
 		case '\'':
 		    return readCharacterLiteral ();
 		case '"':
-		    return readStringLiteral ();
+		    return readTextBlockOrString ();
 
 		case '0':
 		    return readZero ();
@@ -494,9 +494,64 @@ public class CharBufferLexer implements Lexer {
 	return javaTokens.CHARACTER_LITERAL;
     }
 
+    private Token readTextBlockOrString () {
+	// we have seen one '"'
+	if (peek ('"', '"')) {
+	    buf.position (buf.position () + 2);
+	    return readTextBlock ();
+	}
+	return readStringLiteral ();
+    }
+
+    private Token readTextBlock () {
+	return textReturn (handleTextBlock ());
+    }
+
+    private String handleTextBlock () {
+	errorText = "End of input";
+	boolean previousWasBackslash = false;
+	StringBuilder sb = new StringBuilder ();
+	int seenQuotes = 0;
+
+	while (buf.hasRemaining ()) {
+	    char c = nextChar ();
+	    if (previousWasBackslash) {
+		addEscapedChar (sb, c);
+		seenQuotes = 0;
+		previousWasBackslash = false;
+	    } else if (c == '"') {
+		seenQuotes++;
+		if (seenQuotes == 3) {
+		    sb.setLength (sb.length () - 2); // remove the two quotes
+		    errorText = null;
+		    break;
+		}
+		sb.append (c);
+	    } else if (c == '\\') {
+		seenQuotes = 0;
+		previousWasBackslash = true;
+	    } else {
+		seenQuotes = 0;
+		sb.append (c);
+	    }
+	}
+	if (errorText != null)
+	    return null;
+
+	String s = sb.toString ();
+	char c = s.charAt (0);
+	if (c == ' ' || c == '\t' || c == '\f')
+	    s = s.replaceFirst ("^[ \t\f]*(\r\n?|\n)", "");
+	s = s.stripIndent ();
+	return s;
+    }
+
     private Token readStringLiteral () {
-	String s =
-	    handleString ('"', javaTokens.STRING_LITERAL, "String literal not closed");
+	return textReturn (handleString ('"', javaTokens.STRING_LITERAL,
+					 "String literal not closed"));
+    }
+
+    private Token textReturn (String s) {
 	if (s == null)
 	    return grammar.ERROR;
 	currentStringValue = s;
@@ -507,41 +562,12 @@ public class CharBufferLexer implements Lexer {
 	errorText = "End of input";
 
 	boolean previousWasBackslash = false;
-	StringBuilder res = new StringBuilder ();
+	StringBuilder sb = new StringBuilder ();
 
 	while (buf.hasRemaining ()) {
 	    char c = nextChar ();
 	    if (previousWasBackslash) {
-		switch (c) {
-		case 'b': res.append ('\b'); break;
-		case 't': res.append ('\t'); break;
-		case 'n': res.append ('\n'); break;
-		case 'f': res.append ('\f'); break;
-		case 'r': res.append ('\r'); break;
-		case '"':  // fall through
-		case '\'': // fall through
-		case '\\': res.append (c); break;
-
-		// octal escape, Unicode \u0000 to \u00ff
-		case '0':
-		case '1':
-		case '2':
-		case '3':
-		case '4':
-		case '5':
-		case '6':
-		case '7':
-		    int i = getOctalEscape (c);
-		    if (i >= 0 && i < 256)
-			res.append ((char)i);
-		    else
-			errorText = "Invalid octal escape";
-		    break;
-		default:
-		    res.append ('\\');
-		    res.append (c);
-		    errorText = "Illegal escape sequence";
-		}
+		addEscapedChar (sb, c);
 		previousWasBackslash = false;
 	    } else if (c == '\n' || c == '\r') {
 		errorText = newlineError;
@@ -552,10 +578,46 @@ public class CharBufferLexer implements Lexer {
 	    } else if (c == '\\') {
 		previousWasBackslash = true;
 	    } else {
-		res.append (c);
+		sb.append (c);
 	    }
 	}
-	return errorText == null ? res.toString ().intern () : null;
+	return errorText == null ? sb.toString ().intern () : null;
+    }
+
+    private void addEscapedChar (StringBuilder sb, char c) {
+	switch (c) {
+	case 'b': sb.append ('\b'); break;
+	case 't': sb.append ('\t'); break;
+	case 'n': sb.append ('\n'); break;
+	case 'f': sb.append ('\f'); break;
+	case 'r': sb.append ('\r'); break;
+	case '"':  // fall through
+	case '\'': // fall through
+	case '\\': sb.append (c); break;
+
+	    // octal escape, Unicode \u0000 to \u00ff
+	case '0':
+	case '1':
+	case '2':
+	case '3':
+	case '4':
+	case '5':
+	case '6':
+	case '7':
+	    int i = getOctalEscape (c);
+	    if (i >= 0 && i < 256) {
+		sb.append ((char)i);
+	    } else {
+		System.err.println ("error: octal escape");
+		errorText = "Invalid octal escape";
+	    }
+	    break;
+	default:
+	    sb.append ('\\');
+	    sb.append (c);
+	    System.err.println ("error: illegal escape");
+	    errorText = "Illegal escape sequence";
+	}
     }
 
     private int getOctalEscape (char start) {
@@ -820,6 +882,15 @@ public class CharBufferLexer implements Lexer {
 	    }
 	}
 	return c;
+    }
+
+    /** Peek at the coming two characters, will not handle unicode escapes and will not update the buffer position.
+     */
+    private boolean peek (char c1, char c2) {
+	if (buf.remaining () < 2)
+	    return false;
+	int p = buf.position ();
+	return buf.get (p++) == c1 && buf.get (p) == c2;
     }
 
     private void pushBack () {

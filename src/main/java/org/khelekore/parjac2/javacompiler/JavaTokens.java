@@ -106,7 +106,7 @@ public class JavaTokens {
     public final Token DOUBLE_LITERAL;
     public final Token CHARACTER_LITERAL;
     public final Token STRING_LITERAL;
-    public final Token TEXT_BLOCK;
+    public final Token TEXT_BLOCK; // not really used, it is a string.
     public final Token NULL;
     public final Token TRUE;
     public final Token FALSE;
