@@ -236,7 +236,7 @@ public class Parser {
     }
 
     private BitSet scanToken (int currentPosition, BitSet wantedTokens) {
-	if (pushbackTokens != null) {
+	if (pushbackTokens != null) { //  do we need to fake what we scan?
 	    BitSet t = pushbackTokens;
 	    pushbackTokens = null;
 	    return t;
