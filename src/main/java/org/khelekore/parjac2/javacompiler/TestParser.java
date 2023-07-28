@@ -100,7 +100,7 @@ public class TestParser {
     private void parse (Path filePath, CompilerDiagnosticCollector diagnostics) throws IOException {
 	try {
 	CharBuffer input = pathToCharBuffer (filePath, charset);
-	CharBufferLexer lexer = new CharBufferLexer (grammar, java11Tokens, input);
+	CharBufferLexer lexer = new CharBufferLexer (grammar, java11Tokens, input, filePath, diagnostics);
 	Parser p = new Parser (grammar, filePath, predictCache, lexer, diagnostics);
 	ParseTreeNode parseTree = p.parse (goalRule);
 	if (printParseTree && parseTree != null)

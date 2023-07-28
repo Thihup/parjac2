@@ -1,8 +1,11 @@
 package org.khelekore.parjac2;
 
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Locale;
+
 import javax.tools.Diagnostic;
+
 import org.khelekore.parjac2.parser.ParsePosition;
 
 public class SourceDiagnostics implements Diagnostic<Path> {
@@ -19,6 +22,12 @@ public class SourceDiagnostics implements Diagnostic<Path> {
 	this.parsePosition = parsePosition;
 	this.format = format;
 	this.args = args;
+    }
+
+    @Override
+    public String toString () {
+	return getClass ().getSimpleName () + "{" + kind + ", " + path + ", " +
+	    parsePosition + ", " + format + ", " + Arrays.toString (args) + "}";
     }
 
     public static  SourceDiagnostics error (Path path, ParsePosition  parsePosition,

@@ -19,7 +19,7 @@ import org.khelekore.parjac2.parser.Rule;
 public class BatchCompiler {
     private final CompilerDiagnosticCollector diagnostics;
     private final Grammar grammar = new Grammar ();
-    private final JavaTokens java11Tokens = new JavaTokens (grammar);
+    private final JavaTokens javaTokens = new JavaTokens (grammar);
 
     public static void main (String[] args) throws IOException {
 	if (args.length == 0) {
@@ -49,7 +49,7 @@ public class BatchCompiler {
 	    return;
 
 	Rule goalRule = JavaGrammarHelper.readAndValidateRules (grammar, settings.getDebug ());
-	Compiler c = new Compiler (diagnostics, grammar, java11Tokens, goalRule, settings);
+	Compiler c = new Compiler (diagnostics, grammar, javaTokens, goalRule, settings);
 	c.compile ();
 	long endTime = System.nanoTime ();
 	System.out.printf ("Time taken: %.3f seconds\n", ((endTime - startTime) / 1e9));

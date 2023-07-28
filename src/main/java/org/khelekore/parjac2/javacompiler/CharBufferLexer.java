@@ -2,8 +2,11 @@ package org.khelekore.parjac2.javacompiler;
 
 import java.math.BigInteger;
 import java.nio.CharBuffer;
+import java.nio.file.Path;
 import java.util.BitSet;
 
+import org.khelekore.parjac2.CompilerDiagnosticCollector;
+import org.khelekore.parjac2.SourceDiagnostics;
 import org.khelekore.parjac2.parser.Grammar;
 import org.khelekore.parjac2.parser.Lexer;
 import org.khelekore.parjac2.parser.ParsePosition;
@@ -16,7 +19,12 @@ public class CharBufferLexer implements Lexer {
     private final JavaTokens javaTokens;
     // We use the position for keeping track of where we are
     private final CharBuffer buf;
+    private final Path path;
+    private final CompilerDiagnosticCollector diagnostics;
     private boolean hasSentEOI = false;
+
+    // TODO: add our own CompilerDiagnosticCollector for lexer errors
+    // TODO: return char literal and string literal instead of ERROR, but set value to "" or \0
 
     private int tokenStartPosition = 0;
     private int tokenStartColumn = 0;
@@ -48,14 +56,17 @@ public class CharBufferLexer implements Lexer {
 
     private final BitSet multiGTTTokens = new BitSet ();
 
-    public CharBufferLexer (Grammar grammar, JavaTokens java11Tokens, CharBuffer buf) {
+    public CharBufferLexer (Grammar grammar, JavaTokens javaTokens, CharBuffer buf, Path path,
+			    CompilerDiagnosticCollector diagnostics) {
 	this.grammar = grammar;
-	this.javaTokens = java11Tokens;
+	this.javaTokens = javaTokens;
 	this.buf = buf;
+	this.path = path;
+	this.diagnostics = diagnostics;
 	lastScannedTokens = new BitSet (grammar.getNumberOfTokens ());
-	multiGTTTokens.set (java11Tokens.GE.getId ());
-	multiGTTTokens.set (java11Tokens.RIGHT_SHIFT_EQUAL.getId ());
-	multiGTTTokens.set (java11Tokens.RIGHT_SHIFT_UNSIGNED_EQUAL.getId ());
+	multiGTTTokens.set (javaTokens.GE.getId ());
+	multiGTTTokens.set (javaTokens.RIGHT_SHIFT_EQUAL.getId ());
+	multiGTTTokens.set (javaTokens.RIGHT_SHIFT_UNSIGNED_EQUAL.getId ());
     }
 
     @Override public String getError () {
@@ -127,6 +138,12 @@ public class CharBufferLexer implements Lexer {
 				  getTokenStartPos (), getTokenEndPos ());
     }
 
+    /** Used when we find invalid things in strings / chars and we want to report the actual position */
+    private ParsePosition currentParsePosition () {
+	return new ParsePosition (currentLine, currentColumn,
+				  getTokenStartPos (), getTokenEndPos ());
+    }
+
     public int getLineNumber () {
 	return currentLine;
     }
@@ -164,7 +181,7 @@ public class CharBufferLexer implements Lexer {
 	return lastScannedTokens;
     }
 
-    private Token nextRealToken (BitSet wantedTokens) {
+    public Token nextRealToken (BitSet wantedTokens) {
 	tokenStartPosition = buf.position ();
 	tokenStartColumn = currentColumn;
 	try {
@@ -261,7 +278,7 @@ public class CharBufferLexer implements Lexer {
 		    return readDecimalNumber (c);
 		default:
 		    if (Character.isJavaIdentifierStart (c))
-			return readIdentifier (c, wantedTokens);
+			return readIdentifierOrKeyword (c, wantedTokens);
 
 		    errorText = "Illegal character: " + c + "(0x" + Integer.toHexString (c) + ")";
 		    return grammar.ERROR;
@@ -479,18 +496,23 @@ public class CharBufferLexer implements Lexer {
     }
 
     private Token readCharacterLiteral () {
+	currentCharValue = '\0';
 	String s =
 	    handleString ('\'', javaTokens.CHARACTER_LITERAL, "Character literal not closed");
-	if (s == null)
-	    return grammar.ERROR;
-	int len = s.length ();
-	if (len == 0)
-	    return grammar.ERROR;
-	if (len > 1) {
-	    errorText = "Unclosed character literal: *" + s + "*";
-	    return grammar.ERROR;
+	if (s == null) {
+	    errorText = null; // already reported inside handleString
+	} else {
+	    int len = s.length ();
+	    if (len == 0) {
+		errorText = "Empty character literal";
+	    } else if (len > 1) {
+		errorText = "Unclosed character literal: *" + s + "*";
+	    } else {
+		currentCharValue = s.charAt (0);
+	    }
 	}
-	currentCharValue = s.charAt (0);
+	if (errorText != null)
+	    diagnostics.report (SourceDiagnostics.error (path, currentParsePosition (), errorText));
 	return javaTokens.CHARACTER_LITERAL;
     }
 
@@ -514,7 +536,7 @@ public class CharBufferLexer implements Lexer {
 	int seenQuotes = 0;
 
 	while (buf.hasRemaining ()) {
-	    char c = nextChar ();
+	    char c = nextTextChar (previousWasBackslash);
 	    if (previousWasBackslash) {
 		addEscapedChar (sb, c);
 		seenQuotes = 0;
@@ -531,6 +553,8 @@ public class CharBufferLexer implements Lexer {
 		seenQuotes = 0;
 		previousWasBackslash = true;
 	    } else {
+		if (c == '\n' || (c == '\r' && !peek ('\n')))
+		    nextLine ();
 		seenQuotes = 0;
 		sb.append (c);
 	    }
@@ -565,7 +589,7 @@ public class CharBufferLexer implements Lexer {
 	StringBuilder sb = new StringBuilder ();
 
 	while (buf.hasRemaining ()) {
-	    char c = nextChar ();
+	    char c = nextTextChar (previousWasBackslash);
 	    if (previousWasBackslash) {
 		addEscapedChar (sb, c);
 		previousWasBackslash = false;
@@ -581,7 +605,15 @@ public class CharBufferLexer implements Lexer {
 		sb.append (c);
 	    }
 	}
+	if (errorText != null)
+	    diagnostics.report (SourceDiagnostics.error (path, currentParsePosition (), errorText));
 	return errorText == null ? sb.toString ().intern () : null;
+    }
+
+    private char nextTextChar (boolean previousWasBackslash) {
+	if (previousWasBackslash)
+	    return nextNonUnicodeChar ();
+	return nextChar ();
     }
 
     private void addEscapedChar (StringBuilder sb, char c) {
@@ -608,15 +640,15 @@ public class CharBufferLexer implements Lexer {
 	    if (i >= 0 && i < 256) {
 		sb.append ((char)i);
 	    } else {
-		System.err.println ("error: octal escape");
-		errorText = "Invalid octal escape";
+		sb.append ((char)0);
+		errorText = "Invalid octal escape: " + Integer.toOctalString (i);
+		diagnostics.report (SourceDiagnostics.error (path, currentParsePosition (), errorText));
 	    }
 	    break;
 	default:
-	    sb.append ('\\');
-	    sb.append (c);
-	    System.err.println ("error: illegal escape");
+	    sb.append ((char)0);
 	    errorText = "Illegal escape sequence";
+	    diagnostics.report (SourceDiagnostics.error (path, currentParsePosition (), errorText));
 	}
     }
 
@@ -823,9 +855,10 @@ public class CharBufferLexer implements Lexer {
 	}
     }
 
-    private Token readIdentifier (char start, BitSet wantedTokens) {
+    private Token readIdentifierOrKeyword (char start, BitSet wantedTokens) {
 	StringBuilder res = new StringBuilder ();
 	res.append (start);
+	boolean tryNonSealed = wantedTokens.get (javaTokens.NON_SEALED.getId ());
 	while (buf.hasRemaining ()) {
 	    char c = nextChar ();
 	    if (Character.isIdentifierIgnorable (c)) {
@@ -833,6 +866,20 @@ public class CharBufferLexer implements Lexer {
 	    } else if (Character.isJavaIdentifierPart (c)) {
 		res.append (c);
 	    } else {
+		if (tryNonSealed && c == '-' && res.toString ().equals ("non")) {
+		    int cc = currentColumn;
+		    int lcs = lastCharStart;
+		    char nc = nextChar ();
+		    if (nc == 's') {
+			Token t = readIdentifierOrKeyword (nc, wantedTokens);
+			if (t == javaTokens.IDENTIFIER && currentIdentifier.equals ("sealed"))
+			    currentIdentifier = "non-sealed";
+			return javaTokens.NON_SEALED;
+		    }
+		    buf.position (lcs);
+		    currentColumn = cc;
+		    break;
+		}
 		pushBack ();
 		break;
 	    }
@@ -882,6 +929,21 @@ public class CharBufferLexer implements Lexer {
 	    }
 	}
 	return c;
+    }
+
+    private char nextNonUnicodeChar () {
+	lastCharStart = buf.position ();
+	currentColumn++;
+	char c = buf.get ();
+	return c;
+    }
+
+    /** Peek at the coming character, will not handle unicode escapes and will not update the buffer position.
+     */
+    private boolean peek (char c) {
+	if (buf.remaining () < 1)
+	    return false;
+	return buf.get (buf.position ()) == c;
     }
 
     /** Peek at the coming two characters, will not handle unicode escapes and will not update the buffer position.

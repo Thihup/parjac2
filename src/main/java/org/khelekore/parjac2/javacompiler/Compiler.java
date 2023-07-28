@@ -110,7 +110,8 @@ public class Compiler {
 	    if (settings.getDebug ())
 		System.out.println ("parsing: " + file);
 	    CharBuffer charBuf = sourceProvider.getInput (file);
-	    CharBufferLexer lexer = new CharBufferLexer (grammar, java11Tokens, charBuf);
+	    CompilerDiagnosticCollector lexErrors = new CompilerDiagnosticCollector ();
+	    CharBufferLexer lexer = new CharBufferLexer (grammar, java11Tokens, charBuf, file, lexErrors);
 
 	    // Use our own here, we do not want to stop other classes from being parsed.
 	    CompilerDiagnosticCollector collector = new CompilerDiagnosticCollector ();
@@ -120,7 +121,6 @@ public class Compiler {
 		if (tree != null) {
 		    // Translate to more readable errors
 		    addWildcardErrors (file, tree);
-		    return null;
 		}
 		// we could not build a tree, so return the raw parse problems as is
 		diagnostics.addAll (collector);
@@ -147,8 +147,9 @@ public class Compiler {
 	    WildcardNode w = (WildcardNode)node;
 	    Token t = w.getToken ();
 	    diagnostics.report (SourceDiagnostics.error (path, node.getPosition (),
-							 "Expected %s", t.getName ()));
+							 "Replaced missing wildcard with:  %s", t.getName ()));
 	}
+	// TODO: rewrite to avoid recursion
 	node.visitChildNodes (n -> addWildcardErrors (path, n));
     }
 

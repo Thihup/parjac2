@@ -16,39 +16,49 @@ public class CompilerDiagnosticCollector implements DiagnosticListener<Path> {
 	Collections.synchronizedList (new ArrayList<> ());
 
     // Flag is set in one step and checked when that step has been fully handled
-    private volatile boolean hasError;
-    private volatile boolean hasWarning;
+    private volatile int errorCount;
+    private volatile int warningCount;
 
     @Override public void report (Diagnostic<? extends Path> diagnostic) {
 	if (diagnostic.getKind () == Diagnostic.Kind.ERROR)
-	    hasError = true;
+	    errorCount++;
 	if (diagnostic.getKind () == Diagnostic.Kind.WARNING)
-	    hasWarning = true;
+	    warningCount++;
 	list.add (diagnostic);
     }
 
     public void addAll (CompilerDiagnosticCollector other) {
 	list.addAll (other.list);
-	hasError |= other.hasError;
-	hasWarning |= other.hasWarning;
+	errorCount += other.errorCount;
+	warningCount += other.warningCount;
+    }
+
+    public int errorCount () {
+	return errorCount;
     }
 
     public boolean hasError () {
-	return hasError;
+	return errorCount > 0;
+    }
+
+    public int warningCount () {
+	return warningCount;
     }
 
     public boolean hasWarning () {
-	return hasWarning;
+	return warningCount > 0;
     }
 
     public Stream<Diagnostic<? extends Path>> getDiagnostics () {
+	System.err.println ("list has: " + list.size());
 	return list.stream ();
     }
 
     public void clear () {
 	synchronized (list) {
 	    list.clear ();
-	    hasError = false;
+	    warningCount = 0;
+	    errorCount = 0;
 	}
     }
 }

@@ -54,7 +54,6 @@ public class Parser {
     private final int STATE_HASH_SIZE = 509;
 
     private int currentPosition = 0;
-    private int errorCount = 0;
 
     public Parser (Grammar grammar, Path path, PredictCache predictCache, Lexer lexer,
 		   CompilerDiagnosticCollector diagnostics) {
@@ -200,7 +199,6 @@ public class Parser {
 	startPositions.add (states.size ());
 	if (scannedTokens.get (grammar.ERROR.getId ())) {
 	    addParserError ("Lexer returned error: " + lexer.getError ());
-	    errorCount = MAX_ERRORS + 1;
 	    return;
 	}
 
@@ -311,7 +309,7 @@ public class Parser {
 	int bitPos = Math.abs ((arp ^ origin) % STATE_HASH_SIZE);
 	if (hashOfStates.get (bitPos)) {
 	    if (states.checkFor (arp, origin, startPositions.get (currentPosition), states.size ())) {
-		if (errorCount == 0) {// When we try all options we will get dups
+		if (!diagnostics.hasError ()) {// When we try all options we will get dups
 		    System.out.println ("Dup found for: " + grammar.getRule (rule).toReadableString(grammar) +
 					", dotPos: " + dotPos);
 		    printStates (currentPosition);
@@ -334,7 +332,7 @@ public class Parser {
 
     private boolean tooManyErrors () {
 	// make sure we try to fix a few things before we bail
-	return errorCount > MAX_ERRORS;
+	return diagnostics.errorCount () > MAX_ERRORS;
     }
 
     private void findFinished (int rulePos, int origin, Rule goalRule, IntHolder goalHolder) {
@@ -524,7 +522,6 @@ public class Parser {
     }
 
     private void addParserError (String format, Object... args) {
-	errorCount++;
 	ParsePosition pp = lexer.getParsePosition ();
 	if (errorPositions.add (pp))
 	    diagnostics.report (SourceDiagnostics.error (path, pp, format, args));
