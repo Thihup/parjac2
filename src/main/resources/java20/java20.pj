@@ -175,9 +175,10 @@ RequiresModifier:
 ClassDeclaration:
 	NormalClassDeclaration
 	EnumDeclaration
+	RecordDeclaration
 
 NormalClassDeclaration:
-	{ClassModifier} 'class' 'TypeIdentifier' [TypeParameters] [ClassExtends] [ClassImplements] ClassBody
+	{ClassModifier} 'class' 'TypeIdentifier' [TypeParameters] [ClassExtends] [ClassImplements] [ClassPermits] ClassBody
 
 ClassModifier:
 	Annotation
@@ -187,6 +188,8 @@ ClassModifier:
 	'abstract'
 	'static'
 	'final'
+	'sealed'
+	'non-sealed'
 	'strictfp'
 
 TypeParameters:
@@ -203,6 +206,9 @@ ClassImplements:
 
 InterfaceTypeList:
 	ClassType {',' ClassType}
+
+ClassPermits:
+	'permits' TypeName {',' TypeName}
 
 ClassBody:
 	'{' {ClassBodyDeclaration} '}'
@@ -372,13 +378,42 @@ EnumConstantModifier:
 EnumBodyDeclarations:
 	';' {ClassBodyDeclaration}
 
+RecordDeclaration:
+	{ClassModifier} 'record' 'TypeIdentifier' [TypeParameters] RecordHeader [ClassImplements] RecordBody
+
+RecordHeader:
+	'(' [RecordComponentList] ')'
+
+RecordComponentList:
+	RecordComponent {',' RecordComponent}
+
+RecordComponent:
+	{RecordComponentModifier} UnannType 'Identifier'
+	VariableArityRecordComponent
+
+VariableArityRecordComponent:
+	{RecordComponentModifier} UnannType {Annotation} '...' 'Identifier'
+
+RecordComponentModifier:
+	Annotation
+
+RecordBody:
+	'{' {RecordBodyDeclaration} '}'
+
+RecordBodyDeclaration:
+	ClassBodyDeclaration
+	CompactConstructorDeclaration
+
+CompactConstructorDeclaration:
+	{ConstructorModifier} SimpleTypeName ConstructorBody
+
 # Productions from §9 (Interfaces)
 InterfaceDeclaration:
 	NormalInterfaceDeclaration
 	AnnotationTypeDeclaration
 
 NormalInterfaceDeclaration:
-	{InterfaceModifier} 'interface' 'TypeIdentifier' [TypeParameters] [InterfaceExtends] InterfaceBody
+	{InterfaceModifier} 'interface' 'TypeIdentifier' [TypeParameters] [InterfaceExtends] [InterfacePermits] InterfaceBody
 
 InterfaceModifier:
 	Annotation
@@ -387,10 +422,15 @@ InterfaceModifier:
 	'private'
 	'abstract'
 	'static'
+	'sealed'
+	'non-sealed'
 	'strictfp'
 
 InterfaceExtends:
 	'extends' InterfaceTypeList
+
+InterfacePermits:
+	'permits' TypeName {',' TypeName}
 
 InterfaceBody:
 	'{' {InterfaceMemberDeclaration} '}'
@@ -435,7 +475,6 @@ AnnotationTypeMemberDeclaration:
 	ClassDeclaration
 	InterfaceDeclaration
 	';'
-
 
 AnnotationTypeElementDeclaration:
 	{AnnotationTypeElementModifier} UnannType 'Identifier' '(' ')' [Dims] [DefaultValue] ';'
@@ -494,9 +533,13 @@ BlockStatements:
 	BlockStatement {BlockStatement}
 
 BlockStatement:
+	LocalClassOrInterfaceDeclaration
 	LocalVariableDeclarationStatement
-	ClassDeclaration
 	Statement
+
+LocalClassOrInterfaceDeclaration:
+	ClassDeclaration
+	NormalInterfaceDeclaration
 
 LocalVariableDeclarationStatement:
 	LocalVariableDeclaration ';'
@@ -536,6 +579,7 @@ StatementWithoutTrailingSubstatement:
 	SynchronizedStatement
 	ThrowStatement
 	TryStatement
+	YieldStatement
 
 EmptyStatement:
 	';'
@@ -575,15 +619,23 @@ SwitchStatement:
 	'switch' '(' Expression ')' SwitchBlock
 
 SwitchBlock:
-	'{' {SwitchBlockStatementGroup} {SwitchLabel} '}'
+	'{' SwitchRule {SwitchRule} '}'
+	'{' {SwitchBlockStatementGroup} {SwitchLabel ':'} '}'
+
+SwitchRule:
+	SwitchLabel '->' Expression ';'
+	SwitchLabel '->' Block
+	SwitchLabel '->' ThrowStatement
 
 SwitchBlockStatementGroup:
 	SwitchLabel ':' {SwitchLabel ':'} BlockStatements
 
 SwitchLabel:
-	# ConstantExpression may be EnumConstantName
-	'case' ConstantExpression
+	'case' CaseConstant {',' CaseConstant}
 	'default'
+
+CaseConstant:
+	ConditionalExpression
 
 WhileStatement:
 	'while' '(' Expression ')' Statement
@@ -619,13 +671,16 @@ StatementExpressionList:
 	StatementExpression {',' StatementExpression}
 
 EnhancedForStatement:
-	'for' '(' {VariableModifier} LocalVariableType VariableDeclaratorId ':' Expression ')' Statement
+	'for' '(' LocalVariableDeclaration ':' Expression ')' Statement
 
 EnhancedForStatementNoShortIf:
-	'for' '(' {VariableModifier} LocalVariableType VariableDeclaratorId ':' Expression ')' StatementNoShortIf
+	'for' '(' LocalVariableDeclaration ':' Expression ')' StatementNoShortIf
 
 BreakStatement:
 	'break' ['Identifier'] ';'
+
+YieldStatement:
+	'yield' Expression ';'
 
 ContinueStatement:
 	'continue' ['Identifier'] ';'
@@ -669,12 +724,18 @@ ResourceList:
 	Resource {';' Resource}
 
 Resource:
-	{VariableModifier} LocalVariableType 'Identifier' '=' Expression
+	LocalVariableDeclaration
 	VariableAccess
 
 VariableAccess:
 	ExpressionName
 	FieldAccess
+
+Pattern:
+	TypePattern
+
+TypePattern:
+	LocalVariableDeclaration
 
 # Productions from §15 (Expressions)
 Primary:
@@ -714,14 +775,33 @@ TypeArgumentsOrDiamond:
 	TypeArguments
 	'<' '>'
 
-FieldAccess:
-	Primary '.' 'Identifier'
-	'super' '.' 'Identifier'
-	TypeName '.' 'super' '.' 'Identifier'
+ArrayCreationExpression:
+	ArrayCreationExpressionWithoutInitializer
+	ArrayCreationExpressionWithInitializer
+
+ArrayCreationExpressionWithoutInitializer:
+	'new' PrimitiveType DimExprs [Dims]
+	'new' ClassType DimExprs [Dims]
+
+ArrayCreationExpressionWithInitializer:
+	'new' PrimitiveType Dims ArrayInitializer
+	'new' ClassType Dims ArrayInitializer
+
+DimExprs:
+	DimExpr {DimExpr}
+
+DimExpr:
+	{Annotation} '[' Expression ']'
 
 ArrayAccess:
 	ExpressionName '[' Expression ']'
 	PrimaryNoNewArray '[' Expression ']'
+	ArrayCreationExpressionWithInitializer '[' Expression ']'
+
+FieldAccess:
+	Primary '.' 'Identifier'
+	'super' '.' 'Identifier'
+	TypeName '.' 'super' '.' 'Identifier'
 
 MethodInvocation:
 	UntypedMethodInvocation
@@ -745,18 +825,6 @@ MethodReference:
 	TypeName '.' 'super' '::' [TypeArguments] 'Identifier'
 	ClassType '::' [TypeArguments] 'new'
 	ArrayType '::' 'new'
-
-ArrayCreationExpression:
-	'new' PrimitiveType DimExprs [Dims]
-	'new' ClassType DimExprs [Dims]
-	'new' PrimitiveType Dims ArrayInitializer
-	'new' ClassType Dims ArrayInitializer
-
-DimExprs:
-	DimExpr {DimExpr}
-
-DimExpr:
-	{Annotation} '[' Expression ']'
 
 Expression:
 	LambdaExpression
@@ -847,7 +915,11 @@ RelationalExpression:
 	RelationalExpression '>' ShiftExpression
 	RelationalExpression '<=' ShiftExpression
 	RelationalExpression '>=' ShiftExpression
+	InstanceofExpression
+
+InstanceofExpression:
 	RelationalExpression 'instanceof' ReferenceType
+	RelationalExpression 'instanceof' Pattern
 
 ShiftExpression:
 	AdditiveExpression
@@ -887,6 +959,7 @@ UnaryExpressionNotPlusMinus:
 	'~' UnaryExpression
 	'!' UnaryExpression
 	CastExpression
+	SwitchExpression
 
 PostfixExpression:
 	Primary
@@ -904,6 +977,9 @@ CastExpression:
 	'(' PrimitiveType ')' UnaryExpression
 	'(' ReferenceType {AdditionalBound} ')' UnaryExpressionNotPlusMinus
 	'(' ReferenceType {AdditionalBound} ')' LambdaExpression
+
+SwitchExpression:
+	'switch' '(' Expression ')' SwitchBlock
 
 ConstantExpression:
 	Expression

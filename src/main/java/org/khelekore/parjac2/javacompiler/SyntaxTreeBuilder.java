@@ -18,16 +18,16 @@ import org.khelekore.parjac2.parsetree.TokenNode;
 
 public class SyntaxTreeBuilder {
     private final CompilerDiagnosticCollector diagnostics;
-    private final JavaTokens java11Tokens;
+    private final JavaTokens javaTokens;
     private final Grammar grammar;
     private final Map<String, ContextNodeBuilder> nodeBuilders;
     private final FlagConverter flagConverter;
 
-    public SyntaxTreeBuilder (CompilerDiagnosticCollector diagnostics, JavaTokens java11Tokens, Grammar grammar) {
+    public SyntaxTreeBuilder (CompilerDiagnosticCollector diagnostics, JavaTokens javaTokens, Grammar grammar) {
 	this.diagnostics = diagnostics;
-	this.java11Tokens = java11Tokens;
+	this.javaTokens = javaTokens;
 	this.grammar = grammar;
-	this.flagConverter = new FlagConverter (java11Tokens);
+	this.flagConverter = new FlagConverter (javaTokens);
 	nodeBuilders = new HashMap<> ();
 
 	register ("GOAL", this::liftUp);
@@ -77,7 +77,7 @@ public class SyntaxTreeBuilder {
 	register ("TypeImportOnDemandDeclaration", TypeImportOnDemandDeclaration::new);
 	register ("SingleStaticImportDeclaration", SingleStaticImportDeclaration::new);
 	register ("StaticImportOnDemandDeclaration", StaticImportOnDemandDeclaration::new);
-	register ("TypeDeclaration", this::liftUp);
+	register ("TopLevelClassOrInterfaceDeclaration", this::liftUp);
 	register ("ModuleDeclaration", ModuleDeclaration::new);
 	register ("ModuleDirective", this::moduleDirective);
 	register ("RequiresModifier", this::liftUp);
@@ -88,8 +88,9 @@ public class SyntaxTreeBuilder {
 	register ("ClassModifier", this::liftUp);
 	register ("TypeParameters", TypeParameters::new);
 	register ("TypeParameterList", TypeParameterList::new);
-	register ("Superclass", Superclass::new);
-	register ("Superinterfaces", Superinterfaces::new);
+	register ("ClassExtends", Superclass::new);
+	register ("ClassImplements", Superinterfaces::new);
+	register ("ClassPermits", ClassPermits::new);
 	register ("InterfaceTypeList", InterfaceTypeList::new);
 	register ("ClassBody", ClassBody::new);
 	register ("ClassBodyDeclaration", this::liftUp);
@@ -133,12 +134,23 @@ public class SyntaxTreeBuilder {
 	register ("EnumConstant", EnumConstant::new);
 	register ("EnumConstantModifier", this::liftUp);
 	register ("EnumBodyDeclarations", EnumBodyDeclarations::new);
+	register ("RecordDeclaration", RecordDeclaration::new);
+	register ("RecordHeader", RecordHeader::new);
+	register ("RecordComponentList", RecordComponentList::new);
+	register ("RecordComponent", RecordComponent::new);
+	// similar enought, we can not have final on this, but that is handled on grammar level
+	register ("VariableArityRecordComponent", VariableArityParameter::new);
+	register ("RecordComponentModifier", this::liftUp);
+	register ("RecordBody", RecordBody::new);
+	register ("RecordBodyDeclaration", this::liftUp);
+	register ("CompactConstructorDeclaration", CompactConstructorDeclaration::new);
 
 	// Productions from §9 (Interfaces)
 	register ("InterfaceDeclaration", this::liftUp);
 	register ("NormalInterfaceDeclaration", NormalInterfaceDeclaration::new);
 	register ("InterfaceModifier", this::liftUp);
-	register ("ExtendsInterfaces", ExtendsInterfaces::new);
+	register ("InterfaceExtends", ExtendsInterfaces::new);
+	register ("InterfacePermits", InterfacePermits::new);
 	register ("InterfaceBody", InterfaceBody::new);
 	register ("InterfaceMemberDeclaration", this::liftUp);
 	register ("ConstantDeclaration", ConstantDeclaration::new);
@@ -169,6 +181,7 @@ public class SyntaxTreeBuilder {
 	register ("Block", Block::new);
 	register ("BlockStatements", BlockStatements::new);
 	register ("BlockStatement", this::liftUp);
+	register ("LocalClassOrInterfaceDeclaration", this::liftUp);
 	register ("LocalVariableDeclarationStatement", LocalVariableDeclarationStatement::new);
 	register ("LocalVariableDeclaration", LocalVariableDeclaration::new);
 	register ("LocalVariableType", this::liftUp);
@@ -184,10 +197,11 @@ public class SyntaxTreeBuilder {
 	register ("IfThenElseStatement", IfThenStatement::new);
 	register ("IfThenElseStatementNoShortIf", IfThenStatement::new);
 	register ("AssertStatement", AssertStatement::new);
+
+	/** TODO: check switch grammar */
 	register ("SwitchStatement", SwitchStatement::new);
 	register ("SwitchBlock", SwitchBlock::new);
 	register ("SwitchBlockStatementGroup", SwitchBlockStatementGroup::new);
-	register ("SwitchLabels", SwitchLabels::new);
 	register ("SwitchLabel", this::switchLabel);
 	register ("WhileStatement", WhileStatement::new);
 	register ("WhileStatementNoShortIf", WhileStatement::new);
@@ -199,9 +213,12 @@ public class SyntaxTreeBuilder {
 	register ("ForInit", this::liftUp);
 	register ("ForUpdate", this::liftUp);
 	register ("StatementExpressionList", StatementExpressionList::new);
+
+	/** TODO: check enhanced for grammar */
 	register ("EnhancedForStatement", EnhancedForStatement::new);
 	register ("EnhancedForStatementNoShortIf", EnhancedForStatement::new);
 	register ("BreakStatement", BreakStatement::new);
+	register ("YieldStatement", YieldStatement::new);
 	register ("ContinueStatement", ContinueStatement::new);
 	register ("ReturnStatement", ReturnStatement::new);
 	register ("ThrowStatement", ThrowStatement::new);
@@ -216,7 +233,11 @@ public class SyntaxTreeBuilder {
 	register ("ResourceSpecification", ResourceSpecification::new);
 	register ("ResourceList", ResourceList::new);
 	register ("Resource", this::resource);
+
+	/** TODO: not used anymore? */
 	register ("VariableAccess", this::liftUp);
+	register ("Pattern", this::liftUp);
+	register ("TypePattern", this::liftUp);  // TODO: check this
 
 	// Productions from §15 (Expressions)
 	register ("Primary", this::liftUp);
@@ -232,7 +253,10 @@ public class SyntaxTreeBuilder {
 	register ("UntypedMethodInvocation", UntypedMethodInvocation::new);
 	register ("ArgumentList", ArgumentList::new);
 	register ("MethodReference", this::methodReference);
-	register ("ArrayCreationExpression", ArrayCreationExpression::new);
+	register ("ArrayCreationExpression", this::liftUp);
+	// TODO: do we want to split these two?
+	register ("ArrayCreationExpressionWithoutInitializer", ArrayCreationExpression::new);
+	register ("ArrayCreationExpressionWithInitializer", ArrayCreationExpression::new);
 	register ("DimExprs", DimExprs::new);
 	register ("DimExpr", DimExpr::new);
 	register ("Expression", this::liftUp);
@@ -254,6 +278,7 @@ public class SyntaxTreeBuilder {
 	register ("AndExpression", this::oneOrTwoParter);
 	register ("EqualityExpression", this::oneOrTwoParter);
 	register ("RelationalExpression", this::oneOrTwoParter);
+	register ("InstanceOfExpression", this::oneOrTwoParter);
 	register ("ShiftExpression", this::oneOrTwoParter);
 	register ("ShiftOp", this::shiftOp);
 	register ("AdditiveExpression", this::oneOrTwoParter);
@@ -266,6 +291,7 @@ public class SyntaxTreeBuilder {
 	register ("PostIncrementExpression", PostIncrementExpression::new);
 	register ("PostDecrementExpression", PostDecrementExpression::new);
 	register ("CastExpression", CastExpression::new);
+	register ("SwitchExpression", SwitchExpression::new);
 	register ("ConstantExpression", this::liftUp);
     }
 
@@ -278,7 +304,7 @@ public class SyntaxTreeBuilder {
     }
 
     public ParseTreeNode build (DirAndPath dirAndPath, ParseTreeNode root) {
-	Context ctx = new Context (java11Tokens, grammar, diagnostics, dirAndPath, flagConverter);
+	Context ctx = new Context (javaTokens, grammar, diagnostics, dirAndPath, flagConverter);
 	return build (ctx, root);
     }
 
@@ -359,15 +385,15 @@ public class SyntaxTreeBuilder {
 
     private ParseTreeNode moduleDirective (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	int ruleId = rule.get (0);
-	if (ruleId == java11Tokens.REQUIRES.getId ()) {
+	if (ruleId == javaTokens.REQUIRES.getId ()) {
 	    return new RequiresDirective (rule, n, children);
-	} else if (ruleId == java11Tokens.EXPORTS.getId ()) {
+	} else if (ruleId == javaTokens.EXPORTS.getId ()) {
 	    return new ExportsDirective (rule, n, children);
-	} else if (ruleId == java11Tokens.OPENS.getId ()) {
+	} else if (ruleId == javaTokens.OPENS.getId ()) {
 	    return new OpensDirective (rule, n, children);
-	} else if (ruleId == java11Tokens.USES.getId ()) {
+	} else if (ruleId == javaTokens.USES.getId ()) {
 	    return new UsesDirective (rule, n, children);
-	} else if (ruleId == java11Tokens.PROVIDES.getId ()) {
+	} else if (ruleId == javaTokens.PROVIDES.getId ()) {
 	    return new ProvidesDirective (rule, n, children);
 	} else {
 	    ctx.error (n.getPosition (), "Unhandled rule: %d, %s", ruleId, rule.toReadableString (grammar));
@@ -376,7 +402,8 @@ public class SyntaxTreeBuilder {
     }
 
     private SyntaxTreeNode switchLabel (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	if (rule.size () == 2)
+	TokenNode tn = (TokenNode)children.get (0);
+	if (tn.getToken () == ctx.getTokens ().DEFAULT)
 	    return new DefaultLabel (n.getPosition ());
 	return new CaseLabel (n.getPosition (), children.get (1));
     }
@@ -394,11 +421,11 @@ public class SyntaxTreeBuilder {
     }
 
     private ParseTreeNode primaryNoNewArray (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	if (rule.get (0) == java11Tokens.THIS.getId ())
+	if (rule.get (0) == javaTokens.THIS.getId ())
 	    return new ThisPrimary (n);
 	if (rule.size () == 1)
 	    return children.get (0);
-	if (rule.get (0) == java11Tokens.LEFT_PARENTHESIS.getId ())
+	if (rule.get (0) == javaTokens.LEFT_PARENTHESIS.getId ())
 	    return children.get (1);
 	return new DottedThis (children.get (0));
     }
@@ -418,7 +445,7 @@ public class SyntaxTreeBuilder {
 	boolean isSuper = false;
 
 	int i = 0;
-	if (rule.get (0) == java11Tokens.SUPER.getId ()) {  // super.<types>mi
+	if (rule.get (0) == javaTokens.SUPER.getId ()) {  // super.<types>mi
 	    isSuper = true;
 	    i += 2;
 	} else if (rule.size () > 4) {  // Type.super.<types>mi
@@ -435,7 +462,7 @@ public class SyntaxTreeBuilder {
     }
 
     private ParseTreeNode methodReference (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	if (rule.get (rule.size () - 1) == java11Tokens.IDENTIFIER.getId ()) {
+	if (rule.get (rule.size () - 1) == javaTokens.IDENTIFIER.getId ()) {
 	    if (rule.size () > 4)
 		return new SuperMethodReference (rule, n, children);
 	    return new NormalMethodReference (rule, n, children);
@@ -459,7 +486,7 @@ public class SyntaxTreeBuilder {
     }
 
     private ParseTreeNode lambdaParameterList (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	if (rule.get (0) == java11Tokens.IDENTIFIER.getId ())
+	if (rule.get (0) == javaTokens.IDENTIFIER.getId ())
 	    return LambdaParameterList.forIdentifier (rule, n, children, i -> ((Identifier)i).getValue ());
 	return LambdaParameterList.forParameters (rule, n, children, c -> (LambdaParameter)c);
     }
@@ -481,9 +508,9 @@ public class SyntaxTreeBuilder {
 	case 1:
 	    return children.get (0);
 	case 2:
-	    return new TokenNode (java11Tokens.RIGHT_SHIFT, n.getPosition ());
+	    return new TokenNode (javaTokens.RIGHT_SHIFT, n.getPosition ());
 	case 3:
-	    return new TokenNode (java11Tokens.RIGHT_SHIFT_UNSIGNED, n.getPosition ());
+	    return new TokenNode (javaTokens.RIGHT_SHIFT_UNSIGNED, n.getPosition ());
 	}
 	ctx.error (n.getPosition (), "%s got unexpected size %d, children: %d",
 		   rule.toReadableString (grammar), rule.size (), children);

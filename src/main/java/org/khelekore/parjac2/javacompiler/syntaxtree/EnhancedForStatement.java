@@ -7,18 +7,23 @@ import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class EnhancedForStatement extends SyntaxTreeNode {
-    private List<ParseTreeNode> modifiers;
-    private ParseTreeNode type;
-    private VariableDeclaratorId id;
-    private ParseTreeNode expression;
-    private ParseTreeNode statement;
+    private final LocalVariableDeclaration lv;
+    private final ParseTreeNode expression;
+    private final ParseTreeNode statement;
 
     public EnhancedForStatement (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 2;
-	modifiers = rule.size () > 8 ? ((Multiple)children.get (i++)).get () : List.of ();
-	type = children.get (i++);
-	id = (VariableDeclaratorId)children.get (i++);
+	if (children.get (2) instanceof LocalVariableDeclaration lv) {
+	    // modern version allows initializers and multiple ids.
+	    this.lv = lv;
+	} else {
+	    // java 11 and similar
+	    List<ParseTreeNode> modifiers = rule.size () > 8 ? ((Multiple)children.get (i++)).get () : List.of ();
+	    ParseTreeNode type = children.get (i++);
+	    VariableDeclaratorId id = (VariableDeclaratorId)children.get (i++);
+	    lv = new LocalVariableDeclaration (modifiers, type, new VariableDeclaratorList (new VariableDeclarator (id)));
+	}
 	i++; // :
 	expression = children.get (i++);
 	i++;
@@ -27,17 +32,13 @@ public class EnhancedForStatement extends SyntaxTreeNode {
 
     @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
-	sb.append ("for (");
-	modifiers.forEach (m -> sb.append (m).append (" "));
-	sb.append (type).append (" ").append (id).append (" : ").append (expression).append (")")
-	    .append (statement);
+	sb.append ("for (").append (lv.getValue ()).append (" : ")
+	    .append (expression).append (")").append (statement);
 	return sb.toString ();
     }
 
     @Override public void visitChildNodes (NodeVisitor v) {
-	modifiers.forEach (v::accept);
-	v.accept (type);
-	v.accept (id);
+	v.accept (lv);
 	v.accept (expression);
 	v.accept (statement);
     }

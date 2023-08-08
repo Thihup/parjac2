@@ -8,7 +8,7 @@ import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class VariableDeclaratorList extends SyntaxTreeNode {
-    private List<VariableDeclarator> declarators;
+    private final List<VariableDeclarator> declarators;
 
     public VariableDeclaratorList (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
@@ -19,6 +19,11 @@ public class VariableDeclaratorList extends SyntaxTreeNode {
 	    for (int i = 1, e = z.size (); i < e; i += 2)
 		declarators.add ((VariableDeclarator)z.get (i));
 	}
+    }
+
+    public VariableDeclaratorList (VariableDeclarator v) {
+	super (v.getPosition ());
+	declarators = List.of (v);
     }
 
     @Override public Object getValue () {

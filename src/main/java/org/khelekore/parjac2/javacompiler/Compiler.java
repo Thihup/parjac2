@@ -29,7 +29,7 @@ import org.khelekore.parjac2.parsetree.WildcardNode;
 public class Compiler {
     private final CompilerDiagnosticCollector diagnostics;
     private final Grammar grammar;
-    private final JavaTokens java11Tokens;
+    private final JavaTokens javaTokens;
     private final Rule goalRule;
     private final CompilationArguments settings;
     private final PredictCache predictCache;
@@ -37,14 +37,14 @@ public class Compiler {
     private final ClassInformationProvider cip;
 
     public Compiler (CompilerDiagnosticCollector diagnostics, Grammar grammar,
-		     JavaTokens java11Tokens, Rule goalRule, CompilationArguments settings) {
+		     JavaTokens javaTokens, Rule goalRule, CompilationArguments settings) {
 	this.diagnostics = diagnostics;
 	this.grammar = grammar;
-	this.java11Tokens = java11Tokens;
+	this.javaTokens = javaTokens;
 	this.goalRule = goalRule;
 	this.settings = settings;
 	this.predictCache = new PredictCache (grammar);
-	stb = new SyntaxTreeBuilder (diagnostics, java11Tokens, grammar);
+	stb = new SyntaxTreeBuilder (diagnostics, javaTokens, grammar);
 	cip = new ClassInformationProvider (diagnostics, settings);
     }
 
@@ -111,7 +111,7 @@ public class Compiler {
 		System.out.println ("parsing: " + file);
 	    CharBuffer charBuf = sourceProvider.getInput (file);
 	    CompilerDiagnosticCollector lexErrors = new CompilerDiagnosticCollector ();
-	    CharBufferLexer lexer = new CharBufferLexer (grammar, java11Tokens, charBuf, file, lexErrors);
+	    CharBufferLexer lexer = new CharBufferLexer (grammar, javaTokens, charBuf, file, lexErrors);
 
 	    // Use our own here, we do not want to stop other classes from being parsed.
 	    CompilerDiagnosticCollector collector = new CompilerDiagnosticCollector ();

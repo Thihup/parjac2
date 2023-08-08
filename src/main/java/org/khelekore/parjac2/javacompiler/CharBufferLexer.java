@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.nio.CharBuffer;
 import java.nio.file.Path;
 import java.util.BitSet;
+import java.util.Set;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.SourceDiagnostics;
@@ -55,6 +56,11 @@ public class CharBufferLexer implements Lexer {
     private static final BigInteger MAX_ULONG_LITERAL = new BigInteger ("FFFFFFFFFFFFFFFF", 16);
 
     private final BitSet multiGTTTokens = new BitSet ();
+
+    // java 11 only has "var"
+    // java 17+ has "permits", "record", "sealed", "var", "yield"
+    // TODO let constructor or grammar know what to set to use
+    private final Set<String> nonTypeIdentifiers = Set.of ("permits", "record", "sealed", "var", "yield");
 
     public CharBufferLexer (Grammar grammar, JavaTokens javaTokens, CharBuffer buf, Path path,
 			    CompilerDiagnosticCollector diagnostics) {
@@ -128,9 +134,14 @@ public class CharBufferLexer implements Lexer {
 	    return new TokenNode (wantedActualToken, n.getPosition ());
 	if (wantedActualToken == javaTokens.TYPE_IDENTIFIER && n instanceof Identifier) {
 	    Identifier i = (Identifier)n;
-	    return new TypeIdentifier (wantedActualToken, i.getValue (), n.getPosition ());
+	    if (allowedTypeIdentifier (i))
+		return new TypeIdentifier (wantedActualToken, i.getValue (), n.getPosition ());
 	}
 	return n;
+    }
+
+    private boolean allowedTypeIdentifier (Identifier i) {
+	return !nonTypeIdentifiers.contains (i.getId ());
     }
 
     @Override public ParsePosition getParsePosition () {

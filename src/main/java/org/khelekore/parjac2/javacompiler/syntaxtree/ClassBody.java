@@ -37,20 +37,25 @@ public class ClassBody extends SyntaxTreeNode {
 	td.addMapping (ConstructorDeclaration.class, constructorDeclarations);
 	td.<ParseTreeNode>addMapping (FieldDeclaration.class, t -> handleFields (ctx.getTokens (), t, instanceInitializers));
 	td.addMapping (MethodDeclaration.class, methodDeclarations);
+	addAdditionalMappings (td);
 	declarations.forEach (td::distribute);
 
 	declarations.forEach (this::findInnerClasses);
     }
 
-    private void handleFields (JavaTokens java11Tokens, ParseTreeNode t, List<ParseTreeNode> initList) {
+    protected void addAdditionalMappings (TypeDistributor td) {
+	// empty
+    }
+
+    private void handleFields (JavaTokens javaTokens, ParseTreeNode t, List<ParseTreeNode> initList) {
 	FieldDeclaration fd = (FieldDeclaration)t;
 	List<VariableDeclarator> ls = fd.getVariableDeclarators ();
 	for (VariableDeclarator vd : ls) {
 	    String name = vd.getName ();
 	    // TODO: put field in map or something
 	    if (vd.hasInitializer ()) {
-		initList.add (new Assignment (new Identifier (java11Tokens.IDENTIFIER, name, vd.getPosition ()),
-					      java11Tokens.EQUAL,
+		initList.add (new Assignment (new Identifier (javaTokens.IDENTIFIER, name, vd.getPosition ()),
+					      javaTokens.EQUAL,
 					      vd.getInitializer ()));
 	    }
 	}

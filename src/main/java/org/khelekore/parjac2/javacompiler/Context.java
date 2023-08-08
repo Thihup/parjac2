@@ -9,16 +9,16 @@ import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Token;
 
 public class Context {
-    private final JavaTokens java11Tokens;
+    private final JavaTokens javaTokens;
     private final Grammar grammar;
     private final CompilerDiagnosticCollector diagnostics;
     private final DirAndPath dirAndPath;
     private final FlagConverter flagConverter;
 
-    public Context (JavaTokens java11Tokens, Grammar grammar,
+    public Context (JavaTokens javaTokens, Grammar grammar,
 		    CompilerDiagnosticCollector diagnostics, DirAndPath dirAndPath,
 		    FlagConverter flagConverter) {
-	this.java11Tokens = java11Tokens;
+	this.javaTokens = javaTokens;
 	this.grammar = grammar;
 	this.diagnostics = diagnostics;
 	this.dirAndPath = dirAndPath;
@@ -26,7 +26,7 @@ public class Context {
     }
 
     public JavaTokens getTokens () {
-	return java11Tokens;
+	return javaTokens;
     }
 
     public Grammar getGrammar () {

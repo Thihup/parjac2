@@ -5,9 +5,9 @@ import java.util.List;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
-public class SwitchStatement extends SwitchExpressionOrStatement {
+public class ClassPermits extends PermitsBase {
 
-    public SwitchStatement (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public ClassPermits (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (rule, n, children);
     }
 }

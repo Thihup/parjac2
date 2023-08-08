@@ -18,7 +18,7 @@ public class PredictGroup {
     private void addRule (Grammar grammar, int rule) {
 	Rule r = grammar.getRule (rule);
 	Integer nextTokenOrRuleGroup = r.get (0);
-	// TODO: not sure about size, does not look like we get more than this for any java11 grammar
+	// TODO: not sure about size, does not look like we get more than this for any java grammar
 	IntHolder ih = nextTokenOrRuleGroupToRules.computeIfAbsent (nextTokenOrRuleGroup, k -> new IntHolder (16));
 	ih.add (rule << 8); // rule and dotpos
 	if (grammar.isToken (nextTokenOrRuleGroup))

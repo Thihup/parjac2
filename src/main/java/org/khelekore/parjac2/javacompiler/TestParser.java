@@ -26,10 +26,10 @@ public class TestParser {
     private final boolean printParseTree;
     private final boolean printSyntaxTree;
     private final Grammar grammar = new Grammar ();
-    private final JavaTokens java11Tokens = new JavaTokens (grammar);
+    private final JavaTokens javaTokens = new JavaTokens (grammar);
     private final PredictCache predictCache = new PredictCache (grammar);
     private final CompilerDiagnosticCollector diagnostics = new CompilerDiagnosticCollector ();
-    private final SyntaxTreeBuilder stb = new SyntaxTreeBuilder (diagnostics, java11Tokens, grammar);
+    private final SyntaxTreeBuilder stb = new SyntaxTreeBuilder (diagnostics, javaTokens, grammar);
     private final Rule goalRule;
 
     public static void main (String[] args) throws IOException {
@@ -70,7 +70,7 @@ public class TestParser {
 
     private static void usage () {
 	System.err.println ("usage: java " + TestParser.class.getName () +
-			    " [-encoding <charset>] [-print_parse] file_to_parse*");
+			    " [-encoding <charset>] [-print_parse] [-print_syntax] file_to_parse*");
     }
 
     public TestParser (Charset charset, boolean printParseTree, boolean printSyntaxTree) throws IOException {
@@ -100,7 +100,7 @@ public class TestParser {
     private void parse (Path filePath, CompilerDiagnosticCollector diagnostics) throws IOException {
 	try {
 	CharBuffer input = pathToCharBuffer (filePath, charset);
-	CharBufferLexer lexer = new CharBufferLexer (grammar, java11Tokens, input, filePath, diagnostics);
+	CharBufferLexer lexer = new CharBufferLexer (grammar, javaTokens, input, filePath, diagnostics);
 	Parser p = new Parser (grammar, filePath, predictCache, lexer, diagnostics);
 	ParseTreeNode parseTree = p.parse (goalRule);
 	if (printParseTree && parseTree != null)
