@@ -10,13 +10,15 @@ import org.khelekore.parjac2.util.TypeDistributor;
 
 public class RecordBody extends ClassBody {
 
-    protected List<CompactConstructorDeclaration> compactConstructors = new ArrayList<> ();
+    protected List<CompactConstructorDeclaration> compactConstructors;
 
     public RecordBody (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (ctx, rule, n, children);
     }
 
     @Override protected void addAdditionalMappings (TypeDistributor td) {
+	// have to create it here
+	compactConstructors = new ArrayList<> ();
 	td.addMapping (CompactConstructorDeclaration.class, compactConstructors);
     }
 }

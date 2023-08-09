@@ -618,9 +618,11 @@ AssertStatement:
 SwitchStatement:
 	'switch' '(' Expression ')' SwitchBlock
 
+# Switch handling changed a bit from grammar to avoid both SwitchBlockStatementGroup and SwitchLabels to
+# start with {SwitchLabel}
 SwitchBlock:
 	'{' SwitchRule {SwitchRule} '}'
-	'{' {SwitchBlockStatementGroup} {SwitchLabel ':'} '}'
+	'{' {SwitchBlockStatementGroup} {SwitchLabel} '}'
 
 SwitchRule:
 	SwitchLabel '->' Expression ';'
@@ -628,11 +630,14 @@ SwitchRule:
 	SwitchLabel '->' ThrowStatement
 
 SwitchBlockStatementGroup:
-	SwitchLabel ':' {SwitchLabel ':'} BlockStatements
+	SwitchLabels BlockStatements
+
+SwitchLabels:
+	{SwitchLabel} SwitchLabel
 
 SwitchLabel:
-	'case' CaseConstant {',' CaseConstant}
-	'default'
+	'case' CaseConstant {',' CaseConstant}  ':'
+	'default'  ':'
 
 CaseConstant:
 	ConditionalExpression

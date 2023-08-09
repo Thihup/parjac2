@@ -200,8 +200,10 @@ public class SyntaxTreeBuilder {
 
 	/** TODO: check switch grammar */
 	register ("SwitchStatement", SwitchStatement::new);
-	register ("SwitchBlock", SwitchBlock::new);
+	register ("SwitchBlock", SwitchBlock::build);
+	register ("SwitchRule", SwitchRule::new);
 	register ("SwitchBlockStatementGroup", SwitchBlockStatementGroup::new);
+	register ("SwitchLabels", SwitchLabels::new);
 	register ("SwitchLabel", this::switchLabel);
 	register ("WhileStatement", WhileStatement::new);
 	register ("WhileStatementNoShortIf", WhileStatement::new);

@@ -495,14 +495,15 @@ public class Parser {
 	int dotPos = rulePos & 0xff;
 	int rule = rulePos >> 8;
 	Rule candidate = grammar.getRule (rule);
-	if (DEBUG)
-	    System.out.println ("candidate: " + candidate.toReadableString (grammar) + ", " +
-				dotPos + ", " + origin +
+	if (DEBUG) {
+	    System.out.println ("candidate: " + candidate.toReadableString (grammar) + ", dot: " +
+				dotPos + ", origin: " + origin +
 				" oleq: " + originLEQ + ", ogeq: " + originGEQ +
 				" => " +
 				(candidate.getGroupId () == ruleGroup &&
 				 candidate.size () == dotPos &&
 				 origin <= originLEQ && origin >= originGEQ));
+	}
 	return candidate.getGroupId () == ruleGroup &&
 	    candidate.size () == dotPos &&
 	    origin <= originLEQ && origin >= originGEQ;

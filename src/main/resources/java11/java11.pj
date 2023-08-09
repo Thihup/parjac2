@@ -574,16 +574,18 @@ AssertStatement:
 SwitchStatement:
 	'switch' '(' Expression ')' SwitchBlock
 
+# Switch handling changed a bit from grammar to avoid both SwitchBlockStatementGroup and SwitchLabels to
+# start with {SwitchLabel}
 SwitchBlock:
 	'{' {SwitchBlockStatementGroup} {SwitchLabel} '}'
 
 SwitchBlockStatementGroup:
-	SwitchLabel ':' {SwitchLabel ':'} BlockStatements
+	SwitchLabels BlockStatements
 
 SwitchLabel:
 	# ConstantExpression may be EnumConstantName
-	'case' ConstantExpression
-	'default'
+	'case' ConstantExpression ':'
+	'default' ':'
 
 WhileStatement:
 	'while' '(' Expression ')' Statement
