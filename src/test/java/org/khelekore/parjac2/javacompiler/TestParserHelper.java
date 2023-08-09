@@ -8,6 +8,7 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
+import org.khelekore.parjac2.javacompiler.syntaxtree.SyntaxTreeNode;
 import org.khelekore.parjac2.parser.Grammar;
 import org.khelekore.parjac2.parser.GrammarReader;
 import org.khelekore.parjac2.parser.Lexer;
@@ -36,9 +37,7 @@ public class TestParserHelper {
 	    String multiGoalRule = "GOALP";
 	    // use our own custom zero or more here
 	    Rule r1 = g.addRule (multiGoalRule, new int[]{g.getRuleGroupId (goalRule)});
-	    Rule r2 = g.addRule (multiGoalRule, new int[]{r1.getId (), g.getRuleGroupId (goalRule)});
-	    System.err.println ("r1: " + r1.toReadableString (g)); // qewrty
-	    System.err.println ("r2: " + r2.toReadableString (g)); // qwerty
+	    g.addRule (multiGoalRule, new int[]{r1.getGroupId (), g.getRuleGroupId (goalRule)});
 	    goalRule = multiGoalRule;
 	}
 	currentGoal = g.addRule ("GOAL", new int[]{g.getRuleGroupId (goalRule), g.END_OF_INPUT.getId ()});
@@ -48,6 +47,23 @@ public class TestParserHelper {
 	    throw new RuntimeException ("Failed to validate rules", t);
 	}
 	return g;
+    }
+
+    public static void testSuccessfulParse (Grammar g, String s, CompilerDiagnosticCollector diagnostics, SyntaxTreeNode tn) {
+	ParseTreeNode t = syntaxTree (g, s, diagnostics);
+	assert !diagnostics.hasError () : "Got parser errors: " + TestParserHelper.getParseOutput (diagnostics);
+	if (tn != null) {
+	    assert tn.equals (t) : "Expected: " + tn + ", but got: " + t;
+	}
+    }
+
+    public static void testFailedParse (Grammar g, String s, CompilerDiagnosticCollector diagnostics) {
+	try {
+	    parse (g, s, diagnostics);
+	    assert diagnostics.errorCount () > 0 : "Failed to detect errors";
+	} finally {
+	    diagnostics.clear ();
+	}
     }
 
     public static ParseTreeNode syntaxTree (Grammar grammar, String s,

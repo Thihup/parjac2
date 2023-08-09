@@ -5,10 +5,8 @@ import java.util.List;
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.javacompiler.syntaxtree.MarkerAnnotation;
 import org.khelekore.parjac2.javacompiler.syntaxtree.PackageDeclaration;
-import org.khelekore.parjac2.javacompiler.syntaxtree.SyntaxTreeNode;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeName;
 import org.khelekore.parjac2.parser.Grammar;
-import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
@@ -30,19 +28,21 @@ public class TestPackageParsing {
 
     @Test
     public void testSinglePackageMissingSemiColon () {
-	testFailedParse ("package foo");
+	TestParserHelper.testFailedParse (g, "package foo", diagnostics);
     }
 
     @Test
     public void testSinglePackage () {
 	List<String> names = List.of ("foo");
-	testSuccessfulParse ("package foo;", new PackageDeclaration (null, null, names));
+	TestParserHelper.testSuccessfulParse (g, "package foo;", diagnostics,
+					      new PackageDeclaration (null, null, names));
     }
 
     @Test
     public void testMultiPackage () {
 	List<String> names = List.of ("foo", "bar", "baz");
-	testSuccessfulParse ("package foo.bar.baz;", new PackageDeclaration (null, null, names));
+	TestParserHelper.testSuccessfulParse (g, "package foo.bar.baz;", diagnostics,
+					      new PackageDeclaration (null, null, names));
     }
 
     @Test
@@ -51,10 +51,10 @@ public class TestPackageParsing {
 	List<String> bar = List.of ("Bar");
 	MarkerAnnotation maf = new MarkerAnnotation (null, new TypeName (null, foo));
 	MarkerAnnotation mab = new MarkerAnnotation (null, new TypeName (null, bar));
-	testSuccessfulParse ("@foo package foo;",
-			     new PackageDeclaration (null, List.of (maf), foo));
-	testSuccessfulParse ("@foo @Bar package foo;",
-			     new PackageDeclaration (null, List.of (maf, mab), foo));
+	TestParserHelper.testSuccessfulParse (g, "@foo package foo;", diagnostics,
+					      new PackageDeclaration (null, List.of (maf), foo));
+	TestParserHelper.testSuccessfulParse (g, "@foo @Bar package foo;", diagnostics,
+					      new PackageDeclaration (null, List.of (maf, mab), foo));
     }
 
     @Test
@@ -68,24 +68,6 @@ public class TestPackageParsing {
     }
 
     private void testSuccessfulParse (String s) {
-	testSuccessfulParse (s, null);
-    }
-
-    private void testSuccessfulParse (String s, SyntaxTreeNode tn) {
-	ParseTreeNode t = TestParserHelper.syntaxTree (g, s, diagnostics);
-	assert !diagnostics.hasError () : "Got parser errors: " + TestParserHelper.getParseOutput (diagnostics);
-	assert t != null : "Expected non null tree";
-	if (tn != null) {
-	    assert tn.equals (t) : "Expected: " + tn + ", but got: " + t;
-	}
-    }
-
-    private void testFailedParse (String s) {
-	try {
-	    TestParserHelper.parse (g, s, diagnostics);
-	    assert diagnostics.errorCount () > 0 : "Failed to detect errors";
-	} finally {
-	    diagnostics.clear ();
-	}
+	TestParserHelper.testSuccessfulParse (g, s, diagnostics, null);
     }
 }

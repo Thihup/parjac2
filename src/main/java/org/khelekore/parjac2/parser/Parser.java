@@ -194,6 +194,10 @@ public class Parser {
 		      startPositions.get (currentPosition), states.size ());
 	PredictGroup pg = predictions.get (currentPosition);
 	wantedScanTokens.or (pg.getWantedScanTokens ());
+	if (wantedScanTokens.isEmpty ()) {
+	    ParsePosition pp = lexer.getParsePosition ();
+	    diagnostics.report (SourceDiagnostics.error (path, pp, "Unable to find any possible continuation"));
+	}
 
 	BitSet scannedTokens = scanToken (currentPosition, wantedScanTokens);
 	startPositions.add (states.size ());
@@ -201,7 +205,6 @@ public class Parser {
 	    addParserError ("Lexer returned error: " + lexer.getError ());
 	    return;
 	}
-
 	if (wantedScanTokens.intersects (scannedTokens)) {
 	    // Advance the states that can be advanced by the scanned token
 	    states.apply ((rp, o) -> advance (rp, o, scannedTokens),
