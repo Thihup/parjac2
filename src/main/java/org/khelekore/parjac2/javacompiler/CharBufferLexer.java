@@ -178,11 +178,11 @@ public class CharBufferLexer implements Lexer {
 		continue;
 	    lastScannedTokens.clear ();
 	    lastScannedTokens.set (nextToken.getId ());
-	    if (nextToken == javaTokens.VAR) {
+	    if (nonTypeIdentifiers.contains (nextToken.getName ())) {
 		lastScannedTokens.set (javaTokens.IDENTIFIER.getId ());
 	    } else if (nextToken == javaTokens.IDENTIFIER &&
 		       wantedTokens.get (javaTokens.TYPE_IDENTIFIER.getId ()) &&
-		       !currentIdentifier.equals ("var")) {
+		       !nonTypeIdentifiers.contains (currentIdentifier)) {
 		lastScannedTokens.set (javaTokens.TYPE_IDENTIFIER.getId ());
 	    }
 	    return lastScannedTokens;
@@ -903,7 +903,7 @@ public class CharBufferLexer implements Lexer {
 	}
 	t = javaTokens.getContextualKeyWordFromIdentifier (identifier);
 	if (t != null && wantedTokens.get (t.getId ())) {
-	    currentIdentifier = t.getName ();
+	    currentIdentifier = t.getName (); 
 	    return t;
 	}
 	currentIdentifier = identifier;
