@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,13 +26,18 @@ public class GrammarReader {
 
     public void read (URL u) throws IOException {
 	try (InputStream is = u.openStream ();
-	     InputStreamReader isr = new InputStreamReader (is, "UTF-8");
-	     BufferedReader br = new BufferedReader (isr)) {
-		String line = null;
-		while ((line = br.readLine ()) != null) {
-		    parseLine (line);
-		}
+	     InputStreamReader isr = new InputStreamReader (is, "UTF-8")) {
+	    read (isr);
+	}
+    }
+
+    public void read (Reader isr) throws IOException {
+	try (BufferedReader br = new BufferedReader (isr)) {
+	    String line = null;
+	    while ((line = br.readLine ()) != null) {
+		parseLine (line);
 	    }
+	}
     }
 
     // TODO: rewrite it in parjac :-)

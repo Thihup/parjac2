@@ -17,7 +17,7 @@ public class TestLexer {
     private final Grammar grammar = new Grammar ();
     private final JavaTokens javaTokens = new JavaTokens (grammar);
 
-    CompilerDiagnosticCollector diagnostics;
+    private CompilerDiagnosticCollector diagnostics;
 
     @BeforeTest
     public void setupDiagnostics () {

@@ -3,9 +3,11 @@ package org.khelekore.parjac2.javacompiler.syntaxtree;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.khelekore.parjac2.javacompiler.Identifier;
+import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -37,6 +39,13 @@ public class PackageDeclaration extends SyntaxTreeNode {
 	dottedName = nameParts.stream ().collect (Collectors.joining ("."));
     }
 
+    public PackageDeclaration (ParsePosition pos, List<Annotation> annotations, List<String> nameParts) {
+	super (pos);
+	this.annotations = annotations == null ? List.of () : annotations;
+	this.nameParts = nameParts;
+	dottedName = nameParts.stream ().collect (Collectors.joining ("."));
+    }
+
     @Override public Object getValue () {
 	return annotations + (annotations.isEmpty () ? "" : " ") +
 	    "package " + StringHelper.dotted (nameParts) + ";\n";
@@ -48,5 +57,16 @@ public class PackageDeclaration extends SyntaxTreeNode {
 
     public String getName () {
 	return dottedName;
+    }
+
+    @Override public boolean equals (Object o) {
+	if (o == this)
+	    return true;
+	if (o == null)
+	    return false;
+	if (o.getClass () != getClass ())
+	    return false;
+	PackageDeclaration pd = (PackageDeclaration)o;
+	return Objects.equals (annotations, pd.annotations) && nameParts.equals (pd.nameParts);
     }
 }

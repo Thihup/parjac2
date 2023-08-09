@@ -31,6 +31,18 @@ public class Grammar {
 	WILDCARD = getToken ("Wildcard");
     }
 
+    public Grammar (Grammar toCopy) {
+	tokens.addAll (toCopy.tokens);
+	tokenNameToToken.putAll (toCopy.tokenNameToToken);
+	rules.addAll (toCopy.rules);
+	ruleGroups.addAll (toCopy.ruleGroups);
+	nameToRuleGroup.putAll (toCopy.nameToRuleGroup);
+
+	END_OF_INPUT = getToken ("end of input");
+	ERROR = getToken ("Error");
+	WILDCARD = getToken ("Wildcard");
+    }
+
     public void validateRules () {
 	for (int i = 1; i < rules.size (); i++)
 	    if (rules.get (i).size () == 0)
