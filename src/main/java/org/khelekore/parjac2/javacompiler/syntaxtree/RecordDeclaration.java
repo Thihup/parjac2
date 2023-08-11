@@ -14,7 +14,7 @@ public class RecordDeclaration extends TypeDeclaration {
     private final String id;
     private final TypeParameters typeParameters;
     private final RecordHeader recordHeader;
-    private final Superclass classImplements;
+    private final Superinterfaces classImplements;
     private final RecordBody body;
 
     private static FlagCalculator flagCalculator = FlagCalculator.SIMPLE_ACCESS;
@@ -40,7 +40,7 @@ public class RecordDeclaration extends TypeDeclaration {
 	    recordHeader = (RecordHeader)tn;
 	}
 	tn = children.get (i++);
-	if (tn instanceof Superclass ci) {
+	if (tn instanceof Superinterfaces ci) {
 	    classImplements = ci;
 	    body = (RecordBody)children.get (i++);
 	} else {
