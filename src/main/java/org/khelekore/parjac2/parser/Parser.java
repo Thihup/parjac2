@@ -72,7 +72,8 @@ public class Parser {
 	long startTime = System.currentTimeMillis ();
 	addState (goalRule.getId (), 0, 0);
 
-	while (lexer.hasMoreTokens ()) {
+	// We want to add wildcards at the end as well.
+	while (pushbackTokens != null || lexer.hasMoreTokens ()) {
 	    parsePositions.add (lexer.getParsePosition ());
 	    int stateStartPos = startPositions.get (currentPosition);
 	    if (DEBUG) {
