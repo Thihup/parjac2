@@ -15,6 +15,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
+import org.khelekore.parjac2.javacompiler.syntaxtree.DottedName;
+import org.khelekore.parjac2.javacompiler.syntaxtree.MethodDeclarator;
+import org.khelekore.parjac2.javacompiler.syntaxtree.SimpleRecordComponent;
+import org.khelekore.parjac2.javacompiler.syntaxtree.VariableDeclaratorId;
 import org.khelekore.parjac2.parser.Grammar;
 import org.khelekore.parjac2.parser.Parser;
 import org.khelekore.parjac2.parser.PredictCache;
@@ -132,10 +136,19 @@ public class TestParser {
 	System.out.print (indent);
 	System.out.print (n.getId () + " " + n.getPosition ().toShortString ());
 	Object v;
-	if (n.isToken () && (v = n.getValue ()) != null) {
+	if (hasUsableValue (n) && (v = n.getValue ()) != null) {
 	    System.out.print (" " + v);
 	}
 	System.out.println ();
 	n.visitChildNodes (c -> printTree (c, indent + " "));
+    }
+
+    // TODO: grab name from RecordDeclaration
+    private boolean hasUsableValue (ParseTreeNode n) {
+	return n.isToken () ||
+	    n instanceof DottedName ||
+	    n instanceof VariableDeclaratorId ||
+	    n instanceof MethodDeclarator ||
+	    n instanceof SimpleRecordComponent;
     }
 }

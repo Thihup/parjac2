@@ -27,7 +27,7 @@ public class TokenNode implements ParseTreeNode {
     }
 
     @Override public Object getValue () {
-	return null;
+	return token.getName ();
     }
 
     @Override public boolean isRule () {
