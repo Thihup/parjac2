@@ -43,10 +43,10 @@ public class TestClassParsing {
 
     @Test
     public void testSimpleFailures () {
-	testFailedParse ("classs Foo { }");
-	testFailedParse ("class Foo ()");
-	testFailedParse ("class Foo {");
-	testFailedParse ("class Foo {]");
+	testFailedParse ("classs Foo { }", 10); // only 2 if we allowed modules as well
+	testFailedParse ("class Foo ()", 5);
+	testFailedParse ("class Foo {", 1);
+	testFailedParse ("class Foo {]", 5);
     }
 
     @Test
@@ -128,7 +128,7 @@ public class TestClassParsing {
 	TestParserHelper.testSuccessfulParse (g, s, diagnostics, null);
     }
 
-    private void testFailedParse (String s) {
-	TestParserHelper.testFailedParse (g, s, diagnostics);
+    private void testFailedParse (String s, int expectedErrors) {
+	TestParserHelper.testFailedParse (g, s, diagnostics, expectedErrors);
     }
 }

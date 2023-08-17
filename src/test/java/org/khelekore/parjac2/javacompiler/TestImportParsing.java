@@ -61,17 +61,17 @@ public class TestImportParsing {
 
     @Test
     public void testMissingSemiColon () {
-	TestParserHelper.testFailedParse (g, "import Foo", diagnostics);
+	TestParserHelper.testFailedParse (g, "import Foo", diagnostics, 1);
     }
 
     @Test
     public void testExtraStar () {
-	TestParserHelper.testFailedParse (g, "import foo.*.*;", diagnostics);
+	TestParserHelper.testFailedParse (g, "import foo.*.*;", diagnostics, 3);
     }
 
     @Test
     public void testStarIdentifier () {
-	TestParserHelper.testFailedParse (g, "import *.Foo;", diagnostics);
+	TestParserHelper.testFailedParse (g, "import *.Foo;", diagnostics, 5);
     }
 
     private void testSuccessfulParse (String s) {

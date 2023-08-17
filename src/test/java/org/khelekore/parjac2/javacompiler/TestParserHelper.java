@@ -57,10 +57,11 @@ public class TestParserHelper {
 	}
     }
 
-    public static void testFailedParse (Grammar g, String s, CompilerDiagnosticCollector diagnostics) {
+    public static void testFailedParse (Grammar g, String s, CompilerDiagnosticCollector diagnostics, int expectedErrors) {
 	try {
 	    parse (g, s, diagnostics);
-	    assert diagnostics.errorCount () > 0 : "Failed to detect errors";
+	    int numErrors = diagnostics.errorCount ();
+	    assert numErrors == expectedErrors : "Expected " + expectedErrors + " errors, but got: " + numErrors;
 	} finally {
 	    diagnostics.clear ();
 	}

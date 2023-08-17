@@ -33,6 +33,12 @@ public class CompilerDiagnosticCollector implements DiagnosticListener<Path> {
 	warningCount += other.warningCount;
     }
 
+    public void removeAll (CompilerDiagnosticCollector other) {
+	list.removeAll (other.list);
+	errorCount -= other.errorCount;
+	warningCount -= other.warningCount;
+    }
+
     public int errorCount () {
 	return errorCount;
     }
@@ -50,7 +56,6 @@ public class CompilerDiagnosticCollector implements DiagnosticListener<Path> {
     }
 
     public Stream<Diagnostic<? extends Path>> getDiagnostics () {
-	System.err.println ("list has: " + list.size());
 	return list.stream ();
     }
 

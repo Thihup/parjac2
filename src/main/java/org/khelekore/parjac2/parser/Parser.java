@@ -28,6 +28,10 @@ public class Parser {
     private final PredictCache predictCache;
     private final Lexer lexer;
     private final CompilerDiagnosticCollector diagnostics;
+
+    // errors that we replace with wildcard errors if we can create the tree
+    private final CompilerDiagnosticCollector unexpected = new CompilerDiagnosticCollector ();
+    private final List<SourceDiagnostics> wildcardErrors = new ArrayList<> (); // in backward order
     private final Set<ParsePosition> errorPositions = new HashSet<> ();
 
     private final IntHolder startPositions = new IntHolder (1024);
@@ -115,6 +119,11 @@ public class Parser {
 	ParseTreeNode root = ti.node;
 	if (root == null)
 	    addParserError ("Failed to generate parse tree for %s", path);
+
+	// Since we built a parse tree we can remove the unexpected and add any wildcards
+	diagnostics.removeAll (unexpected);
+	for (int i = wildcardErrors.size () - 1; i >= 0; i--)
+	    diagnostics.report (wildcardErrors.get (i));
 	return root;
     }
 
@@ -198,6 +207,7 @@ public class Parser {
 	if (wantedScanTokens.isEmpty ()) {
 	    ParsePosition pp = lexer.getParsePosition ();
 	    diagnostics.report (SourceDiagnostics.error (path, pp, "Unable to find any possible continuation"));
+	    return;
 	}
 
 	BitSet scannedTokens = scanToken (currentPosition, wantedScanTokens);
@@ -214,9 +224,14 @@ public class Parser {
 	    tokenValues.add (lexer.getCurrentValue ());
 	} else {
 	    // Try to advance by saying we got what we wanted
-	    addParserError ("Got unexpected set of tokens: '%s' with value: %s, expected one of: %s",
-			    tokenString (scannedTokens), lexer.getCurrentValue (),
-			    tokenString (wantedScanTokens));
+	    ParsePosition pp = lexer.getParsePosition ();
+	    SourceDiagnostics sd =
+		SourceDiagnostics.error (path, pp,
+					 "Got unexpected set of tokens: '%s' with value: %s, expected one of: %s",
+					 tokenString (scannedTokens), lexer.getCurrentValue (),
+					 tokenString (wantedScanTokens));
+	    diagnostics.report (sd);
+	    unexpected.report (sd);
 	    pushbackTokens = (BitSet)scannedTokens.clone ();
 	    states.apply ((rp, o) -> advanceAllTokens (rp, o),
 			  startPositions.get (currentPosition), states.size ());
@@ -433,7 +448,10 @@ public class Parser {
 	    TokenNode n = lexer.toCorrectType (getTokenValue (completedIn - 1), grammar.getToken (token));
 	    Token t = n.getToken ();
 	    if (t == grammar.WILDCARD) {
-		add (new WildcardNode (grammar.getToken (token), n.getPosition ()));
+		ParsePosition pp = lexer.getParsePosition ();
+		Token missingToken = grammar.getToken (token);
+		add (new WildcardNode (missingToken, pp));
+		wildcardErrors.add (SourceDiagnostics.error (path, pp, "Added missing %s", missingToken.getName ()));
 	    } else {
 		add (n);
 	    }

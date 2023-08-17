@@ -28,7 +28,7 @@ public class TestPackageParsing {
 
     @Test
     public void testSinglePackageMissingSemiColon () {
-	TestParserHelper.testFailedParse (g, "package foo", diagnostics);
+	TestParserHelper.testFailedParse (g, "package foo", diagnostics, 1);
     }
 
     @Test
