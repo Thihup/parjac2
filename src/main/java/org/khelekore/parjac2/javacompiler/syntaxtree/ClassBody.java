@@ -17,13 +17,14 @@ import org.khelekore.parjac2.util.TypeDistributor;
 public class ClassBody extends SyntaxTreeNode {
     protected List<ParseTreeNode> declarations; // all of them
 
-    protected List<ParseTreeNode> instanceInitializers = new ArrayList<> ();
-    protected List<ParseTreeNode> staticInitializers = new ArrayList<> ();
-    protected List<ParseTreeNode> constructorDeclarations = new ArrayList<> ();
+    // either plain blocks or field assignments
+    protected List<SyntaxTreeNode> instanceInitializers = new ArrayList<> ();
+    protected List<StaticInitializer> staticInitializers = new ArrayList<> ();
+    protected List<ConstructorDeclaration> constructorDeclarations = new ArrayList<> ();
 
     // Change this, currently FieldDeclaration have VariableDeclaratorList in them, we want a list of fields.
-    protected List<ParseTreeNode> fieldDeclarations = new ArrayList<> ();
-    protected List<ParseTreeNode> methodDeclarations = new ArrayList<> ();
+    protected List<FieldDeclaration> fieldDeclarations = new ArrayList<> ();
+    protected List<MethodDeclaration> methodDeclarations = new ArrayList<> ();
 
     // inner classes, enums, interfaces and annotations
     protected List<TypeDeclaration> classDeclarations = new ArrayList<> ();
@@ -35,7 +36,7 @@ public class ClassBody extends SyntaxTreeNode {
 	td.addMapping (Block.class, instanceInitializers);
 	td.addMapping (StaticInitializer.class, staticInitializers);
 	td.addMapping (ConstructorDeclaration.class, constructorDeclarations);
-	td.<ParseTreeNode>addMapping (FieldDeclaration.class, t -> handleFields (ctx.getTokens (), t, instanceInitializers));
+	td.<FieldDeclaration>addMapping (FieldDeclaration.class, t -> handleFields (ctx.getTokens (), t, instanceInitializers));
 	td.addMapping (MethodDeclaration.class, methodDeclarations);
 	addAdditionalMappings (td);
 	declarations.forEach (td::distribute);
@@ -47,7 +48,7 @@ public class ClassBody extends SyntaxTreeNode {
 	// empty
     }
 
-    private void handleFields (JavaTokens javaTokens, ParseTreeNode t, List<ParseTreeNode> initList) {
+    private void handleFields (JavaTokens javaTokens, FieldDeclaration t, List<SyntaxTreeNode> initList) {
 	FieldDeclaration fd = (FieldDeclaration)t;
 	List<VariableDeclarator> ls = fd.getVariableDeclarators ();
 	for (VariableDeclarator vd : ls) {

@@ -59,11 +59,11 @@ public class NormalInterfaceDeclaration extends TypeDeclaration {
 	return id;
     }
 
-    public List<ParseTreeNode> getConstants () {
+    public List<ConstantDeclaration> getConstants () {
 	return body.getConstants ();
     }
 
-    public List<ParseTreeNode> getMethods () {
+    public List<InterfaceMethodDeclaration> getMethods () {
 	return body.getMethods ();
     }
 

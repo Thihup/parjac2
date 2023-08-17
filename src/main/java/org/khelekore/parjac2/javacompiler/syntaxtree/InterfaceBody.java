@@ -12,11 +12,11 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.khelekore.parjac2.util.TypeDistributor;
 
 public class InterfaceBody extends SyntaxTreeNode {
-    private List<ParseTreeNode> declarations; // all of them
+    private List<ParseTreeNode> declarations; // all of the things found in the interface
 
     // Change this, currently FieldDeclaration have VariableDeclaratorList in them, we want a list of fields.
-    private List<ParseTreeNode> constantDeclarations = new ArrayList<> ();
-    private List<ParseTreeNode> interfaceMethodDeclarations = new ArrayList<> ();
+    private List<ConstantDeclaration> constantDeclarations = new ArrayList<> ();
+    private List<InterfaceMethodDeclaration> interfaceMethodDeclarations = new ArrayList<> ();
 
     // inner classes, enums, interfaces and annotations
     private List<TypeDeclaration> classDeclarations = new ArrayList<> ();
@@ -62,11 +62,11 @@ public class InterfaceBody extends SyntaxTreeNode {
 	return classDeclarations;
     }
 
-    public List<ParseTreeNode> getConstants () {
+    public List<ConstantDeclaration> getConstants () {
 	return constantDeclarations;
     }
 
-    public List<ParseTreeNode> getMethods () {
+    public List<InterfaceMethodDeclaration> getMethods () {
 	return interfaceMethodDeclarations;
     }
 }
