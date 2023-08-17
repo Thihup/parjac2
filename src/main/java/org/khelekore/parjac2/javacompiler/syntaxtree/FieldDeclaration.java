@@ -8,11 +8,10 @@ import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
-public class FieldDeclaration extends SyntaxTreeNode {
+public class FieldDeclaration extends FlaggedBase {
     private List<ParseTreeNode> modifiers;
     private ParseTreeNode type;
     private VariableDeclaratorList list;
-    private int flags;
 
     private static FlagCalculator flagCalculator = FlagCalculator.SIMPLE_ACCESS;
 
@@ -41,9 +40,5 @@ public class FieldDeclaration extends SyntaxTreeNode {
 
     public List<VariableDeclarator> getVariableDeclarators () {
 	return list.getDeclarators ();
-    }
-
-    public int getFlags () {
-	return flags;
     }
 }

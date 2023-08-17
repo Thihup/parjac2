@@ -9,12 +9,10 @@ import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.objectweb.asm.Opcodes;
 
-public class ConstantDeclaration extends SyntaxTreeNode implements Flagged {
+public class ConstantDeclaration extends FlaggedBase {
     private final List<ParseTreeNode> modifiers;
     private final ParseTreeNode type;
     private final VariableDeclaratorList variables;
-
-    private int flags;
 
     private static FlagCalculator flagCalculator =
 	new FlagCalculator (Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL + Opcodes.ACC_STATIC);
@@ -44,13 +42,5 @@ public class ConstantDeclaration extends SyntaxTreeNode implements Flagged {
 	modifiers.forEach (v::accept);
 	v.accept (type);
 	v.accept (variables);
-    }
-
-    @Override public int getFlags () {
-	return flags;
-    }
-
-    @Override public void setFlags (int flags) {
-	this.flags = flags;
     }
 }

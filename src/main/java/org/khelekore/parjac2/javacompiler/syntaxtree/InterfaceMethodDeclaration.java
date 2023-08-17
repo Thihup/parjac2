@@ -9,11 +9,10 @@ import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
-public class InterfaceMethodDeclaration extends SyntaxTreeNode implements Flagged {
+public class InterfaceMethodDeclaration extends FlaggedBase {
     private final List<ParseTreeNode> modifiers;
     private final MethodHeader header;
     private final ParseTreeNode body; // either ';' or a Block.
-    private int flags;
 
     private static FlagCalculator flagCalculator = new FlagCalculator (0);
     static {
@@ -60,13 +59,5 @@ public class InterfaceMethodDeclaration extends SyntaxTreeNode implements Flagge
 	modifiers.forEach (v::accept);
 	v.accept (header);
 	v.accept (body);
-    }
-
-    @Override public int getFlags () {
-	return flags;
-    }
-
-    @Override public void setFlags (int flags) {
-	this.flags = flags;
     }
 }

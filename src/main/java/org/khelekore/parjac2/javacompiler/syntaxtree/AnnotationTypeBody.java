@@ -11,8 +11,8 @@ import org.khelekore.parjac2.util.TypeDistributor;
 public class AnnotationTypeBody extends SyntaxTreeNode {
     private final List<ParseTreeNode> declarations;
 
-    private List<ParseTreeNode> annotationTypeElementDeclarations = new ArrayList<> ();
-    private List<ParseTreeNode> constantDeclarations = new ArrayList<> ();
+    private List<AnnotationTypeElementDeclaration> annotationTypeElementDeclarations = new ArrayList<> ();
+    private List<ConstantDeclaration> constantDeclarations = new ArrayList<> ();
     private List<TypeDeclaration> classDeclarations = new ArrayList<> ();
 
     public AnnotationTypeBody (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {

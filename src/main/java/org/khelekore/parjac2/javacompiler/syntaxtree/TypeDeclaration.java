@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.khelekore.parjac2.parser.ParsePosition;
 
-public abstract class TypeDeclaration extends SyntaxTreeNode {
+public abstract class TypeDeclaration extends FlaggedBase {
     protected int flags;
 
     public TypeDeclaration (ParsePosition pos) {
@@ -16,14 +16,4 @@ public abstract class TypeDeclaration extends SyntaxTreeNode {
 
     /** Get all the inner classes, enums, interfaces and annotations */
     public abstract List<TypeDeclaration> getInnerClasses ();
-
-    /** Get the flags for this type */
-    public int getFlags () {
-	return flags;
-    }
-
-    /** Set the flags for this type */
-    public void setFlags (int flags) {
-	this.flags = flags;
-    }
 }
