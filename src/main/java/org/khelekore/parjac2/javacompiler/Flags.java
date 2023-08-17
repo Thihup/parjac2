@@ -16,6 +16,14 @@ public class Flags {
 
     // This one does not exist in Opcodes.
     public static final int ACC_DEFAULT = Opcodes.ACC_DEPRECATED << 1;
+
+    public static boolean isPrivate (int flag) {
+	return (flag & ACC_PRIVATE) == ACC_PRIVATE;
+    }
+
+    public static boolean isProtected (int flag) {
+	return (flag & ACC_PROTECTED) == ACC_PROTECTED;
+    }
 }
 
 /*

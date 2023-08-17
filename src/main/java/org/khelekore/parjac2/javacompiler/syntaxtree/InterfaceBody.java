@@ -61,4 +61,12 @@ public class InterfaceBody extends SyntaxTreeNode {
     public List<TypeDeclaration> getInnerClasses () {
 	return classDeclarations;
     }
+
+    public List<ParseTreeNode> getConstants () {
+	return constantDeclarations;
+    }
+
+    public List<ParseTreeNode> getMethods () {
+	return interfaceMethodDeclarations;
+    }
 }

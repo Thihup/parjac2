@@ -13,7 +13,9 @@ import java.util.stream.Collectors;
 import org.khelekore.parjac2.CompilationException;
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.NoSourceDiagnostics;
+import org.khelekore.parjac2.javacompiler.syntaxtree.Flagged;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ModuleDeclaration;
+import org.khelekore.parjac2.javacompiler.syntaxtree.NormalInterfaceDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
 import org.khelekore.parjac2.parser.Grammar;
 import org.khelekore.parjac2.parser.Parser;
@@ -140,7 +142,32 @@ public class Compiler {
     }
 
     private void checkSemantics (List<ParsedEntry> trees) {
-	// TODO: implement
+	runTimed (() -> flagInterfaceMembersAsPublic (), "Flag interface members public");
+	/*
+	 * 1: Set classes for fields, method parameters and method returns, setup scopes
+	 *    Scope hangs on class, method, for-clause and try (with resource) clause
+	 * 2: Set classes for local variables, field access and expressions
+	 */
+	//runTimed (() -> ClassSetter.fillInClasses (cip, trees, diagnostics), "Setting classes");
+    }
+
+    private void flagInterfaceMembersAsPublic () {
+	cip.getCompiledClasses ().parallelStream ().forEach (t -> flagInterfaceMembersAsPublic (t));
+    }
+
+    private void flagInterfaceMembersAsPublic (TypeDeclaration type) {
+	if (type instanceof NormalInterfaceDeclaration iface) {
+	    for (ParseTreeNode n : iface.getConstants ())
+		setFlag ((Flagged)n);
+	    for (ParseTreeNode n : iface.getMethods ())
+		setFlag ((Flagged)n);
+	}
+    }
+
+    private void setFlag (Flagged ft) {
+	int flags = ft.getFlags ();
+	if (!Flags.isPrivate (flags) && !Flags.isProtected (flags))
+	    ft.makePublic ();
     }
 
     private void optimize (List<ParsedEntry> trees) {
