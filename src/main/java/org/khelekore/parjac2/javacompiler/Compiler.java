@@ -13,16 +13,13 @@ import java.util.stream.Collectors;
 import org.khelekore.parjac2.CompilationException;
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.NoSourceDiagnostics;
-import org.khelekore.parjac2.SourceDiagnostics;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ModuleDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
 import org.khelekore.parjac2.parser.Grammar;
 import org.khelekore.parjac2.parser.Parser;
 import org.khelekore.parjac2.parser.PredictCache;
 import org.khelekore.parjac2.parser.Rule;
-import org.khelekore.parjac2.parser.Token;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
-import org.khelekore.parjac2.parsetree.WildcardNode;
 
 /** The actual compiler
  */
@@ -118,10 +115,6 @@ public class Compiler {
 	    Parser parser = new Parser (grammar, file, predictCache, lexer, collector);
 	    ParseTreeNode tree = parser.parse (goalRule);
 	    if (collector.hasError ()) {
-		if (tree != null) {
-		    // Translate to more readable errors
-		    addWildcardErrors (file, tree);
-		}
 		// we could not build a tree, so return the raw parse problems as is
 		diagnostics.addAll (collector);
 		return null;
@@ -140,17 +133,6 @@ public class Compiler {
 	    diagnostics.report (new NoSourceDiagnostics ("Failed to read: %s: %s", file, e));
 	    return null;
 	}
-    }
-
-    private void addWildcardErrors (Path path, ParseTreeNode node) {
-	if (node instanceof WildcardNode) {
-	    WildcardNode w = (WildcardNode)node;
-	    Token t = w.getToken ();
-	    diagnostics.report (SourceDiagnostics.error (path, node.getPosition (),
-							 "Replaced missing wildcard with:  %s", t.getName ()));
-	}
-	// TODO: rewrite to avoid recursion
-	node.visitChildNodes (n -> addWildcardErrors (path, n));
     }
 
     private void addTypes (List<ParsedEntry> trees) {
