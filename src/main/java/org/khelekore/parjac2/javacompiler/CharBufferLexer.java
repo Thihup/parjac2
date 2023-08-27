@@ -903,7 +903,7 @@ public class CharBufferLexer implements Lexer {
 	}
 	t = javaTokens.getContextualKeyWordFromIdentifier (identifier);
 	if (t != null && wantedTokens.get (t.getId ())) {
-	    currentIdentifier = t.getName (); 
+	    currentIdentifier = t.getName ();
 	    return t;
 	}
 	currentIdentifier = identifier;

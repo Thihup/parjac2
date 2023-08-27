@@ -196,7 +196,6 @@ public class JavaTokens {
 	// 3.8. Identifiers
 	IDENTIFIER = grammar.getToken ("Identifier");
 	TYPE_IDENTIFIER = grammar.getToken ("TypeIdentifier");
-	VAR = grammar.getToken ("var");
 
 	// 3.9. Reserved Keywords
 	ABSTRACT = grammar.getToken ("abstract");
@@ -265,6 +264,7 @@ public class JavaTokens {
 	TO = grammar.getToken ("to");
 	TRANSITIVE = grammar.getToken ("transitive");
 	USES = grammar.getToken ("uses");
+	VAR = grammar.getToken ("var");
 	WITH = grammar.getToken ("with");
 	YIELD = grammar.getToken ("yield");
 
@@ -343,7 +343,7 @@ public class JavaTokens {
 	       SUPER, SWITCH, SYNCHRONIZED, THIS, THROW, THROWS, TRANSIENT, TRY, UNDERSCORE, VOID,
 	       VOLATILE, WHILE);
 	store (contextualKeywords, EXPORTS, MODULE, NON_SEALED, OPEN, OPENS, PERMITS, PROVIDES,
-	       RECORD, REQUIRES, SEALED, TO, TRANSITIVE, USES, WITH, YIELD);
+	       RECORD, REQUIRES, SEALED, TO, TRANSITIVE, USES, VAR, WITH, YIELD);
 	store (literals, INT_LITERAL, LONG_LITERAL, FLOAT_LITERAL, DOUBLE_LITERAL,
 	       CHARACTER_LITERAL, STRING_LITERAL, TEXT_BLOCK, NULL, TRUE, FALSE);
 	store (separators, LEFT_PARENTHESIS, RIGHT_PARENTHESIS, LEFT_CURLY, RIGHT_CURLY,

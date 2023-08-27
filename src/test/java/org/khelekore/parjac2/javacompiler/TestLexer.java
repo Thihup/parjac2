@@ -452,6 +452,38 @@ public class TestLexer {
 	assert value.equals ("var");
     }
 
+    @Test
+    public void testContextualLKeywords () {
+	testContextual ("exports", javaTokens.EXPORTS);
+	testContextual ("module", javaTokens.MODULE);
+	// non-sealed is tested in testNonSealed since it is special
+	testContextual ("open", javaTokens.OPEN);
+	testContextual ("opens", javaTokens.OPENS);
+	testContextual ("permits", javaTokens.PERMITS);
+	testContextual ("provides", javaTokens.PROVIDES);
+	testContextual ("record", javaTokens.RECORD);
+	testContextual ("requires", javaTokens.REQUIRES);
+	testContextual ("sealed", javaTokens.SEALED);
+	testContextual ("to", javaTokens.TO);
+	testContextual ("transitive", javaTokens.TRANSITIVE);
+	testContextual ("uses", javaTokens.USES);
+	testContextual ("var", javaTokens.VAR);
+	testContextual ("with", javaTokens.WITH);
+	testContextual ("yield", javaTokens.YIELD);
+    }
+
+    private void testContextual (String s, Token token) {
+	testContextual (s, token, true);
+	testContextual (s, javaTokens.IDENTIFIER, false);
+    }
+
+    private void testContextual (String s, Token token, boolean wanted) {
+	BitSet wantedTokens = new BitSet ();
+	if (wanted)
+	    wantedTokens.set (token.getId ());
+	testInput (s, wantedTokens, token);
+    }
+
     private void testInput (String text, Token... expected) {
 	testInput (text, new BitSet (), expected);
     }
