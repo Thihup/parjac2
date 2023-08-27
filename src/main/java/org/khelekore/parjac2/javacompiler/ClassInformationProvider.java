@@ -256,6 +256,12 @@ public class ClassInformationProvider {
 		    AnonymousClass ac = (AnonymousClass)i;
 		    ac.setAnonymousClassname (Integer.toString (++foundClassId));
 		}
+		// TODO: we need to implement naming here
+		/*
+		if (isLocalClass (i)) {
+		    ac.setLocalName ("1" + i.getName ());
+		}
+		*/
 	    }
 	    td.getInnerClasses ().forEach (i -> addType (packageName, fullName, className, i, origin));
 	}

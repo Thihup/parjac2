@@ -26,7 +26,7 @@ public class ClassBody extends SyntaxTreeNode {
     protected List<FieldDeclaration> fieldDeclarations = new ArrayList<> ();
     protected List<MethodDeclaration> methodDeclarations = new ArrayList<> ();
 
-    // inner classes, enums, interfaces and annotations
+    // inner classes, enums, records, interfaces and annotations
     protected List<TypeDeclaration> classDeclarations = new ArrayList<> ();
 
     public ClassBody (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
@@ -40,7 +40,6 @@ public class ClassBody extends SyntaxTreeNode {
 	td.addMapping (MethodDeclaration.class, methodDeclarations);
 	addAdditionalMappings (td);
 	declarations.forEach (td::distribute);
-
 	declarations.forEach (this::findInnerClasses);
     }
 
@@ -71,6 +70,8 @@ public class ClassBody extends SyntaxTreeNode {
 	    if (isAnonymousClass (f)) {
 		AnonymousClass ac = (AnonymousClass)f;
 		classDeclarations.add (ac);
+	    } else if (f instanceof TypeDeclaration td) {
+		classDeclarations.add (td);
 	    } else {
 		int end = dq.size ();
 		// since we we want to add all the child nodes first in deque we first add them last

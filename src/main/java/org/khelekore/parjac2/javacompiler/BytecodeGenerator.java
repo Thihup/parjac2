@@ -15,6 +15,7 @@ public class BytecodeGenerator {
     private enum ImplicitClassFlags {
 	CLASS_FLAGS (Opcodes.ACC_SUPER),
 	ENUM_FLAGS (Opcodes.ACC_FINAL | Opcodes.ACC_ENUM),
+	RECORD_FLAGS (Opcodes.ACC_FINAL | Opcodes.ACC_RECORD),
 	INTERFACE_FLAGS (Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT),
 	ANNOTATION_FLAGS (Opcodes.ACC_ANNOTATION | Opcodes.ACC_INTERFACE),
 	ENUM_CONSTANT_FLAGS (Opcodes.ACC_FINAL),
@@ -40,6 +41,8 @@ public class BytecodeGenerator {
 	    return generateClass ((NormalClassDeclaration)td);
 	} else if (c == EnumDeclaration.class) {
 	    return generateClass ((EnumDeclaration)td);
+	} else if (c == RecordDeclaration.class) {
+	    return generateClass ((RecordDeclaration)td);
 	} else if (c == NormalInterfaceDeclaration.class) {
 	    return generateInterface ((NormalInterfaceDeclaration)td);
 	} else if (c == AnnotationTypeDeclaration.class) {
@@ -65,6 +68,11 @@ public class BytecodeGenerator {
     private byte[] generateClass (EnumDeclaration e) {
 	String signature = "Ljava/lang/Enum<L" + name + ";>;";
 	return generateClass (e, ImplicitClassFlags.ENUM_FLAGS, signature, "java/lang/Enum", null);
+    }
+
+    private byte[] generateClass (RecordDeclaration e) {
+	String signature = "Ljava/lang/Record";
+	return generateClass (e, ImplicitClassFlags.RECORD_FLAGS, signature, "java/lang/Record", null);
     }
 
     private byte[] generateInterface (NormalInterfaceDeclaration i) {

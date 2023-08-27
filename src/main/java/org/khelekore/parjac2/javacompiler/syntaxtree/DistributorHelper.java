@@ -10,6 +10,7 @@ public class DistributorHelper {
 	TypeDistributor td = new TypeDistributor ();
 	td.addMapping (NormalClassDeclaration.class, classDeclarations);
 	td.addMapping (EnumDeclaration.class, classDeclarations);
+	td.addMapping (RecordDeclaration.class, classDeclarations);
 	td.addMapping (NormalInterfaceDeclaration.class, classDeclarations);
 	td.addMapping (AnnotationTypeDeclaration.class, classDeclarations);
 	td.skip (TokenNode.class);
