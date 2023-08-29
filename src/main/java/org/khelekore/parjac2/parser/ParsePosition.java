@@ -27,12 +27,12 @@ public class ParsePosition {
 	return "(" + lineNumber + "," + tokenColumn + ")";
     }
 
-    /** Get the start position of the current token */
+    /** Get the start position, as in character position in totalinput, of the current token */
     public int getTokenStartPos () {
 	return tokenStartPos;
     }
 
-    /** Get the end position of the current token */
+    /** Get the end position, as in character position in total input, of the current token */
     public int getTokenEndPos () {
 	return tokenEndPos;
     }
