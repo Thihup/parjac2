@@ -68,6 +68,10 @@ public class EnumConstant extends AnonymousClass {
 	return body == null ? List.of () : body.getInnerClasses ();
     }
 
+    @Override public boolean isLocalClass (TypeDeclaration td) {
+	return body == null ? false : body.isLocalClass (td);
+    }
+
     @Override public int getFlags () {
 	return Flags.ACC_FINAL;
     }

@@ -1,10 +1,10 @@
 package org.khelekore.parjac2.javacompiler.syntaxtree;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.khelekore.parjac2.javacompiler.Context;
 import org.khelekore.parjac2.javacompiler.Identifier;
@@ -28,6 +28,7 @@ public class ClassBody extends SyntaxTreeNode {
 
     // inner classes, enums, records, interfaces and annotations
     protected List<TypeDeclaration> classDeclarations = new ArrayList<> ();
+    protected Set<TypeDeclaration> localClasses = new HashSet<> ();
 
     public ClassBody (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
@@ -40,7 +41,8 @@ public class ClassBody extends SyntaxTreeNode {
 	td.addMapping (MethodDeclaration.class, methodDeclarations);
 	addAdditionalMappings (td);
 	declarations.forEach (td::distribute);
-	declarations.forEach (this::findInnerClasses);
+	BodyHelper bh = new BodyHelper (classDeclarations, localClasses);
+	bh.findInnerClasses (this, declarations);
     }
 
     protected void addAdditionalMappings (TypeDistributor td) {
@@ -61,40 +63,6 @@ public class ClassBody extends SyntaxTreeNode {
 	}
     }
 
-    private void findInnerClasses (ParseTreeNode n) {
-	// We do a depth first search for classes.
-	Deque<ParseTreeNode> dq = new ArrayDeque<> ();
-	dq.addFirst (n);
-	while (!dq.isEmpty ()) {
-	    ParseTreeNode f = dq.removeFirst ();
-	    if (isAnonymousClass (f)) {
-		AnonymousClass ac = (AnonymousClass)f;
-		classDeclarations.add (ac);
-	    } else if (f instanceof TypeDeclaration td) {
-		classDeclarations.add (td);
-	    } else {
-		int end = dq.size ();
-		// since we we want to add all the child nodes first in deque we first add them last
-		// and them move them first so that things end up in wanted order
-		f.visitChildNodes (cn -> dq.addLast (cn));
-		int diff = dq.size () - end; // we added this many child nodes
-		for (int i = 0; i < diff; i++)
-		    dq.addFirst (dq.removeLast ());
-	    }
-	}
-    }
-
-    private boolean isAnonymousClass (ParseTreeNode f) {
-	if (f instanceof UnqualifiedClassInstanceCreationExpression) {
-	    UnqualifiedClassInstanceCreationExpression u = (UnqualifiedClassInstanceCreationExpression)f;
-	    return u.hasBody ();
-	} else if (f instanceof EnumConstant) {
-	    EnumConstant e = (EnumConstant)f;
-	    return e.hasBody ();
-	}
-	return false;
-    }
-
     protected boolean hasDeclarations (Rule rule) {
 	return rule.size () > 2;
     }
@@ -113,5 +81,9 @@ public class ClassBody extends SyntaxTreeNode {
 
     public List<TypeDeclaration> getInnerClasses () {
 	return classDeclarations;
+    }
+
+    public boolean isLocalClass (TypeDeclaration td) {
+	return localClasses.contains (td);
     }
 }

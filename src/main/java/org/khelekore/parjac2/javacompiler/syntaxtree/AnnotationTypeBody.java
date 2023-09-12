@@ -44,4 +44,8 @@ public class AnnotationTypeBody extends SyntaxTreeNode {
     public List<TypeDeclaration> getInnerClasses () {
 	return classDeclarations;
     }
+
+    public boolean isLocalClass (TypeDeclaration td) {
+	return false;
+    }
 }

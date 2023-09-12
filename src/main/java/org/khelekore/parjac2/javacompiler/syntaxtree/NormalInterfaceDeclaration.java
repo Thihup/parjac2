@@ -71,6 +71,10 @@ public class NormalInterfaceDeclaration extends TypeDeclaration {
 	return body.getInnerClasses ();
     }
 
+    @Override public boolean isLocalClass (TypeDeclaration td) {
+	return body.isLocalClass (td);
+    }
+
     @Override public void visitChildNodes (NodeVisitor v) {
 	modifiers.forEach (v::accept);
 	if (types != null)

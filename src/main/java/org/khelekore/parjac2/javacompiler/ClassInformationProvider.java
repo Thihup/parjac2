@@ -251,19 +251,22 @@ public class ClassInformationProvider {
 	    typeToFullName.put (td, className);
 
 	    int foundClassId = 0;
-	    for (TypeDeclaration i : td.getInnerClasses ()) {
-		if (i instanceof AnonymousClass) {
-		    AnonymousClass ac = (AnonymousClass)i;
+	    Map<String, Integer> localNameCounter = new HashMap<> ();
+	    for (TypeDeclaration inner : td.getInnerClasses ()) {
+		if (inner instanceof AnonymousClass) {
+		    AnonymousClass ac = (AnonymousClass)inner;
 		    ac.setAnonymousClassname (Integer.toString (++foundClassId));
+		} else if (td.isLocalClass (inner)) {
+		    int counter = getLocalNameCounter (localNameCounter, inner.getName ());
+		    String localName = counter + inner.getName ();
+		    inner.setLocalName (localName);
 		}
-		// TODO: we need to implement naming here
-		/*
-		if (isLocalClass (i)) {
-		    ac.setLocalName ("1" + i.getName ());
-		}
-		*/
 	    }
 	    td.getInnerClasses ().forEach (i -> addType (packageName, fullName, className, i, origin));
+	}
+
+	private int getLocalNameCounter (Map<String, Integer> localNameCounter, String name) {
+	    return localNameCounter.compute (name, (k, v) -> (v ==  null) ? 1 : v + 1);
 	}
 
 	public int getCompiledClassCount () {

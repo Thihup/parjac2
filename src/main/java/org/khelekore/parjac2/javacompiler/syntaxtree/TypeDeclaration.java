@@ -6,6 +6,7 @@ import org.khelekore.parjac2.parser.ParsePosition;
 
 public abstract class TypeDeclaration extends FlaggedBase {
     protected int flags;
+    protected String localName;
 
     public TypeDeclaration (ParsePosition pos) {
 	super (pos);
@@ -16,4 +17,14 @@ public abstract class TypeDeclaration extends FlaggedBase {
 
     /** Get all the inner classes, enums, interfaces and annotations */
     public abstract List<TypeDeclaration> getInnerClasses ();
+
+    public abstract boolean isLocalClass (TypeDeclaration td);
+
+    public void setLocalName (String localName) {
+	this.localName = localName;
+    }
+
+    public String getLocalName () {
+	return localName;
+    }
 }

@@ -2,7 +2,9 @@ package org.khelekore.parjac2.javacompiler.syntaxtree;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.khelekore.parjac2.javacompiler.Context;
 import org.khelekore.parjac2.javacompiler.Flags;
@@ -20,6 +22,7 @@ public class InterfaceBody extends SyntaxTreeNode {
 
     // inner classes, enums, interfaces and annotations
     private List<TypeDeclaration> classDeclarations = new ArrayList<> ();
+    private Set<TypeDeclaration> localClasses = new HashSet<> ();
 
     public InterfaceBody (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
@@ -33,6 +36,9 @@ public class InterfaceBody extends SyntaxTreeNode {
 	td.addMapping (ConstantDeclaration.class, constantDeclarations);
 	td.addMapping (InterfaceMethodDeclaration.class, interfaceMethodDeclarations);
 	declarations.forEach (td::distribute);
+
+	BodyHelper bh = new BodyHelper (classDeclarations, localClasses);
+	bh.findInnerClasses (this, declarations);
 
 	for (TypeDeclaration i : classDeclarations) {
 	    int flags = i.getFlags ();
@@ -60,6 +66,10 @@ public class InterfaceBody extends SyntaxTreeNode {
 
     public List<TypeDeclaration> getInnerClasses () {
 	return classDeclarations;
+    }
+
+    public boolean isLocalClass (TypeDeclaration td) {
+	return localClasses.contains (td);
     }
 
     public List<ConstantDeclaration> getConstants () {

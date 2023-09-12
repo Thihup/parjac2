@@ -72,4 +72,8 @@ public class NormalClassDeclaration extends TypeDeclaration {
     @Override public List<TypeDeclaration> getInnerClasses () {
 	return body.getInnerClasses ();
     }
+
+    @Override public boolean isLocalClass (TypeDeclaration td) {
+	return body.isLocalClass (td);
+    }
 }

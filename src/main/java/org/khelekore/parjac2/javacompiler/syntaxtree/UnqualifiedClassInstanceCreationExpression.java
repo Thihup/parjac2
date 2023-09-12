@@ -56,6 +56,10 @@ public class UnqualifiedClassInstanceCreationExpression extends AnonymousClass {
 	return body == null ? List.of () : body.getInnerClasses ();
     }
 
+    public boolean isLocalClass (TypeDeclaration td) {
+	return body == null ? false : body.isLocalClass (td);
+    }
+
     @Override public int getFlags () {
 	// TODO: fill in flags
 	return 0;

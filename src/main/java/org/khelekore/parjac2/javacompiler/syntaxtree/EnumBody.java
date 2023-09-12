@@ -29,8 +29,9 @@ public class EnumBody extends SyntaxTreeNode {
 	    declarations = null;
 	}
 	innerClasses = new ArrayList<> ();
-	if (constants != null)
+	if (constants != null) {
 	    constants.getConstants ().stream ().filter (EnumConstant::hasBody).forEach (innerClasses::add);
+	}
 	if (declarations != null)
 	    innerClasses.addAll (declarations.getInnerClasses ());
     }
@@ -55,6 +56,10 @@ public class EnumBody extends SyntaxTreeNode {
 
     public List<TypeDeclaration> getInnerClasses () {
 	return innerClasses;
+    }
+
+    public boolean isLocalClass (TypeDeclaration td) {
+	return declarations.isLocalClass (td);
     }
 
     public void setParents (EnumDeclaration ed) {
