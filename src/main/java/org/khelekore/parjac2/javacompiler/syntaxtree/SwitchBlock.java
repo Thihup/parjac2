@@ -44,8 +44,7 @@ public abstract class SwitchBlock extends SyntaxTreeNode {
 		    trailingLabels.addAll (z.get ());
 		}
 	    }
-	    if (children.get (i) instanceof Multiple) {
-		Multiple z = (Multiple)children.get (i);
+	    if (children.get (i) instanceof Multiple z) {
 		trailingLabels.addAll (z.get ());
 	    }
 	}

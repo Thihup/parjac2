@@ -228,14 +228,12 @@ public class ClassInformationProvider {
 
 	public void addTypes (ParseTreeNode n, Path origin) {
 	    // We get OrdinaryCompilationUnit or ModularCompilationUnit
-	    if (n instanceof OrdinaryCompilationUnit) {
-		OrdinaryCompilationUnit ocu = (OrdinaryCompilationUnit)n;
+	    if (n instanceof OrdinaryCompilationUnit ocu) {
 		String packageName = ocu.getPackageName ();
 		for (TypeDeclaration td : ocu.getTypes ()) {
 		    addType (packageName, packageName, "", td, origin);
 		}
-	    } else if (n instanceof ModularCompilationUnit) {
-		ModularCompilationUnit mcu = (ModularCompilationUnit)n;
+	    } else if (n instanceof ModularCompilationUnit mcu) {
 		// TODO: not sure if dotted name is correct here
 		foundModules.put (mcu.getModule ().getDottedName (), mcu.getModule ());
 	    }
@@ -253,8 +251,7 @@ public class ClassInformationProvider {
 	    int foundClassId = 0;
 	    Map<String, Integer> localNameCounter = new HashMap<> ();
 	    for (TypeDeclaration inner : td.getInnerClasses ()) {
-		if (inner instanceof AnonymousClass) {
-		    AnonymousClass ac = (AnonymousClass)inner;
+		if (inner instanceof AnonymousClass ac) {
 		    ac.setAnonymousClassname (Integer.toString (++foundClassId));
 		} else if (td.isLocalClass (inner)) {
 		    int counter = getLocalNameCounter (localNameCounter, inner.getName ());

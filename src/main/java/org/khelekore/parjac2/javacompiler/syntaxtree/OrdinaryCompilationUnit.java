@@ -32,8 +32,8 @@ public class OrdinaryCompilationUnit extends SyntaxTreeNode {
 	    Multiple m = (Multiple)children.get (i++);
 	    types = new ArrayList<> ();
 	    for (ParseTreeNode c : m.getChildren ()) {
-		if (c instanceof TypeDeclaration)
-		    types.add ((TypeDeclaration)c);
+		if (c instanceof TypeDeclaration tc)
+		    types.add (tc);
 		else
 		    ctx.warning (c.getPosition (), "Empty type / Extra ';'");
 	    }
@@ -43,15 +43,14 @@ public class OrdinaryCompilationUnit extends SyntaxTreeNode {
     }
 
     private boolean isZomImports (Grammar grammar, ParseTreeNode n) {
-	if (n instanceof Multiple) {
-	    Multiple z = (Multiple)n;
+	if (n instanceof Multiple z) {
 	    if (z.getInternalGroupId () == grammar.getRuleGroupId ("ImportDeclaration"))
 		return true;
 	}
 	return false;
     }
 
-    @Override public Object getValue() {
+    @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	if (packageDeclarataion != null)
 	    sb.append (packageDeclarataion).append ("\n");
