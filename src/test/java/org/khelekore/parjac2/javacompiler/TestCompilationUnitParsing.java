@@ -1,20 +1,10 @@
 package org.khelekore.parjac2.javacompiler;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
-import org.khelekore.parjac2.parser.Grammar;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
-public class TestCompilationUnitParsing {
-
-    private Grammar g;
-    private CompilerDiagnosticCollector diagnostics;
-
-    @BeforeClass
-    public void createLRParser () {
-	g = TestParserHelper.getJavaGrammarFromFile ("CompilationUnit", false);
-    }
+public class TestCompilationUnitParsing extends CompilationUnitTest {
 
     @BeforeTest
     public void createDiagnostics () {
@@ -110,13 +100,5 @@ public class TestCompilationUnitParsing {
     @Test
     public void testMissingManyTokens () {
 	testFailedParse ("package", 2);
-    }
-
-    private void testSuccessfulParse (String s) {
-	TestParserHelper.testSuccessfulParse (g, s, diagnostics, null);
-    }
-
-    private void testFailedParse (String s, int expectedErrors) {
-	TestParserHelper.testFailedParse (g, s, diagnostics, expectedErrors);
     }
 }

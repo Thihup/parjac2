@@ -27,6 +27,7 @@ public class JavaTokens {
     // 3.8. Identifiers
     public final Token IDENTIFIER;
     public final Token TYPE_IDENTIFIER;
+    public final Token UNQUALIFIED_METHOD_IDENTIFIER;
 
     // 3.9. Keywords
     public final Token ABSTRACT;
@@ -96,6 +97,7 @@ public class JavaTokens {
     public final Token TRANSITIVE;
     public final Token USES;
     public final Token VAR;
+    public final Token WHEN;
     public final Token WITH;
     public final Token YIELD;
 
@@ -196,6 +198,7 @@ public class JavaTokens {
 	// 3.8. Identifiers
 	IDENTIFIER = grammar.getToken ("Identifier");
 	TYPE_IDENTIFIER = grammar.getToken ("TypeIdentifier");
+	UNQUALIFIED_METHOD_IDENTIFIER = grammar.getToken ("UnqualifiedMethodIdentifier");
 
 	// 3.9. Reserved Keywords
 	ABSTRACT = grammar.getToken ("abstract");
@@ -265,6 +268,7 @@ public class JavaTokens {
 	TRANSITIVE = grammar.getToken ("transitive");
 	USES = grammar.getToken ("uses");
 	VAR = grammar.getToken ("var");
+	WHEN = grammar.getToken ("when");
 	WITH = grammar.getToken ("with");
 	YIELD = grammar.getToken ("yield");
 
@@ -343,7 +347,7 @@ public class JavaTokens {
 	       SUPER, SWITCH, SYNCHRONIZED, THIS, THROW, THROWS, TRANSIENT, TRY, UNDERSCORE, VOID,
 	       VOLATILE, WHILE);
 	store (contextualKeywords, EXPORTS, MODULE, NON_SEALED, OPEN, OPENS, PERMITS, PROVIDES,
-	       RECORD, REQUIRES, SEALED, TO, TRANSITIVE, USES, VAR, WITH, YIELD);
+	       RECORD, REQUIRES, SEALED, TO, TRANSITIVE, USES, VAR, WHEN, WITH, YIELD);
 	store (literals, INT_LITERAL, LONG_LITERAL, FLOAT_LITERAL, DOUBLE_LITERAL,
 	       CHARACTER_LITERAL, STRING_LITERAL, TEXT_BLOCK, NULL, TRUE, FALSE);
 	store (separators, LEFT_PARENTHESIS, RIGHT_PARENTHESIS, LEFT_CURLY, RIGHT_CURLY,

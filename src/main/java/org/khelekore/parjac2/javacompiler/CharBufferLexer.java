@@ -61,6 +61,7 @@ public class CharBufferLexer implements Lexer {
     // java 17+ has "permits", "record", "sealed", "var", "yield"
     // TODO let constructor or grammar know what to set to use
     private final Set<String> nonTypeIdentifiers = Set.of ("permits", "record", "sealed", "var", "yield");
+    private final Set<String> nonUnqualifiedMethodIdentifier = Set.of ("yield");
 
     public CharBufferLexer (Grammar grammar, JavaTokens javaTokens, CharBuffer buf, Path path,
 			    CompilerDiagnosticCollector diagnostics) {
@@ -132,16 +133,21 @@ public class CharBufferLexer implements Lexer {
     @Override public TokenNode toCorrectType (TokenNode n, Token wantedActualToken) {
 	if (wantedActualToken == javaTokens.VAR)
 	    return new TokenNode (wantedActualToken, n.getPosition ());
-	if (wantedActualToken == javaTokens.TYPE_IDENTIFIER && n instanceof Identifier) {
-	    Identifier i = (Identifier)n;
-	    if (allowedTypeIdentifier (i))
+	if (n instanceof Identifier i) {
+	    if (wantedActualToken == javaTokens.TYPE_IDENTIFIER && allowedTypeIdentifier (i))
 		return new TypeIdentifier (wantedActualToken, i.getValue (), n.getPosition ());
+	    if (wantedActualToken == javaTokens.UNQUALIFIED_METHOD_IDENTIFIER && allowedUnqualifieldMethodIdentifier (i))
+		return new UnqualifiedMethodIdentifier (wantedActualToken, i.getValue (), n.getPosition ());
 	}
 	return n;
     }
 
     private boolean allowedTypeIdentifier (Identifier i) {
 	return !nonTypeIdentifiers.contains (i.getId ());
+    }
+
+    private boolean allowedUnqualifieldMethodIdentifier (Identifier i) {
+	return !nonUnqualifiedMethodIdentifier.contains (i.getId ());
     }
 
     @Override public ParsePosition getParsePosition () {

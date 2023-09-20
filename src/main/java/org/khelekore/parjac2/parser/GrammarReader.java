@@ -139,7 +139,7 @@ public class GrammarReader {
 	    for (Object x : ls)
 		split (x, parts);
 	} else {
-	    throw new IllegalStateException ("Unhandled type: " + p);
+	    throw new IllegalStateException ("Unhandled type: " + p + ", parts: " + parts);
 	}
     }
 

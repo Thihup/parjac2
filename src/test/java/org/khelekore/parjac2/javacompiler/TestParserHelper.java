@@ -10,7 +10,6 @@ import java.util.stream.Collectors;
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SyntaxTreeNode;
 import org.khelekore.parjac2.parser.Grammar;
-import org.khelekore.parjac2.parser.GrammarReader;
 import org.khelekore.parjac2.parser.Lexer;
 import org.khelekore.parjac2.parser.Parser;
 import org.khelekore.parjac2.parser.PredictCache;
@@ -24,8 +23,7 @@ public class TestParserHelper {
 
     static {
 	try {
-	    GrammarReader gr = new GrammarReader (baseGrammar, false);
-	    gr.read (TestParserHelper.class.getResource ("/java20/java20.pj"));
+	    JavaGrammarHelper.readRules (baseGrammar, false);
 	} catch (IOException e) {
 	    throw new RuntimeException ("Failed to read grammar", e);
 	}
@@ -49,12 +47,15 @@ public class TestParserHelper {
 	return g;
     }
 
-    public static void testSuccessfulParse (Grammar g, String s, CompilerDiagnosticCollector diagnostics, SyntaxTreeNode tn) {
+    public static ParseTreeNode testSuccessfulParse (Grammar g, String s,
+						     CompilerDiagnosticCollector diagnostics,
+						     SyntaxTreeNode tn) {
 	ParseTreeNode t = syntaxTree (g, s, diagnostics);
 	assert !diagnostics.hasError () : "Got parser errors: " + TestParserHelper.getParseOutput (diagnostics);
 	if (tn != null) {
 	    assert tn.equals (t) : "Expected: " + tn + ", but got: " + t;
 	}
+	return t;
     }
 
     public static void testFailedParse (Grammar g, String s, CompilerDiagnosticCollector diagnostics, int expectedErrors) {
@@ -70,7 +71,7 @@ public class TestParserHelper {
     public static ParseTreeNode syntaxTree (Grammar grammar, String s,
 					    CompilerDiagnosticCollector diagnostics) {
 	ParseTreeNode tree = parse (grammar, s, diagnostics);
-	assert diagnostics.errorCount () == 0 : "Expected no errors";
+	assert diagnostics.errorCount () == 0 : "Expected no errors: " + TestParserHelper.getParseOutput (diagnostics);
 	assert tree != null : "Expected to parse to non null tree";
 	JavaTokens javaTokens = new JavaTokens (grammar);
 	SyntaxTreeBuilder stb = new SyntaxTreeBuilder (diagnostics, javaTokens, grammar);
