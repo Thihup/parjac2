@@ -15,7 +15,6 @@ import java.util.jar.JarFile;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.NoSourceDiagnostics;
-import org.khelekore.parjac2.javacompiler.syntaxtree.AnonymousClass;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ModularCompilationUnit;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ModuleDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.OrdinaryCompilationUnit;
@@ -247,23 +246,7 @@ public class ClassInformationProvider {
 	    typeToOrigin.put (td, origin);
 	    String className = classPrefix.isEmpty () ? td.getName () : (classPrefix + "$" + td.getName ());
 	    typeToFullName.put (td, className);
-
-	    int foundClassId = 0;
-	    Map<String, Integer> localNameCounter = new HashMap<> ();
-	    for (TypeDeclaration inner : td.getInnerClasses ()) {
-		if (inner instanceof AnonymousClass ac) {
-		    ac.setAnonymousClassname (Integer.toString (++foundClassId));
-		} else if (td.isLocalClass (inner)) {
-		    int counter = getLocalNameCounter (localNameCounter, inner.getName ());
-		    String localName = counter + inner.getName ();
-		    inner.setLocalName (localName);
-		}
-	    }
 	    td.getInnerClasses ().forEach (i -> addType (packageName, fullName, className, i, origin));
-	}
-
-	private int getLocalNameCounter (Map<String, Integer> localNameCounter, String name) {
-	    return localNameCounter.compute (name, (k, v) -> (v ==  null) ? 1 : v + 1);
 	}
 
 	public int getCompiledClassCount () {

@@ -2,9 +2,7 @@ package org.khelekore.parjac2.javacompiler.syntaxtree;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.khelekore.parjac2.javacompiler.Context;
 import org.khelekore.parjac2.javacompiler.Identifier;
@@ -28,7 +26,7 @@ public class ClassBody extends SyntaxTreeNode {
 
     // inner classes, enums, records, interfaces and annotations
     protected List<TypeDeclaration> classDeclarations = new ArrayList<> ();
-    protected Set<TypeDeclaration> localClasses = new HashSet<> ();
+    protected List<TypeDeclaration> localClasses = new ArrayList<> ();
 
     public ClassBody (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
