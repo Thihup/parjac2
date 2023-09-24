@@ -80,7 +80,6 @@ public class TestLocalClassnames {
 	assert innerClasses.size () == numLocalClasses : "Expected " + numLocalClasses + ", but got: " + innerClasses.size ();
 	Set<String> names = new HashSet<> ();
 	innerClasses.forEach (i -> names.add (i.getLocalName ()));
-	System.err.println ("Got names: " + names);
 	assert names.size () == numLocalClasses : "Expected " + numLocalClasses + " unique names, got :" + names;
     }
 }
