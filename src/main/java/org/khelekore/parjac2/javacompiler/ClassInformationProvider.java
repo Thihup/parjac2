@@ -240,13 +240,15 @@ public class ClassInformationProvider {
 
 	private void addType (String packageName, String namePrefix, String classPrefix,
 			      TypeDeclaration td, Path origin) {
-	    String fullName = namePrefix.isEmpty () ? td.getName () : (namePrefix + "." + td.getName ());
+	    String tdName = td.isLocalClass () ? td.getLocalName () : td.getName ();
+	    String fullName = namePrefix.isEmpty () ? tdName : (namePrefix + "." + tdName);
 	    foundClasses.put (fullName, td);
 	    typeToPackagename.put (td, packageName);
 	    typeToOrigin.put (td, origin);
-	    String className = classPrefix.isEmpty () ? td.getName () : (classPrefix + "$" + td.getName ());
+	    String className = classPrefix.isEmpty () ? tdName : (classPrefix + "$" + tdName);
 	    typeToFullName.put (td, className);
-	    td.getInnerClasses ().forEach (i -> addType (packageName, fullName, className, i, origin));
+	    List<TypeDeclaration> inners = td.getInnerClasses ();
+	    inners.forEach (i -> addType (packageName, fullName, className, i, origin));
 	}
 
 	public int getCompiledClassCount () {

@@ -34,7 +34,6 @@ public class InterfaceBody extends SyntaxTreeNode {
 	td.addMapping (ConstantDeclaration.class, constantDeclarations);
 	td.addMapping (InterfaceMethodDeclaration.class, interfaceMethodDeclarations);
 	declarations.forEach (td::distribute);
-
 	BodyHelper bh = new BodyHelper (classDeclarations, localClasses);
 	bh.findInnerClasses (this, declarations);
 

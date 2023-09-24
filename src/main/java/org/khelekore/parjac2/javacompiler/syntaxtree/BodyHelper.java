@@ -65,8 +65,8 @@ public class BodyHelper {
     }
 
     private boolean isLocalClass (ParseTreeNode parent, ParseTreeNode f) {
-	return (f instanceof TypeDeclaration td &&
-		!(parent instanceof ClassBody));
+	return (f instanceof TypeDeclaration &&
+		!(parent instanceof ClassBody || parent instanceof InterfaceBody));
     }
 
     private int getLocalNameCounter (String name) {
