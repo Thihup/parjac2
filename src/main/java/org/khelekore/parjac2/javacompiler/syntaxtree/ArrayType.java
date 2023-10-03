@@ -23,4 +23,9 @@ public class ArrayType extends SyntaxTreeNode {
 	v.accept (type);
 	v.accept (dims);
     }
+
+    // may be primitive type or class type
+    public ParseTreeNode getType () {
+	return type;
+    }
 }

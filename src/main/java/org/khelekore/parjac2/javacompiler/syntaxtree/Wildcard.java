@@ -36,4 +36,8 @@ public class Wildcard extends SyntaxTreeNode {
 	if (bounds != null)
 	    v.accept (bounds);
     }
+
+    public WildcardBounds getBounds () {
+	return bounds;
+    }
 }

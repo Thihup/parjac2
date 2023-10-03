@@ -7,7 +7,7 @@ import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
-public class SingleStaticImportDeclaration extends ImportDeclaration {
+public final class SingleStaticImportDeclaration extends ImportDeclaration {
     private TypeName typename;
     private String id;
 
@@ -23,5 +23,21 @@ public class SingleStaticImportDeclaration extends ImportDeclaration {
 
     @Override public void visitChildNodes (NodeVisitor v) {
 	v.accept (typename);
+    }
+
+    public TypeName getType () {
+	return typename;
+    }
+
+    public String getInnerId () {
+	return id;
+    }
+
+    public String getFullName () {
+	return typename.getDotName () + "." + id;
+    }
+
+    public TypeName getName () {
+	return typename;
     }
 }

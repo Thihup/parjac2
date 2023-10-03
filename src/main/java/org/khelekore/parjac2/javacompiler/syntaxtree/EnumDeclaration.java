@@ -66,4 +66,8 @@ public class EnumDeclaration extends TypeDeclaration {
     @Override public boolean isLocalClass (TypeDeclaration td) {
 	return body.isLocalClass (td);
     }
+
+    public List<ClassType> getSuperInterfaces () {
+	return (supers != null) ? supers.getTypes () : null;
+    }
 }

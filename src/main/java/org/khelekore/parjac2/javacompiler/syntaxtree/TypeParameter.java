@@ -40,4 +40,14 @@ public class TypeParameter extends SyntaxTreeNode {
 	if (bound != null)
 	    v.accept (bound);
     }
+
+    public TypeBound getTypeBound () {
+	return bound;
+    }
+
+    public ExpressionType getExpressionType () {
+	if (bound != null)
+	    return bound.getExpressionType ();
+	return ExpressionType.OBJECT;
+    }
 }

@@ -31,7 +31,7 @@ public class DottedName extends SyntaxTreeNode {
 	this.nameParts = new ArrayList<> (parts);
     }
 
-    @Override public Object getValue() {
+    @Override public Object getValue () {
 	return StringHelper.dotted (nameParts);
     }
 
@@ -48,5 +48,17 @@ public class DottedName extends SyntaxTreeNode {
 	    return false;
 	DottedName dn = (DottedName)o;
 	return Objects.equals (nameParts, dn.nameParts);
+    }
+
+    public List<String> getParts () {
+	return nameParts;
+    }
+
+    public String getLastPart () {
+	return nameParts.get (nameParts.size () - 1);
+    }
+
+    public String getDotName () {
+	return StringHelper.dotted (nameParts);
     }
 }

@@ -46,4 +46,12 @@ public class SimpleClassType extends SyntaxTreeNode {
 	if (typeArguments != null)
 	    v.accept (typeArguments);
     }
+
+    public String getId () {
+	return id;
+    }
+
+    public TypeArguments getTypeArguments () {
+	return typeArguments;
+    }
 }

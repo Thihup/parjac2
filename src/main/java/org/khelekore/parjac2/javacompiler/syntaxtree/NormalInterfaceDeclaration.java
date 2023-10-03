@@ -83,4 +83,8 @@ public class NormalInterfaceDeclaration extends TypeDeclaration {
 	    v.accept (extendsInterfaces);
 	v.accept (body);
     }
+
+    public List<ClassType> getExtendsInterfaces () {
+	return (extendsInterfaces != null) ? extendsInterfaces.getTypes () : null;
+    }
 }

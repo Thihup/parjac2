@@ -24,6 +24,18 @@ public class Flags {
     public static boolean isProtected (int flag) {
 	return (flag & ACC_PROTECTED) == ACC_PROTECTED;
     }
+
+    public static boolean isPublic (int flag) {
+	return (flag & ACC_PUBLIC) == ACC_PUBLIC;
+    }
+
+    public static boolean isStatic (int flag) {
+	return (flag & ACC_STATIC) == ACC_STATIC;
+    }
+
+    public static boolean isFinal (int flag) {
+	return (flag & ACC_FINAL) == ACC_FINAL;
+    }
 }
 
 /*

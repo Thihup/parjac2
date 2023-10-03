@@ -9,6 +9,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class InterfaceTypeList extends SyntaxTreeNode {
     private List<ClassType> types;
+
     public InterfaceTypeList (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	types = new ArrayList<> ();

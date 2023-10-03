@@ -86,4 +86,8 @@ public class RecordDeclaration extends TypeDeclaration {
     @Override public boolean isLocalClass (TypeDeclaration td) {
 	return body.isLocalClass (td);
     }
+
+    public List<ClassType> getSuperInterfaces () {
+	return classImplements.getTypes ();
+    }
 }

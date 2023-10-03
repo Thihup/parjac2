@@ -23,4 +23,8 @@ public class Superinterfaces extends SyntaxTreeNode {
     @Override public void visitChildNodes (NodeVisitor v) {
 	types.forEach (v::accept);
     }
+
+    public List<ClassType> getTypes () {
+	return types;
+    }
 }

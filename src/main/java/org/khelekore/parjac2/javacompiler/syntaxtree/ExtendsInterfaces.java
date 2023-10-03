@@ -23,4 +23,8 @@ public class ExtendsInterfaces extends SyntaxTreeNode {
     @Override public void visitChildNodes (NodeVisitor v) {
 	v.accept (interfaceTypes);
     }
+
+    public List<ClassType> getTypes () {
+	return interfaceTypes.getTypes ();
+    }
 }

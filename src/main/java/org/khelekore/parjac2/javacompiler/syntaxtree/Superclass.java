@@ -20,4 +20,8 @@ public class Superclass extends SyntaxTreeNode {
     @Override public void visitChildNodes (NodeVisitor v) {
 	v.accept (type);
     }
+
+    public ClassType getType () {
+	return type;
+    }
 }

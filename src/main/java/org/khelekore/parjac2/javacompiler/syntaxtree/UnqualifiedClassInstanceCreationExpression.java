@@ -64,4 +64,8 @@ public class UnqualifiedClassInstanceCreationExpression extends AnonymousClass {
 	// TODO: fill in flags
 	return 0;
     }
+
+    public ClassType getSuperType () {
+	return type.getType ();
+    }
 }

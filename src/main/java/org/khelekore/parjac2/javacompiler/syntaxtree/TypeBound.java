@@ -36,4 +36,21 @@ public class TypeBound extends SyntaxTreeNode {
 	v.accept (base);
 	additionalBounds.forEach (v::accept);
     }
+
+    public ClassType getType () {
+	return base;
+    }
+
+    public List<ClassType> getAdditionalBounds () {
+	return additionalBounds;
+    }
+
+    public int size () {
+	return 1 + additionalBounds.size ();
+    }
+
+    public ExpressionType getExpressionType () {
+	// TODO: do we need to care about additionalBounds?
+	return base.getExpressionType ();
+    }
 }

@@ -4,12 +4,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.khelekore.parjac2.javacompiler.Identifier;
+import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
+// 	{Annotation} 'Identifier' {'.' {Annotation} 'Identifier'} [TypeArgumentsOrDiamond]
 public class ClassOrInterfaceTypeToInstantiate extends SyntaxTreeNode {
     private final List<AnnotatedIdentifier> ids;
+    private final ClassType type;
     private final ParseTreeNode types;
 
     public ClassOrInterfaceTypeToInstantiate (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
@@ -37,6 +40,11 @@ public class ClassOrInterfaceTypeToInstantiate extends SyntaxTreeNode {
 	    }
 	}
 	types = (rule.size () > i) ? children.get (i) : null;
+
+	ParsePosition pos = n.getPosition ();
+	List<SimpleClassType> scts = new ArrayList<> ();
+	ids.forEach (ai -> scts.add (new SimpleClassType (pos, ai.getIdentifier (), null)));
+	type = new ClassType (pos, scts);
     }
 
     private List<Annotation> getAnnotations (Multiple z) {
@@ -59,5 +67,9 @@ public class ClassOrInterfaceTypeToInstantiate extends SyntaxTreeNode {
 	ids.forEach (v::accept);
 	if (types != null)
 	    v.accept (types);
+    }
+
+    public ClassType getType () {
+	return type;
     }
 }

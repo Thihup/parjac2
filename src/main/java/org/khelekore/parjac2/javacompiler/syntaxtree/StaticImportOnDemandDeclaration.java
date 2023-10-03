@@ -6,7 +6,7 @@ import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
-public class StaticImportOnDemandDeclaration extends ImportDeclaration {
+public final class StaticImportOnDemandDeclaration extends ImportDeclaration {
     private TypeName typename;
     public StaticImportOnDemandDeclaration (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
@@ -19,5 +19,9 @@ public class StaticImportOnDemandDeclaration extends ImportDeclaration {
 
     @Override public void visitChildNodes (NodeVisitor v) {
 	v.accept (typename);
+    }
+
+    public TypeName getName () {
+	return typename;
     }
 }

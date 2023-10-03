@@ -83,6 +83,10 @@ public class OrdinaryCompilationUnit extends SyntaxTreeNode {
 	return packageDeclarataion.getName ();
     }
 
+    public List<ImportDeclaration> getImports () {
+	return imports;
+    }
+
     public List<TypeDeclaration> getTypes () {
 	return types;
     }

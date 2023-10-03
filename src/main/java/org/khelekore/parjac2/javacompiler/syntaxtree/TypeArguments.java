@@ -22,4 +22,8 @@ public class TypeArguments extends SyntaxTreeNode {
     @Override public void visitChildNodes (NodeVisitor v) {
 	typeArgumentList.forEach (v::accept);
     }
+
+    public List<ParseTreeNode> getTypeArguments () {
+	return typeArgumentList;
+    }
 }

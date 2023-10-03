@@ -6,7 +6,7 @@ import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
-public class TypeImportOnDemandDeclaration extends ImportDeclaration {
+public final class TypeImportOnDemandDeclaration extends ImportDeclaration {
     private final PackageOrTypeName typename;
 
     public TypeImportOnDemandDeclaration (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
@@ -20,5 +20,9 @@ public class TypeImportOnDemandDeclaration extends ImportDeclaration {
 
     @Override public void visitChildNodes (NodeVisitor v) {
 	v.accept (typename);
+    }
+
+    public DottedName getName () {
+	return typename;
     }
 }

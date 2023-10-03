@@ -6,7 +6,7 @@ import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
-public class SingleTypeImportDeclaration extends ImportDeclaration {
+public final class SingleTypeImportDeclaration extends ImportDeclaration {
     private TypeName typename;
     public SingleTypeImportDeclaration (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
@@ -15,6 +15,10 @@ public class SingleTypeImportDeclaration extends ImportDeclaration {
 
     @Override public Object getValue () {
 	return "import " + typename + ";";
+    }
+
+    public TypeName getName () {
+	return typename;
     }
 
     @Override public void visitChildNodes (NodeVisitor v) {

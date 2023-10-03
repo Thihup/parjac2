@@ -25,4 +25,9 @@ public class WildcardBounds extends SyntaxTreeNode {
     @Override public void visitChildNodes (NodeVisitor v) {
 	v.accept (referenceType);
     }
+
+    // may be class type or array type
+    public ParseTreeNode getClassType () {
+	return referenceType;
+    }
 }

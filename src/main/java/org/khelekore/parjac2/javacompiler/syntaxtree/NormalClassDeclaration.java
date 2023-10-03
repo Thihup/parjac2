@@ -15,6 +15,7 @@ public class NormalClassDeclaration extends TypeDeclaration {
     private TypeParameters typeParameters;
     private Superclass superClass;
     private Superinterfaces superInterfaces;
+    private ClassPermits classPermits;
     private ClassBody body;
 
     private static FlagCalculator flagCalculator = FlagCalculator.SIMPLE_ACCESS;
@@ -29,12 +30,22 @@ public class NormalClassDeclaration extends TypeDeclaration {
 	    modifiers = Collections.emptyList ();
 	i++; // 'class'
 	id = ((TypeIdentifier)children.get (i++)).getValue ();
-	if (children.get (i) instanceof TypeParameters)
-	    typeParameters = (TypeParameters)children.get (i++);
-	if (children.get (i) instanceof Superclass)
-	    superClass = (Superclass)children.get (i++);
-	if (children.get (i) instanceof Superinterfaces)
-	    superInterfaces = (Superinterfaces)children.get (i++);
+	if (children.get (i) instanceof TypeParameters tp) {
+	    typeParameters = tp;
+	    i++;
+	}
+	if (children.get (i) instanceof Superclass sc) {
+	    superClass = sc;
+	    i++;
+	}
+	if (children.get (i) instanceof Superinterfaces si) {
+	    superInterfaces = si;
+	    i++;
+	}
+	if (children.get (i) instanceof ClassPermits cp) {
+	    classPermits = cp;
+	    i++;
+	}
 	body = (ClassBody)children.get (i++);
 	flags = flagCalculator.calculate (ctx, modifiers, getPosition ());
     }
@@ -75,5 +86,13 @@ public class NormalClassDeclaration extends TypeDeclaration {
 
     @Override public boolean isLocalClass (TypeDeclaration td) {
 	return body.isLocalClass (td);
+    }
+
+    public ClassType getSuperClass () {
+	return (superClass != null) ? superClass.getType () : null;
+    }
+
+    public List<ClassType> getSuperInterfaces () {
+	return (superInterfaces != null) ? superInterfaces.getTypes () : null;
     }
 }
