@@ -58,7 +58,7 @@ public class NormalClassDeclaration extends TypeDeclaration {
 	if (typeParameters != null)
 	    sb.append (typeParameters).append (" ");
 	if (superClass != null)
-	    sb.append (superClass).append (" ");
+	    sb.append (" ").append (superClass).append (" ");
 	if (superInterfaces != null)
 	    sb.append (superInterfaces).append (" ");
 	sb.append (body);
