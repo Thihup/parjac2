@@ -65,7 +65,7 @@ public class BodyHelper {
     }
 
     private boolean isLocalClass (ParseTreeNode parent, ParseTreeNode f) {
-	return (f instanceof TypeDeclaration &&
+	return (!(f instanceof UnqualifiedClassInstanceCreationExpression) && f instanceof TypeDeclaration &&
 		!(parent instanceof ClassBody || parent instanceof InterfaceBody));
     }
 
