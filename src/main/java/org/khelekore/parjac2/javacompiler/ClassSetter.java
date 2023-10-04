@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -34,6 +35,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeImportOnDemandDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeName;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeParameter;
+import org.khelekore.parjac2.javacompiler.syntaxtree.UnqualifiedClassInstanceCreationExpression;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Wildcard;
 import org.khelekore.parjac2.javacompiler.syntaxtree.WildcardBounds;
 import org.khelekore.parjac2.parser.ParsePosition;
@@ -50,7 +52,7 @@ public class ClassSetter {
     private final ImportHandler ih;            // keep track of the imports we have
 
     // TODO: document these
-    private Deque<BodyPart> containingTypes = new ArrayDeque<> ();
+    private EnclosingTypes containingTypes = null;
     private final Map<ParseTreeNode, TypeHolder> types = new HashMap<> ();
     private TypeHolder currentTypes = null;
 
@@ -90,19 +92,22 @@ public class ClassSetter {
     }
 
     public void registerSuperTypes () {
-	Deque<TypeDeclaration> typesToHandle = new ArrayDeque<> ();
-	typesToHandle.addAll (ocu.getTypes ());
+	Deque<EnclosingTypes> typesToHandle = new ArrayDeque<> ();
+	ocu.getTypes ().stream ().map (td -> new EnclosingTypes (null, td, cip.getFullName (td))).forEach (typesToHandle::add);
 	while (!typesToHandle.isEmpty ()) {
-	    TypeDeclaration td = typesToHandle.removeFirst ();
+	    EnclosingTypes et = typesToHandle.removeFirst ();
+	    containingTypes = et;
+	    TypeDeclaration td = et.td ();
 	    switch (td) {
 	    case NormalClassDeclaration ndi -> registerSuperTypes (ndi);
 	    case EnumDeclaration ed -> registerSuperTypes (ed.getSuperInterfaces ());
 	    case NormalInterfaceDeclaration i -> registerSuperTypes (i);
 	    case RecordDeclaration rd -> registerSuperTypes (rd.getSuperInterfaces ());
-	    default -> System.err.println ("Unhandled type: " + td.getClass ().getName ());
+	    case UnqualifiedClassInstanceCreationExpression uc -> setType (uc.getSuperType ());
+	    default -> System.err.println ("registerSuperTypes: Unhandled type: " + td.getClass ().getName ());
 	    }
 
-	    // TODO: push class context and inner classes.
+	    td.getInnerClasses ().stream ().map (i -> new EnclosingTypes (et, i, cip.getFullName (i))).forEach (typesToHandle::add);
 	}
     }
 
@@ -245,7 +250,7 @@ public class ClassSetter {
 	    public StaticImportType (SingleStaticImportDeclaration ssid) {
 		this.ssid = ssid;
 		containingClass = getClassName (ssid.getType ()).name;
-		fullName = containingClass + "$" + ssid.getInnerId ();
+		fullName = containingClass + "." + ssid.getInnerId ();
 	    }
 	}
     }
@@ -270,7 +275,7 @@ public class ClassSetter {
     }
 
     private boolean hasVisibleType (String fqn) {
-	String topLevelClass = containingTypes.isEmpty () ? null : containingTypes.peekLast ().fqn;
+	String topLevelClass = containingTypes == null ? null : containingTypes.fqn;
 	return hasVisibleType (fqn, topLevelClass);
     }
 
@@ -296,8 +301,8 @@ public class ClassSetter {
     }
 
     private boolean insideSuperClass (String fqn) {
-	for (BodyPart c : containingTypes)
-	    if (insideSuperClass (fqn, c.fqn))
+	for (EnclosingTypes c : containingTypes)
+	    if (insideSuperClass (fqn, c.fqn ()))
 		return true;
 	return false;
     }
@@ -372,7 +377,7 @@ public class ClassSetter {
 	String currentOuterClass = outerClass;
 	for (int s = scts.size (); i < s; i++) {
 	    SimpleClassType sct = scts.get (i);
-	    String directInnerClass = currentOuterClass + "$" + sct.getId ();
+	    String directInnerClass = currentOuterClass + "." + sct.getId ();
 	    if (hasVisibleType (directInnerClass)) {
 		currentOuterClass = directInnerClass;
 	    } else {
@@ -418,14 +423,14 @@ public class ClassSetter {
 
     private String resolveInnerClass (String id) {
 	// Check for inner class
-	for (BodyPart ctn : containingTypes) {
-	    String icn = ctn.fqn + "$" + id;
+	for (EnclosingTypes ctn : containingTypes) {
+	    String icn = ctn.fqn () + "." + id;
 	    if (hasVisibleType (icn))
 		return icn;
 	}
 
 	// Check for inner class of super classes
-	for (BodyPart ctn : containingTypes) {
+	for (EnclosingTypes ctn : containingTypes) {
 	    String fqn = checkSuperClasses (ctn.fqn, id);
 	    if (fqn != null)
 		return fqn;
@@ -438,7 +443,7 @@ public class ClassSetter {
 	    return null;
 	List<String> superclasses = getSuperClasses (fullCtn);
 	for (String superclass : superclasses) {
-	    String icn = superclass + "$" + id;
+	    String icn = superclass + "." + id;
 	    if (hasVisibleType (icn))
 		return icn;
 	    String ssn = checkSuperClasses (superclass, id);
@@ -526,7 +531,7 @@ public class ClassSetter {
 
     private String tryStaticImportOnDemand (String id) {
 	for (StaticImportOnDemandDeclaration siod : ih.siod) {
-	    String fqn = siod.getName ().getDotName () + "$" + id;
+	    String fqn = siod.getName ().getDotName () + "." + id;
 	    if (hasVisibleType (fqn)) {
 		siod.markUsed ();
 		return fqn;
@@ -565,5 +570,34 @@ public class ClassSetter {
 	diagnostics.report (SourceDiagnostics.warning (tree.getOrigin (),
 						       i.getPosition (),
 						       "Unused import"));
+    }
+
+    private record EnclosingTypes (EnclosingTypes previous, TypeDeclaration td, String fqn)
+	implements Iterable<EnclosingTypes> {
+	public boolean hasOuter () {
+	    return previous != null;
+	}
+
+	public Iterator<EnclosingTypes> iterator () {
+	    return new ETIterator (this);
+	}
+
+	private static class ETIterator implements Iterator<EnclosingTypes> {
+	    private EnclosingTypes e;
+
+	    public ETIterator (EnclosingTypes e) {
+		this.e = e;
+	    }
+
+	    public boolean hasNext () {
+		return e.previous () != null;
+	    }
+
+	    public EnclosingTypes next () {
+		EnclosingTypes ret = e;
+		e = e.previous ();
+		return ret;
+	    }
+	}
     }
 }

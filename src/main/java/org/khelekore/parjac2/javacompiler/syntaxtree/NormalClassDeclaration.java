@@ -61,6 +61,8 @@ public class NormalClassDeclaration extends TypeDeclaration {
 	    sb.append (" ").append (superClass).append (" ");
 	if (superInterfaces != null)
 	    sb.append (superInterfaces).append (" ");
+	if (classPermits != null)
+	    sb.append (classPermits).append (" ");
 	sb.append (body);
 	return sb.toString ();
     }

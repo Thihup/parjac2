@@ -117,6 +117,10 @@ public class ClassInformationProvider {
 	return cth.getOriginFile (td);
     }
 
+    public String getFullName (TypeDeclaration td) {
+	return cth.getFullClassName (td);
+    }
+
     public FieldInformation<?> getFieldInformation (String fqn, String field) {
 	return null; // TODO: implement
     }
