@@ -336,21 +336,6 @@ public class ClassSetter {
 	}
     }
 
-    private static class BodyPart {
-	private final String fqn;
-	private final ParseTreeNode body;
-	private boolean hasConstructor = false;
-
-	public BodyPart (String fqn, ParseTreeNode body) {
-	    this.fqn = fqn;
-	    this.body = body;
-	}
-
-	@Override public String toString () {
-	    return getClass ().getSimpleName () + "{" + fqn + ", " + body + "}";
-	}
-    }
-
     /** Try to find an outer class that has the inner classes for misdirected outer classes.
      */
     private ResolvedClass tryAllParts (ClassType ct) {
