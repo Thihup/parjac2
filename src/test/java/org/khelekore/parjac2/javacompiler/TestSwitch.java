@@ -38,6 +38,20 @@ public class TestSwitch {
     }
 
     @Test
+    public void testOldStyleMultiLabels () {
+	testSuccessfulParse ("""
+			     switch (x) {
+			     case 5:
+			     case 6:
+			     case 7:
+				 break;
+			     case 8:
+			     case 9:
+			     }
+			     """);
+    }
+
+    @Test
     public void testSimpleSwitchRule () {
 	testSuccessfulParse ("""
 			     switch (x) {

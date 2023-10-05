@@ -28,7 +28,7 @@ public abstract class SwitchBlock extends SyntaxTreeNode {
 
     public static class SwitchBlockStatements extends SwitchBlock {
 	private final List<SwitchBlockStatementGroup> ls;
-	private final List<SwitchLabel> trailingLabels;
+	private final List<SwitchLabelColon> trailingLabels;
 
 	public SwitchBlockStatements (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	    super (n.getPosition ());
@@ -54,8 +54,8 @@ public abstract class SwitchBlock extends SyntaxTreeNode {
 	    sb.append ("{");
 	    for (SwitchBlockStatementGroup g : ls)
 		sb.append (g.toString ());
-	    for (SwitchLabel l : trailingLabels)
-		sb.append (l.toString ());
+	    for (SwitchLabelColon l : trailingLabels)
+		sb.append (l.getValue ());
 	    sb.append ("}");
 	    return sb.toString ();
 	}
