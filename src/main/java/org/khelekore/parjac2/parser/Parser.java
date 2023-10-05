@@ -329,6 +329,8 @@ public class Parser {
 	if (hashOfStates.get (bitPos)) {
 	    if (states.checkFor (arp, origin, startPositions.get (currentPosition), states.size ())) {
 		if (!diagnostics.hasError ()) {// When we try all options we will get dups
+		    ParsePosition pp =lexer.getParsePosition ();
+		    diagnostics.report (SourceDiagnostics.error (path, pp, "Parsing failed with duplicate options"));
 		    System.out.println ("Dup found for: " + grammar.getRule (rule).toReadableString(grammar) +
 					", dotPos: " + dotPos);
 		    printStates (currentPosition);

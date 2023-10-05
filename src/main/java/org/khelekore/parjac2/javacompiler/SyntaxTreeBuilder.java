@@ -204,7 +204,11 @@ public class SyntaxTreeBuilder {
 	register ("SwitchRule", SwitchRule::new);
 	register ("SwitchBlockStatementGroup", SwitchBlockStatementGroup::new);
 	register ("SwitchLabels", SwitchLabels::new);
+	register ("SwitchLabelColon", SwitchLabelColon::new);
 	register ("SwitchLabel", this::switchLabel);
+	register ("CaseConstant", this::liftUp);
+	register ("CasePattern", this::liftUp);
+	register ("Guard", Guard::new);
 	register ("WhileStatement", WhileStatement::new);
 	register ("WhileStatementNoShortIf", WhileStatement::new);
 	register ("DoStatement", DoStatement::new);
@@ -404,10 +408,15 @@ public class SyntaxTreeBuilder {
     }
 
     private SyntaxTreeNode switchLabel (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+	//'case' CaseConstant {',' CaseConstant}
+	//'case' CasePattern [Guard]
+	//'default'
 	TokenNode tn = (TokenNode)children.get (0);
 	if (tn.getToken () == ctx.getTokens ().DEFAULT)
 	    return new DefaultLabel (n.getPosition ());
-	return new CaseLabel (n.getPosition (), children.get (1));
+	if (rule.get (1) == ctx.getGrammar ().getRuleGroupId ("CasePattern"))
+	    return new CasePatternLabel (n.getPosition (), children);
+	return new CaseLabel (ctx, n.getPosition (), children);
     }
 
     private ParseTreeNode tryStatement (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {

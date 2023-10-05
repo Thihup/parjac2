@@ -7,7 +7,7 @@ import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class SwitchBlockStatementGroup extends SyntaxTreeNode {
-    private final List<SwitchLabel> labels;
+    private final List<SwitchLabelColon> labels;
     private final BlockStatements statements;
 
     public SwitchBlockStatementGroup (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
@@ -19,7 +19,7 @@ public class SwitchBlockStatementGroup extends SyntaxTreeNode {
 
     @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
-	for (SwitchLabel l : labels)
+	for (SwitchLabelColon l : labels)
 	    sb.append (l).append (" ");
 	sb.append (statements);
 	return sb.toString ();

@@ -70,6 +70,12 @@ public class TestParserHelper {
 
     public static ParseTreeNode syntaxTree (Grammar grammar, String s,
 					    CompilerDiagnosticCollector diagnostics) {
+	return syntaxTree (grammar, s, diagnostics, 0);
+    }
+
+    public static ParseTreeNode syntaxTree (Grammar grammar, String s,
+					    CompilerDiagnosticCollector diagnostics,
+					    int expectedErrors) {
 	ParseTreeNode tree = parse (grammar, s, diagnostics);
 	assert diagnostics.errorCount () == 0 : "Expected no errors: " + TestParserHelper.getParseOutput (diagnostics);
 	assert tree != null : "Expected to parse to non null tree";
@@ -77,7 +83,7 @@ public class TestParserHelper {
 	SyntaxTreeBuilder stb = new SyntaxTreeBuilder (diagnostics, javaTokens, grammar);
 	DirAndPath dirAndPath = new DirAndPath (Paths.get (""), Paths.get ("TestParserHelper.syntaxTree"));
 	ParseTreeNode syntaxTree = stb.build (dirAndPath, tree);
-	assert diagnostics.errorCount () == 0 : "Expected no errors";
+	assert diagnostics.errorCount () == expectedErrors : "Expected " + expectedErrors + " errors";
 	return syntaxTree;
     }
 

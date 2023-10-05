@@ -21,7 +21,7 @@ public abstract class SwitchBlock extends SyntaxTreeNode {
                   '{' SwitchRule {SwitchRule} '}'
 		  '{' {SwitchBlockStatementGroup} {SwitchLabel} '}'
 	*/
-	if (children.get (0) instanceof SwitchRule)
+	if (children.get (1) instanceof SwitchRule)
 	    return new SwitchBlockRule (rule, n, children);
 	return new SwitchBlockStatements (ctx, rule, n, children);
     }

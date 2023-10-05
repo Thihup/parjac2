@@ -623,7 +623,7 @@ SwitchStatement:
 # start with {SwitchLabel}
 SwitchBlock:
 	'{' SwitchRule {SwitchRule} '}'
-	'{' {SwitchBlockStatementGroup} {SwitchLabel} '}'
+	'{' {SwitchBlockStatementGroup} {SwitchLabelColon} '}'
 
 SwitchRule:
 	SwitchLabel '->' Expression ';'
@@ -634,16 +634,20 @@ SwitchBlockStatementGroup:
 	SwitchLabels BlockStatements
 
 SwitchLabels:
-	{SwitchLabel} SwitchLabel
+	{SwitchLabelColon} SwitchLabelColon
+
+SwitchLabelColon:
+	SwitchLabel ':'
 
 SwitchLabel:
-	'case' CaseConstant {',' CaseConstant}  ':'
-	'case' 'null' [',' 'default'] ':'
-	'case' CasePattern [Guard] ':'
-	'default'  ':'
+# since CaseConstant can be Primary it can be 'null' so allowing *'case' 'null' [',' 'default']* causes dups
+	'case' CaseConstant {',' CaseConstant}
+	'case' CasePattern [Guard]
+	'default'
 
 CaseConstant:
 	ConditionalExpression
+	'default'
 
 CasePattern:
 	Pattern

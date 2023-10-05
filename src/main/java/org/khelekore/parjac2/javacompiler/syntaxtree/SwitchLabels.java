@@ -8,23 +8,23 @@ import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class SwitchLabels extends SyntaxTreeNode {
-    private final List<SwitchLabel> labels = new ArrayList<> ();
+    private final List<SwitchLabelColon> labels = new ArrayList<> ();
 
     public SwitchLabels (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	if (children.size () > 1) {
 	    Multiple m = (Multiple)children.get (0);
 	    labels.addAll (m.get ());
-	    labels.add ((SwitchLabel)children.get (1));
+	    labels.add ((SwitchLabelColon)children.get (1));
 	} else {
-	    labels.add ((SwitchLabel)children.get (0));
+	    labels.add ((SwitchLabelColon)children.get (0));
 	}
     }
 
     @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
-	for (SwitchLabel l : labels)
-	    sb.append (l).append (": ");
+	for (SwitchLabelColon l : labels)
+	    sb.append (l.getValue ());
 	return sb.toString ();
     }
 
@@ -32,7 +32,7 @@ public class SwitchLabels extends SyntaxTreeNode {
 	labels.forEach (v::accept);
     }
 
-    public List<SwitchLabel> getLabels () {
+    public List<SwitchLabelColon> getLabels () {
 	return labels;
     }
 }
