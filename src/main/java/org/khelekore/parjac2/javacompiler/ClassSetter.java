@@ -559,10 +559,6 @@ public class ClassSetter {
 
     private record EnclosingTypes (EnclosingTypes previous, TypeDeclaration td, String fqn)
 	implements Iterable<EnclosingTypes> {
-	public boolean hasOuter () {
-	    return previous != null;
-	}
-
 	public Iterator<EnclosingTypes> iterator () {
 	    return new ETIterator (this);
 	}
