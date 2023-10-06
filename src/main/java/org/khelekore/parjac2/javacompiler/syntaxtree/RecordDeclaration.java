@@ -88,6 +88,6 @@ public class RecordDeclaration extends TypeDeclaration {
     }
 
     public List<ClassType> getSuperInterfaces () {
-	return classImplements.getTypes ();
+	return classImplements != null ? classImplements.getTypes () : null;
     }
 }
