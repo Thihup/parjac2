@@ -5,7 +5,6 @@ import java.util.List;
 import org.khelekore.parjac2.parser.ParsePosition;
 
 public abstract class TypeDeclaration extends FlaggedBase {
-    protected int flags;
     protected String localName;
 
     public TypeDeclaration (ParsePosition pos) {

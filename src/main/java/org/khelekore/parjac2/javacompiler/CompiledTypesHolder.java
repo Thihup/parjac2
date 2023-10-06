@@ -12,7 +12,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.EnumDeclaration;
-import org.khelekore.parjac2.javacompiler.syntaxtree.Flagged;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ModularCompilationUnit;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ModuleDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.NormalClassDeclaration;
@@ -40,9 +39,7 @@ public class CompiledTypesHolder {
 	TypeDeclaration ni = foundClasses.get (fqn);
 	if (ni == null)
 	    return LookupResult.NOT_FOUND;
-	int flags = 0;
-	if (ni instanceof Flagged ft)
-	    flags = ft.getFlags ();
+	int flags = ni.getFlags ();
 	return new LookupResult (true, flags);
     }
 

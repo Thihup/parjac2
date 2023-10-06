@@ -19,7 +19,6 @@ import org.khelekore.parjac2.NoSourceDiagnostics;
 import org.khelekore.parjac2.SourceDiagnostics;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
-import org.khelekore.parjac2.javacompiler.syntaxtree.DottedName;
 import org.khelekore.parjac2.javacompiler.syntaxtree.EnumDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ImportDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.NormalClassDeclaration;
@@ -104,7 +103,9 @@ public class ClassSetter {
 	    case NormalInterfaceDeclaration i -> registerSuperTypes (i);
 	    case RecordDeclaration rd -> registerSuperTypes (rd.getSuperInterfaces ());
 	    case UnqualifiedClassInstanceCreationExpression uc -> setType (uc.getSuperType ());
-	    default -> System.err.println ("registerSuperTypes: Unhandled type: " + td.getClass ().getName ());
+	    default -> diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), td.getPosition (),
+								    "registerSuperTypes: Unhandled type: %s",
+								    td.getClass ().getName ()));
 	    }
 
 	    td.getInnerClasses ().stream ().map (i -> new EnclosingTypes (et, i, cip.getFullName (i))).forEach (typesToHandle::add);
@@ -191,11 +192,11 @@ public class ClassSetter {
 	private final List<StaticImportOnDemandDeclaration> siod = new ArrayList<> ();
 
 	public ImportHandler (OrdinaryCompilationUnit tree) {
-	    tiod.add (new ImportHolder (null, new ClassAndSeparator ("java.lang", '.')));
+	    tiod.add (new ImportHolder (null, "java.lang"));
 	    for (ImportDeclaration id : tree.getImports ()) {
 		switch (id) {
 		case SingleTypeImportDeclaration stid -> addSingleTypeImportDeclaration (stid);
-		case TypeImportOnDemandDeclaration i -> tiod.add (new ImportHolder (i, getClassName (i.getName ())));
+		case TypeImportOnDemandDeclaration i -> tiod.add (new ImportHolder (i, i.getName ().getDotName ()));
 		case SingleStaticImportDeclaration ssid -> addSingleStaticImportDeclaration (ssid);
 		case StaticImportOnDemandDeclaration i -> siod.add (i);
 		}
@@ -204,13 +205,13 @@ public class ClassSetter {
 
 	private void addSingleTypeImportDeclaration (SingleTypeImportDeclaration i) {
 	    TypeName dn = i.getName ();
-	    ClassAndSeparator cas = getClassName (dn);
-	    if (!hasVisibleType (cas.name)) {
+	    String name = dn.getDotName ();
+	    if (!hasVisibleType (name)) {
 		diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), i.getPosition (),
-							     "Imported type not found: %s", cas.name));
+							     "Imported type not found: %s", name));
 		i.markUsed (); // Unused, but already flagged as bad, don't want multiple lines
 	    }
-	    ImportHolder prev = stid.put (dn.getLastPart (), new ImportHolder (i, cas));
+	    ImportHolder prev = stid.put (dn.getLastPart (), new ImportHolder (i, name));
 	    if (prev != null) {
 		diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), i.getPosition (),
 							     "Name clash for import: %s", dn.getLastPart ()));
@@ -229,19 +230,6 @@ public class ClassSetter {
 	    ssid.put (i.getInnerId (), new StaticImportType (i));
 	}
 
-	private ClassAndSeparator getClassName (DottedName dn) {
-	    StringBuilder sb = new StringBuilder ();
-	    char sep = '.';
-	    for (String c : dn.getParts ()) {
-		if (sb.length () > 0)
-		    sb.append (sep);
-		sb.append (c);
-		if (hasVisibleType (sb.toString ()))
-		    sep = '$';
-	    }
-	    return new ClassAndSeparator (sb.toString (), sep);
-	}
-
 	private class StaticImportType {
 	    private final SingleStaticImportDeclaration ssid;
 	    private final String containingClass;
@@ -249,7 +237,7 @@ public class ClassSetter {
 
 	    public StaticImportType (SingleStaticImportDeclaration ssid) {
 		this.ssid = ssid;
-		containingClass = getClassName (ssid.getType ()).name;
+		containingClass = ssid.getType ().getDotName ();
 		fullName = containingClass + "." + ssid.getInnerId ();
 	    }
 	}
@@ -260,14 +248,7 @@ public class ClassSetter {
 	    fqn.charAt (topLevelClass.length ()) == '$';
     }
 
-    private static class ImportHolder {
-	private final ImportDeclaration i;
-	private final ClassAndSeparator cas;
-	public ImportHolder (ImportDeclaration i, ClassAndSeparator cas) {
-	    this.i = i;
-	    this.cas = cas;
-	}
-
+    private static record  ImportHolder (ImportDeclaration i, String name) {
 	public void markUsed () {
 	    if (i != null)
 		i.markUsed ();
@@ -324,16 +305,6 @@ public class ClassSetter {
 	    return false;
 	}
 	return false;
-    }
-
-    private static class ClassAndSeparator {
-	private final String name;
-	private final char sep;
-
-	public ClassAndSeparator (String name, char sep) {
-	    this.name = name;
-	    this.sep = sep;
-	}
     }
 
     /** Try to find an outer class that has the inner classes for misdirected outer classes.
@@ -450,9 +421,9 @@ public class ClassSetter {
 
     private String resolveUsingImports (String id, ParsePosition pos) {
 	ImportHolder i = ih.stid.get (id);
-	if (i != null && hasVisibleType (i.cas.name)) {
+	if (i != null && hasVisibleType (i.name ())) {
 	    i.markUsed ();
-	    return i.cas.name;
+	    return i.name ();
 	}
 	String fqn;
 	fqn = tryPackagename (id, pos);
@@ -491,7 +462,7 @@ public class ClassSetter {
     private String tryTypeImportOnDemand (String id, ParsePosition pos) {
 	List<String> matches = new ArrayList<> ();
 	for (ImportHolder ih : ih.tiod) {
-	    String t = ih.cas.name + ih.cas.sep + id;
+	    String t = ih.name () + "." + id;
 	    if (hasVisibleType (t)) {
 		matches.add (t);
 		ih.markUsed ();
