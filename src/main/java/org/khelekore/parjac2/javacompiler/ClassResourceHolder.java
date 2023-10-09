@@ -16,12 +16,11 @@ import java.util.jar.JarFile;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.NoSourceDiagnostics;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.FieldVisitor;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
+
+import io.github.dmlloyd.classfile.AccessFlags;
+import io.github.dmlloyd.classfile.ClassModel;
+import io.github.dmlloyd.classfile.Classfile;
+import io.github.dmlloyd.classfile.constantpool.ClassEntry;
 
 public class ClassResourceHolder {
     private final CompilerDiagnosticCollector diagnostics;
@@ -173,13 +172,11 @@ public class ClassResourceHolder {
 
 	public abstract void readNode () throws IOException;
 
-	protected void readNode (InputStream is) throws IOException {
+	protected void readNode (byte[] data) throws IOException {
 	    try {
-		ClassReader cr = new ClassReader (is);
-		ClassInfoExtractor cie = new ClassInfoExtractor (this);
-		cr.accept (cie, ClassReader.SKIP_CODE);
-		// TODO; implement
-		// methods = Collections.unmodifiableMap (methods);
+		ClassModel model = Classfile.of ().parse (data);
+		ClassInfoExtractor cie = new ClassInfoExtractor (this, model);
+		cie.parse ();
 	    } catch (RuntimeException e) {
 		throw new IOException ("Failed to read class: ", e);
 	    }
@@ -213,7 +210,7 @@ public class ClassResourceHolder {
 	    try (JarFile jf = new JarFile (ctSymFile.toFile ())) {
 		JarEntry e = jf.getJarEntry (path);
 		try (InputStream jis = jf.getInputStream (e)) {
-		    readNode (jis);
+		    readNode (jis.readAllBytes ());
 		}
 	    }
 	}
@@ -235,9 +232,7 @@ public class ClassResourceHolder {
 	}
 
 	@Override public void readNode () throws IOException {
-	    try (InputStream is = Files.newInputStream (path)) {
-		readNode (is);
-	    }
+	    readNode (Files.readAllBytes (path));
 	}
 
 	@Override public String getPath () {
@@ -264,7 +259,7 @@ public class ClassResourceHolder {
 	    try (JarFile jf = new JarFile (jarfile.toFile ())) {
 		JarEntry e = jf.getJarEntry (path);
 		try (InputStream jis = jf.getInputStream (e)) {
-		    readNode (jis);
+		    readNode (jis.readAllBytes ());
 		}
 	    }
 	}
@@ -274,105 +269,45 @@ public class ClassResourceHolder {
 	}
     }
 
-    private static class ClassInfoExtractor extends ClassVisitor {
+    private static class ClassInfoExtractor {
 	private final ClasspathClassInformation r;
+	private final ClassModel model;
 
-	public ClassInfoExtractor (ClasspathClassInformation r) {
-	    super (Opcodes.ASM9);
+	public ClassInfoExtractor (ClasspathClassInformation r, ClassModel model) {
 	    this.r = r;
+	    this.model = model;
 	}
 
-	@Override public void visit (int version, int access, String name,
-				     String signature, String superName,
-				     String[] interfaces) {
-	    if (superName != null) // java.lang.Object have null superName
-		r.superClass = superName.replace ('/', '.');
-	    r.accessFlags = access;
+	public void parse () {
+	    parseAccessFlags ();
+	    parseSuperTypes ();
+	}
+
+	private void parseAccessFlags () {
+	    r.accessFlags = model.flags ().flagsMask ();
+	}
+
+	private void parseSuperTypes () {
+	    Optional<ClassEntry> s = model.superclass ();
+	    s.ifPresent (e -> r.superClass = getDotName (e));
+
 	    int size = 0;
 	    if (r.superClass != null)
 		size++;
-	    if (interfaces != null)
-		size += interfaces.length;
+	    List<ClassEntry> interfaces = model.interfaces ();
+	    size += interfaces.size ();
 	    r.superTypes = new ArrayList<> (size);
 	    if (r.superClass != null)
 		r.superTypes.add (r.superClass);
 	    if (interfaces != null) {
-		for (String i : interfaces)
-		    r.superTypes.add (i.replace ('/', '.'));
+		for (ClassEntry ce : interfaces)
+		    r.superTypes.add (getDotName (ce));
 	    }
 	}
 
-	@Override public void visitSource (String source, String debug) {
-	}
-
-	@Override public void visitEnd () {
-	}
-
-	@Override public void visitInnerClass (String name, String outerName,
-					       String innerName, int access) {
-	}
-
-	@Override public FieldVisitor visitField (int access, String name, String desc,
-						  String signature, Object value) {
-	    // desc is type, signature is only there if field is generic type
-	    Type type = Type.getType (desc);
-	    // TODO: implement field extraction
-	    // r.fieldTypes.put (name, new AsmField (access, ExpressionType.get (type), signature, value));
-	    return null;
-	}
-
-	@Override public MethodVisitor visitMethod (int access, String name,
-						    String desc, String signature,
-						    String[] exceptions) {
-	    /* TODO: implement
-	    // desc is type, signature is only there if field is generic type
-	    MethodInformation mi = new MethodInformation (r.fqn, access, name, desc, signature, exceptions);
-	    List<MethodInformation> ls = r.methods.get (name);
-	    if (ls == null) {
-		ls = new ArrayList<> ();
-		r.methods.put (name, ls);
-	    }
-	    ls.add (mi);
-	    */
-	    return null;
+	private String getDotName (ClassEntry ce) {
+	    return ce.name ().stringValue ().replace ('/', '.');
 	}
     }
-
-    /* TODO: implement
-    private static class AsmField implements Flagged {
-	private final int access;
-	private final ExpressionType type;
-	private final String signature;
-	private final Object value;
-
-	public AsmField (int access, ExpressionType type, String signature, Object value) {
-	    this.access = access;
-	    this.type = type;
-	    this.signature = signature;
-	    this.value = value;
-	}
-
-	@Override public int getFlags () {
-	    return access;
-	}
-
-	@Override public List<ParseTreeNode> getAnnotations () {
-	    return Collections.emptyList ();
-	}
-
-	@Override public ParsePosition getParsePosition() {
-	    return null;
-	}
-
-	@Override public ExpressionType getExpressionType () {
-	    return type;
-	}
-
-	@Override public String toString () {
-	    return getClass ().getSimpleName () + "{" + access + ", " + type + ", " +
-		signature + ", " + value + "}";
-	}
-    }
-    */
 }
 

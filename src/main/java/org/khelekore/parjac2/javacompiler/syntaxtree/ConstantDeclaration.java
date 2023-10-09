@@ -4,10 +4,10 @@ import java.util.Collections;
 import java.util.List;
 
 import org.khelekore.parjac2.javacompiler.Context;
+import org.khelekore.parjac2.javacompiler.Flags;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
-import org.objectweb.asm.Opcodes;
 
 public class ConstantDeclaration extends FlaggedBase {
     private final List<ParseTreeNode> modifiers;
@@ -15,7 +15,7 @@ public class ConstantDeclaration extends FlaggedBase {
     private final VariableDeclaratorList variables;
 
     private static FlagCalculator flagCalculator =
-	new FlagCalculator (Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL + Opcodes.ACC_STATIC);
+	new FlagCalculator (Flags.ACC_PUBLIC + Flags.ACC_FINAL + Flags.ACC_STATIC);
 
     public ConstantDeclaration (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());

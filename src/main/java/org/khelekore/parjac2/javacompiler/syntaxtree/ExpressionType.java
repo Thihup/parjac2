@@ -7,20 +7,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.objectweb.asm.Type;
-
 public abstract class ExpressionType {
 
-    public static final PrimitiveExpressionType BYTE = new PrimitiveExpressionType ("B", Type.BYTE);
-    public static final PrimitiveExpressionType SHORT = new PrimitiveExpressionType ("S", Type.SHORT);
-    public static final PrimitiveExpressionType CHAR = new PrimitiveExpressionType ("C", Type.CHAR);
-    public static final PrimitiveExpressionType INT = new PrimitiveExpressionType ("I", Type.INT);
-    public static final PrimitiveExpressionType LONG = new PrimitiveExpressionType ("J", Type.LONG);
-    public static final PrimitiveExpressionType FLOAT = new PrimitiveExpressionType ("F", Type.FLOAT);
-    public static final PrimitiveExpressionType DOUBLE = new PrimitiveExpressionType ("D", Type.DOUBLE);
-    public static final PrimitiveExpressionType BOOLEAN = new PrimitiveExpressionType ("Z", Type.BOOLEAN);
+    public static final PrimitiveExpressionType BYTE = new PrimitiveExpressionType ("B");
+    public static final PrimitiveExpressionType SHORT = new PrimitiveExpressionType ("S");
+    public static final PrimitiveExpressionType CHAR = new PrimitiveExpressionType ("C");
+    public static final PrimitiveExpressionType INT = new PrimitiveExpressionType ("I");
+    public static final PrimitiveExpressionType LONG = new PrimitiveExpressionType ("J");
+    public static final PrimitiveExpressionType FLOAT = new PrimitiveExpressionType ("F");
+    public static final PrimitiveExpressionType DOUBLE = new PrimitiveExpressionType ("D");
+    public static final PrimitiveExpressionType BOOLEAN = new PrimitiveExpressionType ("Z");
 
-    public static final PrimitiveExpressionType VOID = new PrimitiveExpressionType ("V", Type.VOID);
+    public static final PrimitiveExpressionType VOID = new PrimitiveExpressionType ("V");
     public static final ExpressionType NULL = new NullExpressionType ();
 
     public static final ExpressionType STRING = new ObjectExpressionType ("java.lang.String");
@@ -69,26 +67,13 @@ public abstract class ExpressionType {
 
     private static class PrimitiveExpressionType extends ExpressionType {
 	private final String primitiveType;
-	private final int type;
 
-	public PrimitiveExpressionType (String primitiveType, int type) {
+	public PrimitiveExpressionType (String primitiveType) {
 	    this.primitiveType = primitiveType;
-	    this.type = type;
 	}
 
 	@Override public boolean equals (Object o) {
-	    if (o == this)
-		return true;
-	    if (o == null)
-		return false;
-	    if (o.getClass () != getClass ())
-		return false;
-	    PrimitiveExpressionType e = (PrimitiveExpressionType)o;
-	    return type == e.type;
-	}
-
-	@Override public int hashCode () {
-	    return type;
+	    return o == this;
 	}
 
 	@Override public String toString () {
@@ -111,9 +96,11 @@ public abstract class ExpressionType {
 	    return primitiveType;
 	}
 
+	/*
 	@Override public boolean match (Type t) {
 	    return type == t.getSort () || mayBeAutoCasted (this, t);
 	}
+	*/
     }
 
     private static class ObjectExpressionType extends ExpressionType {
@@ -158,9 +145,11 @@ public abstract class ExpressionType {
 	    return "L" + slashName + ";";
 	}
 
+	/* qwerty
 	@Override public boolean match (Type t) {
 	    return t.getSort () == Type.OBJECT && t.getInternalName ().equals (slashName);
 	}
+	*/
     }
 
     private static class NullExpressionType extends ExpressionType {
@@ -180,9 +169,11 @@ public abstract class ExpressionType {
 	    throw new IllegalStateException ("Not applicable");
 	}
 
+	/* qwerty
 	@Override public boolean match (Type t) {
 	    throw new IllegalStateException ("Not applicable");
 	}
+	*/
     }
 
     private static class ArrayExpressionType extends ExpressionType {
@@ -246,11 +237,13 @@ public abstract class ExpressionType {
 	    return repeat ("[", dims) + base.getDescriptor ();
 	}
 
+	/* qwerty
 	@Override public boolean match (Type t) {
 	    return t.getSort () == Type.ARRAY &&
 		t.getInternalName ().equals (getSlashName ()) &&
 		t.getDimensions () == dims;
 	}
+	*/
     }
 
     public static ExpressionType getObjectType (String className) {
@@ -265,6 +258,7 @@ public abstract class ExpressionType {
 	throw new IllegalStateException ("Not an array type: "  + this);
     }
 
+    /* qwerty
     public static ExpressionType get (Type t) {
 	if (t.getSort () == Type.ARRAY) {
 	    ExpressionType base = get (t.getElementType ());
@@ -277,6 +271,7 @@ public abstract class ExpressionType {
 		return et;
 	throw new IllegalArgumentException ("Unknown type: " + t + ", t.sort: " + t.getSort ());
     }
+    */
 
     public static ExpressionType bigger (ExpressionType e1, ExpressionType e2) {
 	if (mayBeAutoCasted (e1, e2))
@@ -318,8 +313,11 @@ public abstract class ExpressionType {
     public abstract String getDescriptor ();
 
     /** Check if this type match the given Type */
+    /* qwerty
     public abstract boolean match (Type t);
+    */
 
+    /* qwerty
     public static boolean mayBeAutoCasted (ExpressionType from, Type t) {
 	List<PrimitiveExpressionType> l = ALLOWED_UPCASTS.get (from);
 	if (l == null)
@@ -329,6 +327,7 @@ public abstract class ExpressionType {
 		return true;
 	return false;
     }
+    */
 
     private static String repeat (String s, int times) {
 	StringBuilder sb = new StringBuilder ();

@@ -1,9 +1,13 @@
 package org.khelekore.parjac2.javacompiler;
 
+import java.lang.constant.ClassDesc;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Opcodes;
+import io.github.dmlloyd.classfile.Classfile;
+import io.github.dmlloyd.classfile.attribute.SourceFileAttribute;
+
 import org.khelekore.parjac2.javacompiler.syntaxtree.*;
 
 public class BytecodeGenerator {
@@ -13,13 +17,13 @@ public class BytecodeGenerator {
     private final String name;
 
     private enum ImplicitClassFlags {
-	CLASS_FLAGS (Opcodes.ACC_SUPER),
-	ENUM_FLAGS (Opcodes.ACC_FINAL | Opcodes.ACC_ENUM),
-	RECORD_FLAGS (Opcodes.ACC_FINAL | Opcodes.ACC_RECORD),
-	INTERFACE_FLAGS (Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT),
-	ANNOTATION_FLAGS (Opcodes.ACC_ANNOTATION | Opcodes.ACC_INTERFACE),
-	ENUM_CONSTANT_FLAGS (Opcodes.ACC_FINAL),
-	ANONYMOUS_CLASS_FLAGS (Opcodes.ACC_SUPER);
+	CLASS_FLAGS (Classfile.ACC_SUPER),
+	ENUM_FLAGS (Classfile.ACC_FINAL | Classfile.ACC_ENUM),
+	RECORD_FLAGS (Classfile.ACC_FINAL),  // qwerty: there does not seem to be any: Classfile.ACC_RECORD
+	INTERFACE_FLAGS (Classfile.ACC_INTERFACE | Classfile.ACC_ABSTRACT),
+	ANNOTATION_FLAGS (Classfile.ACC_ANNOTATION | Classfile.ACC_INTERFACE),
+	ENUM_CONSTANT_FLAGS (Classfile.ACC_FINAL),
+	ANONYMOUS_CLASS_FLAGS (Classfile.ACC_SUPER);
 
 	private int flags;
 
@@ -62,27 +66,27 @@ public class BytecodeGenerator {
 
     private byte[] generateClass (NormalClassDeclaration c) {
 	// TODO: set signature and interfaces
-	return generateClass (c, ImplicitClassFlags.CLASS_FLAGS, null, "java/lang/Object", null);
+	return generateClass (c, ImplicitClassFlags.CLASS_FLAGS, null, "java.lang.Object", null);
     }
 
     private byte[] generateClass (EnumDeclaration e) {
 	String signature = "Ljava/lang/Enum<L" + name + ";>;";
-	return generateClass (e, ImplicitClassFlags.ENUM_FLAGS, signature, "java/lang/Enum", null);
+	return generateClass (e, ImplicitClassFlags.ENUM_FLAGS, signature, "java.lang.Enum", null);
     }
 
     private byte[] generateClass (RecordDeclaration e) {
 	String signature = "Ljava/lang/Record";
-	return generateClass (e, ImplicitClassFlags.RECORD_FLAGS, signature, "java/lang/Record", null);
+	return generateClass (e, ImplicitClassFlags.RECORD_FLAGS, signature, "java.lang.Record", null);
     }
 
     private byte[] generateInterface (NormalInterfaceDeclaration i) {
-	return generateClass (i, ImplicitClassFlags.INTERFACE_FLAGS, null, "java/lang/Object", null);
+	return generateClass (i, ImplicitClassFlags.INTERFACE_FLAGS, null, "java.lang.Object", null);
     }
 
     private byte[] generateInterface (AnnotationTypeDeclaration at) {
-	String[] superInterfaces = new String[] { "java/lang/annotation/Annotation" };
+	String[] superInterfaces = new String[] { "java.lang.annotation.Annotation" };
 	return generateClass (at, ImplicitClassFlags.ANNOTATION_FLAGS, null,
-			      "java/lang/Object", superInterfaces);
+			      "java.lang.Object", superInterfaces);
     }
 
     private byte[] generateEnumConstant (EnumConstant ec) {
@@ -93,17 +97,25 @@ public class BytecodeGenerator {
     }
 
     private byte[] generateAnonymousClass (UnqualifiedClassInstanceCreationExpression ac) {
-	return generateClass (ac, ImplicitClassFlags.ANONYMOUS_CLASS_FLAGS, null, "java/lang/Object", null);
+	return generateClass (ac, ImplicitClassFlags.ANONYMOUS_CLASS_FLAGS, null, "java.lang.Object", null);
     }
 
     private byte[] generateClass (TypeDeclaration tdt, ImplicitClassFlags icf,
 				  String signature, String superType, String[] superInterfaces) {
-	ClassWriter cw = new ClassWriter (ClassWriter.COMPUTE_FRAMES);
-	int flags = td.getFlags () | icf.flags;
-	cw.visit (Opcodes.V11, flags, name, signature, superType, superInterfaces);
-	if (origin != null)
-	    cw.visitSource (origin.getFileName ().toString (), null);
-        cw.visitEnd ();
-	return cw.toByteArray ();
+	byte[] b = Classfile.of().build(ClassDesc.of (name), classBuilder -> {
+		classBuilder.withFlags (td.getFlags () | icf.flags);
+		classBuilder.withSuperclass (ClassDesc.of (superType));
+		if (superInterfaces != null) {
+		    List<ClassDesc> ls = new ArrayList<> ();
+		    for (String si : superInterfaces)
+			ls.add (ClassDesc.of (si));
+		}
+		if (origin != null)
+		    classBuilder.with (SourceFileAttribute.of (origin.getFileName ().toString ()));
+
+		// add fields: withField
+		// add methods: withMethod, withMethodBody
+	    });
+	return b;
     }
 }

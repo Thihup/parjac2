@@ -52,9 +52,9 @@
   </build>
   <dependencies>
     <dependency>
-      <groupId>org.ow2.asm</groupId>
-      <artifactId>asm</artifactId>
-      <version>9.6</version>
+      <groupId>io.github.dmlloyd</groupId>
+      <artifactId>jdk-classfile-preview</artifactId>
+      <version>22.0.0</version>
     </dependency>
     <dependency>
       <groupId>org.testng</groupId>
