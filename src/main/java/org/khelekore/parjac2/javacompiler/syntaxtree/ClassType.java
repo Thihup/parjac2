@@ -15,6 +15,12 @@ public class ClassType extends SyntaxTreeNode {
 	this.types = types;
     }
 
+    public ClassType (String fqn) {
+	super (null);
+	types = List.of (new SimpleClassType (null, fqn, null));
+	this.fqn = fqn;
+    }
+
     @Override public Object getValue () {
 	return types.toString ();
     }
@@ -49,6 +55,16 @@ public class ClassType extends SyntaxTreeNode {
 
     public List<SimpleClassType> get () {
 	return types;
+    }
+
+    public String getSlashName () {
+	if (fqn == null) throw new IllegalStateException ("FQN not set");
+	return fqn.replace ('.', '/'); // TODO: probably not correct now since we do not have $ for inner classes
+    }
+
+    public TypeArguments getTypeArguments () {
+	List<SimpleClassType> ls = get ();
+	return ls.get (ls.size () - 1).getTypeArguments ();
     }
 
     public ExpressionType getExpressionType () {

@@ -59,6 +59,10 @@ public class NormalInterfaceDeclaration extends TypeDeclaration {
 	return id;
     }
 
+    public TypeParameters getTypeParameters () {
+	return types;
+    }
+
     public List<ConstantDeclaration> getConstants () {
 	return body.getConstants ();
     }

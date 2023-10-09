@@ -5,7 +5,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.github.dmlloyd.classfile.ClassSignature;
 import io.github.dmlloyd.classfile.Classfile;
+import io.github.dmlloyd.classfile.attribute.SignatureAttribute;
 import io.github.dmlloyd.classfile.attribute.SourceFileAttribute;
 
 import org.khelekore.parjac2.javacompiler.syntaxtree.*;
@@ -15,6 +17,10 @@ public class BytecodeGenerator {
     private final TypeDeclaration td;
     private final ClassInformationProvider cip;
     private final String name;
+
+    private static final ClassType enumClassType = new ClassType ("java.lang.Enum");
+    private static final ClassType recordClassType = new ClassType ("java.lang.Record");
+    private static final ClassType objectClassType = new ClassType ("java.lang.Object");
 
     private enum ImplicitClassFlags {
 	CLASS_FLAGS (Classfile.ACC_SUPER),
@@ -66,57 +72,114 @@ public class BytecodeGenerator {
     }
 
     private byte[] generateClass (NormalClassDeclaration c) {
-	// TODO: set signature and interfaces
-	return generateClass (c, ImplicitClassFlags.CLASS_FLAGS, null, "java.lang.Object", null);
+	String signature = getClassSignature (c.getTypeParameters (), c.getSuperClass (), c.getSuperInterfaces ());
+	return generateClass (c, ImplicitClassFlags.CLASS_FLAGS, signature,
+			      c.getSuperClass (), c.getSuperInterfaces ());
     }
 
     private byte[] generateClass (EnumDeclaration e) {
 	String signature = "Ljava/lang/Enum<L" + name + ";>;";
-	return generateClass (e, ImplicitClassFlags.ENUM_FLAGS, signature, "java.lang.Enum", null);
+	return generateClass (e, ImplicitClassFlags.ENUM_FLAGS, signature,
+			      enumClassType, List.of ());
     }
 
     private byte[] generateClass (RecordDeclaration e) {
 	String signature = "Ljava/lang/Record";
-	return generateClass (e, ImplicitClassFlags.RECORD_FLAGS, signature, "java.lang.Record", null);
+	return generateClass (e, ImplicitClassFlags.RECORD_FLAGS, signature,
+			      recordClassType, List.of ());
     }
 
     private byte[] generateInterface (NormalInterfaceDeclaration i) {
-	return generateClass (i, ImplicitClassFlags.INTERFACE_FLAGS, null, "java.lang.Object", null);
+	String signature = getClassSignature (i.getTypeParameters (), null, i.getExtendsInterfaces ());
+	return generateClass (i, ImplicitClassFlags.INTERFACE_FLAGS, signature,
+			      objectClassType, i.getExtendsInterfaces ());
     }
 
     private byte[] generateInterface (AnnotationTypeDeclaration at) {
-	String[] superInterfaces = new String[] { "java.lang.annotation.Annotation" };
+	//List<String> superInterfaces = List.of ("java.lang.annotation.Annotation");
 	return generateClass (at, ImplicitClassFlags.ANNOTATION_FLAGS, null,
-			      "java.lang.Object", superInterfaces);
+			      objectClassType, List.of ()); // TODO: use superInterfaces
     }
 
     private byte[] generateEnumConstant (EnumConstant ec) {
 	// TODO: extend the enum
 	EnumDeclaration ed = ec.getParent ();
 	String parentName = cip.getFullDollarClassName (ed);
-	return generateClass (ec, ImplicitClassFlags.ENUM_CONSTANT_FLAGS, null, parentName, null);
+	return generateClass (ec, ImplicitClassFlags.ENUM_CONSTANT_FLAGS, null,
+			      new ClassType (parentName), List.of ());
     }
 
     private byte[] generateAnonymousClass (UnqualifiedClassInstanceCreationExpression ac) {
-	return generateClass (ac, ImplicitClassFlags.ANONYMOUS_CLASS_FLAGS, null, "java.lang.Object", null);
+	return generateClass (ac, ImplicitClassFlags.ANONYMOUS_CLASS_FLAGS, null,
+			      ac.getSuperType (), List.of ());
+    }
+
+    private String getClassSignature (TypeParameters tps, ClassType superClass, List<ClassType> superInterfaces) {
+	StringBuilder sb = new StringBuilder ();
+	appendTypeParameters (sb, tps);
+	if (superClass != null) {
+	    sb.append (GenericTypeHelper.getGenericType (superClass));
+	} else {
+	    sb.append ("Ljava/lang/Object;");
+	}
+	if (superInterfaces != null) {
+	    for (ClassType ct : superInterfaces)
+		sb.append (GenericTypeHelper.getGenericType (ct));
+	}
+	return sb.toString ();
+    }
+
+    private void appendTypeParameters (StringBuilder sb, TypeParameters tps) {
+	if (tps == null)
+	    return;
+	sb.append ("<");
+	for (TypeParameter tp : tps.get ()) {
+	    sb.append (tp.getId ());
+	    TypeBound b = tp.getTypeBound ();
+	    if (b != null) {
+		ClassType bt = b.getType ();
+		sb.append (cip.isInterface (bt.getFullName ()) ? "::" : ":");
+		sb.append (bt.getExpressionType ().getDescriptor ());
+		List<ClassType> ls = b.getAdditionalBounds ();
+		if (ls != null) {
+		    for (ClassType ab : ls)
+			sb.append (":").append (ab.getExpressionType ().getDescriptor ());
+		}
+	    } else {
+		sb.append (":Ljava/lang/Object;");
+	    }
+	}
+	sb.append (">");
     }
 
     private byte[] generateClass (TypeDeclaration tdt, ImplicitClassFlags icf,
-				  String signature, String superType, String[] superInterfaces) {
+				  String signature, ClassType superType, List<ClassType> superInterfaces) {
 	byte[] b = Classfile.of().build (ClassDesc.of (name), classBuilder -> {
 		classBuilder.withVersion (Classfile.JAVA_21_VERSION, 0);  // possible minor: PREVIEW_MINOR_VERSION
 		classBuilder.withFlags (td.getFlags () | icf.flags);
-		classBuilder.withSuperclass (ClassDesc.of (superType));
+		classBuilder.withSuperclass (ClassDesc.of ((superType != null ? superType : objectClassType).getFullName ()));
 		if (superInterfaces != null) {
 		    List<ClassDesc> ls = new ArrayList<> ();
-		    for (String si : superInterfaces)
-			ls.add (ClassDesc.of (si));
+		    for (ClassType ct : superInterfaces) {
+			ClassDesc cd = ClassDesc.of (ct.getFullName ());
+			ls.add (cd);
+		    }
+		    classBuilder.withInterfaceSymbols (ls);
 		}
-		if (origin != null)
-		    classBuilder.with (SourceFileAttribute.of (origin.getFileName ().toString ()));
-
 		// add fields: withField
 		// add methods: withMethod, withMethodBody
+
+		/* TODO: check if we want to do this instead
+		classBuilder.with (SignatureAttribute.of (ClassSignature.of (typeParameters,
+									     superclassSignature,
+									     superInterfaceSignatures)));
+		*/
+		if (signature != null)
+		    classBuilder.with (SignatureAttribute.of (ClassSignature.parseFrom (signature)));
+		if (origin != null)
+		    classBuilder.with (SourceFileAttribute.of (origin.getFileName ().toString ()));
+		// add nest host attribute: top level class
+		// add inner class attributes
 	    });
 	return b;
     }

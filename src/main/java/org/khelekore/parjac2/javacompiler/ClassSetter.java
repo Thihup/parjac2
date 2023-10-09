@@ -176,8 +176,9 @@ public class ClassSetter {
 	ct.setTypeParameter (fqn.tp);
 	for (SimpleClassType sct : ct.get ()) {
 	    TypeArguments tas = sct.getTypeArguments ();
-	    if (tas != null)
+	    if (tas != null) {
 		tas.getTypeArguments ().forEach (tn -> setType (tn));
+	    }
 	}
     }
 

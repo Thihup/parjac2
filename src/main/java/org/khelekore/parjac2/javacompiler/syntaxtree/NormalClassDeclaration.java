@@ -82,6 +82,10 @@ public class NormalClassDeclaration extends TypeDeclaration {
 	return id;
     }
 
+    public TypeParameters getTypeParameters () {
+	return typeParameters;
+    }
+
     @Override public List<TypeDeclaration> getInnerClasses () {
 	return body.getInnerClasses ();
     }

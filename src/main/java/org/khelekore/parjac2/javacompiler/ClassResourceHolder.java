@@ -17,7 +17,6 @@ import java.util.jar.JarFile;
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.NoSourceDiagnostics;
 
-import io.github.dmlloyd.classfile.AccessFlags;
 import io.github.dmlloyd.classfile.ClassModel;
 import io.github.dmlloyd.classfile.Classfile;
 import io.github.dmlloyd.classfile.constantpool.ClassEntry;

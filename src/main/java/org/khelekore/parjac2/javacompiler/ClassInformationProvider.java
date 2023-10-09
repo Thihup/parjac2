@@ -124,4 +124,8 @@ public class ClassInformationProvider {
     public FieldInformation<?> getFieldInformation (String fqn, String field) {
 	return null; // TODO: implement
     }
+
+    public boolean isInterface (String fqn) {
+	return false; // TODO: implement
+    }
 }

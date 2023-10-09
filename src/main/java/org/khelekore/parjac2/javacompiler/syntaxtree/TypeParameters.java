@@ -21,4 +21,9 @@ public class TypeParameters extends SyntaxTreeNode {
     @Override public void visitChildNodes (NodeVisitor v) {
 	v.accept (list);
     }
+
+    public Iterable<TypeParameter> get () {
+	List<ParseTreeNode> ls = list.get ();
+	return ls.stream ().map (p -> ((TypeParameter)p)).toList ();
+    }
 }
