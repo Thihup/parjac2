@@ -19,6 +19,7 @@ import org.khelekore.parjac2.NoSourceDiagnostics;
 import org.khelekore.parjac2.SourceDiagnostics;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
+import org.khelekore.parjac2.javacompiler.syntaxtree.EnumConstant;
 import org.khelekore.parjac2.javacompiler.syntaxtree.EnumDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ImportDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.NormalClassDeclaration;
@@ -103,6 +104,7 @@ public class ClassSetter {
 	    case NormalInterfaceDeclaration i -> registerSuperTypes (i);
 	    case RecordDeclaration rd -> registerSuperTypes (rd.getSuperInterfaces ());
 	    case UnqualifiedClassInstanceCreationExpression uc -> setType (uc.getSuperType ());
+	    case EnumConstant ec -> registerSuperTypes (ec.getParent ().getSuperInterfaces ());
 	    default -> diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), td.getPosition (),
 								    "registerSuperTypes: Unhandled type: %s",
 								    td.getClass ().getName ()));
@@ -245,7 +247,7 @@ public class ClassSetter {
 
     private boolean sameTopLevelClass (String fqn, String topLevelClass) {
 	return fqn.length () > topLevelClass.length () && fqn.startsWith (topLevelClass) &&
-	    fqn.charAt (topLevelClass.length ()) == '$';
+	    fqn.charAt (topLevelClass.length ()) == '.';
     }
 
     private static record  ImportHolder (ImportDeclaration i, String name) {
@@ -294,7 +296,7 @@ public class ClassSetter {
 	    if (supers.isPresent ()) {
 		for (String s :  supers.get ()) {
 		    if (fqn.length () > s.length () && fqn.startsWith (s) &&
-			fqn.charAt (s.length ()) == '$') {
+			fqn.charAt (s.length ()) == '.') {
 			return true;
 		    }
 		    if (insideSuperClass (fqn, s))
@@ -530,6 +532,7 @@ public class ClassSetter {
 
     private record EnclosingTypes (EnclosingTypes previous, TypeDeclaration td, String fqn)
 	implements Iterable<EnclosingTypes> {
+
 	public Iterator<EnclosingTypes> iterator () {
 	    return new ETIterator (this);
 	}

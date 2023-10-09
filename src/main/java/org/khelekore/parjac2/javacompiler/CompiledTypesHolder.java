@@ -62,7 +62,7 @@ public class CompiledTypesHolder {
 	foundClasses.put (fullName, td);
 	typeToPackagename.put (td, packageName);
 	typeToOrigin.put (td, origin);
-	String className = classPrefix.isEmpty () ? td.getName () : (classPrefix + "$" + td.getName ());
+	String className = classPrefix.isEmpty () ? td.getName () : (classPrefix + "." + td.getName ());
 	typeToFullName.put (td, className);
 	td.getInnerClasses ().forEach (i -> addType (packageName, fullName, className, i, origin));
     }
