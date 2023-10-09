@@ -36,7 +36,7 @@ public class BytecodeGenerator {
 	this.origin = origin;
 	this.td = td;
 	this.cip = cip;
-	this.name = cip.getFullClassName (td);
+	this.name = cip.getFullDollarClassName (td);
     }
 
     public byte[] generate () {
@@ -59,6 +59,7 @@ public class BytecodeGenerator {
 		return generateEnumConstant (ec);
 	    }
 	} else {
+	    // TODO: handle this error!
 	    System.err.println ("Unhandled class: " + c.getName ());
 	}
 	return new byte[0];
@@ -92,7 +93,7 @@ public class BytecodeGenerator {
     private byte[] generateEnumConstant (EnumConstant ec) {
 	// TODO: extend the enum
 	EnumDeclaration ed = ec.getParent ();
-	String parentName = cip.getFullClassName (ed);
+	String parentName = cip.getFullDollarClassName (ed);
 	return generateClass (ec, ImplicitClassFlags.ENUM_CONSTANT_FLAGS, null, parentName, null);
     }
 
@@ -102,7 +103,8 @@ public class BytecodeGenerator {
 
     private byte[] generateClass (TypeDeclaration tdt, ImplicitClassFlags icf,
 				  String signature, String superType, String[] superInterfaces) {
-	byte[] b = Classfile.of().build(ClassDesc.of (name), classBuilder -> {
+	byte[] b = Classfile.of().build (ClassDesc.of (name), classBuilder -> {
+		classBuilder.withVersion (Classfile.JAVA_21_VERSION, 0);  // possible minor: PREVIEW_MINOR_VERSION
 		classBuilder.withFlags (td.getFlags () | icf.flags);
 		classBuilder.withSuperclass (ClassDesc.of (superType));
 		if (superInterfaces != null) {

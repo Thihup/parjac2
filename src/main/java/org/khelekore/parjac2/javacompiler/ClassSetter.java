@@ -93,7 +93,7 @@ public class ClassSetter {
 
     public void registerSuperTypes () {
 	Deque<EnclosingTypes> typesToHandle = new ArrayDeque<> ();
-	ocu.getTypes ().stream ().map (td -> new EnclosingTypes (null, td, cip.getFullName (td))).forEach (typesToHandle::add);
+	ocu.getTypes ().stream ().map (td -> new EnclosingTypes (null, td, cip.getFullDotClassName (td))).forEach (typesToHandle::add);
 	while (!typesToHandle.isEmpty ()) {
 	    EnclosingTypes et = typesToHandle.removeFirst ();
 	    containingTypes = et;
@@ -110,7 +110,7 @@ public class ClassSetter {
 								    td.getClass ().getName ()));
 	    }
 
-	    td.getInnerClasses ().stream ().map (i -> new EnclosingTypes (et, i, cip.getFullName (i))).forEach (typesToHandle::add);
+	    td.getInnerClasses ().stream ().map (i -> new EnclosingTypes (et, i, cip.getFullDotClassName (i))).forEach (typesToHandle::add);
 	}
     }
 

@@ -105,8 +105,12 @@ public class ClassInformationProvider {
 	return cth.getPackageName (td);
     }
 
-    public String getFullClassName (TypeDeclaration td) {
-	return cth.getFullClassName (td);
+    public String getFullDotClassName (TypeDeclaration td) {
+	return cth.getFullDotClassName (td);
+    }
+
+    public String getFullDollarClassName (TypeDeclaration td) {
+	return cth.getFullDollarClassName (td);
     }
 
     public String getFileName (TypeDeclaration td) {
@@ -115,10 +119,6 @@ public class ClassInformationProvider {
 
     public Path getOriginFile (TypeDeclaration td) {
 	return cth.getOriginFile (td);
-    }
-
-    public String getFullName (TypeDeclaration td) {
-	return cth.getFullClassName (td);
     }
 
     public FieldInformation<?> getFieldInformation (String fqn, String field) {

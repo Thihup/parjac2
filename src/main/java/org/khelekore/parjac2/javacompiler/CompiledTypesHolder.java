@@ -29,8 +29,10 @@ public class CompiledTypesHolder {
     private Map<String, TypeDeclaration> foundClasses = new ConcurrentHashMap<> ();
     // TD -> foo.bar
     private Map<TypeDeclaration, String> typeToPackagename = new ConcurrentHashMap<> ();
-    // TD -> Baz$Qaz
+    // TD -> Baz.Qaz
     private Map<TypeDeclaration, String> typeToFullName = new ConcurrentHashMap<> ();
+    // TD -> Baz$Qaz
+    private Map<TypeDeclaration, String> typeToDollarName = new ConcurrentHashMap<> ();
     // TD -> foo/bar/Baz.java
     private Map<TypeDeclaration, Path> typeToOrigin = new ConcurrentHashMap<> ();
     private Map<String, ModuleDeclaration> foundModules = new ConcurrentHashMap<> ();
@@ -64,6 +66,8 @@ public class CompiledTypesHolder {
 	typeToOrigin.put (td, origin);
 	String className = classPrefix.isEmpty () ? td.getName () : (classPrefix + "." + td.getName ());
 	typeToFullName.put (td, className);
+	String dollarName = classPrefix.isEmpty () ? td.getName () : (classPrefix + "$" + td.getName ());
+	typeToDollarName.put (td, dollarName);
 	td.getInnerClasses ().forEach (i -> addType (packageName, fullName, className, i, origin));
     }
 
@@ -87,7 +91,7 @@ public class CompiledTypesHolder {
 	return typeToPackagename.get (td);
     }
 
-    public String getFullClassName (TypeDeclaration td) {
+    public String getFullDotClassName (TypeDeclaration td) {
 	String pn = getPackageName (td);
 	String cn = typeToFullName.get (td);
 	if (pn.isEmpty ())
@@ -95,8 +99,16 @@ public class CompiledTypesHolder {
 	return pn + "." + cn;
     }
 
+    public String getFullDollarClassName (TypeDeclaration td) {
+	String pn = getPackageName (td);
+	String cn = typeToDollarName.get (td);
+	if (pn.isEmpty ())
+	    return cn;
+	return pn + "." + cn;
+    }
+
     public String getFileName (TypeDeclaration td) {
-	return typeToFullName.get (td);
+	return typeToDollarName.get (td);
     }
 
     public Path getOriginFile (TypeDeclaration td) {
