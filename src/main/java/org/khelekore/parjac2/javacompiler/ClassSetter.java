@@ -527,7 +527,7 @@ public class ClassSetter {
 	}
 	diagnostics.report (SourceDiagnostics.warning (tree.getOrigin (),
 						       i.getPosition (),
-						       "Unused import"));
+						       "Unused import: %s", i.getValue ()));
     }
 
     private record EnclosingTypes (EnclosingTypes previous, TypeDeclaration td, String fqn)
