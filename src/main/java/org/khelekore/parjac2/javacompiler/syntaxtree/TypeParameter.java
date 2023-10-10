@@ -41,6 +41,10 @@ public class TypeParameter extends SyntaxTreeNode {
 	    v.accept (bound);
     }
 
+    public String getId () {
+	return id;
+    }
+
     public TypeBound getTypeBound () {
 	return bound;
     }
