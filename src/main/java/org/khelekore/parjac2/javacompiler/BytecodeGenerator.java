@@ -2,11 +2,17 @@ package org.khelekore.parjac2.javacompiler;
 
 import java.lang.constant.ClassDesc;
 import java.nio.file.Path;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
+import java.util.Optional;
 
+import io.github.dmlloyd.classfile.ClassBuilder;
 import io.github.dmlloyd.classfile.ClassSignature;
 import io.github.dmlloyd.classfile.Classfile;
+import io.github.dmlloyd.classfile.attribute.InnerClassInfo;
+import io.github.dmlloyd.classfile.attribute.InnerClassesAttribute;
 import io.github.dmlloyd.classfile.attribute.SignatureAttribute;
 import io.github.dmlloyd.classfile.attribute.SourceFileAttribute;
 
@@ -181,8 +187,33 @@ public class BytecodeGenerator {
 		    classBuilder.with (SourceFileAttribute.of (origin.getFileName ().toString ()));
 		}
 		// add nest host attribute: top level class
+
 		// add inner class attributes
+		addInnerClassAttributes (classBuilder, tdt);
 	    });
 	return b;
+    }
+
+    /* We need to add all nested classes, not just the direct inner classes of tdt.
+  #21= #14 of #7;                         // Inner2=class Inners$Inner2 of class Inners
+  #22= #16 of #7;                         // Inner1=class Inners$Inner1 of class Inners
+  #23= #18 of #16;                        // Inner1_Inner1=class Inners$Inner1$Inner1_Inner1 of class Inners$Inner1
+    */
+    private void addInnerClassAttributes (ClassBuilder classBuilder, TypeDeclaration tdt) {
+	List<InnerClassInfo> innerClassInfos = new ArrayList<> ();
+	Deque<TypeDeclaration> queue = new ArrayDeque<> ();
+	queue.add (tdt);
+	while (!queue.isEmpty ()) {
+	    TypeDeclaration outer = queue.removeFirst ();
+	    Optional<ClassDesc> outerClass = Optional.of (ClassDesc.of (cip.getFullDollarClassName (outer)));
+	    for (TypeDeclaration inner : outer.getInnerClasses ()) {
+		ClassDesc innerClass = ClassDesc.of (cip.getFullDollarClassName (inner));
+		Optional<String> innerName = Optional.of (inner.getName ());
+		int flags = inner.getFlags ();
+		innerClassInfos.add (InnerClassInfo.of (innerClass, outerClass, innerName, flags));
+		queue.add (inner);
+	    }
+	}
+	classBuilder.with (InnerClassesAttribute.of (innerClassInfos));
     }
 }
