@@ -32,11 +32,13 @@ public class BodyHelper {
 	while (!dq.isEmpty ()) {
 	    ParentToChild pc = dq.removeFirst ();
 	    ParseTreeNode f = pc.toCheck ();
-	    if (isAnonymousClass (f)) {
-		AnonymousClass ac = (AnonymousClass)f;
-		classDeclarations.add (ac);
-		anonymousClasses.add (ac);
-		ac.setAnonymousClassname (Integer.toString (anonymousClasses.size ()));
+
+	    if (f instanceof UnqualifiedClassInstanceCreationExpression u) {
+		if (u.hasBody ())
+		    handleAnonymousClass (u);
+	    } else if (f instanceof EnumConstant ec) {
+		if (ec.hasBody ())
+		    handleAnonymousClass (ec);
 	    } else if (isLocalClass (pc.parent (), f)) {
 		TypeDeclaration localClass = (TypeDeclaration)f;
 		classDeclarations.add (localClass);
@@ -55,17 +57,14 @@ public class BodyHelper {
 	}
     }
 
-    private boolean isAnonymousClass (ParseTreeNode f) {
-	if (f instanceof UnqualifiedClassInstanceCreationExpression u) {
-	    return u.hasBody ();
-	} else if (f instanceof EnumConstant e) {
-	    return e.hasBody ();
-	}
-	return false;
+    private void handleAnonymousClass (AnonymousClass ac) {
+	classDeclarations.add (ac);
+	anonymousClasses.add (ac);
+	ac.setAnonymousClassname (Integer.toString (anonymousClasses.size ()));
     }
 
     private boolean isLocalClass (ParseTreeNode parent, ParseTreeNode f) {
-	return (!(f instanceof UnqualifiedClassInstanceCreationExpression) && f instanceof TypeDeclaration &&
+	return (f instanceof TypeDeclaration &&
 		!(parent instanceof ClassBody || parent instanceof InterfaceBody));
     }
 

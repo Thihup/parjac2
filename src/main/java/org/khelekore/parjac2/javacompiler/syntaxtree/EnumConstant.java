@@ -60,6 +60,10 @@ public class EnumConstant extends AnonymousClass {
 	    v.accept (body);
     }
 
+    @Override public String getName () {
+	return id;
+    }
+
     public boolean hasBody () {
 	return body != null;
     }
