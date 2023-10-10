@@ -174,10 +174,12 @@ public class BytecodeGenerator {
 									     superclassSignature,
 									     superInterfaceSignatures)));
 		*/
-		if (signature != null)
+		if (signature != null) {
 		    classBuilder.with (SignatureAttribute.of (ClassSignature.parseFrom (signature)));
-		if (origin != null)
+		}
+		if (origin != null) {
 		    classBuilder.with (SourceFileAttribute.of (origin.getFileName ().toString ()));
+		}
 		// add nest host attribute: top level class
 		// add inner class attributes
 	    });
