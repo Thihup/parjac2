@@ -50,7 +50,7 @@ public class CompiledTypesHolder {
 	if (n instanceof OrdinaryCompilationUnit ocu) {
 	    String packageName = ocu.getPackageName ();
 	    for (TypeDeclaration td : ocu.getTypes ()) {
-		addType (packageName, packageName, "", td, origin);
+		addType (packageName, packageName, "", "", td, origin);
 	    }
 	} else if (n instanceof ModularCompilationUnit mcu) {
 	    // TODO: not sure if dotted name is correct here
@@ -58,17 +58,18 @@ public class CompiledTypesHolder {
 	}
     }
 
-    private void addType (String packageName, String namePrefix, String classPrefix,
+    private void addType (String packageName, String namePrefix,
+			  String dotPrefix, String dollarPrefix,
 			  TypeDeclaration td, Path origin) {
 	String fullName = namePrefix.isEmpty () ? td.getName () : (namePrefix + "." + td.getName ());
 	foundClasses.put (fullName, td);
 	typeToPackagename.put (td, packageName);
 	typeToOrigin.put (td, origin);
-	String className = classPrefix.isEmpty () ? td.getName () : (classPrefix + "." + td.getName ());
+	String className = dotPrefix.isEmpty () ? td.getName () : (dotPrefix + "." + td.getName ());
 	typeToFullName.put (td, className);
-	String dollarName = classPrefix.isEmpty () ? td.getName () : (classPrefix + "$" + td.getName ());
+	String dollarName = dollarPrefix.isEmpty () ? td.getName () : (dollarPrefix + "$" + td.getName ());
 	typeToDollarName.put (td, dollarName);
-	td.getInnerClasses ().forEach (i -> addType (packageName, fullName, className, i, origin));
+	td.getInnerClasses ().forEach (i -> addType (packageName, fullName, className, dollarName, i, origin));
     }
 
     public int getCompiledClassCount () {
