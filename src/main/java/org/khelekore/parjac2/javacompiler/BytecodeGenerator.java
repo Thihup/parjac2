@@ -84,7 +84,7 @@ public class BytecodeGenerator {
     }
 
     private byte[] generateClass (RecordDeclaration e) {
-	String signature = "Ljava/lang/Record";
+	String signature = "Ljava/lang/Record;";
 	return generateClass (e, ImplicitClassFlags.RECORD_FLAGS, signature,
 			      recordClassType, List.of ());
     }
