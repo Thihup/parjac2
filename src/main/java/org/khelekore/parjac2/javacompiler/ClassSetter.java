@@ -259,8 +259,17 @@ public class ClassSetter {
     }
 
     private boolean hasVisibleType (String fqn) {
-	String topLevelClass = containingTypes == null ? null : containingTypes.fqn;
+	String topLevelClass = containingTypes == null ? null : lastFQN (containingTypes);
 	return hasVisibleType (fqn, topLevelClass);
+    }
+
+    private String lastFQN (EnclosingTypes e) {
+	String fqn = null;
+	while (e != null) {
+	    fqn = e.fqn ();
+	    e = e.previous ();
+	}
+	return fqn;
     }
 
     private boolean hasVisibleType (String fqn, String topLevelClass) {
@@ -377,6 +386,10 @@ public class ClassSetter {
 	public ResolvedClass (TypeParameter tp) {
 	    this.type = tp.getExpressionType ().getClassName ();
 	    this.tp = tp;
+	}
+
+	@Override public String toString () {
+	    return "ResolvedClass{type: " + type + ", tp: " + tp + "}";
 	}
     }
 
@@ -546,7 +559,7 @@ public class ClassSetter {
 	    }
 
 	    public boolean hasNext () {
-		return e.previous () != null;
+		return e != null;
 	    }
 
 	    public EnclosingTypes next () {
