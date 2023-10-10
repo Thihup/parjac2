@@ -195,9 +195,10 @@ public class BytecodeGenerator {
     }
 
     /* We need to add all nested classes, not just the direct inner classes of tdt.
-  #21= #14 of #7;                         // Inner2=class Inners$Inner2 of class Inners
-  #22= #16 of #7;                         // Inner1=class Inners$Inner1 of class Inners
-  #23= #18 of #16;                        // Inner1_Inner1=class Inners$Inner1$Inner1_Inner1 of class Inners$Inner1
+     * Here is how it may look for: class Inners { class Inner1 { class Inner1_Inner1 {} } class Inner2 }
+     #21= #14 of #7;   // Inner2=class Inners$Inner2 of class Inners
+     #22= #16 of #7;   // Inner1=class Inners$Inner1 of class Inners
+     #23= #18 of #16;  // Inner1_Inner1=class Inners$Inner1$Inner1_Inner1 of class Inners$Inner1
     */
     private void addInnerClassAttributes (ClassBuilder classBuilder, TypeDeclaration tdt) {
 	List<InnerClassInfo> innerClassInfos = new ArrayList<> ();
@@ -205,15 +206,33 @@ public class BytecodeGenerator {
 	queue.add (tdt);
 	while (!queue.isEmpty ()) {
 	    TypeDeclaration outer = queue.removeFirst ();
-	    Optional<ClassDesc> outerClass = Optional.of (ClassDesc.of (cip.getFullDollarClassName (outer)));
 	    for (TypeDeclaration inner : outer.getInnerClasses ()) {
-		ClassDesc innerClass = ClassDesc.of (cip.getFullDollarClassName (inner));
-		Optional<String> innerName = Optional.of (inner.getName ());
-		int flags = inner.getFlags ();
-		innerClassInfos.add (InnerClassInfo.of (innerClass, outerClass, innerName, flags));
+		innerClassInfos.add (getInnerClassInfo (outer, inner));
 		queue.add (inner);
 	    }
 	}
-	classBuilder.with (InnerClassesAttribute.of (innerClassInfos));
+	/* We need to add outer classes as well.
+	 * For the Inner1_Inner1 above javac produces:
+	 #20= #18 of #15;   // Inner1=class Inners$Inner1 of class Inners
+	 #21= #7 of #18;    // Inner1_Inner1=class Inners$Inner1$Inner1_Inner1 of class Inners$Inner1
+	*/
+	TypeDeclaration outer = tdt.getOuterClass ();
+	TypeDeclaration inner = tdt;
+	while (outer != null) {
+	    innerClassInfos.add (getInnerClassInfo (outer, inner));
+	    inner = outer;
+	    outer = outer.getOuterClass ();
+	}
+
+	if (!innerClassInfos.isEmpty ())
+	    classBuilder.with (InnerClassesAttribute.of (innerClassInfos));
+    }
+
+    private InnerClassInfo getInnerClassInfo (TypeDeclaration outer, TypeDeclaration inner) {
+	ClassDesc innerClass = ClassDesc.of (cip.getFullDollarClassName (inner));
+	Optional<ClassDesc> outerClass = Optional.of (ClassDesc.of (cip.getFullDollarClassName (outer)));
+	Optional<String> innerName = Optional.of (inner.getName ());
+	int flags = inner.getFlags ();
+	return InnerClassInfo.of (innerClass, outerClass, innerName, flags);
     }
 }

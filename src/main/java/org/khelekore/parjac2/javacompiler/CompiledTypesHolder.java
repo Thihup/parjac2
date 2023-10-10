@@ -70,6 +70,7 @@ public class CompiledTypesHolder {
 	String dollarName = dollarPrefix.isEmpty () ? td.getName () : (dollarPrefix + "$" + td.getName ());
 	typeToDollarName.put (td, dollarName);
 	td.getInnerClasses ().forEach (i -> addType (packageName, fullName, className, dollarName, i, origin));
+	td.getInnerClasses ().forEach (i -> i.setOuterClass (td));
     }
 
     public int getCompiledClassCount () {
