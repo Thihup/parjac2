@@ -31,10 +31,12 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.SingleStaticImportDeclarati
 import org.khelekore.parjac2.javacompiler.syntaxtree.SingleTypeImportDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.StaticImportOnDemandDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeArguments;
+import org.khelekore.parjac2.javacompiler.syntaxtree.TypeBound;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeImportOnDemandDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeName;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeParameter;
+import org.khelekore.parjac2.javacompiler.syntaxtree.TypeParameters;
 import org.khelekore.parjac2.javacompiler.syntaxtree.UnqualifiedClassInstanceCreationExpression;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Wildcard;
 import org.khelekore.parjac2.javacompiler.syntaxtree.WildcardBounds;
@@ -119,6 +121,7 @@ public class ClassSetter {
 	if (superclass != null)
 	    setType (superclass);
 	registerSuperTypes (ndi.getSuperInterfaces ());
+	registerTypeParameters (ndi.getTypeParameters ());
     }
 
     private void registerSuperTypes (NormalInterfaceDeclaration i) {
@@ -128,6 +131,19 @@ public class ClassSetter {
     private void registerSuperTypes (List<ClassType> types) {
 	if (types != null)
 	    types.forEach (this::setType);
+    }
+
+    private void registerTypeParameters (TypeParameters tps) {
+	if (tps == null)
+	    return;
+	for (TypeParameter tp : tps.get ()) {
+	    // TODO: register the type parameter tp.getId ();
+	    TypeBound bound = tp.getTypeBound ();
+	    if (bound != null) {
+		setType (bound.getType ());
+		bound.getAdditionalBounds ().forEach (this::setType);
+	    }
+	}
     }
 
     private void setType (ParseTreeNode type) {
