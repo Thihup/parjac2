@@ -23,15 +23,12 @@ public class ClassInformationProvider {
     private final CompilerDiagnosticCollector diagnostics;
     private final ClassResourceHolder crh;
     private final CompiledTypesHolder cth;
-    private Map<TypeParameter, String> typeToName;
     private Map<String, TypeParameter> nameToType;
 
     public ClassInformationProvider (CompilerDiagnosticCollector diagnostics, CompilationArguments settings) {
 	this.diagnostics = diagnostics;
 	crh = new ClassResourceHolder (diagnostics, settings);
 	cth = new CompiledTypesHolder ();
-
-	typeToName = new ConcurrentHashMap<> ();
 	nameToType = new ConcurrentHashMap<> ();
     }
 

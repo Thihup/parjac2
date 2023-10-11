@@ -34,6 +34,7 @@ public class EnumBody extends SyntaxTreeNode {
 	}
 	if (declarations != null)
 	    innerClasses.addAll (declarations.getInnerClasses ());
+	// TODO: do we not need to use BodyHelper here?
     }
 
     @Override public Object getValue () {

@@ -75,8 +75,10 @@ public class ClassSetter {
 	if (diagnostics.hasError ())
 	    return;
 	classSetters.parallelStream ().forEach (ClassSetter::registerSuperTypes);
-	// qwerty
+	// TODO: handle all parts of a class
 
+	classSetters.parallelStream ().forEach (ClassSetter::registerFields);
+	//classSetters.parallelStream ().forEach (ClassSetter::registerMethods);
 
 	classSetters.parallelStream ().forEach (cs -> cs.checkUnusedImport ());
     }
@@ -95,7 +97,7 @@ public class ClassSetter {
 
     public void registerSuperTypes () {
 	Deque<EnclosingTypes> typesToHandle = new ArrayDeque<> ();
-	ocu.getTypes ().stream ().map (td -> new EnclosingTypes (null, td, cip.getFullDotClassName (td))).forEach (typesToHandle::add);
+	ocu.getTypes ().stream ().map (td -> enclosingTypes (null, td)).forEach (typesToHandle::add);
 	while (!typesToHandle.isEmpty ()) {
 	    EnclosingTypes et = typesToHandle.removeFirst ();
 	    containingTypes = et;
@@ -112,7 +114,7 @@ public class ClassSetter {
 								    td.getClass ().getName ()));
 	    }
 
-	    td.getInnerClasses ().stream ().map (i -> new EnclosingTypes (et, i, cip.getFullDotClassName (i))).forEach (typesToHandle::add);
+	    td.getInnerClasses ().stream ().map (i -> enclosingTypes (et, i)).forEach (typesToHandle::add);
 	}
     }
 
@@ -146,6 +148,10 @@ public class ClassSetter {
 	}
     }
 
+    private void registerFields () {
+
+    }
+
     private void setType (ParseTreeNode type) {
 	/* Not sure if we need this
 	if (type instanceof PrimitiveTokenType) {
@@ -176,7 +182,7 @@ public class ClassSetter {
 	if (ct.getFullName () != null) // already set?
 	    return;
 	// "List" and "java.util.List" are easy to resolve
-	String id1 = getId (ct, ".");
+	String id1 = getId (ct);
 	ResolvedClass fqn = resolve (id1, ct.getPosition ());
 	if (fqn == null && ct.size () > 1) {
 	    // ok, someone probably wrote something like "HashMap.Entry" or
@@ -198,10 +204,10 @@ public class ClassSetter {
 	}
     }
 
-    private String getId (ClassType ct, String join) {
+    private String getId (ClassType ct) {
 	if (ct.size () == 1)
 	    return ct.get ().get (0).getId ();
-	return ct.get ().stream ().map (s -> s.getId ()).collect (Collectors.joining (join));
+	return ct.get ().stream ().map (s -> s.getId ()).collect (Collectors.joining ("."));
     }
 
     private class ImportHandler {
@@ -419,7 +425,7 @@ public class ClassSetter {
 
 	// Check for inner class of super classes
 	for (EnclosingTypes ctn : containingTypes) {
-	    String fqn = checkSuperClasses (ctn.fqn, id);
+	    String fqn = checkSuperClasses (ctn.fqn (), id);
 	    if (fqn != null)
 		return fqn;
 	}
@@ -558,6 +564,10 @@ public class ClassSetter {
 	diagnostics.report (SourceDiagnostics.warning (tree.getOrigin (),
 						       i.getPosition (),
 						       "Unused import: %s", i.getValue ()));
+    }
+
+    public EnclosingTypes enclosingTypes (EnclosingTypes previous, TypeDeclaration td) {
+	return new EnclosingTypes (previous, td, cip.getFullDotClassName (td));
     }
 
     private record EnclosingTypes (EnclosingTypes previous, TypeDeclaration td, String fqn)

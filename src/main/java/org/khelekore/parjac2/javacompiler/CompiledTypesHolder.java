@@ -27,14 +27,7 @@ public class CompiledTypesHolder {
     // full class name to declaration, name only has '.' as separator, no / or $
     // foo.bar.Baz.Qas -> TD
     private Map<String, TypeDeclaration> foundClasses = new ConcurrentHashMap<> ();
-    // TD -> foo.bar
-    private Map<TypeDeclaration, String> typeToPackagename = new ConcurrentHashMap<> ();
-    // TD -> Baz.Qaz
-    private Map<TypeDeclaration, String> typeToFullName = new ConcurrentHashMap<> ();
-    // TD -> Baz$Qaz
-    private Map<TypeDeclaration, String> typeToDollarName = new ConcurrentHashMap<> ();
-    // TD -> foo/bar/Baz.java
-    private Map<TypeDeclaration, Path> typeToOrigin = new ConcurrentHashMap<> ();
+    private Map<TypeDeclaration, TypeInfo> typeToInfo = new ConcurrentHashMap<> ();
     private Map<String, ModuleDeclaration> foundModules = new ConcurrentHashMap<> ();
 
     public LookupResult hasVisibleType (String fqn) {
@@ -63,13 +56,10 @@ public class CompiledTypesHolder {
 			  TypeDeclaration td, Path origin) {
 	String fullName = namePrefix.isEmpty () ? td.getName () : (namePrefix + "." + td.getName ());
 	foundClasses.put (fullName, td);
-	typeToPackagename.put (td, packageName);
-	typeToOrigin.put (td, origin);
-	String className = dotPrefix.isEmpty () ? td.getName () : (dotPrefix + "." + td.getName ());
-	typeToFullName.put (td, className);
+	String dotName = dotPrefix.isEmpty () ? td.getName () : (dotPrefix + "." + td.getName ());
 	String dollarName = dollarPrefix.isEmpty () ? td.getName () : (dollarPrefix + "$" + td.getName ());
-	typeToDollarName.put (td, dollarName);
-	td.getInnerClasses ().forEach (i -> addType (packageName, fullName, className, dollarName, i, origin));
+	typeToInfo.put (td, new TypeInfo (packageName, dotName, dollarName, origin));
+	td.getInnerClasses ().forEach (i -> addType (packageName, fullName, dotName, dollarName, i, origin));
 	td.getInnerClasses ().forEach (i -> i.setOuterClass (td));
     }
 
@@ -90,31 +80,25 @@ public class CompiledTypesHolder {
     }
 
     public String getPackageName (TypeDeclaration td) {
-	return typeToPackagename.get (td);
+	return typeToInfo.get (td).packageName;
     }
 
     public String getFullDotClassName (TypeDeclaration td) {
-	String pn = getPackageName (td);
-	String cn = typeToFullName.get (td);
-	if (pn.isEmpty ())
-	    return cn;
-	return pn + "." + cn;
+	TypeInfo info = typeToInfo.get (td);
+	return info.getFullDotClassName ();
     }
 
     public String getFullDollarClassName (TypeDeclaration td) {
-	String pn = getPackageName (td);
-	String cn = typeToDollarName.get (td);
-	if (pn.isEmpty ())
-	    return cn;
-	return pn + "." + cn;
+	TypeInfo info = typeToInfo.get (td);
+	return info.getFullDollarClassName ();
     }
 
     public String getFileName (TypeDeclaration td) {
-	return typeToDollarName.get (td);
+	return typeToInfo.get (td).dollarName;
     }
 
     public Path getOriginFile (TypeDeclaration td) {
-	return typeToOrigin.get (td);
+	return typeToInfo.get (td).origin;
     }
 
     public Optional<List<String>> getSuperTypes (String type) {
@@ -187,5 +171,45 @@ public class CompiledTypesHolder {
     private void addInterfaces (List<String> ret, List<ClassType> types) {
 	if (types != null)
 	    types.forEach (ct -> ret.add (ct.getFullName ()));
+    }
+
+    private static class TypeInfo {
+	private final String packageName;  // "foo.bar"
+	private final String dotName;      // Baz.Qaz
+	private final String dollarName;   // Baz$Qaz
+	private final Path origin;         // foo/bar/Baz.java
+
+	private String fullDotName;        // foo.bar.Baz.Qaz
+	private String fullDollarName;     // foo.bar.Baz$Qaz
+
+	public TypeInfo (String packageName, String dotName, String dollarName, Path origin) {
+	    this.packageName = packageName;
+	    this.dotName = dotName;
+	    this.dollarName = dollarName;
+	    this.origin = origin;
+	}
+
+	@Override public String toString () {
+	    return getClass ().getSimpleName () + "{" + packageName + ", " + dotName + ", " + dollarName + ", " +
+		origin + ", " + fullDotName + ", " + fullDollarName + "}";
+	}
+
+	private synchronized String getFullDotClassName () {
+	    if (fullDotName == null) {
+		String pn = packageName;
+		String cn = dotName;
+		fullDotName = pn.isEmpty () ? cn : pn + "." + cn;
+	    }
+	    return fullDotName;
+	}
+
+	private synchronized String getFullDollarClassName () {
+	    if (fullDollarName == null) {
+		String pn = packageName;
+		String cn = dollarName;
+		fullDollarName = pn.isEmpty () ? cn : pn + "." + cn;
+	    }
+	    return fullDollarName;
+	}
     }
 }

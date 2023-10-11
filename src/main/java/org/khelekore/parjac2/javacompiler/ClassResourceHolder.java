@@ -121,7 +121,7 @@ public class ClassResourceHolder {
     public LookupResult hasVisibleType (String fqn) {
 	ClasspathClassInformation r = foundClasses.get (fqn);
 	if (r != null)
-	    if (loadNoCheckedException (fqn, r))
+	    if (loadNoCheckedException (r))
 		return new LookupResult (true, r.accessFlags);
 	return LookupResult.NOT_FOUND;
     }
@@ -130,13 +130,13 @@ public class ClassResourceHolder {
 	ClasspathClassInformation r = foundClasses.get (fqn);
 	if (r == null)
 	    return Optional.empty ();
-	loadNoCheckedException (fqn, r);
+	loadNoCheckedException (r);
 	return Optional.of (r.superTypes);
     }
 
-    private boolean loadNoCheckedException (String fqn, ClasspathClassInformation r) {
+    private boolean loadNoCheckedException (ClasspathClassInformation r) {
 	try {
-	    r.ensureNodeIsLoaded (fqn);
+	    r.ensureNodeIsLoaded ();
 	    return true;
 	} catch (IOException e) {
 	    e.printStackTrace ();
@@ -152,7 +152,6 @@ public class ClassResourceHolder {
 
     private static abstract class ClasspathClassInformation {
 	private boolean loaded = false;
-	private String fqn;
 	private String superClass;
 	private List<String> superTypes;
 	private int accessFlags;
@@ -161,11 +160,10 @@ public class ClassResourceHolder {
 	//private Map<String, AsmField> fieldTypes = new HashMap<> ();
 	//private Map<String, List<MethodInformation>> methods = new HashMap<> ();
 
-	public synchronized void ensureNodeIsLoaded (String fqn) throws IOException {
+	public synchronized void ensureNodeIsLoaded () throws IOException {
 	    if (loaded)
 		return;
 	    loaded = true;
-	    this.fqn = fqn;
 	    readNode ();
 	}
 
