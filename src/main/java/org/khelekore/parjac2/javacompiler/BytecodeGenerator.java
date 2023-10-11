@@ -5,7 +5,9 @@ import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import io.github.dmlloyd.classfile.ClassBuilder;
@@ -17,6 +19,9 @@ import io.github.dmlloyd.classfile.attribute.SignatureAttribute;
 import io.github.dmlloyd.classfile.attribute.SourceFileAttribute;
 
 import org.khelekore.parjac2.javacompiler.syntaxtree.*;
+import org.khelekore.parjac2.parser.Token;
+import org.khelekore.parjac2.parsetree.ParseTreeNode;
+import org.khelekore.parjac2.parsetree.TokenNode;
 
 public class BytecodeGenerator {
     private final Path origin;
@@ -27,6 +32,8 @@ public class BytecodeGenerator {
     private static final ClassType enumClassType = new ClassType ("java.lang.Enum");
     private static final ClassType recordClassType = new ClassType ("java.lang.Record");
     private static final ClassType objectClassType = new ClassType ("java.lang.Object");
+
+    private final Map<Token, String> tokenToDescriptor = new HashMap<> ();
 
     private enum ImplicitClassFlags {
 	CLASS_FLAGS (Classfile.ACC_SUPER),
@@ -44,37 +51,36 @@ public class BytecodeGenerator {
 	}
     }
 
-    public BytecodeGenerator (Path origin, TypeDeclaration td, ClassInformationProvider cip) {
+    public BytecodeGenerator (Path origin, TypeDeclaration td, ClassInformationProvider cip, JavaTokens javaTokens) {
 	this.origin = origin;
 	this.td = td;
 	this.cip = cip;
 	this.name = cip.getFullDollarClassName (td);
+
+	tokenToDescriptor.put (javaTokens.BYTE, "B");
+	tokenToDescriptor.put (javaTokens.SHORT, "S");
+	tokenToDescriptor.put (javaTokens.CHAR, "C");
+	tokenToDescriptor.put (javaTokens.INT, "I");
+	tokenToDescriptor.put (javaTokens.LONG, "J");
+	tokenToDescriptor.put (javaTokens.FLOAT, "F");
+	tokenToDescriptor.put (javaTokens.DOUBLE, "D");
+	tokenToDescriptor.put (javaTokens.BOOLEAN, "Z");
     }
 
     public byte[] generate () {
-	Class<?> c = td.getClass ();
-	if (c == NormalClassDeclaration.class) {
-	    return generateClass ((NormalClassDeclaration)td);
-	} else if (c == EnumDeclaration.class) {
-	    return generateClass ((EnumDeclaration)td);
-	} else if (c == RecordDeclaration.class) {
-	    return generateClass ((RecordDeclaration)td);
-	} else if (c == NormalInterfaceDeclaration.class) {
-	    return generateInterface ((NormalInterfaceDeclaration)td);
-	} else if (c == AnnotationTypeDeclaration.class) {
-	    return generateInterface ((AnnotationTypeDeclaration)td);
-	} else if (c == UnqualifiedClassInstanceCreationExpression.class) {
-	    return generateAnonymousClass ((UnqualifiedClassInstanceCreationExpression)td);
-	} else if (c == EnumConstant.class) {
-	    EnumConstant ec = (EnumConstant)td;
-	    if (ec.hasBody ()) {
-		return generateEnumConstant (ec);
-	    }
-	} else {
+	return switch (td) {
+	case NormalClassDeclaration n -> generateClass (n);
+	case EnumDeclaration e -> generateClass (e);
+	case RecordDeclaration r -> generateClass (r);
+	case NormalInterfaceDeclaration i -> generateInterface (i);
+	case AnnotationTypeDeclaration a -> generateInterface (a);
+	case UnqualifiedClassInstanceCreationExpression u -> generateAnonymousClass (u);
+	case EnumConstant ec when ec.hasBody () -> generateEnumConstant (ec);
+	default -> {
 	    // TODO: handle this error!
-	    System.err.println ("Unhandled class: " + c.getName ());
+	    throw new IllegalStateException ("BytecodeGenerator: Unhandled class: " + td.getClass ().getName ());
 	}
-	return new byte[0];
+	};
     }
 
     private byte[] generateClass (NormalClassDeclaration c) {
@@ -120,19 +126,31 @@ public class BytecodeGenerator {
 			      ac.getSuperType (), List.of ());
     }
 
+    // TODO: we only want to generate a signature if we have any generic thing to deal with.
     private String getClassSignature (TypeParameters tps, ClassType superClass, List<ClassType> superInterfaces) {
-	StringBuilder sb = new StringBuilder ();
-	appendTypeParameters (sb, tps);
-	if (superClass != null) {
-	    sb.append (GenericTypeHelper.getGenericType (superClass));
-	} else {
-	    sb.append ("Ljava/lang/Object;");
+	if (tps != null || hasGenericType (superClass) || hasGenericType (superInterfaces)) {
+	    StringBuilder sb = new StringBuilder ();
+	    appendTypeParameters (sb, tps);
+	    if (superClass != null) {
+		sb.append (GenericTypeHelper.getGenericType (superClass));
+	    } else {
+		sb.append ("Ljava/lang/Object;");
+	    }
+	    if (superInterfaces != null) {
+		for (ClassType ct : superInterfaces)
+		    sb.append (GenericTypeHelper.getGenericType (ct));
+	    }
+	    return sb.toString ();
 	}
-	if (superInterfaces != null) {
-	    for (ClassType ct : superInterfaces)
-		sb.append (GenericTypeHelper.getGenericType (ct));
-	}
-	return sb.toString ();
+	return null;
+    }
+
+    private boolean hasGenericType (List<ClassType> ls) {
+	return ls != null && ls.stream ().anyMatch (this::hasGenericType);
+    }
+
+    private boolean hasGenericType (ClassType ct) {
+	return ct != null && ct.getTypeArguments () != null;
     }
 
     private void appendTypeParameters (StringBuilder sb, TypeParameters tps) {
@@ -164,15 +182,9 @@ public class BytecodeGenerator {
 		classBuilder.withVersion (Classfile.JAVA_21_VERSION, 0);  // possible minor: PREVIEW_MINOR_VERSION
 		classBuilder.withFlags (td.getFlags () | icf.flags);
 		classBuilder.withSuperclass (ClassDesc.of ((superType != null ? superType : objectClassType).getFullName ()));
-		if (superInterfaces != null) {
-		    List<ClassDesc> ls = new ArrayList<> ();
-		    for (ClassType ct : superInterfaces) {
-			ClassDesc cd = ClassDesc.of (ct.getFullName ());
-			ls.add (cd);
-		    }
-		    classBuilder.withInterfaceSymbols (ls);
-		}
-		// add fields: withField
+		addSuperInterfaces (classBuilder, superInterfaces);
+
+		addFields (classBuilder, td);
 		// add methods: withMethod, withMethodBody
 
 		/* TODO: check if we want to do this instead
@@ -192,6 +204,58 @@ public class BytecodeGenerator {
 		addInnerClassAttributes (classBuilder, tdt);
 	    });
 	return b;
+    }
+
+    private void addSuperInterfaces (ClassBuilder classBuilder, List<ClassType> superInterfaces) {
+	if (superInterfaces != null) {
+	    List<ClassDesc> ls = new ArrayList<> ();
+	    for (ClassType ct : superInterfaces) {
+		ClassDesc cd = ClassDesc.of (ct.getFullName ());
+		ls.add (cd);
+	    }
+	    classBuilder.withInterfaceSymbols (ls);
+	}
+    }
+
+    private void addFields (ClassBuilder classBuilder, TypeDeclaration td) {
+	td.getFields ().forEach ((name, info) -> {
+		FieldDeclarationBase fdb = info.fd ();
+		ParseTreeNode type = fdb.getType ();
+		ClassDesc desc = getFieldClassDesc (type);
+		VariableDeclarator vd = info.vd ();
+		if (vd.isArray ())
+		    desc = desc.arrayType (vd.getDims ().rank ());
+		classBuilder.withField (name, desc, fb -> fb.withFlags (fdb.getFlags ()));
+	    });
+    }
+
+    private ClassDesc getFieldClassDesc (ParseTreeNode type) {
+	ClassDesc desc = switch (type) {
+	case TokenNode tn -> getClassDesc (tn);
+	case ClassType ct -> getClassDesc (ct);
+	case ArrayType at -> getClassDesc (at);
+	default -> throw new IllegalStateException ("BytecodeGenerator: Unhandled field type: " + type.getClass ().getName () + ": " + type);
+	};
+	return desc;
+    }
+
+    private ClassDesc getClassDesc (TokenNode tn) {
+	String descriptor = tokenToDescriptor.get (tn.getToken ());
+	if (descriptor == null)
+	    throw new IllegalStateException ("BytecodeGenerator: Unhandled token type " + tn);
+	return ClassDesc.ofDescriptor (descriptor);
+    }
+
+    private ClassDesc getClassDesc (ClassType ct) {
+	return ClassDesc.of (ct.getFullName ());
+    }
+
+    private ClassDesc getClassDesc (ArrayType at) {
+	ParseTreeNode type = at.getType ();
+	ClassDesc base = getFieldClassDesc (type);
+	Dims dims = at.getDims ();
+	int rank = dims.rank ();
+	return base.arrayType (rank);
     }
 
     /* We need to add all nested classes, not just the direct inner classes of tdt.

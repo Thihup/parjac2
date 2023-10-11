@@ -3,8 +3,10 @@ package org.khelekore.parjac2.javacompiler.syntaxtree;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.khelekore.parjac2.javacompiler.Context;
+import org.khelekore.parjac2.javacompiler.FieldInfo;
 import org.khelekore.parjac2.javacompiler.Flags;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
@@ -22,6 +24,8 @@ public class InterfaceBody extends SyntaxTreeNode {
     private List<TypeDeclaration> classDeclarations = new ArrayList<> ();
     private List<TypeDeclaration> localClasses = new ArrayList<> ();
 
+    private Map<String, FieldInfo> nameToField;
+
     public InterfaceBody (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	if (rule.size () > 2) {
@@ -36,6 +40,7 @@ public class InterfaceBody extends SyntaxTreeNode {
 	declarations.forEach (td::distribute);
 	BodyHelper bh = new BodyHelper (classDeclarations, localClasses);
 	bh.findInnerClasses (this, declarations);
+	nameToField = bh.getFields (constantDeclarations, ctx);
 
 	for (TypeDeclaration i : classDeclarations) {
 	    int flags = i.getFlags ();
@@ -71,6 +76,10 @@ public class InterfaceBody extends SyntaxTreeNode {
 
     public List<ConstantDeclaration> getConstants () {
 	return constantDeclarations;
+    }
+
+    public Map<String, FieldInfo> getConstantFields () {
+	return nameToField;
     }
 
     public List<InterfaceMethodDeclaration> getMethods () {

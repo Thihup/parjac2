@@ -2,8 +2,10 @@ package org.khelekore.parjac2.javacompiler.syntaxtree;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.khelekore.parjac2.javacompiler.Context;
+import org.khelekore.parjac2.javacompiler.FieldInfo;
 import org.khelekore.parjac2.javacompiler.Identifier;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
@@ -69,5 +71,9 @@ public class EnumDeclaration extends TypeDeclaration {
 
     public List<ClassType> getSuperInterfaces () {
 	return (supers != null) ? supers.getTypes () : null;
+    }
+
+    @Override public Map<String, FieldInfo> getFields () {
+	return body.getFields ();
     }
 }

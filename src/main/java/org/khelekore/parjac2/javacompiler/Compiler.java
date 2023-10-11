@@ -203,7 +203,7 @@ public class Compiler {
     }
 
     private byte[] generateClass (Path origin, TypeDeclaration td) {
-	BytecodeGenerator g = new BytecodeGenerator (origin, td, cip);
+	BytecodeGenerator g = new BytecodeGenerator (origin, td, cip, javaTokens);
 	return g.generate ();
     }
 

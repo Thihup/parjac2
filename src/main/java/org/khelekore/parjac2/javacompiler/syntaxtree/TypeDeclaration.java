@@ -1,7 +1,9 @@
 package org.khelekore.parjac2.javacompiler.syntaxtree;
 
 import java.util.List;
+import java.util.Map;
 
+import org.khelekore.parjac2.javacompiler.FieldInfo;
 import org.khelekore.parjac2.parser.ParsePosition;
 
 public abstract class TypeDeclaration extends FlaggedBase {
@@ -40,4 +42,6 @@ public abstract class TypeDeclaration extends FlaggedBase {
     public String getLocalName () {
 	return localName;
     }
+
+    public abstract Map<String, FieldInfo> getFields ();
 }

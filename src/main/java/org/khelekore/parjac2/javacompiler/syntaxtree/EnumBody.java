@@ -2,8 +2,10 @@ package org.khelekore.parjac2.javacompiler.syntaxtree;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.khelekore.parjac2.javacompiler.Context;
+import org.khelekore.parjac2.javacompiler.FieldInfo;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -66,5 +68,9 @@ public class EnumBody extends SyntaxTreeNode {
     public void setParents (EnumDeclaration ed) {
 	if (constants != null)
 	    constants.getConstants ().forEach (c -> c.setParent (ed));
+    }
+
+    public Map<String, FieldInfo> getFields () {
+	return declarations.getFields ();
     }
 }

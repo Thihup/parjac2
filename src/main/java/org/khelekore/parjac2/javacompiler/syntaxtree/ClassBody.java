@@ -3,8 +3,10 @@ package org.khelekore.parjac2.javacompiler.syntaxtree;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.khelekore.parjac2.javacompiler.Context;
+import org.khelekore.parjac2.javacompiler.FieldInfo;
 import org.khelekore.parjac2.javacompiler.Identifier;
 import org.khelekore.parjac2.javacompiler.JavaTokens;
 import org.khelekore.parjac2.parser.Rule;
@@ -28,6 +30,8 @@ public class ClassBody extends SyntaxTreeNode {
     protected List<TypeDeclaration> classDeclarations = new ArrayList<> ();
     protected List<TypeDeclaration> localClasses = new ArrayList<> ();
 
+    private Map<String, FieldInfo> nameToField;
+
     public ClassBody (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	declarations = hasDeclarations (rule) ? ((Multiple)children.get (1)).get () : Collections.emptyList ();
@@ -35,28 +39,30 @@ public class ClassBody extends SyntaxTreeNode {
 	td.addMapping (Block.class, instanceInitializers);
 	td.addMapping (StaticInitializer.class, staticInitializers);
 	td.addMapping (ConstructorDeclaration.class, constructorDeclarations);
-	td.<FieldDeclaration>addMapping (FieldDeclaration.class, t -> handleFields (ctx.getTokens (), t, instanceInitializers));
+	td.<FieldDeclaration>addMapping (FieldDeclaration.class, t -> handleFields (ctx.getTokens (), t));
 	td.addMapping (MethodDeclaration.class, methodDeclarations);
 	addAdditionalMappings (td);
 	declarations.forEach (td::distribute);
 	BodyHelper bh = new BodyHelper (classDeclarations, localClasses);
 	bh.findInnerClasses (this, declarations);
+	nameToField = bh.getFields (fieldDeclarations, ctx);
     }
 
     protected void addAdditionalMappings (TypeDistributor td) {
 	// empty
     }
 
-    private void handleFields (JavaTokens javaTokens, FieldDeclaration t, List<SyntaxTreeNode> initList) {
+    private void handleFields (JavaTokens javaTokens, FieldDeclaration t) {
 	FieldDeclaration fd = (FieldDeclaration)t;
+	fieldDeclarations.add (fd);
 	List<VariableDeclarator> ls = fd.getVariableDeclarators ();
 	for (VariableDeclarator vd : ls) {
 	    String name = vd.getName ();
 	    // TODO: put field in map or something
 	    if (vd.hasInitializer ()) {
-		initList.add (new Assignment (new Identifier (javaTokens.IDENTIFIER, name, vd.getPosition ()),
-					      javaTokens.EQUAL,
-					      vd.getInitializer ()));
+		instanceInitializers.add (new Assignment (new Identifier (javaTokens.IDENTIFIER, name, vd.getPosition ()),
+							  javaTokens.EQUAL,
+							  vd.getInitializer ()));
 	    }
 	}
     }
@@ -65,7 +71,7 @@ public class ClassBody extends SyntaxTreeNode {
 	return rule.size () > 2;
     }
 
-    @Override public Object getValue() {
+    @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	sb.append (" {\n");
 	declarations.forEach (d -> sb.append (d).append ("\n"));
@@ -83,5 +89,9 @@ public class ClassBody extends SyntaxTreeNode {
 
     public boolean isLocalClass (TypeDeclaration td) {
 	return localClasses.contains (td);
+    }
+
+    public Map<String, FieldInfo> getFields () {
+	return nameToField;
     }
 }

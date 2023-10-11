@@ -1,7 +1,9 @@
 package org.khelekore.parjac2.javacompiler.syntaxtree;
 
 import java.util.List;
+import java.util.Map;
 
+import org.khelekore.parjac2.javacompiler.FieldInfo;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -67,5 +69,9 @@ public class UnqualifiedClassInstanceCreationExpression extends AnonymousClass {
 
     public ClassType getSuperType () {
 	return type.getType ();
+    }
+
+    @Override public Map<String, FieldInfo> getFields () {
+	return body.getFields ();
     }
 }

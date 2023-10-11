@@ -10,9 +10,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
-
-import javax.lang.model.type.PrimitiveType;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.NoSourceDiagnostics;
@@ -25,6 +24,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.ImportDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.NormalClassDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.NormalInterfaceDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.OrdinaryCompilationUnit;
+import org.khelekore.parjac2.javacompiler.syntaxtree.PrimitiveType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.RecordDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SimpleClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SingleStaticImportDeclaration;
@@ -42,6 +42,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.Wildcard;
 import org.khelekore.parjac2.javacompiler.syntaxtree.WildcardBounds;
 import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
+import org.khelekore.parjac2.parsetree.TokenNode;
 
 public class ClassSetter {
 
@@ -53,8 +54,9 @@ public class ClassSetter {
 
     private final ImportHandler ih;            // keep track of the imports we have
 
-    // TODO: document these
+    // The list of outer classes, currently changed while we loop over inner classes
     private EnclosingTypes containingTypes = null;
+
     private final Map<ParseTreeNode, TypeHolder> types = new HashMap<> ();
     private TypeHolder currentTypes = null;
 
@@ -96,26 +98,19 @@ public class ClassSetter {
     }
 
     public void registerSuperTypes () {
-	Deque<EnclosingTypes> typesToHandle = new ArrayDeque<> ();
-	ocu.getTypes ().stream ().map (td -> enclosingTypes (null, td)).forEach (typesToHandle::add);
-	while (!typesToHandle.isEmpty ()) {
-	    EnclosingTypes et = typesToHandle.removeFirst ();
-	    containingTypes = et;
-	    TypeDeclaration td = et.td ();
-	    switch (td) {
-	    case NormalClassDeclaration ndi -> registerSuperTypes (ndi);
-	    case EnumDeclaration ed -> registerSuperTypes (ed.getSuperInterfaces ());
-	    case NormalInterfaceDeclaration i -> registerSuperTypes (i);
-	    case RecordDeclaration rd -> registerSuperTypes (rd.getSuperInterfaces ());
-	    case UnqualifiedClassInstanceCreationExpression uc -> setType (uc.getSuperType ());
-	    case EnumConstant ec -> registerSuperTypes (ec.getParent ().getSuperInterfaces ());
-	    default -> diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), td.getPosition (),
-								    "registerSuperTypes: Unhandled type: %s",
-								    td.getClass ().getName ()));
-	    }
-
-	    td.getInnerClasses ().stream ().map (i -> enclosingTypes (et, i)).forEach (typesToHandle::add);
-	}
+	forAllTypes (td -> {
+		switch (td) {
+		case NormalClassDeclaration ndi -> registerSuperTypes (ndi);
+		case EnumDeclaration ed -> registerSuperTypes (ed.getSuperInterfaces ());
+		case NormalInterfaceDeclaration i -> registerSuperTypes (i);
+		case RecordDeclaration rd -> registerSuperTypes (rd.getSuperInterfaces ());
+		case UnqualifiedClassInstanceCreationExpression uc -> setType (uc.getSuperType ());
+		case EnumConstant ec -> registerSuperTypes (ec.getParent ().getSuperInterfaces ());
+		default -> diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), td.getPosition (),
+									"ClassSetter.registerSuperTypes: Unhandled type: %s",
+									td.getClass ().getName ()));
+		}
+	    });
     }
 
     private void registerSuperTypes (NormalClassDeclaration ndi) {
@@ -149,7 +144,28 @@ public class ClassSetter {
     }
 
     private void registerFields () {
+	forAllTypes (this::setFieldTypes);
+    }
 
+    private void setFieldTypes (TypeDeclaration td) {
+	Map<String, FieldInfo> fields = td.getFields ();
+	fields.forEach (this::setFieldType);
+    }
+
+    private void setFieldType (String name, FieldInfo info) {
+	setType (info.fd ().getType ());
+    }
+
+    private void forAllTypes (Consumer<TypeDeclaration> handler) {
+	Deque<EnclosingTypes> typesToHandle = new ArrayDeque<> ();
+	ocu.getTypes ().stream ().map (td -> enclosingTypes (null, td)).forEach (typesToHandle::add);
+	while (!typesToHandle.isEmpty ()) {
+	    EnclosingTypes et = typesToHandle.removeFirst ();
+	    containingTypes = et;
+	    TypeDeclaration td = et.td ();
+	    handler.accept (td);
+	    td.getInnerClasses ().stream ().map (i -> enclosingTypes (et, i)).forEach (typesToHandle::add);
+	}
     }
 
     private void setType (ParseTreeNode type) {
@@ -158,23 +174,20 @@ public class ClassSetter {
 	    return;
 	}
 	*/
-	if (type instanceof PrimitiveType) {
-	    return;
-	}
-	if (type instanceof ClassType ct) {
-	    setType (ct);
-	} else if (type instanceof ArrayType) {
-	    ArrayType at = (ArrayType)type;
-	    setType (at.getType ());
-	} else if (type instanceof Wildcard) {
-	    Wildcard wc = (Wildcard)type;
+	switch (type) {
+	case TokenNode t -> {}
+	case PrimitiveType p -> {}
+	case ClassType ct -> setType (ct);
+	case ArrayType at -> setType (at.getType ());
+	case Wildcard wc -> {
 	    WildcardBounds wb = wc.getBounds ();
 	    if (wb != null)
 		setType (wb.getClassType ());
-	} else {
-	    diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), type.getPosition (),
-							 "Unhandled type: %s, %s",
-							 type.getClass ().getName (), type));
+	}
+	default -> diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), type.getPosition (),
+								"ClassSetter: Unhandled type: %s, %s",
+								type.getClass ().getName (), type));
+
 	}
     }
 

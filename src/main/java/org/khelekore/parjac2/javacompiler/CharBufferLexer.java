@@ -112,6 +112,7 @@ public class CharBufferLexer implements Lexer {
     }
 
     @Override public TokenNode getCurrentValue () {
+	// TODO: can we check if we have a value?
 	if (lastScannedTokens.get (javaTokens.CHARACTER_LITERAL.getId ()))
 	    return new CharLiteral (javaTokens.CHARACTER_LITERAL, getCharValue (), getParsePosition ());
 	if (lastScannedTokens.get (javaTokens.STRING_LITERAL.getId ()))

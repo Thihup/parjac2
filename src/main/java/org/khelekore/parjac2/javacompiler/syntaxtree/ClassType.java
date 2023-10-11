@@ -21,6 +21,10 @@ public class ClassType extends SyntaxTreeNode {
 	this.fqn = fqn;
     }
 
+    public void add (SimpleClassType sct) {
+	types.add (sct);
+    }
+
     @Override public Object getValue () {
 	return types.toString ();
     }

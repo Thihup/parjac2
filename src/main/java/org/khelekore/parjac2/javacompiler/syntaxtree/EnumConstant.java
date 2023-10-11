@@ -2,8 +2,10 @@ package org.khelekore.parjac2.javacompiler.syntaxtree;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.khelekore.parjac2.javacompiler.Context;
+import org.khelekore.parjac2.javacompiler.FieldInfo;
 import org.khelekore.parjac2.javacompiler.Flags;
 import org.khelekore.parjac2.javacompiler.Identifier;
 import org.khelekore.parjac2.parser.Rule;
@@ -86,5 +88,9 @@ public class EnumConstant extends AnonymousClass {
 
     public EnumDeclaration getParent () {
 	return ed;
+    }
+
+    @Override public Map<String, FieldInfo> getFields () {
+	return body.getFields ();
     }
 }

@@ -43,4 +43,8 @@ public class Dims extends SyntaxTreeNode {
     @Override public void visitChildNodes (NodeVisitor v) {
 	annotations.forEach (ls -> ls.forEach (v::accept));
     }
+
+    public int rank () {
+	return annotations.size ();
+    }
 }

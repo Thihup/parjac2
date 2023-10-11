@@ -4,9 +4,12 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.khelekore.parjac2.javacompiler.Context;
+import org.khelekore.parjac2.javacompiler.FieldInfo;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class BodyHelper {
@@ -70,6 +73,21 @@ public class BodyHelper {
 
     private int getLocalNameCounter (String name) {
 	return localNameCounter.compute (name, (k, v) -> (v ==  null) ? 1 : v + 1);
+    }
+
+    public Map<String, FieldInfo> getFields (List<? extends FieldDeclarationBase> fds, Context ctx) {
+	Map<String, FieldInfo> ret = new LinkedHashMap<> ();
+	for (FieldDeclarationBase fd : fds) {
+	    for (VariableDeclarator vd : fd.getVariableDeclarators ()) {
+		String name = vd.getName ();
+		if (ret.containsKey (name)) {
+		    ctx.error (vd.getPosition (), "Field with name %s already exists", name);
+		} else {
+		    ret.put (name, new FieldInfo (name, fd, vd));
+		}
+	    }
+	}
+	return ret;
     }
 
     private record ParentToChild (ParseTreeNode parent, ParseTreeNode toCheck) {}

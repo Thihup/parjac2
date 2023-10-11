@@ -28,4 +28,8 @@ public class ArrayType extends SyntaxTreeNode {
     public ParseTreeNode getType () {
 	return type;
     }
+
+    public Dims getDims () {
+	return dims;
+    }
 }
