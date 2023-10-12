@@ -43,5 +43,10 @@ public abstract class TypeDeclaration extends FlaggedBase {
 	return localName;
     }
 
+    /**
+     * @return a Map from field name to FieldInfo, fields are in declaration order.
+     */
     public abstract Map<String, FieldInfo> getFields ();
+
+    public abstract List<? extends MethodDeclarationBase> getMethods ();
 }

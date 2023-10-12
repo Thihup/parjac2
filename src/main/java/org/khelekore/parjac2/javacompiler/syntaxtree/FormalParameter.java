@@ -33,4 +33,12 @@ public class FormalParameter extends FormalParameterBase {
 	v.accept (type);
 	v.accept (var);
     }
+
+    @Override public List<ParseTreeNode> getModifiers () {
+	return modifiers;
+    }
+
+    @Override public ParseTreeNode getType () {
+	return type;
+    }
 }

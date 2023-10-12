@@ -69,10 +69,6 @@ public class NormalInterfaceDeclaration extends TypeDeclaration {
 	return body.getConstants ();
     }
 
-    public List<InterfaceMethodDeclaration> getMethods () {
-	return body.getMethods ();
-    }
-
     @Override public List<TypeDeclaration> getInnerClasses () {
 	return body.getInnerClasses ();
     }
@@ -96,5 +92,9 @@ public class NormalInterfaceDeclaration extends TypeDeclaration {
 
     @Override public Map<String, FieldInfo> getFields () {
 	return body.getConstantFields ();
+    }
+
+    public List<InterfaceMethodDeclaration> getMethods () {
+	return body.getMethods ();
     }
 }

@@ -16,20 +16,27 @@ import java.util.stream.Collectors;
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.NoSourceDiagnostics;
 import org.khelekore.parjac2.SourceDiagnostics;
+import org.khelekore.parjac2.javacompiler.syntaxtree.Annotation;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.EnumConstant;
 import org.khelekore.parjac2.javacompiler.syntaxtree.EnumDeclaration;
+import org.khelekore.parjac2.javacompiler.syntaxtree.ExceptionTypeList;
+import org.khelekore.parjac2.javacompiler.syntaxtree.FormalParameterBase;
+import org.khelekore.parjac2.javacompiler.syntaxtree.FormalParameterList;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ImportDeclaration;
+import org.khelekore.parjac2.javacompiler.syntaxtree.MethodDeclarationBase;
 import org.khelekore.parjac2.javacompiler.syntaxtree.NormalClassDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.NormalInterfaceDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.OrdinaryCompilationUnit;
 import org.khelekore.parjac2.javacompiler.syntaxtree.PrimitiveType;
+import org.khelekore.parjac2.javacompiler.syntaxtree.ReceiverParameter;
 import org.khelekore.parjac2.javacompiler.syntaxtree.RecordDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SimpleClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SingleStaticImportDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SingleTypeImportDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.StaticImportOnDemandDeclaration;
+import org.khelekore.parjac2.javacompiler.syntaxtree.Throws;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeArguments;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeBound;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
@@ -80,7 +87,7 @@ public class ClassSetter {
 	// TODO: handle all parts of a class
 
 	classSetters.parallelStream ().forEach (ClassSetter::registerFields);
-	//classSetters.parallelStream ().forEach (ClassSetter::registerMethods);
+	classSetters.parallelStream ().forEach (ClassSetter::registerMethods);
 
 	classSetters.parallelStream ().forEach (cs -> cs.checkUnusedImport ());
     }
@@ -101,14 +108,12 @@ public class ClassSetter {
 	forAllTypes (td -> {
 		switch (td) {
 		case NormalClassDeclaration ndi -> registerSuperTypes (ndi);
-		case EnumDeclaration ed -> registerSuperTypes (ed.getSuperInterfaces ());
+		case EnumDeclaration ed -> setTypes (ed.getSuperInterfaces ());
 		case NormalInterfaceDeclaration i -> registerSuperTypes (i);
-		case RecordDeclaration rd -> registerSuperTypes (rd.getSuperInterfaces ());
+		case RecordDeclaration rd -> setTypes (rd.getSuperInterfaces ());
 		case UnqualifiedClassInstanceCreationExpression uc -> setType (uc.getSuperType ());
-		case EnumConstant ec -> registerSuperTypes (ec.getParent ().getSuperInterfaces ());
-		default -> diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), td.getPosition (),
-									"ClassSetter.registerSuperTypes: Unhandled type: %s",
-									td.getClass ().getName ()));
+		case EnumConstant ec -> setTypes (ec.getParent ().getSuperInterfaces ());
+		default -> error (td, "ClassSetter.registerSuperTypes: Unhandled type: %s", td.getClass ().getName ());
 		}
 	    });
     }
@@ -117,17 +122,12 @@ public class ClassSetter {
 	ClassType superclass = ndi.getSuperClass ();
 	if (superclass != null)
 	    setType (superclass);
-	registerSuperTypes (ndi.getSuperInterfaces ());
+	setTypes (ndi.getSuperInterfaces ());
 	registerTypeParameters (ndi.getTypeParameters ());
     }
 
     private void registerSuperTypes (NormalInterfaceDeclaration i) {
-	registerSuperTypes (i.getExtendsInterfaces ());
-    }
-
-    private void registerSuperTypes (List<ClassType> types) {
-	if (types != null)
-	    types.forEach (this::setType);
+	setTypes (i.getExtendsInterfaces ());
     }
 
     private void registerTypeParameters (TypeParameters tps) {
@@ -154,6 +154,62 @@ public class ClassSetter {
 
     private void setFieldType (String name, FieldInfo info) {
 	setType (info.fd ().getType ());
+    }
+
+    private void registerMethods () {
+	forAllTypes (this::setMethodTypes);
+    }
+
+    private void setMethodTypes (TypeDeclaration td) {
+	List<? extends MethodDeclarationBase> methods = td.getMethods ();
+	methods.forEach (this::setMethodTypes);
+
+	// TODO: handle constructors
+	// TODO: handle instance and static blocks
+    }
+
+    private void setMethodTypes (MethodDeclarationBase md) {
+	registerTypeParameters (md.getTypeParameters ());
+	checkAnnotations (md.getAnnotations ());
+	setType (md.getResult ());
+	ReceiverParameter rp = md.getReceiverParameter ();
+	if (rp != null) {
+	    checkAnnotations (rp.getAnnotations ());
+	    setType (rp.getType ());
+	}
+	FormalParameterList args = md.getFormalParameterList ();
+	if (args != null) {
+	    for (FormalParameterBase fp : args.getParameters ()) {
+		checkFormalParameterModifiers (fp.getModifiers ());
+		setType (fp.getType ());
+	    }
+	}
+
+	Throws t = md.getThrows ();
+	if (t != null) {
+	    ExceptionTypeList exceptions = t.getExceptions ();
+	    setTypes (exceptions.get ());
+	}
+	ParseTreeNode body = md.getMethodBody ();
+	// TODO: handle body
+    }
+
+    private void checkAnnotations (List<? extends ParseTreeNode> annotations) {
+	if (annotations == null)
+	    return;
+	for (ParseTreeNode t : annotations) {
+	    switch (t) {
+	    case Annotation a -> setType (a.getTypeName ());
+	    default -> error (t, "ClassSetter: Unhandled annotation: %s, %s", t.getClass ().getName (), t);
+	    }
+	}
+    }
+
+    private void checkFormalParameterModifiers (List<ParseTreeNode> modifiers) {
+	for (ParseTreeNode n : modifiers) {
+	    if (n instanceof Annotation a)
+		setType (a.getTypeName ());
+	}
     }
 
     private void forAllTypes (Consumer<TypeDeclaration> handler) {
@@ -184,11 +240,13 @@ public class ClassSetter {
 	    if (wb != null)
 		setType (wb.getClassType ());
 	}
-	default -> diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), type.getPosition (),
-								"ClassSetter: Unhandled type: %s, %s",
-								type.getClass ().getName (), type));
-
+	default -> error (type, "ClassSetter: Unhandled type: %s, %s", type.getClass ().getName (), type);
 	}
+    }
+
+    private void setTypes (List<ClassType> types) {
+	if (types != null)
+	    types.forEach (this::setType);
     }
 
     private void setType (ClassType ct) {
@@ -607,5 +665,9 @@ public class ClassSetter {
 		return ret;
 	    }
 	}
+    }
+
+    private void error (ParseTreeNode where, String template, Object... args) {
+	diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), where.getPosition (), template, args));
     }
 }

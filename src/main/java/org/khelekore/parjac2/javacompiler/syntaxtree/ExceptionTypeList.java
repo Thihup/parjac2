@@ -31,4 +31,8 @@ public class ExceptionTypeList extends SyntaxTreeNode {
     @Override public void visitChildNodes (NodeVisitor v) {
 	types.forEach (v::accept);
     }
+
+    public List<ClassType> get () {
+	return types;
+    }
 }

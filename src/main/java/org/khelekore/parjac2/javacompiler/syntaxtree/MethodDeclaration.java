@@ -1,19 +1,13 @@
 package org.khelekore.parjac2.javacompiler.syntaxtree;
 
-import java.util.Collections;
 import java.util.List;
 
 import org.khelekore.parjac2.javacompiler.Context;
 import org.khelekore.parjac2.javacompiler.Flags;
 import org.khelekore.parjac2.parser.Rule;
-import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
-public class MethodDeclaration extends FlaggedBase {
-    private List<ParseTreeNode> modifiers;
-    private MethodHeader header;
-    private ParseTreeNode body; // Block or ;
-
+public class MethodDeclaration extends MethodDeclarationBase {
     private static FlagCalculator flagCalculator = new FlagCalculator (0);
     static {
 	flagCalculator.addInvalid (Flags.ACC_PUBLIC | Flags.ACC_PROTECTED | Flags.ACC_PRIVATE);
@@ -24,29 +18,6 @@ public class MethodDeclaration extends FlaggedBase {
     }
 
     public MethodDeclaration (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
-	int i = 0;
-	modifiers = (rule.size () > 2) ? ((Multiple)children.get (i++)).get () : Collections.emptyList ();
-	header = (MethodHeader)children.get (i++);
-	body = children.get (i);
-	flags = flagCalculator.calculate (ctx, modifiers, getPosition ());
-    }
-
-    @Override public Object getValue () {
-	StringBuilder sb = new StringBuilder ();
-	if (!modifiers.isEmpty ())
-	    sb.append (modifiers).append (" ");
-	sb.append (header).append (" ").append (body);
-	return sb.toString ();
-    }
-
-    @Override public void visitChildNodes (NodeVisitor v) {
-	modifiers.forEach (v::accept);
-	v.accept (header);
-	v.accept (body);
-    }
-
-    public String getName () {
-	return header.getName ();
+	super (ctx, rule, n, children, flagCalculator);
     }
 }

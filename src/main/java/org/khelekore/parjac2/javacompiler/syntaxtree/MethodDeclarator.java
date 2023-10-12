@@ -14,6 +14,7 @@ public class MethodDeclarator extends SyntaxTreeNode {
     private FormalParameterList params;
     private Dims dims;
 
+    // Identifier ( [ReceiverParameter ,] [FormalParameterList] ) [Dims] 
     public MethodDeclarator (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	id = ((Identifier)children.get (0)).getValue ();
@@ -53,5 +54,17 @@ public class MethodDeclarator extends SyntaxTreeNode {
 
     public String getName () {
 	return id;
+    }
+
+    public ReceiverParameter getReceiverParameter () {
+	return rp;
+    }
+
+    public FormalParameterList getFormalParameterList () {
+	return params;
+    }
+
+    public Dims getDims () {
+	return dims;
     }
 }

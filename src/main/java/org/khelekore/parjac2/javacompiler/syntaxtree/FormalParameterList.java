@@ -8,7 +8,8 @@ import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class FormalParameterList extends SyntaxTreeNode {
-    List<FormalParameterBase> params;
+    private List<FormalParameterBase> params;
+
     public FormalParameterList (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	params = new ArrayList<> ();
@@ -26,5 +27,9 @@ public class FormalParameterList extends SyntaxTreeNode {
 
     @Override public void visitChildNodes (NodeVisitor v) {
 	params.forEach (v::accept);
+    }
+
+    public List<FormalParameterBase> getParameters () {
+	return params;
     }
 }

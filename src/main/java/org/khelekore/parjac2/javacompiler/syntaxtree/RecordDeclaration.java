@@ -96,4 +96,8 @@ public class RecordDeclaration extends TypeDeclaration {
     @Override public Map<String, FieldInfo> getFields () {
 	return body.getFields ();
     }
+
+    public List<MethodDeclaration> getMethods () {
+	return body.getMethods ();
+    }
 }

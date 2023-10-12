@@ -58,4 +58,8 @@ public class AnnotationTypeDeclaration extends TypeDeclaration {
     @Override public Map<String, FieldInfo> getFields () {
 	return body.getFields ();
     }
+
+    public List<MethodDeclaration> getMethods () {
+	return List.of ();
+    }
 }

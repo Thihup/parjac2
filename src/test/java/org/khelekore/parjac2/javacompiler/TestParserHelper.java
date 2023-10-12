@@ -19,11 +19,13 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 public class TestParserHelper {
 
     private static final Grammar baseGrammar = new Grammar ();
+    private static final JavaTokens javaTokens;
     private static Rule currentGoal;
 
     static {
 	try {
 	    JavaGrammarHelper.readRules (baseGrammar, false);
+	    javaTokens = new JavaTokens (baseGrammar);
 	} catch (IOException e) {
 	    throw new RuntimeException ("Failed to read grammar", e);
 	}
@@ -45,6 +47,10 @@ public class TestParserHelper {
 	    throw new RuntimeException ("Failed to validate rules", t);
 	}
 	return g;
+    }
+
+    public static JavaTokens getTokens () {
+	return javaTokens;
     }
 
     public static ParseTreeNode testSuccessfulParse (Grammar g, String s,
@@ -79,7 +85,6 @@ public class TestParserHelper {
 	ParseTreeNode tree = parse (grammar, s, diagnostics);
 	assert diagnostics.errorCount () == 0 : "Expected no errors: " + TestParserHelper.getParseOutput (diagnostics);
 	assert tree != null : "Expected to parse to non null tree";
-	JavaTokens javaTokens = new JavaTokens (grammar);
 	SyntaxTreeBuilder stb = new SyntaxTreeBuilder (diagnostics, javaTokens, grammar);
 	DirAndPath dirAndPath = new DirAndPath (Paths.get (""), Paths.get ("TestParserHelper.syntaxTree"));
 	ParseTreeNode syntaxTree = stb.build (dirAndPath, tree);
@@ -96,7 +101,6 @@ public class TestParserHelper {
 				       CompilerDiagnosticCollector diagnostics) {
 	CharBuffer charBuf = CharBuffer.wrap (s);
 	Path path = Paths.get (sourcePath == null ? "TestParseHelper.getParser" : sourcePath);
-	JavaTokens javaTokens = new JavaTokens (grammar);
 	Lexer lexer = new CharBufferLexer (grammar, javaTokens, charBuf, path, diagnostics);
 	PredictCache predictCache = new PredictCache (grammar);
 	Parser parser = new Parser (grammar, path, predictCache, lexer, diagnostics);

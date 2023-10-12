@@ -73,4 +73,8 @@ public class EnumBody extends SyntaxTreeNode {
     public Map<String, FieldInfo> getFields () {
 	return declarations.getFields ();
     }
+
+    public List<MethodDeclaration> getMethods () {
+	return declarations.getMethods ();
+    }
 }

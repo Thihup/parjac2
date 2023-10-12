@@ -15,6 +15,8 @@ public class MethodHeader extends SyntaxTreeNode {
     private MethodDeclarator methodDeclarator;
     private Throws t;
 
+    // Result MethodDeclarator [Throws]
+    // TypeParameters {Annotation} Result MethodDeclarator [Throws]
     public MethodHeader (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
@@ -52,7 +54,35 @@ public class MethodHeader extends SyntaxTreeNode {
 	    v.accept (t);
     }
 
+    public TypeParameters getTypeParameters () {
+	return types;
+    }
+
+    public List<ParseTreeNode> getAnnotations () {
+	return annotations;
+    }
+
+    public ParseTreeNode getResult () {
+	return result;
+    }
+
     public String getName () {
 	return methodDeclarator.getName ();
+    }
+
+    public ReceiverParameter getReceiverParameter () {
+	return methodDeclarator.getReceiverParameter ();
+    }
+
+    public FormalParameterList getFormalParameterList () {
+	return methodDeclarator.getFormalParameterList ();
+    }
+
+    public Dims getDims () {
+	return methodDeclarator.getDims ();
+    }
+
+    public Throws getThrows () {
+	return t;
     }
 }

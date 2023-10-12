@@ -7,25 +7,23 @@ import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
+import org.khelekore.parjac2.parsetree.TokenNode;
 
 public class MarkerAnnotation extends Annotation {
-    private TypeName typename;
     public MarkerAnnotation (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
-	this.typename = (TypeName)children.get (1);
+	super (n.getPosition (), children);
     }
 
-    public MarkerAnnotation (ParsePosition pos, TypeName typename) {
-	super (pos);
-	this.typename = typename;
+    public MarkerAnnotation (ParsePosition pos, TokenNode at, TypeName typename) {
+	super (pos, List.of (at, typename));
     }
 
     @Override public Object getValue() {
-	return "@" + typename;
+	return "@" + getTypeName ();
     }
 
     @Override public void visitChildNodes (NodeVisitor v) {
-	v.accept (typename);
+	v.accept (getTypeName ());
     }
 
     @Override public boolean equals (Object o) {
@@ -36,6 +34,6 @@ public class MarkerAnnotation extends Annotation {
 	if (o.getClass () != getClass ())
 	    return false;
 	MarkerAnnotation ma = (MarkerAnnotation)o;
-	return Objects.equals (typename, ma.typename);
+	return Objects.equals (getTypeName (), ma.getTypeName ());
     }
 }

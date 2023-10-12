@@ -21,4 +21,8 @@ public class Throws extends SyntaxTreeNode {
     @Override public void visitChildNodes (NodeVisitor v) {
 	v.accept (exceptionTypeList);
     }
+
+    public ExceptionTypeList getExceptions () {
+	return exceptionTypeList;
+    }
 }

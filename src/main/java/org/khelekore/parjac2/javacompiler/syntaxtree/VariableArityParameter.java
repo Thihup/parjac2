@@ -42,4 +42,12 @@ public class VariableArityParameter extends FormalParameterBase {
 	v.accept (type);
 	annotations.forEach (v::accept);
     }
+
+    @Override public List<ParseTreeNode> getModifiers () {
+	return modifiers;
+    }
+
+    @Override public ParseTreeNode getType () {
+	return type;
+    }
 }

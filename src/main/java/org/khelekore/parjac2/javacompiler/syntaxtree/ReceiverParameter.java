@@ -42,4 +42,12 @@ public class ReceiverParameter extends SyntaxTreeNode {
 	annotations.forEach (v::accept);
 	v.accept (type);
     }
+
+    public List<Annotation> getAnnotations () {
+	return annotations;
+    }
+
+    public ParseTreeNode getType () {
+	return type;
+    }
 }

@@ -94,4 +94,8 @@ public class ClassBody extends SyntaxTreeNode {
     public Map<String, FieldInfo> getFields () {
 	return nameToField;
     }
+
+    public List<MethodDeclaration> getMethods () {
+	return methodDeclarations;
+    }
 }

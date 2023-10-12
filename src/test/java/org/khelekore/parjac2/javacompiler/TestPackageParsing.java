@@ -7,6 +7,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.MarkerAnnotation;
 import org.khelekore.parjac2.javacompiler.syntaxtree.PackageDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeName;
 import org.khelekore.parjac2.parser.Grammar;
+import org.khelekore.parjac2.parsetree.TokenNode;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
@@ -49,8 +50,9 @@ public class TestPackageParsing {
     public void testMarkerAnnotatedPackage () {
 	List<String> foo = List.of ("foo");
 	List<String> bar = List.of ("Bar");
-	MarkerAnnotation maf = new MarkerAnnotation (null, new TypeName (null, foo));
-	MarkerAnnotation mab = new MarkerAnnotation (null, new TypeName (null, bar));
+	TokenNode at = new TokenNode(TestParserHelper.getTokens ().AT, null);
+	MarkerAnnotation maf = new MarkerAnnotation (null, at, new TypeName (null, foo));
+	MarkerAnnotation mab = new MarkerAnnotation (null, at, new TypeName (null, bar));
 	TestParserHelper.testSuccessfulParse (g, "@foo package foo;", diagnostics,
 					      new PackageDeclaration (null, List.of (maf), foo));
 	TestParserHelper.testSuccessfulParse (g, "@foo @Bar package foo;", diagnostics,
