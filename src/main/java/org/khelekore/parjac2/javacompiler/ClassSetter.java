@@ -10,7 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
@@ -61,9 +61,6 @@ public class ClassSetter {
 
     private final ImportHandler ih;            // keep track of the imports we have
 
-    // The list of outer classes, currently changed while we loop over inner classes
-    private EnclosingTypes containingTypes = null;
-
     private final Map<ParseTreeNode, TypeHolder> types = new HashMap<> ();
     private TypeHolder currentTypes = null;
 
@@ -104,40 +101,40 @@ public class ClassSetter {
     }
 
     public void registerSuperTypes () {
-	forAllTypes (td -> {
+	forAllTypes ((td, et) -> {
 		switch (td) {
-		case NormalClassDeclaration ndi -> registerSuperTypes (ndi);
-		case EnumDeclaration ed -> setTypes (ed.getSuperInterfaces ());
-		case NormalInterfaceDeclaration i -> registerSuperTypes (i);
-		case RecordDeclaration rd -> setTypes (rd.getSuperInterfaces ());
-		case UnqualifiedClassInstanceCreationExpression uc -> setType (uc.getSuperType ());
-		case EnumConstant ec -> setTypes (ec.getParent ().getSuperInterfaces ());
+		case NormalClassDeclaration ndi -> registerSuperTypes (et, ndi);
+		case EnumDeclaration ed -> setTypes (et, ed.getSuperInterfaces ());
+		case NormalInterfaceDeclaration i -> registerSuperTypes (et, i);
+		case RecordDeclaration rd -> setTypes (et, rd.getSuperInterfaces ());
+		case UnqualifiedClassInstanceCreationExpression uc -> setType (et, uc.getSuperType ());
+		case EnumConstant ec -> setTypes (et, ec.getParent ().getSuperInterfaces ());
 		default -> error (td, "ClassSetter.registerSuperTypes: Unhandled type: %s", td.getClass ().getName ());
 		}
 	    });
     }
 
-    private void registerSuperTypes (NormalClassDeclaration ndi) {
+    private void registerSuperTypes (EnclosingTypes et, NormalClassDeclaration ndi) {
 	ClassType superclass = ndi.getSuperClass ();
 	if (superclass != null)
-	    setType (superclass);
-	setTypes (ndi.getSuperInterfaces ());
-	registerTypeParameters (ndi.getTypeParameters ());
+	    setType (et, superclass);
+	setTypes (et, ndi.getSuperInterfaces ());
+	registerTypeParameters (et, ndi.getTypeParameters ());
     }
 
-    private void registerSuperTypes (NormalInterfaceDeclaration i) {
-	setTypes (i.getExtendsInterfaces ());
+    private void registerSuperTypes (EnclosingTypes et, NormalInterfaceDeclaration i) {
+	setTypes (et, i.getExtendsInterfaces ());
     }
 
-    private void registerTypeParameters (TypeParameters tps) {
+    private void registerTypeParameters (EnclosingTypes et, TypeParameters tps) {
 	if (tps == null)
 	    return;
 	for (TypeParameter tp : tps.get ()) {
 	    // TODO: register the type parameter tp.getId ();
 	    TypeBound bound = tp.getTypeBound ();
 	    if (bound != null) {
-		setType (bound.getType ());
-		bound.getAdditionalBounds ().forEach (this::setType);
+		setType (et, bound.getType ());
+		bound.getAdditionalBounds ().forEach (b -> setType (et, b));
 	    }
 	}
     }
@@ -146,84 +143,83 @@ public class ClassSetter {
 	forAllTypes (this::setFieldTypes);
     }
 
-    private void setFieldTypes (TypeDeclaration td) {
+    private void setFieldTypes (TypeDeclaration td, EnclosingTypes et) {
 	Map<String, FieldInfo> fields = td.getFields ();
-	fields.forEach (this::setFieldType);
+	fields.forEach ((name, info) ->  setFieldType (et, name, info));
     }
 
-    private void setFieldType (String name, FieldInfo info) {
-	setType (info.fd ().getType ());
+    private void setFieldType (EnclosingTypes et, String name, FieldInfo info) {
+	setType (et, info.fd ().getType ());
     }
 
     private void registerMethods () {
 	forAllTypes (this::setMethodTypes);
     }
 
-    private void setMethodTypes (TypeDeclaration td) {
+    private void setMethodTypes (TypeDeclaration td, EnclosingTypes et) {
 	List<? extends MethodDeclarationBase> methods = td.getMethods ();
-	methods.forEach (this::setMethodTypes);
+	methods.forEach (m -> setMethodTypes (et, m));
 
 	// TODO: handle constructors
 	// TODO: handle instance and static blocks
     }
 
-    private void setMethodTypes (MethodDeclarationBase md) {
-	registerTypeParameters (md.getTypeParameters ());
-	checkAnnotations (md.getAnnotations ());
-	setType (md.getResult ());
+    private void setMethodTypes (EnclosingTypes et, MethodDeclarationBase md) {
+	registerTypeParameters (et, md.getTypeParameters ());
+	checkAnnotations (et, md.getAnnotations ());
+	setType (et, md.getResult ());
 	ReceiverParameter rp = md.getReceiverParameter ();
 	if (rp != null) {
-	    checkAnnotations (rp.getAnnotations ());
-	    setType (rp.getType ());
+	    checkAnnotations (et, rp.getAnnotations ());
+	    setType (et, rp.getType ());
 	}
 	FormalParameterList args = md.getFormalParameterList ();
 	if (args != null) {
 	    for (FormalParameterBase fp : args.getParameters ()) {
-		checkFormalParameterModifiers (fp.getModifiers ());
-		setType (fp.getType ());
+		checkFormalParameterModifiers (et, fp.getModifiers ());
+		setType (et, fp.getType ());
 	    }
 	}
 
 	Throws t = md.getThrows ();
 	if (t != null) {
 	    ExceptionTypeList exceptions = t.getExceptions ();
-	    setTypes (exceptions.get ());
+	    setTypes (et, exceptions.get ());
 	}
 	ParseTreeNode body = md.getMethodBody ();
 	// TODO: handle body
     }
 
-    private void checkAnnotations (List<? extends ParseTreeNode> annotations) {
+    private void checkAnnotations (EnclosingTypes et, List<? extends ParseTreeNode> annotations) {
 	if (annotations == null)
 	    return;
 	for (ParseTreeNode t : annotations) {
 	    switch (t) {
-	    case Annotation a -> setType (a.getTypeName ());
+	    case Annotation a -> setType (et, a.getTypeName ());
 	    default -> error (t, "ClassSetter: Unhandled annotation: %s, %s", t.getClass ().getName (), t);
 	    }
 	}
     }
 
-    private void checkFormalParameterModifiers (List<ParseTreeNode> modifiers) {
+    private void checkFormalParameterModifiers (EnclosingTypes et, List<ParseTreeNode> modifiers) {
 	for (ParseTreeNode n : modifiers) {
 	    if (n instanceof Annotation a)
-		setType (a.getTypeName ());
+		setType (et, a.getTypeName ());
 	}
     }
 
-    private void forAllTypes (Consumer<TypeDeclaration> handler) {
+    private void forAllTypes (BiConsumer<TypeDeclaration, EnclosingTypes> handler) {
 	Deque<EnclosingTypes> typesToHandle = new ArrayDeque<> ();
 	ocu.getTypes ().stream ().map (td -> enclosingTypes (null, td)).forEach (typesToHandle::add);
 	while (!typesToHandle.isEmpty ()) {
 	    EnclosingTypes et = typesToHandle.removeFirst ();
-	    containingTypes = et;
 	    TypeDeclaration td = et.td ();
-	    handler.accept (td);
+	    handler.accept (td, et);
 	    td.getInnerClasses ().stream ().map (i -> enclosingTypes (et, i)).forEach (typesToHandle::add);
 	}
     }
 
-    private void setType (ParseTreeNode type) {
+    private void setType (EnclosingTypes et, ParseTreeNode type) {
 	/* Not sure if we need this
 	if (type instanceof PrimitiveTokenType) {
 	    return;
@@ -232,32 +228,32 @@ public class ClassSetter {
 	switch (type) {
 	case TokenNode t -> {}
 	case PrimitiveType p -> {}
-	case ClassType ct -> setType (ct);
-	case ArrayType at -> setType (at.getType ());
+	case ClassType ct -> setType (et, ct);
+	case ArrayType at -> setType (et, at.getType ());
 	case Wildcard wc -> {
 	    WildcardBounds wb = wc.getBounds ();
 	    if (wb != null)
-		setType (wb.getClassType ());
+		setType (et, wb.getClassType ());
 	}
 	default -> error (type, "ClassSetter: Unhandled type: %s, %s", type.getClass ().getName (), type);
 	}
     }
 
-    private void setTypes (List<ClassType> types) {
+    private void setTypes (EnclosingTypes et, List<ClassType> types) {
 	if (types != null)
-	    types.forEach (this::setType);
+	    types.forEach (ct -> setType (et, ct));
     }
 
-    private void setType (ClassType ct) {
+    private void setType (EnclosingTypes et, ClassType ct) {
 	if (ct.getFullName () != null) // already set?
 	    return;
 	// "List" and "java.util.List" are easy to resolve
 	String id1 = getId (ct);
-	ResolvedClass fqn = resolve (id1, ct.getPosition ());
+	ResolvedClass fqn = resolve (et, id1, ct.getPosition ());
 	if (fqn == null && ct.size () > 1) {
 	    // ok, someone probably wrote something like "HashMap.Entry" or
 	    // "java.util.HashMap.Entry" which is somewhat problematic, but legal
-	    fqn = tryAllParts (ct);
+	    fqn = tryAllParts (et, ct);
 	}
 	if (fqn == null) {
 	    diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), ct.getPosition (),
@@ -269,7 +265,7 @@ public class ClassSetter {
 	for (SimpleClassType sct : ct.get ()) {
 	    TypeArguments tas = sct.getTypeArguments ();
 	    if (tas != null) {
-		tas.getTypeArguments ().forEach (tn -> setType (tn));
+		tas.getTypeArguments ().forEach (tn -> setType (et, tn));
 	    }
 	}
     }
@@ -301,7 +297,7 @@ public class ClassSetter {
 	private void addSingleTypeImportDeclaration (SingleTypeImportDeclaration i) {
 	    TypeName dn = i.getName ();
 	    String name = dn.getDotName ();
-	    if (!hasVisibleType (name)) {
+	    if (!hasVisibleType (null, name)) {
 		diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), i.getPosition (),
 							     "Imported type not found: %s", name));
 		i.markUsed (); // Unused, but already flagged as bad, don't want multiple lines
@@ -315,7 +311,7 @@ public class ClassSetter {
 
 	private void addSingleStaticImportDeclaration (SingleStaticImportDeclaration i) {
 	    String fqn = i.getName ().getDotName ();
-	    if (!hasVisibleType (fqn)) {
+	    if (!hasVisibleType (null, fqn)) {
 		diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), i.getPosition (),
 							     "Imported type not found: %s", fqn));
 		i.markUsed (); // Unused, but already flagged as bad, don't want multiple lines
@@ -343,16 +339,16 @@ public class ClassSetter {
 	    fqn.charAt (topLevelClass.length ()) == '.';
     }
 
-    private static record  ImportHolder (ImportDeclaration i, String name) {
+    private static record ImportHolder (ImportDeclaration i, String name) {
 	public void markUsed () {
 	    if (i != null)
 		i.markUsed ();
 	}
     }
 
-    private boolean hasVisibleType (String fqn) {
-	String topLevelClass = containingTypes == null ? null : lastFQN (containingTypes);
-	return hasVisibleType (fqn, topLevelClass);
+    private boolean hasVisibleType (EnclosingTypes et, String fqn) {
+	String topLevelClass = et == null ? null : lastFQN (et);
+	return hasVisibleTypeIn (et, fqn, topLevelClass);
     }
 
     private String lastFQN (EnclosingTypes e) {
@@ -364,14 +360,14 @@ public class ClassSetter {
 	return fqn;
     }
 
-    private boolean hasVisibleType (String fqn, String topLevelClass) {
+    private boolean hasVisibleTypeIn (EnclosingTypes et, String fqn, String topLevelClass) {
 	LookupResult r = cip.hasVisibleType (fqn);
 	if (!r.getFound ())
 	    return false;
 	if (Flags.isPublic (r.getAccessFlags ())) {
 	    return true;
 	} else if (Flags.isProtected (r.getAccessFlags ())) {
-	    return samePackage (fqn, packageName) || insideSuperClass (fqn);
+	    return samePackage (fqn, packageName) || insideSuperClass (et, fqn);
 	} else if (Flags.isPrivate (r.getAccessFlags ())) {
 	    return sameTopLevelClass (fqn, topLevelClass);
 	}
@@ -385,8 +381,8 @@ public class ClassSetter {
 	    fqn.indexOf ('.', fqn.length ()) == -1;
     }
 
-    private boolean insideSuperClass (String fqn) {
-	for (EnclosingTypes c : containingTypes)
+    private boolean insideSuperClass (EnclosingTypes et, String fqn) {
+	for (EnclosingTypes c : et)
 	    if (insideSuperClass (fqn, c.fqn ()))
 		return true;
 	return false;
@@ -413,7 +409,7 @@ public class ClassSetter {
 
     /** Try to find an outer class that has the inner classes for misdirected outer classes.
      */
-    private ResolvedClass tryAllParts (ClassType ct) {
+    private ResolvedClass tryAllParts (EnclosingTypes et, ClassType ct) {
 	StringBuilder sb = new StringBuilder ();
 	List<SimpleClassType> scts = ct.get ();
 	// group package names to class "java.util.HashMap"
@@ -422,10 +418,10 @@ public class ClassSetter {
 	    if (i > 0)
 		sb.append (".");
 	    sb.append (sct.getId ());
-	    ResolvedClass outerClass = resolve (sb.toString (), ct.getPosition ());
+	    ResolvedClass outerClass = resolve (et, sb.toString (), ct.getPosition ());
 	    if (outerClass != null) {
 		// Ok, now check if Entry is an inner class either directly or in super class
-		String fqn = checkForInnerClasses (scts, i + 1, outerClass.type);
+		String fqn = checkForInnerClasses (et, scts, i + 1, outerClass.type);
 		if (fqn != null)
 		    return new ResolvedClass (fqn);
 	    }
@@ -433,15 +429,15 @@ public class ClassSetter {
 	return null;
     }
 
-    private String checkForInnerClasses (List<SimpleClassType> scts, int i, String outerClass) {
+    private String checkForInnerClasses (EnclosingTypes et, List<SimpleClassType> scts, int i, String outerClass) {
 	String currentOuterClass = outerClass;
 	for (int s = scts.size (); i < s; i++) {
 	    SimpleClassType sct = scts.get (i);
 	    String directInnerClass = currentOuterClass + "." + sct.getId ();
-	    if (hasVisibleType (directInnerClass)) {
+	    if (hasVisibleType (et, directInnerClass)) {
 		currentOuterClass = directInnerClass;
 	    } else {
-		currentOuterClass = checkSuperClasses (currentOuterClass, sct.getId ());
+		currentOuterClass = checkSuperClasses (et, currentOuterClass, sct.getId ());
 		if (currentOuterClass == null)
 		    return null;
 	    }
@@ -449,18 +445,18 @@ public class ClassSetter {
 	return currentOuterClass;
     }
 
-    private ResolvedClass resolve (String id, ParsePosition pos) {
+    private ResolvedClass resolve (EnclosingTypes et, String id, ParsePosition pos) {
 	TypeParameter tp = getTypeParameter (id);
 	if (tp != null) {
 	    return new ResolvedClass (tp);
 	}
 
-	if (hasVisibleType (id))
+	if (hasVisibleType (et, id))
 	    return new ResolvedClass (id);
 
-	String fqn = resolveInnerClass (id);
+	String fqn = resolveInnerClass (et, id);
 	if (fqn == null)
-	    fqn = resolveUsingImports (id, pos);
+	    fqn = resolveUsingImports (et, id, pos);
 	if (fqn != null)
 	    return new ResolvedClass (fqn);
 	return null;
@@ -485,32 +481,32 @@ public class ClassSetter {
 	}
     }
 
-    private String resolveInnerClass (String id) {
+    private String resolveInnerClass (EnclosingTypes et, String id) {
 	// Check for inner class
-	for (EnclosingTypes ctn : containingTypes) {
+	for (EnclosingTypes ctn : et) {
 	    String icn = ctn.fqn () + "." + id;
-	    if (hasVisibleType (icn))
+	    if (hasVisibleType (et, icn))
 		return icn;
 	}
 
 	// Check for inner class of super classes
-	for (EnclosingTypes ctn : containingTypes) {
-	    String fqn = checkSuperClasses (ctn.fqn (), id);
+	for (EnclosingTypes ctn : et) {
+	    String fqn = checkSuperClasses (et, ctn.fqn (), id);
 	    if (fqn != null)
 		return fqn;
 	}
 	return null;
     }
 
-    private String checkSuperClasses (String fullCtn, String id) {
+    private String checkSuperClasses (EnclosingTypes et, String fullCtn, String id) {
 	if (fullCtn == null)
 	    return null;
 	List<String> superclasses = getSuperClasses (fullCtn);
 	for (String superclass : superclasses) {
 	    String icn = superclass + "." + id;
-	    if (hasVisibleType (icn))
+	    if (hasVisibleType (et, icn))
 		return icn;
-	    String ssn = checkSuperClasses (superclass, id);
+	    String ssn = checkSuperClasses (et, superclass, id);
 	    if (ssn != null)
 		return ssn;
 	}
@@ -527,23 +523,23 @@ public class ClassSetter {
 	return Collections.emptyList ();
     }
 
-    private String resolveUsingImports (String id, ParsePosition pos) {
+    private String resolveUsingImports (EnclosingTypes et, String id, ParsePosition pos) {
 	ImportHolder i = ih.stid.get (id);
-	if (i != null && hasVisibleType (i.name ())) {
+	if (i != null && hasVisibleType (et, i.name ())) {
 	    i.markUsed ();
 	    return i.name ();
 	}
 	String fqn;
 	fqn = tryPackagename (id, pos);
-	if (fqn != null && hasVisibleType (fqn))
+	if (fqn != null && hasVisibleType (et, fqn))
 	    return fqn;
 	fqn = trySingleStaticImport (id);
-	if (fqn != null && hasVisibleType (fqn))
+	if (fqn != null && hasVisibleType (et, fqn))
 	    return fqn;
-	fqn = tryTypeImportOnDemand (id, pos);
+	fqn = tryTypeImportOnDemand (et, id, pos);
 	if (fqn != null) // already checked cip.hasType
 	    return fqn;
-	fqn = tryStaticImportOnDemand (id);
+	fqn = tryStaticImportOnDemand (et, id);
 	if (fqn != null) // already checked cip.hasType
 	    return fqn;
 
@@ -567,11 +563,11 @@ public class ClassSetter {
 	return packageName + "." + id;
     }
 
-    private String tryTypeImportOnDemand (String id, ParsePosition pos) {
+    private String tryTypeImportOnDemand (EnclosingTypes et, String id, ParsePosition pos) {
 	List<String> matches = new ArrayList<> ();
 	for (ImportHolder ih : ih.tiod) {
 	    String t = ih.name () + "." + id;
-	    if (hasVisibleType (t)) {
+	    if (hasVisibleType (et, t)) {
 		matches.add (t);
 		ih.markUsed ();
 	    }
@@ -593,10 +589,10 @@ public class ClassSetter {
 	return sit.fullName;
     }
 
-    private String tryStaticImportOnDemand (String id) {
+    private String tryStaticImportOnDemand (EnclosingTypes et, String id) {
 	for (StaticImportOnDemandDeclaration siod : ih.siod) {
 	    String fqn = siod.getName ().getDotName () + "." + id;
-	    if (hasVisibleType (fqn)) {
+	    if (hasVisibleType (et, fqn)) {
 		siod.markUsed ();
 		return fqn;
 	    }
@@ -625,7 +621,7 @@ public class ClassSetter {
 	    String full = si.getFullName ();
 	    String fqn = si.getType ().getDotName ();
 	    String field = si.getInnerId ();
-	    if (!hasVisibleType (full) && cip.getFieldInformation (fqn, field) == null) {
+	    if (!hasVisibleType (null, full) && cip.getFieldInformation (fqn, field) == null) {
 		diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), i.getPosition (),
 							     "Type %s has no symbol: %s", fqn, field));
 		return;
