@@ -84,7 +84,6 @@ public class ClassSetter {
 	if (diagnostics.hasError ())
 	    return;
 	classSetters.parallelStream ().forEach (ClassSetter::registerSuperTypes);
-	// TODO: handle all parts of a class
 
 	classSetters.parallelStream ().forEach (ClassSetter::registerFields);
 	classSetters.parallelStream ().forEach (ClassSetter::registerMethods);

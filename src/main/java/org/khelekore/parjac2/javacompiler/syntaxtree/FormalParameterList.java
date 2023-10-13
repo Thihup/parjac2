@@ -21,7 +21,7 @@ public class FormalParameterList extends SyntaxTreeNode {
 	}
     }
 
-    @Override public Object getValue() {
+    @Override public Object getValue () {
 	return params;
     }
 
@@ -31,5 +31,9 @@ public class FormalParameterList extends SyntaxTreeNode {
 
     public List<FormalParameterBase> getParameters () {
 	return params;
+    }
+
+    public int size () {
+	return params.size ();
     }
 }

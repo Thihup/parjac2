@@ -1,18 +1,28 @@
 package org.khelekore.parjac2.javacompiler;
 
+import java.util.Map;
+
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeArguments;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeParameter;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Wildcard;
+import org.khelekore.parjac2.parser.Token;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
+import org.khelekore.parjac2.parsetree.TokenNode;
 
 public class GenericTypeHelper {
 
-    public static String getGenericType (ParseTreeNode tn) {
+    private final Map<Token, String> tokenToDescriptor;
+
+    public GenericTypeHelper (Map<Token, String> tokenToDescriptor) {
+	this.tokenToDescriptor = tokenToDescriptor;
+    }
+
+    public String getGenericType (ParseTreeNode tn) {
 	return getGenericType (tn, "");
     }
 
-    public static String getGenericType (ParseTreeNode tn, String prefix) {
+    public String getGenericType (ParseTreeNode tn, String prefix) {
 	if (tn instanceof ClassType ct) {
 	    TypeParameter tp = ct.getTypeParameter ();
 	    if (tp != null)
@@ -23,6 +33,9 @@ public class GenericTypeHelper {
 		return "L" + ct.getSlashName () + getTypeArgumentsSignature (ta) + ";";
 	    }
 	    return "L" + ct.getSlashName () + ";";
+	} else if (tn instanceof TokenNode tkn) {
+	    Token t = tkn.getToken ();
+	    return tokenToDescriptor.get (t);
 	}
 	// TODO: not sure how we get here.
 	//return tn.getExpressionType ().getDescriptor ();
@@ -30,7 +43,7 @@ public class GenericTypeHelper {
 	return tn.getValue ().toString ();
     }
 
-    private static String getTypeArgumentsSignature (TypeArguments ta) {
+    private String getTypeArgumentsSignature (TypeArguments ta) {
 	if (ta == null)
 	    return "";
 	StringBuilder sb = new StringBuilder ();
@@ -45,5 +58,4 @@ public class GenericTypeHelper {
 	sb.append (">");
 	return sb.toString ();
     }
-
 }
