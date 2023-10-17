@@ -27,8 +27,9 @@ public interface FullNameHandler {
 	return false;
     }
 
-    default String getSignature (GenericTypeHelper gth, ClassInformationProvider cip, boolean shortForm) {
-	return getFullDollarName ();
+    default String getSignature (GenericTypeHelper gth, ClassInformationProvider cip,
+				 boolean shortForm, TypeArguments ta) {
+	return ta != null ? getFullDollarName () + gth.getTypeArgumentsSignature (ta, cip, shortForm) : getFullDollarName ();
     }
 
     /** Get a full name handler from the dotted name of an outer class "foo.bar.Baz" */

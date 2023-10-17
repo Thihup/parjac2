@@ -19,6 +19,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.NormalClassDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.NormalInterfaceDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.OrdinaryCompilationUnit;
 import org.khelekore.parjac2.javacompiler.syntaxtree.RecordDeclaration;
+import org.khelekore.parjac2.javacompiler.syntaxtree.TypeArguments;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.UnqualifiedClassInstanceCreationExpression;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -85,7 +86,8 @@ public class CompiledTypesHolder {
 	    return td.getTypeParameters () != null;
 	}
 
-	@Override public String getSignature (GenericTypeHelper gth, ClassInformationProvider cip, boolean shortForm) {
+	@Override public String getSignature (GenericTypeHelper gth, ClassInformationProvider cip,
+					      boolean shortForm, TypeArguments ta) {
 	    StringBuilder sb = new StringBuilder ();
 	    sb.append ("L");
 	    appendInternalSignature (sb, gth, cip, shortForm);
@@ -117,7 +119,8 @@ public class CompiledTypesHolder {
 	    return outer.hasGenericType () || td.getTypeParameters () != null;
 	}
 
-	@Override public String getSignature (GenericTypeHelper gth, ClassInformationProvider cip, boolean shortForm) {
+	@Override public String getSignature (GenericTypeHelper gth, ClassInformationProvider cip,
+					      boolean shortForm, TypeArguments ta) {
 	    StringBuilder sb = new StringBuilder();
 	    sb.append ("L");
 	    outer.appendInternalSignature (sb, gth, cip, shortForm);

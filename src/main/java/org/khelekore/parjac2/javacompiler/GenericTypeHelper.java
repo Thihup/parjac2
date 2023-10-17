@@ -22,15 +22,11 @@ public class GenericTypeHelper {
     }
 
     public String getGenericType (ParseTreeNode tn, ClassInformationProvider cip, boolean shortForm) {
-	return getGenericType (tn, "", cip, shortForm);
-    }
-
-    public String getGenericType (ParseTreeNode tn, String prefix, ClassInformationProvider cip, boolean shortForm) {
 	if (tn instanceof ClassType ct) {
 	    TypeParameter tp = ct.getTypeParameter ();
 	    if (tp != null)
 		return "T" + tp.getId () + ";";
-	    return ct.getFullNameHandler ().getSignature (this, cip, shortForm);
+	    return ct.getFullNameHandler ().getSignature (this, cip, shortForm, ct.getTypeArguments ());
 	} else if (tn instanceof TokenNode tkn) {
 	    Token t = tkn.getToken ();
 	    return tokenToDescriptor.get (t);
@@ -41,14 +37,14 @@ public class GenericTypeHelper {
 	return tn.getValue ().toString ();
     }
 
-    private String getTypeArgumentsSignature (TypeArguments ta, ClassInformationProvider cip, boolean shortForm) {
+    public String getTypeArgumentsSignature (TypeArguments ta, ClassInformationProvider cip, boolean shortForm) {
 	StringBuilder sb = new StringBuilder ();
 	sb.append ("<");
 	for (ParseTreeNode tn : ta.getTypeArguments ()) {
 	    switch (tn) {
 	    //TODO: we also need to handle type and additional bounds
-	    case Wildcard w -> sb.append ("+").append (getGenericType (w.getBounds ().getClassType (), cip, shortForm));
-	    default -> sb.append (getGenericType (tn, cip, shortForm));
+	    case Wildcard w -> sb.append ("+L").append (getGenericType (w.getBounds ().getClassType (), cip, shortForm)).append (";");
+	    default -> sb.append ("L").append (getGenericType (tn, cip, shortForm)).append (";");
 	    }
 	}
 	sb.append (">");
@@ -67,12 +63,10 @@ public class GenericTypeHelper {
 		TypeBound b = tp.getTypeBound ();
 		if (b != null) {
 		    ClassType bt = b.getType ();
-		    sb.append (cip.isInterface (bt.getFullDotName ()) ? "::" : ":");
-		    sb.append (bt.getExpressionType ().getDescriptor ());
+		    appendType (sb, bt, cip, shortForm);
 		    List<ClassType> ls = b.getAdditionalBounds ();
 		    if (ls != null) {
-			for (ClassType ab : ls)
-			    sb.append (":").append (ab.getExpressionType ().getDescriptor ());
+			ls.forEach (ct -> appendType (sb, ct, cip, shortForm));
 		    }
 		} else {
 		    sb.append (":Ljava/lang/Object;");
@@ -80,5 +74,12 @@ public class GenericTypeHelper {
 	    }
 	}
 	sb.append (">");
+    }
+
+    private void appendType (StringBuilder sb, ClassType ct, ClassInformationProvider cip, boolean shortForm) {
+	sb.append (cip.isInterface (ct.getFullDotName ()) ? "::" : ":");
+	sb.append ("L");
+	sb.append (getGenericType (ct, cip, shortForm));
+	sb.append (";");
     }
 }
