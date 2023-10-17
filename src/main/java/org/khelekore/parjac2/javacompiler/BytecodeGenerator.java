@@ -29,11 +29,11 @@ public class BytecodeGenerator {
     private final Path origin;
     private final TypeDeclaration td;
     private final ClassInformationProvider cip;
-    private final String name;
+    private final FullNameHandler name;
 
-    private static final ClassType enumClassType = new ClassType (FullNameHandler.ofSimpleClassName ("java.lang.Enum"));
-    private static final ClassType recordClassType = new ClassType (FullNameHandler.ofSimpleClassName ("java.lang.Record"));
-    private static final ClassType objectClassType = new ClassType (FullNameHandler.ofSimpleClassName ("java.lang.Object"));
+    private static final ClassType enumClassType = new ClassType (FullNameHandler.JL_ENUM);
+    private static final ClassType recordClassType = new ClassType (FullNameHandler.JL_RECORD);
+    private static final ClassType objectClassType = new ClassType (FullNameHandler.JL_OBJECT);
 
     private final Map<Token, String> tokenToDescriptor = new HashMap<> ();
     private final GenericTypeHelper genericTypeHelper;
@@ -58,7 +58,7 @@ public class BytecodeGenerator {
 	this.origin = origin;
 	this.td = td;
 	this.cip = cip;
-	this.name = cip.getFullDollarClassName (td);
+	this.name = cip.getFullName (td);
 
 	tokenToDescriptor.put (javaTokens.BYTE, "B");
 	tokenToDescriptor.put (javaTokens.SHORT, "S");
@@ -123,9 +123,9 @@ public class BytecodeGenerator {
     private byte[] generateEnumConstant (EnumConstant ec) {
 	// TODO: extend the enum
 	EnumDeclaration ed = ec.getParent ();
-	String parentName = cip.getFullDollarClassName (ed);
+	FullNameHandler parentName = cip.getFullName (ed);
 	return generateClass (ec, ImplicitClassFlags.ENUM_CONSTANT_FLAGS, null,
-			      new ClassType (FullNameHandler.ofDollarNAme (parentName)), List.of ());
+			      new ClassType (parentName), List.of ());
     }
 
     private byte[] generateAnonymousClass (UnqualifiedClassInstanceCreationExpression ac) {
@@ -189,7 +189,7 @@ public class BytecodeGenerator {
 
     private byte[] generateClass (TypeDeclaration tdt, ImplicitClassFlags icf,
 				  String signature, ClassType superType, List<ClassType> superInterfaces) {
-	byte[] b = Classfile.of().build (ClassDesc.of (name), classBuilder -> {
+	byte[] b = Classfile.of().build (ClassDesc.of (name.getFullDollarName ()), classBuilder -> {
 		classBuilder.withVersion (Classfile.JAVA_21_VERSION, 0);  // possible minor: PREVIEW_MINOR_VERSION
 		classBuilder.withFlags (td.getFlags () | icf.flags);
 		classBuilder.withSuperclass (ClassDesc.of ((superType != null ? superType : objectClassType).getFullDollarName ()));
@@ -357,8 +357,8 @@ public class BytecodeGenerator {
     }
 
     private InnerClassInfo getInnerClassInfo (TypeDeclaration outer, TypeDeclaration inner) {
-	ClassDesc innerClass = ClassDesc.of (cip.getFullDollarClassName (inner));
-	Optional<ClassDesc> outerClass = Optional.of (ClassDesc.of (cip.getFullDollarClassName (outer)));
+	ClassDesc innerClass = ClassDesc.of (cip.getFullName (inner).getFullDollarName ());
+	Optional<ClassDesc> outerClass = Optional.of (ClassDesc.of (cip.getFullName (outer).getFullDollarName ()));
 	Optional<String> innerName = Optional.of (inner.getName ());
 	int flags = inner.getFlags ();
 	return InnerClassInfo.of (innerClass, outerClass, innerName, flags);

@@ -36,7 +36,8 @@ public class CompiledTypesHolder {
 	if (ni == null)
 	    return LookupResult.NOT_FOUND;
 	int flags = ni.getFlags ();
-	return new LookupResult (true, flags);
+	FullNameHandler name = typeToInfo.get (ni).getFullName ();
+	return new LookupResult (true, flags, name);
     }
 
     public void addTypes (ParseTreeNode n, Path origin) {
@@ -84,14 +85,9 @@ public class CompiledTypesHolder {
 	return typeToInfo.get (td).packageName;
     }
 
-    public String getFullDotClassName (TypeDeclaration td) {
+    public FullNameHandler getFullName (TypeDeclaration td) {
 	TypeInfo info = typeToInfo.get (td);
-	return info.getFullDotClassName ();
-    }
-
-    public String getFullDollarClassName (TypeDeclaration td) {
-	TypeInfo info = typeToInfo.get (td);
-	return info.getFullDollarClassName ();
+	return info.getFullName ();
     }
 
     public String getFileName (TypeDeclaration td) {
@@ -179,38 +175,35 @@ public class CompiledTypesHolder {
 	private final String dotName;      // Baz.Qaz
 	private final String dollarName;   // Baz$Qaz
 	private final Path origin;         // foo/bar/Baz.java
-
-	private String fullDotName;        // foo.bar.Baz.Qaz
-	private String fullDollarName;     // foo.bar.Baz$Qaz
+	private final FullNameHandler fullName;
 
 	public TypeInfo (String packageName, String dotName, String dollarName, Path origin) {
 	    this.packageName = packageName;
 	    this.dotName = dotName;
 	    this.dollarName = dollarName;
 	    this.origin = origin;
+	    fullName = FullNameHandler.of (getFullDotName (), getFullDollarName ());
 	}
 
 	@Override public String toString () {
 	    return getClass ().getSimpleName () + "{" + packageName + ", " + dotName + ", " + dollarName + ", " +
-		origin + ", " + fullDotName + ", " + fullDollarName + "}";
+		origin + ", " + fullName + "}";
 	}
 
-	private synchronized String getFullDotClassName () {
-	    if (fullDotName == null) {
-		String pn = packageName;
-		String cn = dotName;
-		fullDotName = pn.isEmpty () ? cn : pn + "." + cn;
-	    }
-	    return fullDotName;
+	public FullNameHandler getFullName () {
+	    return fullName;
 	}
 
-	private synchronized String getFullDollarClassName () {
-	    if (fullDollarName == null) {
-		String pn = packageName;
-		String cn = dollarName;
-		fullDollarName = pn.isEmpty () ? cn : pn + "." + cn;
-	    }
-	    return fullDollarName;
+	private String getFullDotName () {
+	    String pn = packageName;
+	    String cn = dotName;
+	    return pn.isEmpty () ? cn : pn + "." + cn;
+	}
+
+	private String getFullDollarName () {
+	    String pn = packageName;
+	    String cn = dollarName;
+	    return pn.isEmpty () ? cn : pn + "." + cn;
 	}
     }
 }

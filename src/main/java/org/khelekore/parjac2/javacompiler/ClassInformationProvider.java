@@ -35,7 +35,7 @@ public class ClassInformationProvider {
 
     public LookupResult hasVisibleType (String dottedName) {
 	LookupResult res = cth.hasVisibleType (dottedName);
-	if (res.getFound ())
+	if (res.found ())
 	    return res;
 	return crh.hasVisibleType (dottedName);
     }
@@ -104,17 +104,7 @@ public class ClassInformationProvider {
     }
 
     public FullNameHandler getFullName (TypeDeclaration td) {
-	String dot = getFullDotClassName (td);
-	String dollar = getFullDollarClassName (td);
-	return FullNameHandler.of (dot, dollar);
-    }
-
-    public String getFullDotClassName (TypeDeclaration td) {
-	return cth.getFullDotClassName (td);
-    }
-
-    public String getFullDollarClassName (TypeDeclaration td) {
-	return cth.getFullDollarClassName (td);
+	return cth.getFullName (td);
     }
 
     public String getFileName (TypeDeclaration td) {

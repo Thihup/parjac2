@@ -369,13 +369,13 @@ public class ClassSetter {
 
     private boolean hasVisibleTypeIn (EnclosingTypes et, FullNameHandler fqn, FullNameHandler topLevelClass) {
 	LookupResult r = cip.hasVisibleType (fqn.getFullDotName ());
-	if (!r.getFound ())
+	if (!r.found ())
 	    return false;
-	if (Flags.isPublic (r.getAccessFlags ())) {
+	if (Flags.isPublic (r.accessFlags ())) {
 	    return true;
-	} else if (Flags.isProtected (r.getAccessFlags ())) {
+	} else if (Flags.isProtected (r.accessFlags ())) {
 	    return samePackage (fqn, packageName) || insideSuperClass (et, fqn);
-	} else if (Flags.isPrivate (r.getAccessFlags ())) {
+	} else if (Flags.isPrivate (r.accessFlags ())) {
 	    return sameTopLevelClass (fqn, topLevelClass);
 	}
 	// No access level

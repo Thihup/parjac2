@@ -1,25 +1,7 @@
 package org.khelekore.parjac2.javacompiler;
 
-class LookupResult {
-    private boolean found;
-    private int accessFlags;
+import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 
-    public static final LookupResult NOT_FOUND = new LookupResult (false, 0);
-
-    public LookupResult (boolean found, int accessFlags) {
-	this.found = found;
-	this.accessFlags = accessFlags;
-    }
-
-    @Override public String toString () {
-	return getClass ().getSimpleName () + "{found: " + found + ", flags: " + accessFlags + "}";
-    }
-
-    public boolean getFound () {
-	return found;
-    }
-
-    public int getAccessFlags () {
-	return accessFlags;
-    }
+record LookupResult (boolean found, int accessFlags, FullNameHandler fullName) {
+    public static final LookupResult NOT_FOUND = new LookupResult (false, 0, null);
 }

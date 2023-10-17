@@ -80,7 +80,8 @@ public class ClassResourceHolder {
 
 	// For now we are going to assume that later version come later in the file so
 	// no need to check ctSymVersion
-	storeName (name, ".sig", '/', new CtSymResult (ctSymFile, versions, moduleName, name, e.getName ()));
+	FullNameHandler fullName = getFullName (name, ".sig", '/');
+	storeName (new CtSymResult (fullName, ctSymFile, versions, moduleName, name, e.getName ()));
     }
 
     private void scan (Path p) throws IOException {
@@ -94,7 +95,8 @@ public class ClassResourceHolder {
 	Files.walk (start).forEach (f -> {
 		if (Files.isRegularFile (f)) {
 		    Path relative = start.relativize (f);
-		    storeName (relative.toString (), ".class", File.separatorChar, new PathResult (f));
+		    FullNameHandler fullName = getFullName (relative.toString (), ".class", File.separatorChar);
+		    storeName (new PathResult (fullName, f));
 		}
 	    });
     }
@@ -106,24 +108,27 @@ public class ClassResourceHolder {
     }
 
     private void storeClass (Path jarfile, JarEntry e) {
-	JarEntryResult r = new JarEntryResult (jarfile, e.getName ());
-	storeName (e.getName (), ".class", '/', r);
+	JarEntryResult r = new JarEntryResult (getFullName (e.getName (), ".class", '/'), jarfile, e.getName ());
+	storeName (r);
     }
 
-    private void storeName (String name, String type, char dirSeparator, ClasspathClassInformation r) {
-	if (name.endsWith (type)) {
-	    name = name.substring (0, name.length () - type.length ());
-	    name = name.replace (dirSeparator, '.');
-	    name = name.replace ('$', '.');
-	    foundClasses.put (name, r);
-	}
+    private static FullNameHandler getFullName (String name, String extension, char dirSeparator) {
+	name = name.substring (0, name.length () - extension.length ());
+	String slashName = name.replace (dirSeparator, '/');
+	String dollarName = slashName.replace ('/', '.');
+	String dotName = dollarName.replace ('$', '.');
+	return FullNameHandler.of (dotName, dollarName);
+    }
+
+    private void storeName (ClasspathClassInformation r) {
+	foundClasses.put (r.getFullDotName (), r);
     }
 
     public LookupResult hasVisibleType (String fqn) {
 	ClasspathClassInformation r = foundClasses.get (fqn);
 	if (r != null)
 	    if (loadNoCheckedException (r))
-		return new LookupResult (true, r.accessFlags);
+		return new LookupResult (true, r.accessFlags, r.getFullName ());
 	return LookupResult.NOT_FOUND;
     }
 
@@ -152,10 +157,23 @@ public class ClassResourceHolder {
     }
 
     private static abstract class ClasspathClassInformation {
+	private FullNameHandler fullName;
 	private boolean loaded = false;
 	private FullNameHandler superClass;
 	private List<FullNameHandler> superTypes;
 	private int accessFlags;
+
+	public ClasspathClassInformation (FullNameHandler fullName) {
+	    this.fullName = fullName;
+	}
+
+	public FullNameHandler getFullName () {
+	    return fullName;
+	}
+
+	public String getFullDotName () {
+	    return fullName.getFullDotName ();
+	}
 
 	// TODO: implement
 	//private Map<String, AsmField> fieldTypes = new HashMap<> ();
@@ -192,7 +210,10 @@ public class ClassResourceHolder {
 	// can be something like "K/jdk.xml.dom/org/w3c/dom/xpath/XPathEvaluator.sig"
 	private final String path;
 
-	public CtSymResult (Path ctSymFile, String versions, String moduleName, String name, String path) {
+	public CtSymResult (FullNameHandler fullName,
+			    Path ctSymFile, String versions, String moduleName,
+			    String name, String path) {
+	    super (fullName);
 	    this.ctSymFile = ctSymFile;
 	    this.versions = versions;
 	    this.moduleName = moduleName;
@@ -221,7 +242,8 @@ public class ClassResourceHolder {
     private static class PathResult extends ClasspathClassInformation {
 	private final Path path;
 
-	public PathResult (Path path) {
+	public PathResult (FullNameHandler fullName, Path path) {
+	    super (fullName);
 	    this.path = path;
 	}
 
@@ -242,7 +264,8 @@ public class ClassResourceHolder {
 	private final Path jarfile;
 	private final String path;
 
-	public JarEntryResult (Path jarfile, String path) {
+	public JarEntryResult (FullNameHandler fullName, Path jarfile, String path) {
+	    super (fullName);
 	    this.jarfile = jarfile;
 	    this.path = path;
 	}
