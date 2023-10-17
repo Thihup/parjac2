@@ -31,9 +31,9 @@ public class BytecodeGenerator {
     private final ClassInformationProvider cip;
     private final String name;
 
-    private static final ClassType enumClassType = new ClassType ("java.lang.Enum");
-    private static final ClassType recordClassType = new ClassType ("java.lang.Record");
-    private static final ClassType objectClassType = new ClassType ("java.lang.Object");
+    private static final ClassType enumClassType = new ClassType (FullNameHandler.ofSimpleClassName ("java.lang.Enum"));
+    private static final ClassType recordClassType = new ClassType (FullNameHandler.ofSimpleClassName ("java.lang.Record"));
+    private static final ClassType objectClassType = new ClassType (FullNameHandler.ofSimpleClassName ("java.lang.Object"));
 
     private final Map<Token, String> tokenToDescriptor = new HashMap<> ();
     private final GenericTypeHelper genericTypeHelper;
@@ -125,7 +125,7 @@ public class BytecodeGenerator {
 	EnumDeclaration ed = ec.getParent ();
 	String parentName = cip.getFullDollarClassName (ed);
 	return generateClass (ec, ImplicitClassFlags.ENUM_CONSTANT_FLAGS, null,
-			      new ClassType (parentName), List.of ());
+			      new ClassType (FullNameHandler.ofDollarNAme (parentName)), List.of ());
     }
 
     private byte[] generateAnonymousClass (UnqualifiedClassInstanceCreationExpression ac) {
@@ -173,7 +173,7 @@ public class BytecodeGenerator {
 	    TypeBound b = tp.getTypeBound ();
 	    if (b != null) {
 		ClassType bt = b.getType ();
-		sb.append (cip.isInterface (bt.getFullName ()) ? "::" : ":");
+		sb.append (cip.isInterface (bt.getFullDollarName ()) ? "::" : ":");
 		sb.append (bt.getExpressionType ().getDescriptor ());
 		List<ClassType> ls = b.getAdditionalBounds ();
 		if (ls != null) {
@@ -192,7 +192,7 @@ public class BytecodeGenerator {
 	byte[] b = Classfile.of().build (ClassDesc.of (name), classBuilder -> {
 		classBuilder.withVersion (Classfile.JAVA_21_VERSION, 0);  // possible minor: PREVIEW_MINOR_VERSION
 		classBuilder.withFlags (td.getFlags () | icf.flags);
-		classBuilder.withSuperclass (ClassDesc.of ((superType != null ? superType : objectClassType).getFullName ()));
+		classBuilder.withSuperclass (ClassDesc.of ((superType != null ? superType : objectClassType).getFullDollarName ()));
 		addSuperInterfaces (classBuilder, superInterfaces);
 
 		addFields (classBuilder, td);
@@ -221,7 +221,7 @@ public class BytecodeGenerator {
 	if (superInterfaces != null) {
 	    List<ClassDesc> ls = new ArrayList<> ();
 	    for (ClassType ct : superInterfaces) {
-		ClassDesc cd = ClassDesc.of (ct.getFullName ());
+		ClassDesc cd = ClassDesc.of (ct.getFullDollarName ());
 		ls.add (cd);
 	    }
 	    classBuilder.withInterfaceSymbols (ls);
@@ -311,7 +311,7 @@ public class BytecodeGenerator {
     }
 
     private ClassDesc getClassDesc (ClassType ct) {
-	return ClassDesc.of (ct.getFullName ());
+	return ClassDesc.of (ct.getFullDollarName ());
     }
 
     private ClassDesc getClassDesc (ArrayType at) {

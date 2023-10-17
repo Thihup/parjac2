@@ -21,9 +21,9 @@ public abstract class ExpressionType {
     public static final PrimitiveExpressionType VOID = new PrimitiveExpressionType ("V");
     public static final ExpressionType NULL = new NullExpressionType ();
 
-    public static final ExpressionType STRING = new ObjectExpressionType ("java.lang.String");
-    public static final ExpressionType OBJECT = new ObjectExpressionType ("java.lang.Object");
-    public static final ExpressionType CLASS = new ObjectExpressionType ("java.lang.Class");
+    public static final ExpressionType STRING = new ObjectExpressionType (FullNameHandler.ofSimpleClassName ("java.lang.String"));
+    public static final ExpressionType OBJECT = new ObjectExpressionType (FullNameHandler.ofSimpleClassName ("java.lang.Object"));
+    public static final ExpressionType CLASS = new ObjectExpressionType (FullNameHandler.ofSimpleClassName ("java.lang.Class"));
 
     private static final PrimitiveExpressionType[] primitives =
     { BYTE, SHORT, CHAR, INT, LONG, FLOAT, DOUBLE, BOOLEAN, VOID };
@@ -88,6 +88,10 @@ public abstract class ExpressionType {
 	    return false;
 	}
 
+	@Override public String getDollarName () {
+	    return primitiveType;
+	}
+
 	@Override public String getSlashName () {
 	    return primitiveType;
 	}
@@ -104,14 +108,12 @@ public abstract class ExpressionType {
     }
 
     private static class ObjectExpressionType extends ExpressionType {
-	private final String className;
-	private final String slashName;
+	private final FullNameHandler fnh;
 
-	public ObjectExpressionType (String className) {
-	    if (className == null)
-		throw new NullPointerException ("className may not be null");
-	    this.className = className;
-	    this.slashName = className.replace ('.', '/');
+	public ObjectExpressionType (FullNameHandler fnh) {
+	    if (fnh == null)
+		throw new NullPointerException ("Given name may not be null");
+	    this.fnh = fnh;
 	}
 
 	@Override public boolean equals (Object o) {
@@ -122,27 +124,31 @@ public abstract class ExpressionType {
 	    if (o.getClass () != getClass ())
 		return false;
 	    ObjectExpressionType e = (ObjectExpressionType)o;
-	    return className.equals (e.className);
+	    return fnh.equals (e.fnh);
 	}
 
 	@Override public int hashCode () {
-	    return className.hashCode ();
+	    return fnh.hashCode ();
 	}
 
 	@Override public String toString () {
-	    return  className;
+	    return fnh.getFullDotName ();
 	}
 
-	@Override public String getClassName () {
-	    return className;
+	@Override public FullNameHandler getFullNameHandler () {
+	    return fnh;
+	}
+
+	@Override public String getDollarName () {
+	    return fnh.getFullDollarName ();
 	}
 
 	@Override public String getSlashName () {
-	    return slashName;
+	    return fnh.getSlashName ();
 	}
 
 	@Override public String getDescriptor () {
-	    return "L" + slashName + ";";
+	    return "L" + getSlashName () + ";";
 	}
 
 	/* qwerty
@@ -158,6 +164,10 @@ public abstract class ExpressionType {
 	}
 
 	@Override public boolean isClassType () {
+	    throw new IllegalStateException ("Not applicable");
+	}
+
+	@Override public String getDollarName () {
 	    throw new IllegalStateException ("Not applicable");
 	}
 
@@ -225,8 +235,12 @@ public abstract class ExpressionType {
 	    return base;
 	}
 
-	@Override public String getClassName () {
-	    return base.getClassName () + repeat ("[]", dims);
+	@Override public FullNameHandler getFullNameHandler () {
+	    return FullNameHandler.ofDollarNAme (base.getDollarName () + repeat ("[]", dims));
+	}
+
+	@Override public String getDollarName () {
+	    return base.getDollarName ();
 	}
 
 	@Override public String getSlashName () {
@@ -246,8 +260,8 @@ public abstract class ExpressionType {
 	*/
     }
 
-    public static ExpressionType getObjectType (String className) {
-	return new ObjectExpressionType (className);
+    public static ExpressionType getObjectType (FullNameHandler fnh) {
+	return new ObjectExpressionType (fnh);
     }
 
     public static ExpressionType array (ExpressionType base, int dims) {
@@ -303,9 +317,11 @@ public abstract class ExpressionType {
     }
 
     /** Get the name of the class this type represents. */
-    public String getClassName () {
+    public FullNameHandler getFullNameHandler () {
 	throw new IllegalStateException ("Not a class type: " + this + ", " + this.getClass ().getName ());
     }
+
+    public abstract String getDollarName ();
 
     /** Get the '/'-separated name of a type */
     public abstract String getSlashName ();

@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.EnumDeclaration;
+import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ModularCompilationUnit;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ModuleDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.NormalClassDeclaration;
@@ -101,7 +102,7 @@ public class CompiledTypesHolder {
 	return typeToInfo.get (td).origin;
     }
 
-    public Optional<List<String>> getSuperTypes (String type) {
+    public Optional<List<FullNameHandler>> getSuperTypes (String type) {
 	TypeDeclaration tn = getType (type);
 
 	return switch (tn) {
@@ -114,49 +115,49 @@ public class CompiledTypesHolder {
 	};
     }
 
-    private Optional<List<String>> getSuperTypes (NormalClassDeclaration ncd) {
-	List<String> ret = new ArrayList<> ();
+    private Optional<List<FullNameHandler>> getSuperTypes (NormalClassDeclaration ncd) {
+	List<FullNameHandler> ret = new ArrayList<> ();
 	ClassType ct = ncd.getSuperClass ();
 	if (ct != null) {
-	    if (ct.getFullName () == null)
-		return Optional.of (Collections.<String>emptyList ());
-	    ret.add (ct.getFullName ());
+	    if (!ct.hasFullName ())
+		return Optional.of (Collections.<FullNameHandler>emptyList ());
+	    ret.add (ct.getFullNameHandler ());
 	} else {
-	    ret.add ("java.lang.Object");
+	    ret.add (FullNameHandler.JL_OBJECT);
 	}
 	addInterfaces (ret, ncd.getSuperInterfaces ());
 	return Optional.of (ret);
     }
 
-    private Optional<List<String>> getSuperTypes (NormalInterfaceDeclaration nid) {
+    private Optional<List<FullNameHandler>> getSuperTypes (NormalInterfaceDeclaration nid) {
 	List<ClassType> cts = nid.getExtendsInterfaces ();
 	if (cts != null) {
-	    List<String> ls = new ArrayList<> ();
+	    List<FullNameHandler> ls = new ArrayList<> (cts.size ());
 	    addInterfaces (ls, cts);
 	    return Optional.of (ls);
 	}
 	return Optional.empty ();
     }
 
-    private Optional<List<String>> getSuperTypes (UnqualifiedClassInstanceCreationExpression at) {
+    private Optional<List<FullNameHandler>> getSuperTypes (UnqualifiedClassInstanceCreationExpression at) {
 	ClassType ct = at.getSuperType ();
 	if (ct != null) {
-	    List<String> ret = Arrays.asList (ct.getFullName ());
+	    List<FullNameHandler> ret = Arrays.asList (ct.getFullNameHandler ());
 	    return Optional.of (ret);
 	}
 	return Optional.empty ();
     }
 
-    private Optional<List<String>> getSuperTypes (EnumDeclaration ed) {
-	List<String> ret = new ArrayList<> ();
-	ret.add ("java.lang.Enum");
+    private Optional<List<FullNameHandler>> getSuperTypes (EnumDeclaration ed) {
+	List<FullNameHandler> ret = new ArrayList<> ();
+	ret.add (FullNameHandler.JL_ENUM);
 	addInterfaces (ret, ed.getSuperInterfaces ());
 	return Optional.of (ret);
     }
 
-    private Optional<List<String>> getSuperTypes (RecordDeclaration rd) {
-	List<String> ret = new ArrayList<> ();
-	ret.add ("java.lang.Record");
+    private Optional<List<FullNameHandler>> getSuperTypes (RecordDeclaration rd) {
+	List<FullNameHandler> ret = new ArrayList<> ();
+	ret.add (FullNameHandler.JL_RECORD);
 	addInterfaces (ret, rd.getSuperInterfaces ());
 	return Optional.of (ret);
     }
@@ -168,9 +169,9 @@ public class CompiledTypesHolder {
 	return foundClasses.get (fqn);
     }
 
-    private void addInterfaces (List<String> ret, List<ClassType> types) {
+    private void addInterfaces (List<FullNameHandler> ret, List<ClassType> types) {
 	if (types != null)
-	    types.forEach (ct -> ret.add (ct.getFullName ()));
+	    types.forEach (ct -> ret.add (ct.getFullNameHandler ()));
     }
 
     private static class TypeInfo {

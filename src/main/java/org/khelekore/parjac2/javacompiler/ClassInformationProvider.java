@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.NoSourceDiagnostics;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
+import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ModuleDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeBound;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
@@ -32,18 +33,18 @@ public class ClassInformationProvider {
 	nameToType = new ConcurrentHashMap<> ();
     }
 
-    public LookupResult hasVisibleType (String fqn) {
-	LookupResult res = cth.hasVisibleType (fqn);
+    public LookupResult hasVisibleType (String dottedName) {
+	LookupResult res = cth.hasVisibleType (dottedName);
 	if (res.getFound ())
 	    return res;
-	return crh.hasVisibleType (fqn);
+	return crh.hasVisibleType (dottedName);
     }
 
 
-    public Optional<List<String>> getSuperTypes (String fqn, boolean isArray) throws IOException {
+    public Optional<List<FullNameHandler>> getSuperTypes (String fqn, boolean isArray) throws IOException {
 	if (isArray)
-	    return Optional.of (Collections.singletonList ("java.lang.Object"));
-	Optional<List<String>> supers = cth.getSuperTypes (fqn);
+	    return Optional.of (Collections.singletonList (FullNameHandler.JL_OBJECT));
+	Optional<List<FullNameHandler>> supers = cth.getSuperTypes (fqn);
 	if (supers.isPresent ())
 	    return supers;
 	TypeParameter tp = nameToType.get (fqn);
@@ -52,16 +53,16 @@ public class ClassInformationProvider {
 	return crh.getSuperTypes (fqn);
     }
 
-    private List<String> getSuperTypes (TypeParameter tp) {
+    private List<FullNameHandler> getSuperTypes (TypeParameter tp) {
 	TypeBound b = tp.getTypeBound ();
 	if (b == null)
-	    return Collections.singletonList ("java.lang.Object");
-	List<String> ret = new ArrayList<> (b.size ());
-	ret.add (b.getType ().getFullName ());
+	    return Collections.singletonList (FullNameHandler.JL_OBJECT);
+	List<FullNameHandler> ret = new ArrayList<> (b.size ());
+	ret.add (b.getType ().getFullNameHandler ());
 	List<ClassType> ls = b.getAdditionalBounds ();
 	if (ls != null) {
 	    for (ClassType ab : ls)
-		ret.add (ab.getFullName ());
+		ret.add (ab.getFullNameHandler ());
 	}
 	return ret;
     }
@@ -100,6 +101,12 @@ public class ClassInformationProvider {
 
     public String getPackageName (TypeDeclaration td) {
 	return cth.getPackageName (td);
+    }
+
+    public FullNameHandler getFullName (TypeDeclaration td) {
+	String dot = getFullDotClassName (td);
+	String dollar = getFullDollarClassName (td);
+	return FullNameHandler.of (dot, dollar);
     }
 
     public String getFullDotClassName (TypeDeclaration td) {

@@ -16,6 +16,7 @@ import java.util.jar.JarFile;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.NoSourceDiagnostics;
+import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 
 import io.github.dmlloyd.classfile.ClassModel;
 import io.github.dmlloyd.classfile.Classfile;
@@ -126,7 +127,7 @@ public class ClassResourceHolder {
 	return LookupResult.NOT_FOUND;
     }
 
-    public Optional<List<String>> getSuperTypes (String fqn) throws IOException {
+    public Optional<List<FullNameHandler>> getSuperTypes (String fqn) throws IOException {
 	ClasspathClassInformation r = foundClasses.get (fqn);
 	if (r == null)
 	    return Optional.empty ();
@@ -152,8 +153,8 @@ public class ClassResourceHolder {
 
     private static abstract class ClasspathClassInformation {
 	private boolean loaded = false;
-	private String superClass;
-	private List<String> superTypes;
+	private FullNameHandler superClass;
+	private List<FullNameHandler> superTypes;
 	private int accessFlags;
 
 	// TODO: implement
@@ -286,7 +287,7 @@ public class ClassResourceHolder {
 
 	private void parseSuperTypes () {
 	    Optional<ClassEntry> s = model.superclass ();
-	    s.ifPresent (e -> r.superClass = getDotName (e));
+	    s.ifPresent (e -> r.superClass = getFullName (e));
 
 	    int size = 0;
 	    if (r.superClass != null)
@@ -298,12 +299,15 @@ public class ClassResourceHolder {
 		r.superTypes.add (r.superClass);
 	    if (interfaces != null) {
 		for (ClassEntry ce : interfaces)
-		    r.superTypes.add (getDotName (ce));
+		    r.superTypes.add (getFullName (ce));
 	    }
 	}
 
-	private String getDotName (ClassEntry ce) {
-	    return ce.name ().stringValue ().replace ('/', '.');
+	private FullNameHandler getFullName (ClassEntry ce) {
+	    String slashName = ce.name ().stringValue ();
+	    String dollarName = slashName.replace ('/', '.');
+	    String dotName = dollarName.replace ('$', '.');
+	    return FullNameHandler.of (dotName, dollarName);
 	}
     }
 }

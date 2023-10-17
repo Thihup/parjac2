@@ -7,7 +7,7 @@ import org.khelekore.parjac2.parsetree.NodeVisitor;
 
 public class ClassType extends SyntaxTreeNode {
     private final List<SimpleClassType> types;
-    private String fqn;
+    private FullNameHandler fnh;
     private TypeParameter tp;
 
     public ClassType (ParsePosition pos, List<SimpleClassType> types) {
@@ -15,10 +15,10 @@ public class ClassType extends SyntaxTreeNode {
 	this.types = types;
     }
 
-    public ClassType (String fqn) {
+    public ClassType (FullNameHandler fnh) {
 	super (null);
-	types = List.of (new SimpleClassType (null, fqn, null));
-	this.fqn = fqn;
+	types = List.of (new SimpleClassType (null, fnh.getFullDotName (), null)); // TODO: do we need this?
+	this.fnh = fnh;
     }
 
     public void add (SimpleClassType sct) {
@@ -37,12 +37,24 @@ public class ClassType extends SyntaxTreeNode {
 	return types;
     }
 
-    public void setFullName (String fqn) {
-	this.fqn = fqn;
+    public void setFullName (FullNameHandler fnh) {
+	this.fnh = fnh;
     }
 
-    public String getFullName () {
-	return fqn;
+    public FullNameHandler getFullNameHandler () {
+	return fnh;
+    }
+
+    public boolean hasFullName () {
+	return fnh != null;
+    }
+
+    public String getFullDotName () {
+	return fnh.getFullDotName ();
+    }
+
+    public String getFullDollarName () {
+	return fnh.getFullDollarName ();
     }
 
     public void setTypeParameter (TypeParameter tp) {
@@ -62,8 +74,8 @@ public class ClassType extends SyntaxTreeNode {
     }
 
     public String getSlashName () {
-	if (fqn == null) throw new IllegalStateException ("FQN not set");
-	return fqn.replace ('.', '/'); // TODO: probably not correct now since we do not have $ for inner classes
+	if (fnh == null) throw new IllegalStateException ("FQN not set");
+	return fnh.getSlashName ();
     }
 
     public TypeArguments getTypeArguments () {
@@ -72,8 +84,8 @@ public class ClassType extends SyntaxTreeNode {
     }
 
     public ExpressionType getExpressionType () {
-	if (fqn != null)
-	    return ExpressionType.getObjectType (fqn);
+	if (fnh != null)
+	    return ExpressionType.getObjectType (fnh);
 	return null;
     }
 }
