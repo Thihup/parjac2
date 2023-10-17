@@ -304,7 +304,8 @@ public class ClassSetter {
 	    TypeName dn = i.getName ();
 	    String dotName = dn.getDotName ();
 	    FullNameHandler name = FullNameHandler.ofSimpleClassName (dotName);
-	    if (!hasVisibleType (null, name)) {
+	    FullNameHandler visibleType = getVisibleType (null, name);
+	    if (visibleType == null) {
 		diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), i.getPosition (),
 							     "Imported type not found: %s", name));
 		i.markUsed (); // Unused, but already flagged as bad, don't want multiple lines
@@ -319,7 +320,8 @@ public class ClassSetter {
 	private void addSingleStaticImportDeclaration (SingleStaticImportDeclaration i) {
 	    String dotName = i.getName ().getDotName ();
 	    FullNameHandler name = FullNameHandler.ofSimpleClassName (dotName);
-	    if (!hasVisibleType (null, name)) {
+	    FullNameHandler visibleType = getVisibleType (null, name);
+	    if (visibleType == null) {
 		diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), i.getPosition (),
 							     "Imported type not found: %s", dotName));
 		i.markUsed (); // Unused, but already flagged as bad, don't want multiple lines
@@ -353,9 +355,9 @@ public class ClassSetter {
 	}
     }
 
-    private boolean hasVisibleType (EnclosingTypes et, FullNameHandler fqn) {
+    private FullNameHandler getVisibleType (EnclosingTypes et, FullNameHandler fqn) {
 	FullNameHandler topLevelClass = et == null ? null : lastFQN (et);
-	return hasVisibleTypeIn (et, fqn, topLevelClass);
+	return getVisibleTypeIn (et, fqn, topLevelClass);
     }
 
     private FullNameHandler lastFQN (EnclosingTypes et) {
@@ -367,10 +369,16 @@ public class ClassSetter {
 	return fqn;
     }
 
-    private boolean hasVisibleTypeIn (EnclosingTypes et, FullNameHandler fqn, FullNameHandler topLevelClass) {
+    private FullNameHandler getVisibleTypeIn (EnclosingTypes et, FullNameHandler fqn, FullNameHandler topLevelClass) {
 	LookupResult r = cip.hasVisibleType (fqn.getFullDotName ());
 	if (!r.found ())
-	    return false;
+	    return null;
+	if (!r.found () || !isAccessible (et, fqn, topLevelClass, r))
+	    return null;
+	return r.fullName ();
+    }
+
+    private boolean isAccessible (EnclosingTypes et, FullNameHandler fqn, FullNameHandler topLevelClass, LookupResult r) {
 	if (Flags.isPublic (r.accessFlags ())) {
 	    return true;
 	} else if (Flags.isProtected (r.accessFlags ())) {
@@ -379,7 +387,9 @@ public class ClassSetter {
 	    return sameTopLevelClass (fqn, topLevelClass);
 	}
 	// No access level
-	return samePackage (fqn, packageName);
+	if (samePackage (fqn, packageName))
+	    return true;
+	return false;
     }
 
     private boolean samePackage (FullNameHandler fnh, String packageName) {
@@ -447,8 +457,9 @@ public class ClassSetter {
 	for (int s = scts.size (); i < s; i++) {
 	    SimpleClassType sct = scts.get (i);
 	    FullNameHandler directInnerClass = currentOuterClass.getInnerClass (sct.getId ());
-	    if (hasVisibleType (et, directInnerClass)) {
-		currentOuterClass = directInnerClass;
+	    FullNameHandler visibleType = getVisibleType (et, directInnerClass);
+	    if (visibleType != null) {
+		currentOuterClass = visibleType;
 	    } else {
 		currentOuterClass = checkSuperClasses (et, currentOuterClass, sct.getId ());
 		if (currentOuterClass == null)
@@ -465,8 +476,9 @@ public class ClassSetter {
 	    return new ResolvedClass (tp);
 	}
 
-	if (hasVisibleType (et, name))
-	    return new ResolvedClass (name);
+	FullNameHandler visibleType = getVisibleType (et, name);
+	if (visibleType != null)
+	    return new ResolvedClass (visibleType);
 
 	FullNameHandler fqn = resolveInnerClass (et, simpleName);
 	if (fqn == null)
@@ -498,9 +510,9 @@ public class ClassSetter {
     private FullNameHandler resolveInnerClass (EnclosingTypes et, String id) {
 	// Check for inner class
 	for (EnclosingTypes ctn : et) {
-	    FullNameHandler icn = ctn.fqn ().getInnerClass (id);
-	    if (hasVisibleType (et, icn))
-		return icn;
+	    FullNameHandler visibleType = getVisibleType (et, ctn.fqn ().getInnerClass (id));
+	    if (visibleType != null)
+		return visibleType;
 	}
 
 	// Check for inner class of super classes
@@ -517,9 +529,9 @@ public class ClassSetter {
 	    return null;
 	List<FullNameHandler> superclasses = getSuperClasses (fullCtn);
 	for (FullNameHandler superclass : superclasses) {
-	    FullNameHandler icn = superclass.getInnerClass (id);
-	    if (hasVisibleType (et, icn))
-		return icn;
+	    FullNameHandler visibleType = getVisibleType (et, superclass.getInnerClass (id));
+	    if (visibleType != null)
+		return visibleType;
 	    FullNameHandler ssn = checkSuperClasses (et, superclass, id);
 	    if (ssn != null)
 		return ssn;
@@ -540,19 +552,19 @@ public class ClassSetter {
     private FullNameHandler resolveUsingImports (EnclosingTypes et, String id, ParsePosition pos) {
 	ImportHolder i = ih.stid.get (id);
 	if (i != null) {
-	    FullNameHandler ifh = FullNameHandler.ofSimpleClassName (i.name ());
-	    if (hasVisibleType (et, ifh)) {
+	    FullNameHandler visibleType = getVisibleType (et, FullNameHandler.ofSimpleClassName (i.name ()));
+	    if (visibleType != null) {
 		i.markUsed ();
-		return ifh;
+		return visibleType;
 	    }
 	}
-	FullNameHandler fqn;
+	FullNameHandler fqn, visibleType;
 	fqn = tryPackagename (id, pos);
-	if (fqn != null && hasVisibleType (et, fqn))
-	    return fqn;
+	if (fqn != null && (visibleType = getVisibleType (et, fqn)) != null)
+	    return visibleType;
 	fqn = trySingleStaticImport (id);
-	if (fqn != null && hasVisibleType (et, fqn))
-	    return fqn;
+	if (fqn != null && (visibleType = getVisibleType (et, fqn)) != null)
+	    return visibleType;
 	fqn = tryTypeImportOnDemand (et, id, pos);
 	if (fqn != null) // already checked cip.hasType
 	    return fqn;
@@ -585,9 +597,9 @@ public class ClassSetter {
     private FullNameHandler tryTypeImportOnDemand (EnclosingTypes et, String id, ParsePosition pos) {
 	List<FullNameHandler> matches = new ArrayList<> ();
 	for (ImportHolder ih : ih.tiod) {
-	    FullNameHandler t = FullNameHandler.ofSimpleClassName (ih.name () + "." + id);
-	    if (hasVisibleType (et, t)) {
-		matches.add (t);
+	    FullNameHandler visibleType = getVisibleType (et, FullNameHandler.ofSimpleClassName (ih.name () + "." + id));
+	    if (visibleType != null) {
+		matches.add (visibleType);
 		ih.markUsed ();
 	    }
 	}
@@ -610,10 +622,10 @@ public class ClassSetter {
 
     private FullNameHandler tryStaticImportOnDemand (EnclosingTypes et, String id) {
 	for (StaticImportOnDemandDeclaration siod : ih.siod) {
-	    FullNameHandler fqn = FullNameHandler.ofDollarNAme (siod.getName ().getDotName () + "$" + id);
-	    if (hasVisibleType (et, fqn)) {
+	    FullNameHandler visibleType = getVisibleType (et, FullNameHandler.ofDollarNAme (siod.getName ().getDotName () + "$" + id));
+	    if (visibleType != null) {
 		siod.markUsed ();
-		return fqn;
+		return visibleType;
 	    }
 	}
 	return null;
@@ -644,7 +656,8 @@ public class ClassSetter {
 	    FullNameHandler fullName = FullNameHandler.ofSimpleClassName (full);
 	    String fqn = si.getType ().getDotName ();
 	    String field = si.getInnerId ();
-	    if (!hasVisibleType (null, fullName) && cip.getFieldInformation (fqn, field) == null) {
+	    FullNameHandler visibleType = getVisibleType (null, fullName);
+	    if (visibleType == null && cip.getFieldInformation (fqn, field) == null) {
 		diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), i.getPosition (),
 							     "Type %s has no symbol: %s", fqn, field));
 		return;

@@ -140,6 +140,14 @@ public class ClassResourceHolder {
 	return Optional.of (r.superTypes);
     }
 
+    public boolean isInterface (String fqn) {
+	ClasspathClassInformation r = foundClasses.get (fqn);
+	if (r == null)
+	    return false;
+	loadNoCheckedException (r);
+	return Flags.isInterface (r.accessFlags);
+    }
+
     private boolean loadNoCheckedException (ClasspathClassInformation r) {
 	try {
 	    r.ensureNodeIsLoaded ();

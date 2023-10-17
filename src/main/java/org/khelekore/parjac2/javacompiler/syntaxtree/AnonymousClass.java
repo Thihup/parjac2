@@ -16,4 +16,8 @@ public abstract class AnonymousClass extends TypeDeclaration {
     @Override public String getName () {
 	return anonymousClassname;
     }
+
+    @Override public TypeParameters getTypeParameters () {
+	return null;
+    }
 }

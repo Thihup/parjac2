@@ -61,6 +61,10 @@ public class EnumDeclaration extends TypeDeclaration {
 	return id;
     }
 
+    @Override public TypeParameters getTypeParameters () {
+	return null;
+    }
+
     @Override public List<TypeDeclaration> getInnerClasses () {
 	return body.getInnerClasses ();
     }

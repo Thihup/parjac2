@@ -1,10 +1,15 @@
 package org.khelekore.parjac2.javacompiler.syntaxtree;
 
+import org.khelekore.parjac2.javacompiler.ClassInformationProvider;
+import org.khelekore.parjac2.javacompiler.GenericTypeHelper;
+
 public interface FullNameHandler {
 
     public static final FullNameHandler JL_OBJECT = FullNameHandler.ofSimpleClassName ("java.lang.Object");
+    public static final FullNameHandler JL_CLASS = FullNameHandler.ofSimpleClassName ("java.lang.Class");
     public static final FullNameHandler JL_ENUM = FullNameHandler.ofSimpleClassName ("java.lang.Enum");
     public static final FullNameHandler JL_RECORD = FullNameHandler.ofSimpleClassName ("java.lang.Record");
+    public static final FullNameHandler JL_STRING = FullNameHandler.ofSimpleClassName ("java.lang.String");
 
     /** Get the dotted name, for ecample foo.bar.Baz.Quox */
     String getFullDotName ();
@@ -15,6 +20,15 @@ public interface FullNameHandler {
     /** Get the dotted name, for ecample foo/bar/Baz$Quox */
     default String getSlashName () {
 	return getFullDollarName ().replace ('.', '/');
+    }
+
+    /** Check if the types described by this namae has any generic types. */
+    default boolean hasGenericType () {
+	return false;
+    }
+
+    default String getSignature (GenericTypeHelper gth, ClassInformationProvider cip, boolean shortForm) {
+	return getFullDollarName ();
     }
 
     /** Get a full name handler from the dotted name of an outer class "foo.bar.Baz" */

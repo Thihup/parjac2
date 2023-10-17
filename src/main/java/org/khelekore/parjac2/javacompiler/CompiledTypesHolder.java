@@ -45,7 +45,7 @@ public class CompiledTypesHolder {
 	if (n instanceof OrdinaryCompilationUnit ocu) {
 	    String packageName = ocu.getPackageName ();
 	    for (TypeDeclaration td : ocu.getTypes ()) {
-		addType (packageName, packageName, "", "", td, origin);
+		addType (packageName, null, td, origin);
 	    }
 	} else if (n instanceof ModularCompilationUnit mcu) {
 	    // TODO: not sure if dotted name is correct here
@@ -53,16 +53,88 @@ public class CompiledTypesHolder {
 	}
     }
 
-    private void addType (String packageName, String namePrefix,
-			  String dotPrefix, String dollarPrefix,
+    private void addType (String packageName, PackageNameHandler outerClass,
 			  TypeDeclaration td, Path origin) {
-	String fullName = namePrefix.isEmpty () ? td.getName () : (namePrefix + "." + td.getName ());
-	foundClasses.put (fullName, td);
-	String dotName = dotPrefix.isEmpty () ? td.getName () : (dotPrefix + "." + td.getName ());
-	String dollarName = dollarPrefix.isEmpty () ? td.getName () : (dollarPrefix + "$" + td.getName ());
-	typeToInfo.put (td, new TypeInfo (packageName, dotName, dollarName, origin));
-	td.getInnerClasses ().forEach (i -> addType (packageName, fullName, dotName, dollarName, i, origin));
+	PackageNameHandler fullName;
+	if (outerClass == null) {
+	    fullName = new TypeFullName (packageName, td);
+	} else {
+	    fullName = new InnerClassFullName (outerClass, td);
+	}
+	foundClasses.put (fullName.getFullDotName (), td);
+	typeToInfo.put (td, new TypeInfo (fullName, origin));
+	td.getInnerClasses ().forEach (i -> addType (packageName, fullName, i, origin));
 	td.getInnerClasses ().forEach (i -> i.setOuterClass (td));
+    }
+
+    private interface PackageNameHandler extends FullNameHandler {
+	String getPackageName ();
+	void appendInternalSignature (StringBuilder sb, GenericTypeHelper gth, ClassInformationProvider cip, boolean shortForm);
+    }
+
+    private record TypeFullName (String packageName, TypeDeclaration td) implements PackageNameHandler {
+	@Override public String getFullDotName () {
+	    return packageName.isEmpty () ? td.getName () : packageName + "." + td.getName ();
+	}
+
+	@Override public String getFullDollarName () {
+	    return getFullDotName ();
+	}
+
+	@Override public boolean hasGenericType () {
+	    return td.getTypeParameters () != null;
+	}
+
+	@Override public String getSignature (GenericTypeHelper gth, ClassInformationProvider cip, boolean shortForm) {
+	    StringBuilder sb = new StringBuilder ();
+	    sb.append ("L");
+	    appendInternalSignature (sb, gth, cip, shortForm);
+	    sb.append (";");
+	    return sb.toString ();
+	}
+
+	@Override public String getPackageName () {
+	    return packageName;
+	}
+
+	@Override public void appendInternalSignature (StringBuilder sb, GenericTypeHelper gth,
+						       ClassInformationProvider cip, boolean shortForm) {
+	    sb.append (getSlashName ());
+	    gth.appendTypeParametersSignature (sb, td.getTypeParameters (), cip, shortForm);
+	}
+    }
+
+    private record InnerClassFullName (PackageNameHandler outer, TypeDeclaration td) implements PackageNameHandler {
+	@Override public String getFullDotName () {
+	    return outer.getFullDotName () + "." + td.getName ();
+	}
+
+	@Override public String getFullDollarName () {
+	    return outer.getFullDotName () + "$" + td.getName ();
+	}
+
+	@Override public boolean hasGenericType () {
+	    return outer.hasGenericType () || td.getTypeParameters () != null;
+	}
+
+	@Override public String getSignature (GenericTypeHelper gth, ClassInformationProvider cip, boolean shortForm) {
+	    StringBuilder sb = new StringBuilder();
+	    sb.append ("L");
+	    outer.appendInternalSignature (sb, gth, cip, shortForm);
+	    appendInternalSignature (sb, gth, cip, shortForm);
+	    sb.append (";");
+	    return sb.toString ();
+	}
+
+	@Override public void appendInternalSignature (StringBuilder sb, GenericTypeHelper gth,
+						       ClassInformationProvider cip, boolean shortForm) {
+	    sb.append (".").append (td.getName ());
+	    gth.appendTypeParametersSignature (sb, td.getTypeParameters (), cip, shortForm);
+	}
+
+	@Override public String getPackageName () {
+	    return outer.getPackageName ();
+	}
     }
 
     public int getCompiledClassCount () {
@@ -82,7 +154,7 @@ public class CompiledTypesHolder {
     }
 
     public String getPackageName (TypeDeclaration td) {
-	return typeToInfo.get (td).packageName;
+	return typeToInfo.get (td).getPackageName ();
     }
 
     public FullNameHandler getFullName (TypeDeclaration td) {
@@ -91,7 +163,8 @@ public class CompiledTypesHolder {
     }
 
     public String getFileName (TypeDeclaration td) {
-	return typeToInfo.get (td).dollarName;
+	// from foo.barBar$Baz we want Bar$Baz
+	return typeToInfo.get (td).getDollarName ();
     }
 
     public Path getOriginFile (TypeDeclaration td) {
@@ -171,39 +244,31 @@ public class CompiledTypesHolder {
     }
 
     private static class TypeInfo {
-	private final String packageName;  // "foo.bar"
-	private final String dotName;      // Baz.Qaz
-	private final String dollarName;   // Baz$Qaz
+	private final PackageNameHandler fullName;
 	private final Path origin;         // foo/bar/Baz.java
-	private final FullNameHandler fullName;
 
-	public TypeInfo (String packageName, String dotName, String dollarName, Path origin) {
-	    this.packageName = packageName;
-	    this.dotName = dotName;
-	    this.dollarName = dollarName;
+	public TypeInfo (PackageNameHandler fullName, Path origin) {
+	    this.fullName = fullName;
 	    this.origin = origin;
-	    fullName = FullNameHandler.of (getFullDotName (), getFullDollarName ());
 	}
 
 	@Override public String toString () {
-	    return getClass ().getSimpleName () + "{" + packageName + ", " + dotName + ", " + dollarName + ", " +
-		origin + ", " + fullName + "}";
+	    return getClass ().getSimpleName () + "{" + fullName + ", " + origin + "}";
 	}
 
 	public FullNameHandler getFullName () {
 	    return fullName;
 	}
 
-	private String getFullDotName () {
-	    String pn = packageName;
-	    String cn = dotName;
-	    return pn.isEmpty () ? cn : pn + "." + cn;
+	public String getPackageName () {
+	    return fullName.getPackageName ();
 	}
 
-	private String getFullDollarName () {
-	    String pn = packageName;
-	    String cn = dollarName;
-	    return pn.isEmpty () ? cn : pn + "." + cn;
+	// from foo.barBar$Baz we want Bar$Baz
+	public String getDollarName () {
+	    String fullDollarName = fullName.getFullDollarName ();
+	    String packageName = fullName.getPackageName ();
+	    return packageName.isEmpty () ? fullDollarName : fullDollarName.substring (packageName.length () + 1);
 	}
     }
 }

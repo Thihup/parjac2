@@ -81,6 +81,10 @@ public class RecordDeclaration extends TypeDeclaration {
 	return id;
     }
 
+    @Override public TypeParameters getTypeParameters () {
+	return typeParameters;
+    }
+
     @Override public List<TypeDeclaration> getInnerClasses () {
 	return body.getInnerClasses ();
     }

@@ -17,6 +17,9 @@ public abstract class TypeDeclaration extends FlaggedBase {
     /** Get the class/enum/interface/annotation name of this type */
     public abstract String getName ();
 
+    /** Get the generic types of this type */
+    public abstract TypeParameters getTypeParameters ();
+
     /** Get all the inner classes, enums, interfaces and annotations */
     public abstract List<TypeDeclaration> getInnerClasses ();
 

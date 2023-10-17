@@ -21,9 +21,9 @@ public abstract class ExpressionType {
     public static final PrimitiveExpressionType VOID = new PrimitiveExpressionType ("V");
     public static final ExpressionType NULL = new NullExpressionType ();
 
-    public static final ExpressionType STRING = new ObjectExpressionType (FullNameHandler.ofSimpleClassName ("java.lang.String"));
-    public static final ExpressionType OBJECT = new ObjectExpressionType (FullNameHandler.ofSimpleClassName ("java.lang.Object"));
-    public static final ExpressionType CLASS = new ObjectExpressionType (FullNameHandler.ofSimpleClassName ("java.lang.Class"));
+    public static final ExpressionType STRING = new ObjectExpressionType (FullNameHandler.JL_STRING);
+    public static final ExpressionType OBJECT = new ObjectExpressionType (FullNameHandler.JL_OBJECT);
+    public static final ExpressionType CLASS = new ObjectExpressionType (FullNameHandler.JL_CLASS);
 
     private static final PrimitiveExpressionType[] primitives =
     { BYTE, SHORT, CHAR, INT, LONG, FLOAT, DOUBLE, BOOLEAN, VOID };

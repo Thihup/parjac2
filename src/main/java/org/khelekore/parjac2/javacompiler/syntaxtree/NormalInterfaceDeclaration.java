@@ -61,7 +61,7 @@ public class NormalInterfaceDeclaration extends TypeDeclaration {
 	return id;
     }
 
-    public TypeParameters getTypeParameters () {
+    @Override public TypeParameters getTypeParameters () {
 	return types;
     }
 

@@ -137,15 +137,15 @@ public class BytecodeGenerator {
     private String getClassSignature (TypeParameters tps, ClassType superClass, List<ClassType> superInterfaces) {
 	if (tps != null || hasGenericType (superClass) || hasGenericType (superInterfaces)) {
 	    StringBuilder sb = new StringBuilder ();
-	    appendTypeParameters (sb, tps);
+	    genericTypeHelper.appendTypeParametersSignature (sb, tps, cip, false);
 	    if (superClass != null) {
-		sb.append (genericTypeHelper.getGenericType (superClass));
+		sb.append (genericTypeHelper.getGenericType (superClass, cip, false));
 	    } else {
 		sb.append ("Ljava/lang/Object;");
 	    }
 	    if (superInterfaces != null) {
 		for (ClassType ct : superInterfaces)
-		    sb.append (genericTypeHelper.getGenericType (ct));
+		    sb.append (genericTypeHelper.getGenericType (ct, cip, false));
 	    }
 	    return sb.toString ();
 	}
@@ -161,31 +161,9 @@ public class BytecodeGenerator {
     }
 
     private boolean hasGenericType (ClassType ct) {
-	return ct != null && ct.getTypeArguments () != null;
+	return ct != null && ct.getFullNameHandler ().hasGenericType ();
     }
 
-    private void appendTypeParameters (StringBuilder sb, TypeParameters tps) {
-	if (tps == null)
-	    return;
-	sb.append ("<");
-	for (TypeParameter tp : tps.get ()) {
-	    sb.append (tp.getId ());
-	    TypeBound b = tp.getTypeBound ();
-	    if (b != null) {
-		ClassType bt = b.getType ();
-		sb.append (cip.isInterface (bt.getFullDollarName ()) ? "::" : ":");
-		sb.append (bt.getExpressionType ().getDescriptor ());
-		List<ClassType> ls = b.getAdditionalBounds ();
-		if (ls != null) {
-		    for (ClassType ab : ls)
-			sb.append (":").append (ab.getExpressionType ().getDescriptor ());
-		}
-	    } else {
-		sb.append (":Ljava/lang/Object;");
-	    }
-	}
-	sb.append (">");
-    }
 
     private byte[] generateClass (TypeDeclaration tdt, ImplicitClassFlags icf,
 				  String signature, ClassType superType, List<ClassType> superInterfaces) {
@@ -261,7 +239,7 @@ public class BytecodeGenerator {
 	TypeParameters tps = m.getTypeParameters ();
 	if (tps != null) {
 	    foundGenericTypes = true;
-	    appendTypeParameters (sb, tps);
+	    genericTypeHelper.appendTypeParametersSignature (sb, tps, cip, false);
 	}
 
 	List<ClassDesc> paramDescs = List.of ();
@@ -273,7 +251,7 @@ public class BytecodeGenerator {
 		ParseTreeNode p = fp.getType ();
 		foundGenericTypes |= hasGenericType (p);
 		paramDescs.add (getParseTreeClassDesc (p));
-		sb.append (genericTypeHelper.getGenericType (p));
+		sb.append (genericTypeHelper.getGenericType (p, cip, true));
 	    }
 	}
 	sb.append (")");
@@ -281,11 +259,11 @@ public class BytecodeGenerator {
 	ParseTreeNode p = m.getResult ();
 	foundGenericTypes |= hasGenericType (p);
 	ClassDesc returnDesc = getParseTreeClassDesc (p);
-	sb.append (genericTypeHelper.getGenericType (p));
+	sb.append (genericTypeHelper.getGenericType (p, cip, true));
 
 	MethodTypeDesc descriptor = MethodTypeDesc.of (returnDesc, paramDescs.toArray (new ClassDesc[paramDescs.size ()]));
 
-	String signature  = foundGenericTypes ? sb.toString () : null;
+	String signature = foundGenericTypes ? sb.toString () : null;
 	return new MethodSignatureHolder (descriptor, signature);
     }
 

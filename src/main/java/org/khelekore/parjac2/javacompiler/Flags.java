@@ -13,6 +13,7 @@ public class Flags {
     public static final int ACC_STATIC = Classfile.ACC_STATIC;
     public static final int ACC_STRICT = Classfile.ACC_STRICT;
     public static final int ACC_SYNCHRONIZED = Classfile.ACC_SYNCHRONIZED;
+    public static final int ACC_INTERFACE = Classfile.ACC_INTERFACE;
 
     // This one does not exist in Classfile.
     public static final int ACC_DEFAULT = 262144;
@@ -35,6 +36,10 @@ public class Flags {
 
     public static boolean isFinal (int flag) {
 	return (flag & ACC_FINAL) == ACC_FINAL;
+    }
+
+    public static boolean isInterface (int flag) {
+	return (flag & ACC_INTERFACE) == ACC_INTERFACE;
     }
 }
 

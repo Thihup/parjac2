@@ -15,6 +15,7 @@ import org.khelekore.parjac2.NoSourceDiagnostics;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ModuleDeclaration;
+import org.khelekore.parjac2.javacompiler.syntaxtree.NormalInterfaceDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeBound;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeParameter;
@@ -120,6 +121,9 @@ public class ClassInformationProvider {
     }
 
     public boolean isInterface (String fqn) {
-	return false; // TODO: implement
+	TypeDeclaration td = cth.getType (fqn);
+	if (td instanceof NormalInterfaceDeclaration)
+	    return true;
+	return crh.isInterface (fqn);
     }
 }
