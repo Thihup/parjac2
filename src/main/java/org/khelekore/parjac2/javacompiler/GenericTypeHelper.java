@@ -26,7 +26,7 @@ public class GenericTypeHelper {
 	    TypeParameter tp = ct.getTypeParameter ();
 	    if (tp != null)
 		return "T" + tp.getId () + ";";
-	    return ct.getFullNameHandler ().getSignature (this, cip, shortForm, ct.getTypeArguments ());
+	    return "L" + ct.getFullNameHandler ().getSignature (this, cip, shortForm, ct.getTypeArguments ()) + ";";
 	} else if (tn instanceof TokenNode tkn) {
 	    Token t = tkn.getToken ();
 	    return tokenToDescriptor.get (t);
@@ -43,8 +43,8 @@ public class GenericTypeHelper {
 	for (ParseTreeNode tn : ta.getTypeArguments ()) {
 	    switch (tn) {
 	    //TODO: we also need to handle type and additional bounds
-	    case Wildcard w -> sb.append ("+L").append (getGenericType (w.getBounds ().getClassType (), cip, shortForm)).append (";");
-	    default -> sb.append ("L").append (getGenericType (tn, cip, shortForm)).append (";");
+	    case Wildcard w -> sb.append ("+").append (getGenericType (w.getBounds ().getClassType (), cip, shortForm));
+	    default -> sb.append (getGenericType (tn, cip, shortForm));
 	    }
 	}
 	sb.append (">");
@@ -78,8 +78,6 @@ public class GenericTypeHelper {
 
     private void appendType (StringBuilder sb, ClassType ct, ClassInformationProvider cip, boolean shortForm) {
 	sb.append (cip.isInterface (ct.getFullDotName ()) ? "::" : ":");
-	sb.append ("L");
 	sb.append (getGenericType (ct, cip, shortForm));
-	sb.append (";");
     }
 }

@@ -70,7 +70,9 @@ public class CompiledTypesHolder {
 
     private interface PackageNameHandler extends FullNameHandler {
 	String getPackageName ();
-	void appendInternalSignature (StringBuilder sb, GenericTypeHelper gth, ClassInformationProvider cip, boolean shortForm);
+	void appendInternalSignature (StringBuilder sb, GenericTypeHelper gth,
+				      ClassInformationProvider cip, boolean shortForm,
+				      TypeArguments ta);
     }
 
     private record TypeFullName (String packageName, TypeDeclaration td) implements PackageNameHandler {
@@ -89,9 +91,7 @@ public class CompiledTypesHolder {
 	@Override public String getSignature (GenericTypeHelper gth, ClassInformationProvider cip,
 					      boolean shortForm, TypeArguments ta) {
 	    StringBuilder sb = new StringBuilder ();
-	    sb.append ("L");
-	    appendInternalSignature (sb, gth, cip, shortForm);
-	    sb.append (";");
+	    appendInternalSignature (sb, gth, cip, shortForm, ta);
 	    return sb.toString ();
 	}
 
@@ -100,9 +100,13 @@ public class CompiledTypesHolder {
 	}
 
 	@Override public void appendInternalSignature (StringBuilder sb, GenericTypeHelper gth,
-						       ClassInformationProvider cip, boolean shortForm) {
+						       ClassInformationProvider cip, boolean shortForm,
+						       TypeArguments ta) {
 	    sb.append (getSlashName ());
-	    gth.appendTypeParametersSignature (sb, td.getTypeParameters (), cip, shortForm);
+	    if (ta != null)
+		sb.append (gth.getTypeArgumentsSignature (ta, cip, shortForm));
+	    else
+		gth.appendTypeParametersSignature (sb, td.getTypeParameters (), cip, shortForm);
 	}
     }
 
@@ -122,17 +126,19 @@ public class CompiledTypesHolder {
 	@Override public String getSignature (GenericTypeHelper gth, ClassInformationProvider cip,
 					      boolean shortForm, TypeArguments ta) {
 	    StringBuilder sb = new StringBuilder();
-	    sb.append ("L");
-	    outer.appendInternalSignature (sb, gth, cip, shortForm);
-	    appendInternalSignature (sb, gth, cip, shortForm);
-	    sb.append (";");
+	    outer.appendInternalSignature (sb, gth, cip, shortForm, ta);
+	    appendInternalSignature (sb, gth, cip, shortForm, ta);
 	    return sb.toString ();
 	}
 
 	@Override public void appendInternalSignature (StringBuilder sb, GenericTypeHelper gth,
-						       ClassInformationProvider cip, boolean shortForm) {
+						       ClassInformationProvider cip, boolean shortForm,
+						       TypeArguments ta) {
 	    sb.append (".").append (td.getName ());
-	    gth.appendTypeParametersSignature (sb, td.getTypeParameters (), cip, shortForm);
+	    if (ta != null)
+		sb.append (gth.getTypeArgumentsSignature (ta, cip, shortForm));
+	    else
+		gth.appendTypeParametersSignature (sb, td.getTypeParameters (), cip, shortForm);
 	}
 
 	@Override public String getPackageName () {
