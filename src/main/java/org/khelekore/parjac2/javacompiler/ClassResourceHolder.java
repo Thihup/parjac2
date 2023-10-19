@@ -108,7 +108,11 @@ public class ClassResourceHolder {
     }
 
     private void storeClass (Path jarfile, JarEntry e) {
-	JarEntryResult r = new JarEntryResult (getFullName (e.getName (), ".class", '/'), jarfile, e.getName ());
+	String name = e.getName ();
+	String extension = ".class";
+	if (!name.endsWith (extension))
+	    return;
+	JarEntryResult r = new JarEntryResult (getFullName (e.getName (), extension, '/'), jarfile, e.getName ());
 	storeName (r);
     }
 
