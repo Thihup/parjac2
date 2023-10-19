@@ -15,6 +15,7 @@ import io.github.dmlloyd.classfile.ClassBuilder;
 import io.github.dmlloyd.classfile.ClassSignature;
 import io.github.dmlloyd.classfile.Classfile;
 import io.github.dmlloyd.classfile.MethodSignature;
+import io.github.dmlloyd.classfile.Signature;
 import io.github.dmlloyd.classfile.attribute.InnerClassInfo;
 import io.github.dmlloyd.classfile.attribute.InnerClassesAttribute;
 import io.github.dmlloyd.classfile.attribute.SignatureAttribute;
@@ -161,7 +162,7 @@ public class BytecodeGenerator {
     }
 
     private boolean hasGenericType (ClassType ct) {
-	return ct != null && ct.getFullNameHandler ().hasGenericType ();
+	return ct != null && (ct.getFullNameHandler ().hasGenericType () || ct.getTypeParameter () != null);
     }
 
 
@@ -214,8 +215,23 @@ public class BytecodeGenerator {
 		VariableDeclarator vd = info.vd ();
 		if (vd.isArray ())
 		    desc = desc.arrayType (vd.getDims ().rank ());
-		classBuilder.withField (name, desc, fb -> fb.withFlags (fdb.getFlags ()));
+		String signature = getGenericSignature (type);
+		classBuilder.withField (name, desc, fb -> {
+			fb.withFlags (fdb.getFlags ());
+			if (signature != null)
+			    fb.with (SignatureAttribute.of (Signature.parseFrom (signature)));
+		    });
 	    });
+    }
+
+    private String getGenericSignature (ParseTreeNode type) {
+	if (type instanceof ClassType ct) {
+	    TypeParameter tp = ct.getTypeParameter ();
+	    if (tp != null) {
+		return "T" + tp.getId () + ";";
+	    }
+	}
+	return null;
     }
 
     private void addMethods (ClassBuilder classBuilder, TypeDeclaration td) {

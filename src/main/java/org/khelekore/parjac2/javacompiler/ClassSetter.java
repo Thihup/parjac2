@@ -118,21 +118,28 @@ public class ClassSetter {
     }
 
     private void registerSuperTypes (EnclosingTypes et, NormalClassDeclaration ndi) {
+	et = registerTypeParameters (et, ndi.getTypeParameters ());
 	ClassType superclass = ndi.getSuperClass ();
 	if (superclass != null)
 	    setType (et, superclass);
 	setTypes (et, ndi.getSuperInterfaces ());
-	registerTypeParameters (et, ndi.getTypeParameters ());
     }
 
     private void registerSuperTypes (EnclosingTypes et, NormalInterfaceDeclaration i) {
+	et = registerTypeParameters (et, i.getTypeParameters ());
 	setTypes (et, i.getExtendsInterfaces ());
     }
 
-    private void registerTypeParameters (EnclosingTypes et, TypeParameters tps) {
+    private EnclosingTypes registerTypeParameters (EnclosingTypes et, TypeParameters tps) {
 	if (tps == null)
-	    return;
+	    return et;
+	Map<String, TypeParameter> nameToTypeParameter = new HashMap<> ();
 	for (TypeParameter tp : tps.get ()) {
+	    String id = tp.getId ();
+	    TypeParameter previous = nameToTypeParameter.put (id, tp);
+	    if (previous != null) {
+		error (tp, "ClassSetter.registerTypeParameters: Type parameter name %s already declared", id);
+	    }
 	    // TODO: register the type parameter tp.getId ();
 	    TypeBound bound = tp.getTypeBound ();
 	    if (bound != null) {
@@ -140,6 +147,7 @@ public class ClassSetter {
 		bound.getAdditionalBounds ().forEach (b -> setType (et, b));
 	    }
 	}
+	return et.withTypeParameters (nameToTypeParameter);
     }
 
     private void registerFields () {
@@ -147,8 +155,9 @@ public class ClassSetter {
     }
 
     private void setFieldTypes (TypeDeclaration td, EnclosingTypes et) {
+	EnclosingTypes ett = registerTypeParameters (et, td.getTypeParameters ());
 	Map<String, FieldInfo> fields = td.getFields ();
-	fields.forEach ((name, info) ->  setFieldType (et, name, info));
+	fields.forEach ((name, info) ->  setFieldType (ett, name, info));
     }
 
     private void setFieldType (EnclosingTypes et, String name, FieldInfo info) {
@@ -160,16 +169,17 @@ public class ClassSetter {
     }
 
     private void setMethodTypes (TypeDeclaration td, EnclosingTypes et) {
+	EnclosingTypes ett = registerTypeParameters (et, td.getTypeParameters ());
 	List<? extends MethodDeclarationBase> methods = td.getMethods ();
-	methods.forEach (m -> setMethodTypes (et, m));
+	methods.forEach (m -> setMethodTypes (ett, m));
 
 	// TODO: handle constructors
 	// TODO: handle instance and static blocks
     }
 
     private void setMethodTypes (EnclosingTypes et, MethodDeclarationBase md) {
-	registerTypeParameters (et, md.getTypeParameters ());
 	checkAnnotations (et, md.getAnnotations ());
+	et = registerTypeParameters (et, md.getTypeParameters ());
 	setType (et, md.getResult ());
 	ReceiverParameter rp = md.getReceiverParameter ();
 	if (rp != null) {
@@ -223,11 +233,6 @@ public class ClassSetter {
     }
 
     private void setType (EnclosingTypes et, ParseTreeNode type) {
-	/* Not sure if we need this
-	if (type instanceof PrimitiveTokenType) {
-	    return;
-	}
-	*/
 	switch (type) {
 	case TokenNode t -> {}
 	case PrimitiveType p -> {}
@@ -354,7 +359,9 @@ public class ClassSetter {
     private FullNameHandler lastFQN (EnclosingTypes et) {
 	FullNameHandler fqn = null;
 	while (et != null) {
-	    fqn = et.fqn ();
+	    FullNameHandler etFqn = et.fqn ();
+	    if (etFqn != null)
+		fqn = etFqn;
 	    et = et.previous ();
 	}
 	return fqn;
@@ -392,8 +399,9 @@ public class ClassSetter {
 
     private boolean insideSuperClass (EnclosingTypes et, FullNameHandler fqn) {
 	for (EnclosingTypes c : et)
-	    if (insideSuperClass (fqn, c.fqn ()))
-		return true;
+	    if (c.fqn () != null)
+		if (insideSuperClass (fqn, c.fqn ()))
+		    return true;
 	return false;
     }
 
@@ -462,11 +470,10 @@ public class ClassSetter {
 
     private ResolvedClass resolve (EnclosingTypes et, FullNameHandler name, ParsePosition pos) {
 	String simpleName = name.getFullDotName ();
-	TypeParameter tp = getTypeParameter (simpleName);
+	TypeParameter tp = getTypeParameter (et, simpleName);
 	if (tp != null) {
 	    return new ResolvedClass (tp);
 	}
-
 	FullNameHandler visibleType = getVisibleType (et, name);
 	if (visibleType != null)
 	    return new ResolvedClass (visibleType);
@@ -476,6 +483,7 @@ public class ClassSetter {
 	    fqn = resolveUsingImports (et, simpleName, pos);
 	if (fqn != null)
 	    return new ResolvedClass (fqn);
+
 	return null;
     }
 
@@ -501,16 +509,20 @@ public class ClassSetter {
     private FullNameHandler resolveInnerClass (EnclosingTypes et, String id) {
 	// Check for inner class
 	for (EnclosingTypes ctn : et) {
-	    FullNameHandler visibleType = getVisibleType (et, ctn.fqn ().getInnerClass (id));
-	    if (visibleType != null)
-		return visibleType;
+	    if (ctn.fqn () != null) {
+		FullNameHandler visibleType = getVisibleType (et, ctn.fqn ().getInnerClass (id));
+		if (visibleType != null)
+		    return visibleType;
+	    }
 	}
 
 	// Check for inner class of super classes
 	for (EnclosingTypes ctn : et) {
-	    FullNameHandler fqn = checkSuperClasses (et, ctn.fqn (), id);
-	    if (fqn != null)
-		return fqn;
+	    if (ctn.fqn () != null) {
+		FullNameHandler fqn = checkSuperClasses (et, ctn.fqn (), id);
+		if (fqn != null)
+		    return fqn;
+	    }
 	}
 	return null;
     }
@@ -566,17 +578,8 @@ public class ClassSetter {
 	return null;
     }
 
-    private TypeParameter getTypeParameter (String id) {
-	/* TODO: implement correctly
-	TypeHolder th = currentTypes;
-	while (th != null) {
-	    TypeParameter tp = th.types.get (id);
-	    if (tp != null)
-		return tp;
-	    th = th.parent;
-	}
-	*/
-	return null;
+    private TypeParameter getTypeParameter (EnclosingTypes et, String id) {
+	return et.nameToTypeParameter.get (id);
     }
 
     private FullNameHandler tryPackagename (String id, ParsePosition pos) {
@@ -622,19 +625,6 @@ public class ClassSetter {
 	return null;
     }
 
-    /** qwerty TODO remove this */
-    /*
-    private static class TypeHolder {
-	private final TypeHolder parent;
-	private final Map<String, TypeParameter> types;
-
-	public TypeHolder (TypeHolder parent, Map<String, TypeParameter> types) {
-	    this.parent = parent;
-	    this.types = types;
-	}
-    }
-    */
-
     public void checkUnusedImport () {
 	List<ImportDeclaration> imports = ocu.getImports ();
 	imports.stream ().filter (i -> !i.hasBeenUsed ()).forEach (i -> checkUnusedImport (i));
@@ -660,14 +650,18 @@ public class ClassSetter {
     }
 
     public EnclosingTypes enclosingTypes (EnclosingTypes previous, TypeDeclaration td) {
-	return new EnclosingTypes (previous, td, cip.getFullName (td));
+	return new EnclosingTypes (previous, td, cip.getFullName (td), Map.of ());
     }
 
-    private record EnclosingTypes (EnclosingTypes previous, TypeDeclaration td, FullNameHandler fqn)
+    private record EnclosingTypes (EnclosingTypes previous, TypeDeclaration td, FullNameHandler fqn, Map<String, TypeParameter> nameToTypeParameter)
 	implements Iterable<EnclosingTypes> {
 
 	public Iterator<EnclosingTypes> iterator () {
 	    return new ETIterator (this);
+	}
+
+	public EnclosingTypes withTypeParameters (Map<String, TypeParameter> nameToTypeParameter) {
+	    return new EnclosingTypes (this, null, null, nameToTypeParameter);
 	}
 
 	private static class ETIterator implements Iterator<EnclosingTypes> {
