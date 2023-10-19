@@ -251,7 +251,7 @@ public class ClassSetter {
 	if (ct.hasFullName ()) // already set?
 	    return;
 	// "List" and "java.util.List" are easy to resolve
-	FullNameHandler id = getDottedName (ct);
+	FullNameHandler id = ct.getFullNameAsSimpleDottedName ();
 	ResolvedClass fqn = resolve (et, id, ct.getPosition ());
 	if (fqn == null && ct.size () > 1) {
 	    // ok, someone probably wrote something like "HashMap.Entry" or
@@ -271,15 +271,6 @@ public class ClassSetter {
 		tas.getTypeArguments ().forEach (tn -> setType (et, tn));
 	    }
 	}
-    }
-
-    private FullNameHandler getDottedName (ClassType ct) {
-	String dotName;
-	if (ct.size () == 1)
-	    dotName = ct.get ().get (0).getId ();
-	else
-	    dotName = ct.get ().stream ().map (s -> s.getId ()).collect (Collectors.joining ("."));
-	return FullNameHandler.ofSimpleClassName (dotName);
     }
 
     private class ImportHandler {

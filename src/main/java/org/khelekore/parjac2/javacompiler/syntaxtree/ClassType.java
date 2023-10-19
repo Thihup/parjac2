@@ -1,6 +1,7 @@
 package org.khelekore.parjac2.javacompiler.syntaxtree;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
@@ -87,5 +88,14 @@ public class ClassType extends SyntaxTreeNode {
 	if (fnh != null)
 	    return ExpressionType.getObjectType (fnh);
 	return null;
+    }
+
+    public FullNameHandler getFullNameAsSimpleDottedName () {
+	String dotName;
+	if (size () == 1)
+	    dotName = get ().get (0).getId ();
+	else
+	    dotName = get ().stream ().map (s -> s.getId ()).collect (Collectors.joining ("."));
+	return FullNameHandler.ofSimpleClassName (dotName);
     }
 }

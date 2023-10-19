@@ -249,7 +249,14 @@ public class CompiledTypesHolder {
 
     private void addInterfaces (List<FullNameHandler> ret, List<ClassType> types) {
 	if (types != null)
-	    types.forEach (ct -> ret.add (ct.getFullNameHandler ()));
+	    types.forEach (ct -> ret.add (getFullNameHandler (ct)));
+    }
+
+    private FullNameHandler getFullNameHandler (ClassType ct) {
+	FullNameHandler fnh = ct.getFullNameHandler ();
+	if (fnh != null)
+	    return fnh;
+	return ct.getFullNameAsSimpleDottedName ();
     }
 
     private static class TypeInfo {
