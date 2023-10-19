@@ -56,11 +56,11 @@ public class NormalClassDeclaration extends TypeDeclaration {
 	StringBuilder sb = new StringBuilder ();
 	if (!modifiers.isEmpty ())
 	    sb.append (modifiers).append (" ");
-	sb.append ("class ").append (id);
+	sb.append ("class ").append (id).append (" ");
 	if (typeParameters != null)
 	    sb.append (typeParameters).append (" ");
 	if (superClass != null)
-	    sb.append (" ").append (superClass).append (" ");
+	    sb.append (superClass).append (" ");
 	if (superInterfaces != null)
 	    sb.append (superInterfaces).append (" ");
 	if (classPermits != null)

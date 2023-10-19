@@ -73,7 +73,7 @@ public class ClassBody extends SyntaxTreeNode {
 
     @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
-	sb.append (" {\n");
+	sb.append ("{\n");
 	declarations.forEach (d -> sb.append (d).append ("\n"));
 	sb.append ("}\n");
 	return sb.toString ();
