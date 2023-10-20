@@ -21,4 +21,8 @@ public class RecordBody extends ClassBody {
 	compactConstructors = new ArrayList<> ();
 	td.addMapping (CompactConstructorDeclaration.class, compactConstructors);
     }
+
+    public List<CompactConstructorDeclaration> getCompactConstructors () {
+	return compactConstructors;
+    }
 }

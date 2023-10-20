@@ -77,4 +77,17 @@ public class EnumBody extends SyntaxTreeNode {
     public List<MethodDeclaration> getMethods () {
 	return declarations.getMethods ();
     }
+
+    public List<ConstructorDeclaration> getConsructors () {
+	return declarations.getConsructors ();
+    }
+
+    public List<SyntaxTreeNode> getInstanceInitializers () {
+	return declarations.getInstanceInitializers ();
+    }
+
+    public List<StaticInitializer> getStaticInitializers () {
+	return declarations.getStaticInitializers ();
+    }
 }
+

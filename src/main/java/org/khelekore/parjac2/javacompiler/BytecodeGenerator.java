@@ -98,7 +98,7 @@ public class BytecodeGenerator {
     }
 
     private byte[] generateClass (EnumDeclaration e) {
-	String signature = "Ljava/lang/Enum<L" + name + ";>;";
+	String signature = "Ljava/lang/Enum<L" + name.getSlashName () + ";>;";
 	return generateClass (e, ImplicitClassFlags.ENUM_FLAGS, signature,
 			      enumClassType, List.of ());
     }
@@ -238,7 +238,6 @@ public class BytecodeGenerator {
 	td.getMethods ().forEach (m -> {
 		MethodSignatureHolder msh = getMethodSignature (m);
 		int flags = m.getFlags ();
-		// String name, MethodTypeDesc descriptor, int methodFlags, Consumer<? super MethodBuilderPREVIEW> handler)
 		classBuilder.withMethod (m.getName (), msh.desc, flags, mb -> {
 			mb.withCode (cb -> {
 				cb.lineNumber (42);

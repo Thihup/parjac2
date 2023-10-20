@@ -66,4 +66,16 @@ public class AnnotationTypeDeclaration extends TypeDeclaration {
     public List<MethodDeclaration> getMethods () {
 	return List.of ();
     }
+
+    public List<ConstructorDeclaration> getConsructors () {
+	return List.of ();
+    }
+
+    public List<SyntaxTreeNode> getInstanceInitializers () {
+	return List.of ();
+    }
+
+    public List<StaticInitializer> getStaticInitializers () {
+	return List.of ();
+    }
 }

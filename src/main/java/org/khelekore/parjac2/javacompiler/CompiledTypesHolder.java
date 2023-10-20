@@ -220,7 +220,7 @@ public class CompiledTypesHolder {
     private Optional<List<FullNameHandler>> getSuperTypes (UnqualifiedClassInstanceCreationExpression at) {
 	ClassType ct = at.getSuperType ();
 	if (ct != null) {
-	    List<FullNameHandler> ret = Arrays.asList (ct.getFullNameHandler ());
+	    List<FullNameHandler> ret = Arrays.asList (getFullNameHandler (ct));
 	    return Optional.of (ret);
 	}
 	return Optional.empty ();

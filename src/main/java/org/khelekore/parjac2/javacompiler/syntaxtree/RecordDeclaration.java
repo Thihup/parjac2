@@ -1,5 +1,6 @@
 package org.khelekore.parjac2.javacompiler.syntaxtree;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -103,5 +104,26 @@ public class RecordDeclaration extends TypeDeclaration {
 
     public List<MethodDeclaration> getMethods () {
 	return body.getMethods ();
+    }
+
+    public List<? extends ConstructorDeclarationBase> getConsructors () {
+	List<CompactConstructorDeclaration> lsc = body.getCompactConstructors ();
+	List<ConstructorDeclaration> lsn = body.getConsructors ();
+	if (lsc.isEmpty ())
+	    return lsn;
+	if (lsn.isEmpty ())
+	    return lsc;
+	List<ConstructorDeclarationBase> ret = new ArrayList<ConstructorDeclarationBase> (lsc.size () + lsn.size ());
+	ret.addAll (lsn);
+	ret.addAll (lsc);
+	return ret;
+    }
+
+    public List<SyntaxTreeNode> getInstanceInitializers () {
+	return body.getInstanceInitializers ();
+    }
+
+    public List<StaticInitializer> getStaticInitializers () {
+	return body.getStaticInitializers ();
     }
 }

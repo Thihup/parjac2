@@ -3,12 +3,15 @@ package org.khelekore.parjac2.javacompiler;
 import java.util.List;
 import java.util.Map;
 
+import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
+import org.khelekore.parjac2.javacompiler.syntaxtree.Dims;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeArguments;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeBound;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeParameter;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeParameters;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Wildcard;
+import org.khelekore.parjac2.javacompiler.syntaxtree.WildcardBounds;
 import org.khelekore.parjac2.parser.Token;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.khelekore.parjac2.parsetree.TokenNode;
@@ -30,10 +33,14 @@ public class GenericTypeHelper {
 	} else if (tn instanceof TokenNode tkn) {
 	    Token t = tkn.getToken ();
 	    return tokenToDescriptor.get (t);
+	} else if (tn instanceof ArrayType at) {
+	    ParseTreeNode type = at.getType ();
+	    Dims dims = at.getDims ();
+	    return "[".repeat (dims.rank ()) + getGenericType (type, cip, shortForm);
 	}
 	// TODO: not sure how we get here.
 	//return tn.getExpressionType ().getDescriptor ();
-	System.err.println ("Got unhandled type: " + tn.getClass ().getName ());
+	System.err.println ("GenericTypeHelper: Got unhandled type: " + tn.getClass ().getName ());
 	return tn.getValue ().toString ();
     }
 
@@ -43,12 +50,19 @@ public class GenericTypeHelper {
 	for (ParseTreeNode tn : ta.getTypeArguments ()) {
 	    switch (tn) {
 	    //TODO: we also need to handle type and additional bounds
-	    case Wildcard w -> sb.append ("+").append (getGenericType (w.getBounds ().getClassType (), cip, shortForm));
+	    case Wildcard w -> sb.append (getGenericType (w, cip, shortForm));
 	    default -> sb.append (getGenericType (tn, cip, shortForm));
 	    }
 	}
 	sb.append (">");
 	return sb.toString ();
+    }
+
+    private String getGenericType (Wildcard w, ClassInformationProvider cip, boolean shortForm) {
+	WildcardBounds b = w.getBounds ();
+	if (b == null)
+	    return "*";
+	return "+" + getGenericType (w.getBounds ().getClassType (), cip, shortForm);
     }
 
     public void appendTypeParametersSignature (StringBuilder sb, TypeParameters tps, ClassInformationProvider cip, boolean shortForm) {

@@ -97,4 +97,16 @@ public class NormalInterfaceDeclaration extends TypeDeclaration {
     public List<InterfaceMethodDeclaration> getMethods () {
 	return body.getMethods ();
     }
+
+    public List<ConstructorDeclaration> getConsructors () {
+	return List.of ();
+    }
+
+    public List<SyntaxTreeNode> getInstanceInitializers () {
+	return List.of ();
+    }
+
+    public List<StaticInitializer> getStaticInitializers () {
+	return List.of ();
+    }
 }

@@ -7,7 +7,7 @@ import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
-public class NormalMethodReference extends SyntaxTreeNode {
+public class NormalMethodReference extends SyntaxTreeNode implements MethodReference {
     private final ParseTreeNode type;
     private final TypeArguments types;
     private final String id;

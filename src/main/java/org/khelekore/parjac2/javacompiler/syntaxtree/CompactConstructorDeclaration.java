@@ -8,7 +8,7 @@ import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
-public class CompactConstructorDeclaration extends SyntaxTreeNode {
+public class CompactConstructorDeclaration extends SyntaxTreeNode implements ConstructorDeclarationBase {
     private final List<ParseTreeNode> modifiers;
     private final String name;
     private final ConstructorBody body;
@@ -32,5 +32,25 @@ public class CompactConstructorDeclaration extends SyntaxTreeNode {
     @Override public void visitChildNodes (NodeVisitor v) {
 	modifiers.forEach (v::accept);
 	v.accept (body);
+    }
+
+    public List<? extends ParseTreeNode> getAnnotations () {
+	return null;
+    }
+
+    public TypeParameters getTypeParameters () {
+	return null;
+    }
+
+    public ReceiverParameter getReceiverParameter () {
+	return null;
+    }
+
+    public FormalParameterList getFormalParameterList () {
+	return null;  // TODO: not sure how to deal with this, should probably return RecordComponentList
+    }
+
+    public List<ParseTreeNode> getStatements () {
+	return body.getStatements ();
     }
 }

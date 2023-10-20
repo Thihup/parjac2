@@ -11,8 +11,9 @@ import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.khelekore.parjac2.util.StringHelper;
 
-public class DottedName extends SyntaxTreeNode {
+public class DottedName extends SyntaxTreeNode implements NamePartHandler {
     private final List<String> nameParts;
+    private FullNameHandler fnh;
 
     public DottedName (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
@@ -60,5 +61,30 @@ public class DottedName extends SyntaxTreeNode {
 
     public String getDotName () {
 	return StringHelper.dotted (nameParts);
+    }
+
+    public int size () {
+	return nameParts.size ();
+    }
+
+    public String getNamePart (int i) {
+	return nameParts.get (i);
+    }
+
+    public void setFullName (FullNameHandler fnh) {
+	this.fnh = fnh;
+    }
+
+    public FullNameHandler getFullNameHandler () {
+	return fnh;
+    }
+
+    public boolean hasFullName () {
+	return fnh != null;
+    }
+
+    public FullNameHandler getFullNameAsSimpleDottedName () {
+	String dotName = String.join (".", getParts ());
+	return FullNameHandler.ofSimpleClassName (dotName);
     }
 }

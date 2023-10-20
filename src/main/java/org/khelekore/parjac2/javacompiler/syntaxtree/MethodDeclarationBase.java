@@ -1,5 +1,6 @@
 package org.khelekore.parjac2.javacompiler.syntaxtree;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -48,7 +49,16 @@ public class MethodDeclarationBase extends FlaggedBase {
     }
 
     public List<ParseTreeNode> getAnnotations () {
-	return header.getAnnotations ();
+	List<ParseTreeNode> ls1 = Annotation.getAnnotations (modifiers);
+	List<ParseTreeNode> ls2 = header.getAnnotations ();
+	if (ls2 == null)
+	    return ls1;
+	if (ls1 == null)
+	    return ls2;
+	ArrayList<ParseTreeNode> ret = new ArrayList<> (ls1.size () + ls2.size ());
+	ret.addAll (ls1);
+	ret.addAll (ls2);
+	return ret;
     }
 
     public ParseTreeNode getResult () {

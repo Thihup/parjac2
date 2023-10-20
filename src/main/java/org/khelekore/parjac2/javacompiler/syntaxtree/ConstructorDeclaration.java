@@ -7,7 +7,7 @@ import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
-public class ConstructorDeclaration extends SyntaxTreeNode {
+public class ConstructorDeclaration extends SyntaxTreeNode implements ConstructorDeclarationBase {
     private final List<ParseTreeNode> modifiers;
     private final ConstructorDeclarator declarator;
     private final Throws t;
@@ -42,5 +42,25 @@ public class ConstructorDeclaration extends SyntaxTreeNode {
 	if (t != null)
 	    v.accept (t);
 	v.accept (body);
+    }
+
+    public List<ParseTreeNode> getAnnotations () {
+	return Annotation.getAnnotations (modifiers);
+    }
+
+    public TypeParameters getTypeParameters () {
+	return declarator.getTypeParameters ();
+    }
+
+    public ReceiverParameter getReceiverParameter () {
+	return declarator.getReceiverParameter ();
+    }
+
+    public FormalParameterList getFormalParameterList () {
+	return declarator.getFormalParameterList ();
+    }
+
+    public List<ParseTreeNode> getStatements () {
+	return body.getStatements ();
     }
 }

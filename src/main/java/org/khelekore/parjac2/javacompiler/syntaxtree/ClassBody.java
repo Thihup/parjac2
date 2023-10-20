@@ -58,7 +58,6 @@ public class ClassBody extends SyntaxTreeNode {
 	List<VariableDeclarator> ls = fd.getVariableDeclarators ();
 	for (VariableDeclarator vd : ls) {
 	    String name = vd.getName ();
-	    // TODO: put field in map or something
 	    if (vd.hasInitializer ()) {
 		instanceInitializers.add (new Assignment (new Identifier (javaTokens.IDENTIFIER, name, vd.getPosition ()),
 							  javaTokens.EQUAL,
@@ -97,5 +96,17 @@ public class ClassBody extends SyntaxTreeNode {
 
     public List<MethodDeclaration> getMethods () {
 	return methodDeclarations;
+    }
+
+    public List<ConstructorDeclaration> getConsructors () {
+	return constructorDeclarations;
+    }
+
+    public List<SyntaxTreeNode> getInstanceInitializers () {
+	return instanceInitializers;
+    }
+
+    public List<StaticInitializer> getStaticInitializers () {
+	return staticInitializers;
     }
 }

@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 
-public class ClassType extends SyntaxTreeNode {
+public class ClassType extends SyntaxTreeNode implements NamePartHandler {
     private final List<SimpleClassType> types;
     private FullNameHandler fnh;
     private TypeParameter tp;
@@ -72,6 +72,10 @@ public class ClassType extends SyntaxTreeNode {
 
     public List<SimpleClassType> get () {
 	return types;
+    }
+
+    public String getNamePart (int i) {
+	return types.get (i).getId ();
     }
 
     public String getSlashName () {

@@ -37,4 +37,8 @@ public class ConstructorBody extends SyntaxTreeNode {
 	if (statements != null)
 	    v.accept (statements);
     }
+
+    public List<ParseTreeNode> getStatements () {
+	return statements == null ? List.of () : statements.getStatements ();
+    }
 }

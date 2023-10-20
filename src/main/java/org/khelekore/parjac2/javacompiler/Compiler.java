@@ -188,7 +188,7 @@ public class Compiler {
     }
 
     private void writeClasses (BytecodeWriter classWriter) {
-	cip.getCompiledClasses ().parallelStream ().forEach (td -> writeClass (classWriter, td));
+	cip.getCompiledClasses ().parallelStream ().sequential ().forEach (td -> writeClass (classWriter, td));
 	cip.getCompiledModules ().parallelStream ().forEach (td -> writeModule (classWriter, td));
     }
 

@@ -18,7 +18,12 @@ import org.khelekore.parjac2.NoSourceDiagnostics;
 import org.khelekore.parjac2.SourceDiagnostics;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Annotation;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayType;
+import org.khelekore.parjac2.javacompiler.syntaxtree.Block;
+import org.khelekore.parjac2.javacompiler.syntaxtree.BlockStatements;
+import org.khelekore.parjac2.javacompiler.syntaxtree.ClassOrInterfaceTypeToInstantiate;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
+import org.khelekore.parjac2.javacompiler.syntaxtree.ConstructorDeclarationBase;
+import org.khelekore.parjac2.javacompiler.syntaxtree.DottedName;
 import org.khelekore.parjac2.javacompiler.syntaxtree.EnumConstant;
 import org.khelekore.parjac2.javacompiler.syntaxtree.EnumDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ExceptionTypeList;
@@ -27,6 +32,8 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.FormalParameterList;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ImportDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.MethodDeclarationBase;
+import org.khelekore.parjac2.javacompiler.syntaxtree.MethodReference;
+import org.khelekore.parjac2.javacompiler.syntaxtree.NamePartHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.NormalClassDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.NormalInterfaceDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.OrdinaryCompilationUnit;
@@ -37,6 +44,8 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.SimpleClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SingleStaticImportDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SingleTypeImportDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.StaticImportOnDemandDeclaration;
+import org.khelekore.parjac2.javacompiler.syntaxtree.StaticInitializer;
+import org.khelekore.parjac2.javacompiler.syntaxtree.SyntaxTreeNode;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Throws;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeArguments;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeBound;
@@ -61,11 +70,6 @@ public class ClassSetter {
     private final OrdinaryCompilationUnit ocu; // we do not care about ModularCompilationUnit (for now?)
 
     private final ImportHandler ih;            // keep track of the imports we have
-
-    /* qwerty: TODO: remove
-    private final Map<ParseTreeNode, TypeHolder> types = new HashMap<> ();
-    private TypeHolder currentTypes = null;
-    */
 
     /** High level description:
      *  For each class:
@@ -147,7 +151,7 @@ public class ClassSetter {
 		bound.getAdditionalBounds ().forEach (b -> setType (et, b));
 	    }
 	}
-	return et.withTypeParameters (nameToTypeParameter);
+	return enclosingTypeParameter (et, nameToTypeParameter);
     }
 
     private void registerFields () {
@@ -173,34 +177,83 @@ public class ClassSetter {
 	List<? extends MethodDeclarationBase> methods = td.getMethods ();
 	methods.forEach (m -> setMethodTypes (ett, m));
 
-	// TODO: handle constructors
-	// TODO: handle instance and static blocks
+	List<? extends ConstructorDeclarationBase> constructors = td.getConsructors ();
+	constructors.forEach (c -> setConstructorTypes (ett, c));
+
+	List<SyntaxTreeNode> instanceInitializers = td.getInstanceInitializers ();
+	instanceInitializers.forEach (c -> setInstanceInitializerTypes (ett, c));
+	List<StaticInitializer> staticInitializers = td.getStaticInitializers ();
+	staticInitializers.forEach (c -> setStaticInitializerType (ett, c));
     }
 
-    private void setMethodTypes (EnclosingTypes et, MethodDeclarationBase md) {
-	checkAnnotations (et, md.getAnnotations ());
-	et = registerTypeParameters (et, md.getTypeParameters ());
+    private void setMethodTypes (EnclosingTypes bt, MethodDeclarationBase md) {
+	checkAnnotations (bt, md.getAnnotations ());
+	EnclosingTypes et = registerTypeParameters (bt, md.getTypeParameters ());
 	setType (et, md.getResult ());
 	ReceiverParameter rp = md.getReceiverParameter ();
 	if (rp != null) {
 	    checkAnnotations (et, rp.getAnnotations ());
 	    setType (et, rp.getType ());
 	}
-	FormalParameterList args = md.getFormalParameterList ();
+	EnclosingTypes rt = setFormalParameterListTypes (et, md.getFormalParameterList ());
+
+	Throws t = md.getThrows ();
+	if (t != null) {
+	    ExceptionTypeList exceptions = t.getExceptions ();
+	    setTypes (rt, exceptions.get ());
+	}
+	ParseTreeNode body = md.getMethodBody ();
+	if (body instanceof Block block) {
+	    BlockStatements bs = block.getStatements ();
+	    if (bs != null) {
+		List<ParseTreeNode> statements = bs.getStatements ();
+		statements.forEach (s -> setTypesForMethodStatement (rt, s));
+	    }
+	}
+    }
+
+    private void setConstructorTypes (EnclosingTypes bt, ConstructorDeclarationBase cdb) {
+	checkAnnotations (bt, cdb.getAnnotations ());
+	EnclosingTypes et = registerTypeParameters (bt, cdb.getTypeParameters ());
+	EnclosingTypes rt = setFormalParameterListTypes (et, cdb.getFormalParameterList ());
+	List<ParseTreeNode> statements = cdb.getStatements ();
+	statements.forEach (s -> setTypesForMethodStatement (rt, s));
+    }
+
+    private void setInstanceInitializerTypes (EnclosingTypes et, SyntaxTreeNode n) {
+	setTypesForMethodStatement (et, n);
+    }
+
+    private void setStaticInitializerType (EnclosingTypes et, StaticInitializer s) {
+	setTypesForMethodStatement (et, s);
+    }
+
+    private EnclosingTypes setFormalParameterListTypes (EnclosingTypes et, FormalParameterList args) {
 	if (args != null) {
 	    for (FormalParameterBase fp : args.getParameters ()) {
 		checkFormalParameterModifiers (et, fp.getModifiers ());
 		setType (et, fp.getType ());
 	    }
 	}
+	// TODO: qwerty create a scope with argument names.
+	return et;
+    }
 
-	Throws t = md.getThrows ();
-	if (t != null) {
-	    ExceptionTypeList exceptions = t.getExceptions ();
-	    setTypes (et, exceptions.get ());
+    private void setTypesForMethodStatement (EnclosingTypes et, ParseTreeNode p) {
+	Deque<ParseTreeNode> partsToHandle = new ArrayDeque<> ();
+	partsToHandle.add (p);
+	while (!partsToHandle.isEmpty ()) {
+	    ParseTreeNode pp = partsToHandle.removeFirst ();
+	    switch (pp) {
+	    case ClassType ct -> setType (et, ct);
+	    case DottedName dt -> setType (et, dt);
+	    case MethodReference mr -> {
+		// skip for now
+	    }
+	    case ClassOrInterfaceTypeToInstantiate coitti -> setType (et, coitti.getType ());
+	    default -> pp.visitChildNodes (partsToHandle::add);
+	    }
 	}
-	ParseTreeNode body = md.getMethodBody ();
-	// TODO: handle body
     }
 
     private void checkAnnotations (EnclosingTypes et, List<? extends ParseTreeNode> annotations) {
@@ -237,6 +290,7 @@ public class ClassSetter {
 	case TokenNode t -> {}
 	case PrimitiveType p -> {}
 	case ClassType ct -> setType (et, ct);
+	case DottedName dn -> setType (et, dn);
 	case ArrayType at -> setType (et, at.getType ());
 	case Wildcard wc -> {
 	    WildcardBounds wb = wc.getBounds ();
@@ -261,7 +315,7 @@ public class ClassSetter {
 	if (fqn == null && ct.size () > 1) {
 	    // ok, someone probably wrote something like "HashMap.Entry" or
 	    // "java.util.HashMap.Entry" which is somewhat problematic, but legal
-	    fqn = tryAllParts (et, ct);
+	    fqn = tryAllParts (et, ct, ct.getPosition ());
 	}
 	if (fqn == null) {
 	    diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), ct.getPosition (),
@@ -276,6 +330,22 @@ public class ClassSetter {
 		tas.getTypeArguments ().forEach (tn -> setType (et, tn));
 	    }
 	}
+    }
+
+    private void setType (EnclosingTypes et, DottedName tn) {
+	if (tn.hasFullName ())
+	    return;
+	FullNameHandler id = tn.getFullNameAsSimpleDottedName ();
+	ResolvedClass fqn = resolve (et, id, tn.getPosition ());
+	if (fqn == null && tn.size () > 1) {
+	    fqn = tryAllParts (et, tn, tn.getPosition ());
+	}
+	if (fqn == null) {
+	    diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), tn.getPosition (),
+							 "Failed to find class: %s", id));
+	    return;
+	}
+	tn.setFullName (fqn.type);
     }
 
     private class ImportHandler {
@@ -294,6 +364,10 @@ public class ClassSetter {
 		case StaticImportOnDemandDeclaration i -> siod.add (i);
 		}
 	    }
+	}
+
+	@Override public String toString () {
+	    return "imports: " + stid + "\n" + tiod + "\n" + ssid + "\n" + siod;
 	}
 
 	private void addSingleTypeImportDeclaration (SingleTypeImportDeclaration i) {
@@ -431,19 +505,18 @@ public class ClassSetter {
 
     /** Try to find an outer class that has the inner classes for misdirected outer classes.
      */
-    private ResolvedClass tryAllParts (EnclosingTypes et, ClassType ct) {
+    private ResolvedClass tryAllParts (EnclosingTypes et, NamePartHandler nph, ParsePosition pp) {
 	StringBuilder sb = new StringBuilder ();
-	List<SimpleClassType> scts = ct.get ();
 	// group package names to class "java.util.HashMap"
-	for (int i = 0, s = scts.size (); i < s; i++) {
-	    SimpleClassType sct = scts.get (i);
+	for (int i = 0, s = nph.size (); i < s; i++) {
 	    if (i > 0)
 		sb.append (".");
-	    sb.append (sct.getId ());
-	    ResolvedClass outerClass = resolve (et, FullNameHandler.ofSimpleClassName (sb.toString ()), ct.getPosition ());
+	    String id = nph.getNamePart (i);
+	    sb.append (id);
+	    ResolvedClass outerClass = resolve (et, FullNameHandler.ofSimpleClassName (sb.toString ()), pp);
 	    if (outerClass != null) {
 		// Ok, now check if Entry is an inner class either directly or in super class
-		FullNameHandler fqn = checkForInnerClasses (et, scts, i + 1, outerClass.type);
+		FullNameHandler fqn = checkForInnerClasses (et, nph, i + 1, outerClass.type);
 		if (fqn != null)
 		    return new ResolvedClass (fqn);
 	    }
@@ -451,16 +524,16 @@ public class ClassSetter {
 	return null;
     }
 
-    private FullNameHandler checkForInnerClasses (EnclosingTypes et, List<SimpleClassType> scts, int i, FullNameHandler outerClass) {
+    private FullNameHandler checkForInnerClasses (EnclosingTypes et, NamePartHandler nph, int i, FullNameHandler outerClass) {
 	FullNameHandler currentOuterClass = outerClass;
-	for (int s = scts.size (); i < s; i++) {
-	    SimpleClassType sct = scts.get (i);
-	    FullNameHandler directInnerClass = currentOuterClass.getInnerClass (sct.getId ());
+	for (int s = nph.size (); i < s; i++) {
+	    String id = nph.getNamePart (i);
+	    FullNameHandler directInnerClass = currentOuterClass.getInnerClass (id);
 	    FullNameHandler visibleType = getVisibleType (et, directInnerClass);
 	    if (visibleType != null) {
 		currentOuterClass = visibleType;
 	    } else {
-		currentOuterClass = checkSuperClasses (et, currentOuterClass, sct.getId ());
+		currentOuterClass = checkSuperClasses (et, currentOuterClass, id);
 		if (currentOuterClass == null)
 		    return null;
 	    }
@@ -579,7 +652,7 @@ public class ClassSetter {
     }
 
     private TypeParameter getTypeParameter (EnclosingTypes et, String id) {
-	return et.nameToTypeParameter.get (id);
+	return et.getTypeParameter (id);
     }
 
     private FullNameHandler tryPackagename (String id, ParsePosition pos) {
@@ -650,18 +723,30 @@ public class ClassSetter {
     }
 
     public EnclosingTypes enclosingTypes (EnclosingTypes previous, TypeDeclaration td) {
-	return new EnclosingTypes (previous, td, cip.getFullName (td), Map.of ());
+	return new EnclosingTypes (previous, new TypeEnclosure (td, cip.getFullName (td)));
     }
 
-    private record EnclosingTypes (EnclosingTypes previous, TypeDeclaration td, FullNameHandler fqn, Map<String, TypeParameter> nameToTypeParameter)
+    public EnclosingTypes enclosingTypeParameter (EnclosingTypes previous, Map<String, TypeParameter> nameToTypeParameter) {
+	return new EnclosingTypes (previous, new TypeParameterEnclosure (nameToTypeParameter));
+    }
+
+    private record EnclosingTypes (EnclosingTypes previous, Enclosure e)
 	implements Iterable<EnclosingTypes> {
 
 	public Iterator<EnclosingTypes> iterator () {
 	    return new ETIterator (this);
 	}
 
-	public EnclosingTypes withTypeParameters (Map<String, TypeParameter> nameToTypeParameter) {
-	    return new EnclosingTypes (this, null, null, nameToTypeParameter);
+	public TypeDeclaration td () {
+	    return e.td ();
+	}
+
+	public FullNameHandler fqn () {
+	    return e.fqn ();
+	}
+
+	public TypeParameter getTypeParameter (String id) {
+	    return e.getTypeParameter (id);
 	}
 
 	private static class ETIterator implements Iterator<EnclosingTypes> {
@@ -681,6 +766,20 @@ public class ClassSetter {
 		return ret;
 	    }
 	}
+    }
+
+    private interface Enclosure {
+	default TypeDeclaration td () { return null; }
+	default FullNameHandler fqn () { return null; }
+	default TypeParameter getTypeParameter (String id) { return null; }
+    }
+
+    record TypeEnclosure (TypeDeclaration td, FullNameHandler fqn) implements Enclosure {
+	@Override public TypeDeclaration td () { return td; }
+	@Override public FullNameHandler fqn () { return fqn; }
+    }
+    record TypeParameterEnclosure (Map<String, TypeParameter> nameToTypeParameter) implements Enclosure {
+	@Override public TypeParameter getTypeParameter (String id) { return nameToTypeParameter.get (id); }
     }
 
     private void error (ParseTreeNode where, String template, Object... args) {

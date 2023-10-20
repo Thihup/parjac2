@@ -14,7 +14,7 @@ public class Block extends SyntaxTreeNode {
 	statements = (rule.size () > 2) ? (BlockStatements)children.get (1) : null;
     }
 
-    @Override public Object getValue() {
+    @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	sb.append ("{\n");
 	if (statements != null)
@@ -26,5 +26,9 @@ public class Block extends SyntaxTreeNode {
     @Override public void visitChildNodes (NodeVisitor v) {
 	if (statements != null)
 	    v.accept (statements);
+    }
+
+    public BlockStatements getStatements () {
+	return statements;
     }
 }

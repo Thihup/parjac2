@@ -111,4 +111,16 @@ public class NormalClassDeclaration extends TypeDeclaration {
     public List<MethodDeclaration> getMethods () {
 	return body.getMethods ();
     }
+
+    public List<ConstructorDeclaration> getConsructors () {
+	return body.getConsructors ();
+    }
+
+    public List<SyntaxTreeNode> getInstanceInitializers () {
+	return body.getInstanceInitializers ();
+    }
+
+    public List<StaticInitializer> getStaticInitializers () {
+	return body.getStaticInitializers ();
+    }
 }

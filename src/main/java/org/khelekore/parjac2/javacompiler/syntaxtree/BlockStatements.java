@@ -17,7 +17,7 @@ public class BlockStatements extends SyntaxTreeNode {
 	    statements.addAll (((Multiple)children.get (1)).get ());
     }
 
-    @Override public Object getValue() {
+    @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	statements.forEach (s -> sb.append (s).append ("\n"));
 	return sb.toString ();
@@ -25,5 +25,9 @@ public class BlockStatements extends SyntaxTreeNode {
 
     @Override public void visitChildNodes (NodeVisitor v) {
 	statements.forEach (v::accept);
+    }
+
+    public List<ParseTreeNode> getStatements () {
+	return statements;
     }
 }

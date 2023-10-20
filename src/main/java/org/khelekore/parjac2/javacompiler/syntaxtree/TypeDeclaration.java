@@ -52,4 +52,10 @@ public abstract class TypeDeclaration extends FlaggedBase {
     public abstract Map<String, FieldInfo> getFields ();
 
     public abstract List<? extends MethodDeclarationBase> getMethods ();
+
+    public abstract List<? extends ConstructorDeclarationBase> getConsructors ();
+
+    public abstract List<SyntaxTreeNode> getInstanceInitializers ();
+
+    public abstract List<StaticInitializer> getStaticInitializers ();
 }

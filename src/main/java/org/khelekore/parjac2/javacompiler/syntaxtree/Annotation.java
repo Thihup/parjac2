@@ -16,4 +16,8 @@ public abstract class Annotation extends SyntaxTreeNode {
     public TypeName getTypeName () {
 	return typename;
     }
+
+    public static <T extends ParseTreeNode> List<T> getAnnotations (List<T> modifiers) {
+	return modifiers.stream ().filter (m -> m instanceof Annotation).toList ();
+    }
 }

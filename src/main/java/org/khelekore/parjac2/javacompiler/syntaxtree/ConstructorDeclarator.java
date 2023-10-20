@@ -52,4 +52,16 @@ public class ConstructorDeclarator extends SyntaxTreeNode {
 	if (params != null)
 	    v.accept (params);
     }
+
+    public TypeParameters getTypeParameters () {
+	return types;
+    }
+
+    public ReceiverParameter getReceiverParameter () {
+	return rp;
+    }
+
+    public FormalParameterList getFormalParameterList () {
+	return params;
+    }
 }
