@@ -107,7 +107,7 @@ public class ClassSetter {
 	ih = new ImportHandler (ocu);
     }
 
-    public void registerSuperTypes () {
+    private void registerSuperTypes () {
 	forAllTypes ((td, et) -> {
 		switch (td) {
 		case NormalClassDeclaration ndi -> registerSuperTypes (et, ndi);
@@ -722,11 +722,11 @@ public class ClassSetter {
 						       "Unused import: %s", i.getValue ()));
     }
 
-    public EnclosingTypes enclosingTypes (EnclosingTypes previous, TypeDeclaration td) {
+    private EnclosingTypes enclosingTypes (EnclosingTypes previous, TypeDeclaration td) {
 	return new EnclosingTypes (previous, new TypeEnclosure (td, cip.getFullName (td)));
     }
 
-    public EnclosingTypes enclosingTypeParameter (EnclosingTypes previous, Map<String, TypeParameter> nameToTypeParameter) {
+    private EnclosingTypes enclosingTypeParameter (EnclosingTypes previous, Map<String, TypeParameter> nameToTypeParameter) {
 	return new EnclosingTypes (previous, new TypeParameterEnclosure (nameToTypeParameter));
     }
 
@@ -774,11 +774,12 @@ public class ClassSetter {
 	default TypeParameter getTypeParameter (String id) { return null; }
     }
 
-    record TypeEnclosure (TypeDeclaration td, FullNameHandler fqn) implements Enclosure {
+    private record TypeEnclosure (TypeDeclaration td, FullNameHandler fqn) implements Enclosure {
 	@Override public TypeDeclaration td () { return td; }
 	@Override public FullNameHandler fqn () { return fqn; }
     }
-    record TypeParameterEnclosure (Map<String, TypeParameter> nameToTypeParameter) implements Enclosure {
+
+    private record TypeParameterEnclosure (Map<String, TypeParameter> nameToTypeParameter) implements Enclosure {
 	@Override public TypeParameter getTypeParameter (String id) { return nameToTypeParameter.get (id); }
     }
 
