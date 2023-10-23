@@ -14,6 +14,10 @@ public class CompilationArguments {
     private final boolean reportTime;
     private final boolean debug;
 
+    public CompilationArguments () {
+	this (null, null, null, false, false);
+    }
+
     public CompilationArguments (SourceProvider sourceProvider, BytecodeWriter classWriter,
 				 List<Path> classPathEntries,
 				 boolean reportTime, boolean debug) {

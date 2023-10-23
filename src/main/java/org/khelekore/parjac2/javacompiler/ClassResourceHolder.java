@@ -39,8 +39,9 @@ public class ClassResourceHolder {
 
     public void scanClassPath () throws IOException {
 	scanCtSym ();
-	for (Path p : classPathEntries)
-	    scan (p);
+	if (classPathEntries != null)
+	    for (Path p : classPathEntries)
+		scan (p);
     }
 
     private void scanCtSym () throws IOException {
