@@ -64,6 +64,62 @@ public class TestClassSetter {
 	checkFieldType (t1, "t", "java.lang.Object", "T");
     }
 
+    @Test
+    public void testFieldSetToOtherClass () {
+	TypeDeclaration t1 = getFirstType ("package foo; class C { D d; } class D {}");
+	checkFieldType (t1, "d", "foo.D");
+    }
+
+    @Test
+    public void testSuperClassInnerClassFound () {
+	List<TypeDeclaration> types = getTypes ("package foo; class A { class I {} } class B extends A { I i; }");
+	TypeDeclaration b = types.get (1);
+	checkFieldType (b, "i", "foo.A$I");
+    }
+
+    @Test
+    public void testFindsGenericTypeOverSuperClassInnerclass () {
+	List<TypeDeclaration> types = getTypes ("package foo; class A { class T {} } class B<T> extends A { T t; }");
+	TypeDeclaration b = types.get (1);
+	checkFieldType (b, "t", "java.lang.Object", "T");
+    }
+
+    @Test
+    public void testGenericTypeExtends () {
+	TypeDeclaration t1 = getFirstType ("package foo; class C<T extends Runnable> { T t; }");
+	checkFieldType (t1, "t", "java.lang.Runnable", "T");
+    }
+
+    @Test
+    public void testInnerClassShadowingSuperClassInner () {
+	List<TypeDeclaration> types = getTypes ("package foo; class A { class T {} } class B extends A { class T {} T t; }");
+	TypeDeclaration b = types.get (1);
+	checkFieldType (b, "t", "foo.B$T");
+    }
+
+    /* TODO: ClassSetter needs a fix */
+    /*
+    @Test
+    public void testFieldIsInnerClassWhenTypeHasGenericTypeWithSameName () {
+	TypeDeclaration t1 = getFirstType ("package foo; class C<T> { class T {} T t; }");
+	checkFieldType (t1, "t", "foo.C$T");
+    }
+    */
+
+    @Test
+    public void testReturnClassGenericType () {
+	TypeDeclaration t1 = getFirstType ("package foo; class C<T> { T foo () { return null; }}");
+	MethodDeclarationBase md = t1.getMethods ().get (0);
+	checkType ((ClassType)md.getResult (), "java.lang.Object", "T");
+    }
+
+    @Test
+    public void testReturnMethodGenericType () {
+	TypeDeclaration t1 = getFirstType ("package foo; class C<T> { <K> K foo () { return null; }}");
+	MethodDeclarationBase md = t1.getMethods ().get (0);
+	checkType ((ClassType)md.getResult (), "java.lang.Object", "K");
+    }
+
     /* TODO: ClassSetter needs a fix */
     /*
     @Test
@@ -73,12 +129,6 @@ public class TestClassSetter {
 	checkType ((ClassType)md.getResult (), "foo.C$T", null);
     }
     */
-
-    @Test
-    public void testFieldSetToOtherClass () {
-	TypeDeclaration t1 = getFirstType ("package foo; class C { D d; } class D {}");
-	checkFieldType (t1, "d", "foo.D");
-    }
 
     @Test
     public void testJavaLangImplicitImport () {
@@ -99,13 +149,16 @@ public class TestClassSetter {
     }
 
     private TypeDeclaration getFirstType (String txt) {
+	return getTypes (txt).get (0);
+    }
+
+    private List<TypeDeclaration> getTypes (String txt) {
 	ParsedEntry tree = syntaxTree (txt);
 	cip.addTypes (tree.getRoot (), tree.getOrigin ());
 	ClassSetter.fillInClasses (cip, List.of (tree), diagnostics);
 	assert !diagnostics.hasError () : "Got parser errors: " + TestParserHelper.getParseOutput (diagnostics);
 	OrdinaryCompilationUnit ocu = (OrdinaryCompilationUnit)tree.getRoot ();
-	List<TypeDeclaration> ls = ocu.getTypes ();
-	return ls.get (0);
+	return ocu.getTypes ();
     }
 
     private ParsedEntry syntaxTree (String txt) {
@@ -131,7 +184,7 @@ public class TestClassSetter {
 	assert fn != null : "Expected full name to be set";
 	String dollarName = fn.getFullDollarName ();
 	TypeParameter tp = type.getTypeParameter ();
-	assert expectedType.equals (dollarName) : "Expected name to be set correctly, but got: " + dollarName +
+	assert expectedType.equals (dollarName) : "Expected type to be " + expectedType + ", but got: " + dollarName +
 	    (tp != null ? " with type parameter: " + tp : "");
 	if (expectedTypeParam == null)
 	    assert tp == null : "Expected to not have any type paramter";
