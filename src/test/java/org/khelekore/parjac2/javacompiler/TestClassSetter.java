@@ -97,14 +97,25 @@ public class TestClassSetter {
 	checkFieldType (b, "t", "foo.B$T");
     }
 
-    /* TODO: ClassSetter needs a fix */
-    /*
     @Test
     public void testFieldIsInnerClassWhenTypeHasGenericTypeWithSameName () {
 	TypeDeclaration t1 = getFirstType ("package foo; class C<T> { class T {} T t; }");
 	checkFieldType (t1, "t", "foo.C$T");
     }
-    */
+
+    @Test
+    public void testFieldIsGenericTypeEvenThoughSuperClassHasInnnerClass () {
+	List<TypeDeclaration> types = getTypes ("package foo; class A { class T {}} class B<T> extends A { T t; }");
+	TypeDeclaration b = types.get (1);
+	checkFieldType (b, "t", "java.lang.Object", "T");
+    }
+
+    @Test
+    public void testOuterOuterClassFound () {
+	List<TypeDeclaration> types = getTypes ("package foo; class A { class T {} } class B extends A {} class C extends B { T t; }");
+	TypeDeclaration c = types.get (2);
+	checkFieldType (c, "t", "foo.A$T");
+    }
 
     @Test
     public void testReturnClassGenericType () {
@@ -120,15 +131,12 @@ public class TestClassSetter {
 	checkType ((ClassType)md.getResult (), "java.lang.Object", "K");
     }
 
-    /* TODO: ClassSetter needs a fix */
-    /*
     @Test
     public void testMethodReturnIsInnnerClassWhenClassHasGenericTypeWithSameName () {
 	TypeDeclaration t1 = getFirstType ("package foo; class C<T> { class T {} T foo () { return null; }}");
 	MethodDeclarationBase md = t1.getMethods ().get (0);
 	checkType ((ClassType)md.getResult (), "foo.C$T", null);
     }
-    */
 
     @Test
     public void testJavaLangImplicitImport () {

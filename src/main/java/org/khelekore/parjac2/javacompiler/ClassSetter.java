@@ -533,7 +533,7 @@ public class ClassSetter {
 	    if (visibleType != null) {
 		currentOuterClass = visibleType;
 	    } else {
-		currentOuterClass = checkSuperClasses (et, currentOuterClass, id);
+		currentOuterClass = checkSuperClassesHasInnerClass (et, currentOuterClass, id);
 		if (currentOuterClass == null)
 		    return null;
 	    }
@@ -542,23 +542,73 @@ public class ClassSetter {
     }
 
     private ResolvedClass resolve (EnclosingTypes et, FullNameHandler name, ParsePosition pos) {
+	FullNameHandler currentClass = currentClass (et);
 	String simpleName = name.getFullDotName ();
-	TypeParameter tp = getTypeParameter (et, simpleName);
-	if (tp != null) {
-	    return new ResolvedClass (tp);
-	}
-	FullNameHandler visibleType = getVisibleType (et, name);
-	if (visibleType != null)
-	    return new ResolvedClass (visibleType);
 
-	FullNameHandler fqn = resolveInnerClass (et, simpleName);
-	if (fqn == null)
-	    fqn = resolveUsingImports (et, simpleName, pos);
-	if (fqn != null)
-	    return new ResolvedClass (fqn);
+	// Check inner classes in the current class
+	ResolvedClass r = resolveUsingInnerClass (et, currentClass, name);
+	if (r != null)
+	    return r;
+
+	// Check if we have a generic type
+	TypeParameter tp = getTypeParameter (et, simpleName);
+	if (tp != null)
+	    return new ResolvedClass (tp);
+
+	// Is it a direct class?
+	if (packageName.isEmpty ()) {
+	    FullNameHandler visibleType = getVisibleType (et, name);
+	    if (visibleType != null)
+		return new ResolvedClass (visibleType);
+	}
+
+	// check for class in current package
+	FullNameHandler importedClass = resolveUsingImports (et, simpleName, pos);
+	if (importedClass != null)
+	    return new ResolvedClass (importedClass);
+
+	// check for inner class in super types
+	FullNameHandler superInner = checkSuperClassesHasInnerClass (et, currentClass, simpleName);
+	if (superInner != null)
+	    return new ResolvedClass (superInner);
+
+	// check outer types
+	FullNameHandler outerInner = checkOuterClassesHasInnerClass (et, simpleName);
+	if (outerInner != null)
+	    return new ResolvedClass (outerInner);
 
 	return null;
     }
+
+    private ResolvedClass resolveUsingInnerClass (EnclosingTypes et, FullNameHandler currentClass, FullNameHandler name) {
+	FullNameHandler candidate = currentClass.getInnerClass (name.getFullDotName ());
+	FullNameHandler visibleType = getVisibleType (et, candidate);
+	if (visibleType != null)
+	    return new ResolvedClass (visibleType);
+	return null;
+    }
+
+    private FullNameHandler currentClass (EnclosingTypes et) {
+	while (et != null) {
+	    if (et.fqn () != null)
+		return et.fqn ();
+	    et = et.previous ();
+	}
+	return null;
+    }
+
+    private FullNameHandler checkOuterClassesHasInnerClass (EnclosingTypes et, String name) {
+	while (et != null) {
+	    FullNameHandler fn = et.fqn ();
+	    FullNameHandler candidate = fn.getInnerClass (name);
+	    FullNameHandler visibleType = getVisibleType (et, candidate);
+	    if (visibleType != null)
+		return visibleType;
+	    et = et.previous ();
+	}
+	return null;
+    }
+
 
     private static class ResolvedClass {
 	public final FullNameHandler type;
@@ -575,40 +625,20 @@ public class ClassSetter {
 	}
 
 	@Override public String toString () {
-	    return "ResolvedClass{type: " + type + ", tp: " + tp + "}";
+	    return "ResolvedClass{type: " + type.getFullDollarName () + ", tp: " + tp + "}";
 	}
     }
 
-    private FullNameHandler resolveInnerClass (EnclosingTypes et, String id) {
-	// Check for inner class
-	for (EnclosingTypes ctn : et) {
-	    if (ctn.fqn () != null) {
-		FullNameHandler visibleType = getVisibleType (et, ctn.fqn ().getInnerClass (id));
-		if (visibleType != null)
-		    return visibleType;
-	    }
-	}
-
-	// Check for inner class of super classes
-	for (EnclosingTypes ctn : et) {
-	    if (ctn.fqn () != null) {
-		FullNameHandler fqn = checkSuperClasses (et, ctn.fqn (), id);
-		if (fqn != null)
-		    return fqn;
-	    }
-	}
-	return null;
-    }
-
-    private FullNameHandler checkSuperClasses (EnclosingTypes et, FullNameHandler fullCtn, String id) {
+    private FullNameHandler checkSuperClassesHasInnerClass (EnclosingTypes et, FullNameHandler fullCtn, String id) {
 	if (fullCtn == null)
 	    return null;
 	List<FullNameHandler> superclasses = getSuperClasses (fullCtn);
 	for (FullNameHandler superclass : superclasses) {
-	    FullNameHandler visibleType = getVisibleType (et, superclass.getInnerClass (id));
+	    FullNameHandler candidate = superclass.getInnerClass (id);
+	    FullNameHandler visibleType = getVisibleType (et, candidate);
 	    if (visibleType != null)
 		return visibleType;
-	    FullNameHandler ssn = checkSuperClasses (et, superclass, id);
+	    FullNameHandler ssn = checkSuperClassesHasInnerClass (et, superclass, id);
 	    if (ssn != null)
 		return ssn;
 	}
