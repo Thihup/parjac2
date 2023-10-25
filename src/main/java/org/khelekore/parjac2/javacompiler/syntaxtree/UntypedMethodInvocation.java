@@ -33,4 +33,8 @@ public class UntypedMethodInvocation extends SyntaxTreeNode {
 	if (args != null)
 	    v.accept (args);
     }
+
+    public String getMethodName () {
+	return methodName;
+    }
 }

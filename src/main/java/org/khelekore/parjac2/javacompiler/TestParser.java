@@ -18,12 +18,15 @@ import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.javacompiler.syntaxtree.DottedName;
 import org.khelekore.parjac2.javacompiler.syntaxtree.MethodDeclarator;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SimpleRecordComponent;
+import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
+import org.khelekore.parjac2.javacompiler.syntaxtree.UntypedMethodInvocation;
 import org.khelekore.parjac2.javacompiler.syntaxtree.VariableDeclaratorId;
 import org.khelekore.parjac2.parser.Grammar;
 import org.khelekore.parjac2.parser.Parser;
 import org.khelekore.parjac2.parser.PredictCache;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
+import org.khelekore.parjac2.parsetree.TokenNode;
 
 public class TestParser {
     private final Charset charset;
@@ -135,20 +138,24 @@ public class TestParser {
     private void printTree (ParseTreeNode n, String indent) {
 	System.out.print (indent);
 	System.out.print (n.getId () + " " + n.getPosition ().toShortString ());
-	Object v;
-	if (hasUsableValue (n) && (v = n.getValue ()) != null) {
-	    System.out.print (" " + v);
-	}
+	printValue (n);
 	System.out.println ();
 	n.visitChildNodes (c -> printTree (c, indent + " "));
     }
 
-    // TODO: grab name from RecordDeclaration
-    private boolean hasUsableValue (ParseTreeNode n) {
-	return n.isToken () ||
-	    n instanceof DottedName ||
-	    n instanceof VariableDeclaratorId ||
-	    n instanceof MethodDeclarator ||
-	    n instanceof SimpleRecordComponent;
+    private void printValue (ParseTreeNode n) {
+	Object res =
+	    switch (n) {
+	    case DottedName dn -> n.getValue ();
+	    case VariableDeclaratorId dn -> n.getValue ();
+	    case MethodDeclarator dn -> n.getValue ();
+	    case SimpleRecordComponent dn -> n.getValue ();
+	    case UntypedMethodInvocation m -> m.getMethodName ();
+	    case TypeDeclaration td -> td.getName ();
+	    case TokenNode s -> s.getValue ();
+	    default -> null;
+	    };
+	if (res != null)
+	    System.out.print (" " + res.toString ());
     }
 }
