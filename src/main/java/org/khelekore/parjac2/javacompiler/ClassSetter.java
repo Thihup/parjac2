@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.NoSourceDiagnostics;
 import org.khelekore.parjac2.SourceDiagnostics;
+import org.khelekore.parjac2.javacompiler.syntaxtree.AmbiguousName;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Annotation;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Block;
@@ -27,6 +28,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.DottedName;
 import org.khelekore.parjac2.javacompiler.syntaxtree.EnumConstant;
 import org.khelekore.parjac2.javacompiler.syntaxtree.EnumDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ExceptionTypeList;
+import org.khelekore.parjac2.javacompiler.syntaxtree.ExpressionName;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FormalParameterBase;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FormalParameterList;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
@@ -246,6 +248,8 @@ public class ClassSetter {
 	    ParseTreeNode pp = partsToHandle.removeFirst ();
 	    switch (pp) {
 	    case ClassType ct -> setType (et, ct);
+	    case AmbiguousName an -> {} // qwerty
+	    case ExpressionName en -> {} // qwerty 
 	    case DottedName dt -> setType (et, dt);
 	    case MethodReference mr -> {
 		// skip for now
@@ -319,7 +323,7 @@ public class ClassSetter {
 	}
 	if (fqn == null) {
 	    diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), ct.getPosition (),
-							 "Failed to find class: %s", id));
+							 "Failed to find class for type: %s", id));
 	    return;
 	}
 	ct.setFullName (fqn.type);
@@ -342,7 +346,7 @@ public class ClassSetter {
 	}
 	if (fqn == null) {
 	    diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), tn.getPosition (),
-							 "Failed to find class: %s", id));
+							 "Failed to find class for dotted name: %s", id));
 	    return;
 	}
 	tn.setFullName (fqn.type);
@@ -600,10 +604,12 @@ public class ClassSetter {
     private FullNameHandler checkOuterClassesHasInnerClass (EnclosingTypes et, String name) {
 	while (et != null) {
 	    FullNameHandler fn = et.fqn ();
-	    FullNameHandler candidate = fn.getInnerClass (name);
-	    FullNameHandler visibleType = getVisibleType (et, candidate);
-	    if (visibleType != null)
-		return visibleType;
+	    if (fn != null) {
+		FullNameHandler candidate = fn.getInnerClass (name);
+		FullNameHandler visibleType = getVisibleType (et, candidate);
+		if (visibleType != null)
+		    return visibleType;
+	    }
 	    et = et.previous ();
 	}
 	return null;

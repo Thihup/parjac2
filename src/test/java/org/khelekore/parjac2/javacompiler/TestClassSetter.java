@@ -156,6 +156,34 @@ public class TestClassSetter {
 	checkFieldType (t1, "m", "java.util.Map");
     }
 
+    @Test
+    public void testNoErrorsOnInstanceMethodCall () {
+	TypeDeclaration t1 = getFirstType ("package foo; class A { void foo (A a) { a.foo(null); }}");
+	// TODO: check that a is not set in the method call
+	assert diagnostics.errorCount () == 0 : "Errors found";
+    }
+
+    @Test
+    public void testNoErrorsOnStaticMethodCall () {
+	TypeDeclaration t1 = getFirstType ("package foo; class A { void foo () { String.join (\".\", \"a\", \"b\"); }}");
+	// TODO: check that String is set correctly
+	assert diagnostics.errorCount () == 0 : "Errors found";
+    }
+
+    @Test
+    public void testNoErrorsOnStaticFieldMethodCall () {
+	TypeDeclaration t1 = getFirstType ("package foo; class A { void foo () { System.out.println (\"Hello World!\"); }}");
+	// TODO: check that String is set correctly
+	assert diagnostics.errorCount () == 0 : "Errors found";
+    }
+
+    @Test
+    public void testNoErrorsOnFQNStaticMethodCall () {
+	TypeDeclaration t1 = getFirstType ("package foo; class A { void foo () { java.lang.System.out.println (\"Hello World!\"); }}");
+	// TODO: check that String is set correctly
+	assert diagnostics.errorCount () == 0 : "Errors found";
+    }
+
     private TypeDeclaration getFirstType (String txt) {
 	return getTypes (txt).get (0);
     }
