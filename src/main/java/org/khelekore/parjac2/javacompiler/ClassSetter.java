@@ -288,8 +288,12 @@ public class ClassSetter {
 		String id = an.getLastPart ();
 		VariableInfo fi = cip.getFieldInformation (fn, id);
 		if (fi != null) {
-		    if (!isAccessible (et, fn, fi))
+		    if (isAccessible (et, fn, fi)) {
+			an.setFullName (fi.getTypeName ());
+			// TODO: we need to store that we found a field access!
+		    } else {
 			error (an, "Field: %s in class %s is not accessible", id, fn.getFullDotName ());
+		    }
 		} else {
 		    FullNameHandler innerClassCandidate = fn.getInnerClass (id);
 		    FullNameHandler foundInnerClass = getVisibleType (null, innerClassCandidate);
@@ -584,6 +588,7 @@ public class ClassSetter {
 
     /** Try to find an outer class that has the inner classes for misdirected outer classes.
      */
+    // TODO: We need to verify if this works correctly
     private ResolvedClass tryAllParts (EnclosingTypes et, NamePartHandler nph, ParsePosition pp) {
 	StringBuilder sb = new StringBuilder ();
 	// group package names to class "java.util.HashMap"
@@ -621,6 +626,11 @@ public class ClassSetter {
     }
 
     private ResolvedClass resolve (EnclosingTypes et, FullNameHandler name, ParsePosition pos) {
+	// Is it a direct class?
+	FullNameHandler visibleType = getVisibleType (et, name);
+	if (visibleType != null)
+	    return new ResolvedClass (visibleType);
+
 	FullNameHandler currentClass = currentClass (et);
 	String simpleName = name.getFullDotName ();
 
@@ -633,13 +643,6 @@ public class ClassSetter {
 	TypeParameter tp = getTypeParameter (et, simpleName);
 	if (tp != null)
 	    return new ResolvedClass (tp);
-
-	// Is it a direct class?
-	if (packageName.isEmpty ()) {
-	    FullNameHandler visibleType = getVisibleType (et, name);
-	    if (visibleType != null)
-		return new ResolvedClass (visibleType);
-	}
 
 	// check for class in current package
 	FullNameHandler importedClass = resolveUsingImports (et, simpleName, pos);

@@ -116,7 +116,7 @@ public class CompiledTypesHolder {
 	}
 
 	@Override public String getFullDollarName () {
-	    return outer.getFullDotName () + "$" + td.getName ();
+	    return outer.getFullDollarName () + "$" + td.getName ();
 	}
 
 	@Override public boolean hasGenericType () {

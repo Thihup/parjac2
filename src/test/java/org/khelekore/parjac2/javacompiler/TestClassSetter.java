@@ -230,6 +230,16 @@ public class TestClassSetter {
 	getTypes ("class C { private String s; } class D { void foo (C c) { c.s.length (); }}", 1);
     }
 
+    @Test
+    public void testSeveralNestedFields () {
+	getTypes ("class C { C c; void foo () { return c.c.c.c.c; }}");
+    }
+
+    @Test
+    public void testSeveralNestedClasses () {
+	getTypes ("package foo; class C { class D { class E { class F {}}} void foo () {foo.C.D.E.F f = null; }}");
+    }
+
     private TypeDeclaration getFirstType (String txt) {
 	return getTypes (txt).get (0);
     }
