@@ -36,7 +36,7 @@ public class CompiledTypesHolder {
 	TypeDeclaration ni = foundClasses.get (fqn);
 	if (ni == null)
 	    return LookupResult.NOT_FOUND;
-	int flags = ni.getFlags ();
+	int flags = ni.flags ();
 	FullNameHandler name = typeToInfo.get (ni).getFullName ();
 	return new LookupResult (true, flags, name);
     }
@@ -241,7 +241,7 @@ public class CompiledTypesHolder {
     }
 
     /** Get the outer tree node for a given fully qualified name,
-     *  that is "some.package.Foo$Bar".
+     *  that is "some.package.Foo.Bar".
      */
     public TypeDeclaration getType (String fqn) {
 	return foundClasses.get (fqn);

@@ -78,7 +78,7 @@ public class EnumConstant extends AnonymousClass {
 	return body == null ? false : body.isLocalClass (td);
     }
 
-    @Override public int getFlags () {
+    @Override public int flags () {
 	return Flags.ACC_FINAL;
     }
 

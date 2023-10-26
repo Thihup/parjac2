@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class ExpressionType {
 
@@ -21,9 +22,10 @@ public abstract class ExpressionType {
     public static final PrimitiveExpressionType VOID = new PrimitiveExpressionType ("V");
     public static final ExpressionType NULL = new NullExpressionType ();
 
-    public static final ExpressionType STRING = new ObjectExpressionType (FullNameHandler.JL_STRING);
-    public static final ExpressionType OBJECT = new ObjectExpressionType (FullNameHandler.JL_OBJECT);
-    public static final ExpressionType CLASS = new ObjectExpressionType (FullNameHandler.JL_CLASS);
+    private static Map<FullNameHandler, ObjectExpressionType> objectExpressionTypeCache = new ConcurrentHashMap<> ();
+    public static final ExpressionType STRING = getObjectType (FullNameHandler.JL_STRING);
+    public static final ExpressionType OBJECT = getObjectType (FullNameHandler.JL_OBJECT);
+    public static final ExpressionType CLASS = getObjectType (FullNameHandler.JL_CLASS);
 
     private static final PrimitiveExpressionType[] primitives =
     { BYTE, SHORT, CHAR, INT, LONG, FLOAT, DOUBLE, BOOLEAN, VOID };
@@ -236,7 +238,7 @@ public abstract class ExpressionType {
 	}
 
 	@Override public FullNameHandler getFullNameHandler () {
-	    return FullNameHandler.ofDollarNAme (base.getDollarName () + repeat ("[]", dims));
+	    return FullNameHandler.ofDollarName (base.getDollarName () + repeat ("[]", dims));
 	}
 
 	@Override public String getDollarName () {
@@ -261,7 +263,7 @@ public abstract class ExpressionType {
     }
 
     public static ExpressionType getObjectType (FullNameHandler fnh) {
-	return new ObjectExpressionType (fnh);
+	return objectExpressionTypeCache.computeIfAbsent (fnh, ObjectExpressionType::new);
     }
 
     public static ExpressionType array (ExpressionType base, int dims) {

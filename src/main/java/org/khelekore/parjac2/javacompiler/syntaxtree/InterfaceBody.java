@@ -43,7 +43,7 @@ public class InterfaceBody extends SyntaxTreeNode {
 	nameToField = bh.getFields (constantDeclarations, ctx);
 
 	for (TypeDeclaration i : classDeclarations) {
-	    int flags = i.getFlags ();
+	    int flags = i.flags ();
 	    int clash = flags & (Flags.ACC_PRIVATE | Flags.ACC_PROTECTED);
 	    if (clash > 0) {
 		ctx.error (i.getPosition (), "Interface member type may not be %s",

@@ -170,7 +170,7 @@ public class BytecodeGenerator {
 				  String signature, ClassType superType, List<ClassType> superInterfaces) {
 	byte[] b = Classfile.of().build (ClassDesc.of (name.getFullDollarName ()), classBuilder -> {
 		classBuilder.withVersion (Classfile.JAVA_21_VERSION, 0);  // possible minor: PREVIEW_MINOR_VERSION
-		classBuilder.withFlags (td.getFlags () | icf.flags);
+		classBuilder.withFlags (td.flags () | icf.flags);
 		classBuilder.withSuperclass (ClassDesc.of ((superType != null ? superType : objectClassType).getFullDollarName ()));
 		addSuperInterfaces (classBuilder, superInterfaces);
 
@@ -217,7 +217,7 @@ public class BytecodeGenerator {
 		    desc = desc.arrayType (vd.getDims ().rank ());
 		String signature = getGenericSignature (type);
 		classBuilder.withField (name, desc, fb -> {
-			fb.withFlags (fdb.getFlags ());
+			fb.withFlags (fdb.flags ());
 			if (signature != null)
 			    fb.with (SignatureAttribute.of (Signature.parseFrom (signature)));
 		    });
@@ -237,7 +237,7 @@ public class BytecodeGenerator {
     private void addMethods (ClassBuilder classBuilder, TypeDeclaration td) {
 	td.getMethods ().forEach (m -> {
 		MethodSignatureHolder msh = getMethodSignature (m);
-		int flags = m.getFlags ();
+		int flags = m.flags ();
 		classBuilder.withMethod (m.getName (), msh.desc, flags, mb -> {
 			mb.withCode (cb -> {
 				cb.lineNumber (42);
@@ -353,7 +353,7 @@ public class BytecodeGenerator {
 	ClassDesc innerClass = ClassDesc.of (cip.getFullName (inner).getFullDollarName ());
 	Optional<ClassDesc> outerClass = Optional.of (ClassDesc.of (cip.getFullName (outer).getFullDollarName ()));
 	Optional<String> innerName = Optional.of (inner.getName ());
-	int flags = inner.getFlags ();
+	int flags = inner.flags ();
 	return InnerClassInfo.of (innerClass, outerClass, innerName, flags);
     }
 }

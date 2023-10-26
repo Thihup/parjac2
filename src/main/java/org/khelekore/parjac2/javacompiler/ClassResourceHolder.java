@@ -17,9 +17,13 @@ import java.util.jar.JarFile;
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.NoSourceDiagnostics;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
+import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
+import io.github.dmlloyd.classfile.Attributes;
 import io.github.dmlloyd.classfile.ClassModel;
 import io.github.dmlloyd.classfile.Classfile;
+import io.github.dmlloyd.classfile.FieldModel;
+import io.github.dmlloyd.classfile.attribute.SignatureAttribute;
 import io.github.dmlloyd.classfile.constantpool.ClassEntry;
 
 public class ClassResourceHolder {
@@ -145,6 +149,13 @@ public class ClassResourceHolder {
 	return Optional.of (r.superTypes);
     }
 
+    public VariableInfo getFieldInformation (String fqn, String field) {
+	ClasspathClassInformation r = foundClasses.get (fqn);
+	if (r == null)
+	    return null;
+	return r.fields.get (field);
+    }
+
     public boolean isInterface (String fqn) {
 	ClasspathClassInformation r = foundClasses.get (fqn);
 	if (r == null)
@@ -175,6 +186,7 @@ public class ClassResourceHolder {
 	private FullNameHandler superClass;
 	private List<FullNameHandler> superTypes;
 	private int accessFlags;
+	private Map<String, VariableInfo> fields;
 
 	public ClasspathClassInformation (FullNameHandler fullName) {
 	    this.fullName = fullName;
@@ -315,6 +327,7 @@ public class ClassResourceHolder {
 	public void parse () {
 	    parseAccessFlags ();
 	    parseSuperTypes ();
+	    parseFields ();
 	}
 
 	private void parseAccessFlags () {
@@ -345,5 +358,41 @@ public class ClassResourceHolder {
 	    String dotName = dollarName.replace ('$', '.');
 	    return FullNameHandler.of (dotName, dollarName);
 	}
+
+	private void parseFields () {
+	    Map<String, VariableInfo> fields = new HashMap<> ();
+	    for (FieldModel fm : model.fields ()) {
+		String name = fm.fieldName ().stringValue ();
+		int flags = fm.flags ().flagsMask ();
+		String typeName = fm.fieldType ().stringValue ();
+		Optional<SignatureAttribute> osa = fm.findAttribute (Attributes.SIGNATURE);
+		String signature = null;
+		if (osa.isPresent ()) {
+		    signature = osa.get ().signature ().stringValue ();
+		}
+		fields.put (name, new ClassResourceField (name, flags, typeName, signature));
+	    }
+	    r.fields = fields;
+	}
+    }
+
+    private record ClassResourceField (String name, int flags, String typeName, String signature) implements VariableInfo {
+	@Override public ParseTreeNode getType () {
+	    return null;
+	}
+
+	@Override public FullNameHandler getTypeName () {
+	    return parseTypeName (typeName);
+	}
+    }
+
+    private static FullNameHandler parseTypeName (String typeName) {
+	// TODO: this needs more work!
+	if (typeName.startsWith ("L") && typeName.endsWith (";")) {
+	    String slashName = typeName.substring (0, typeName.length () - 1);
+	    String dollarName = slashName.replace ('/', '.');
+	    return FullNameHandler.ofDollarName (dollarName);
+	}
+	throw new IllegalArgumentException ("Unhandled type: " + typeName);
     }
 }

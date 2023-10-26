@@ -1,5 +1,7 @@
 package org.khelekore.parjac2.javacompiler.syntaxtree;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.khelekore.parjac2.javacompiler.ClassInformationProvider;
 import org.khelekore.parjac2.javacompiler.GenericTypeHelper;
 
@@ -35,26 +37,32 @@ public interface FullNameHandler {
 
     /** Get a full name handler from the dotted name of an outer class "foo.bar.Baz" */
     static FullNameHandler ofSimpleClassName (String dotName) {
-	return new DotNameHandler (dotName);
+	return DotNameHandler.of (dotName);
     }
 
     /** Get a full name handler from the dollar name of an outer class "foo.bar.Baz$Quox" */
-    static FullNameHandler ofDollarNAme (String dollarName) {
-	return new SimpleNameHandler (dollarName.replace ('$', '.'), dollarName);
+    static FullNameHandler ofDollarName (String dollarName) {
+	return SimpleNameHandler.of (dollarName.replace ('$', '.'), dollarName);
     }
 
     static FullNameHandler of (String dot, String dollar) {
-	return new SimpleNameHandler (dot, dollar);
+	return SimpleNameHandler.of (dot, dollar);
     }
 
     /** Get the FullNameHandler for an inner class to this outer class */
     default FullNameHandler getInnerClass (String id) {
 	String dot = getFullDotName () + "." + id;
 	String dollar = getFullDollarName () + "$" + id;
-	return new SimpleNameHandler (dot, dollar);
+	return SimpleNameHandler.of (dot, dollar);
     }
 
     public record DotNameHandler (String dotName)  implements FullNameHandler {
+	private final static ConcurrentHashMap<String, DotNameHandler> nameCache = new ConcurrentHashMap<> ();
+
+	public static DotNameHandler of (String dotName) {
+	    return nameCache.computeIfAbsent (dotName, DotNameHandler::new);
+	}
+
 	public String getFullDotName () {
 	    return dotName;
 	}
@@ -65,6 +73,12 @@ public interface FullNameHandler {
     }
 
     public record SimpleNameHandler (String dotName, String dollarName)  implements FullNameHandler {
+	private final static ConcurrentHashMap<String, SimpleNameHandler> nameCache = new ConcurrentHashMap<> ();
+
+	public static SimpleNameHandler of (String dotName, String dollarName) {
+	    return nameCache.computeIfAbsent (dollarName, n -> new SimpleNameHandler (dotName, dollarName));
+	}
+
 	public String getFullDotName () {
 	    return dotName;
 	}

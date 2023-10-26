@@ -55,6 +55,11 @@ public class DottedName extends SyntaxTreeNode implements NamePartHandler {
 	return nameParts;
     }
 
+    public DottedName allButLast () {
+	List<String> ls = getParts ().subList (0, size () - 1);
+	return new DottedName (getPosition (), ls);
+    }
+
     public String getLastPart () {
 	return nameParts.get (nameParts.size () - 1);
     }

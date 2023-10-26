@@ -116,8 +116,12 @@ public class ClassInformationProvider {
 	return cth.getOriginFile (td);
     }
 
-    public FieldInformation<?> getFieldInformation (String fqn, String field) {
-	return null; // TODO: implement
+    public VariableInfo getFieldInformation (FullNameHandler fqn, String field) {
+	String dotName = fqn.getFullDotName ();
+	TypeDeclaration td = cth.getType (dotName);
+	if (td != null)
+	    return td.getFields ().get (field);
+	return crh.getFieldInformation (dotName, field);
     }
 
     public boolean isInterface (String fqn) {

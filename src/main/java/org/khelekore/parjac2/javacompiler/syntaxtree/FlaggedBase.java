@@ -10,7 +10,7 @@ public abstract class FlaggedBase extends SyntaxTreeNode implements Flagged {
     }
 
     /** Get the flags for this type */
-    @Override public int getFlags () {
+    @Override public int flags () {
 	return flags;
     }
 

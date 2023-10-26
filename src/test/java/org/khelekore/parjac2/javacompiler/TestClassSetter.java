@@ -5,10 +5,14 @@ import java.util.List;
 import java.util.Map;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
+import org.khelekore.parjac2.javacompiler.syntaxtree.Block;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
+import org.khelekore.parjac2.javacompiler.syntaxtree.DottedName;
+import org.khelekore.parjac2.javacompiler.syntaxtree.ExpressionStatement;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FieldDeclarationBase;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.MethodDeclarationBase;
+import org.khelekore.parjac2.javacompiler.syntaxtree.MethodInvocation;
 import org.khelekore.parjac2.javacompiler.syntaxtree.OrdinaryCompilationUnit;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeParameter;
@@ -139,6 +143,12 @@ public class TestClassSetter {
     }
 
     @Test
+    public void testFieldFoundOverGenericType () {
+	getFirstType ("package foo; class C<T> { String T; Object foo () { return T; }}");
+	assert diagnostics.errorCount () == 0 : "Errors found";
+    }
+
+    @Test
     public void testJavaLangImplicitImport () {
 	TypeDeclaration t1 = getFirstType ("package foo; class C { String s; }");
 	checkFieldType (t1, "s", "java.lang.String");
@@ -158,30 +168,66 @@ public class TestClassSetter {
 
     @Test
     public void testNoErrorsOnInstanceMethodCall () {
-	TypeDeclaration t1 = getFirstType ("package foo; class A { void foo (A a) { a.foo(null); }}");
-	// TODO: check that a is not set in the method call
-	assert diagnostics.errorCount () == 0 : "Errors found";
+	testTypeSetOnVariable ("package foo; class A { void foo (A a) { a.foo (null); }}", "foo.A");
+    }
+
+    @Test
+    public void testNoErrorsOnFieldMethodCall () {
+	testTypeSetOnVariable ("package foo; class A { A a; void foo () { a.foo (null); }}", "foo.A");
     }
 
     @Test
     public void testNoErrorsOnStaticMethodCall () {
-	TypeDeclaration t1 = getFirstType ("package foo; class A { void foo () { String.join (\".\", \"a\", \"b\"); }}");
-	// TODO: check that String is set correctly
+	testTypeSetOnVariable ("package foo; class A { void foo () { String.join (\".\", \"a\", \"b\"); }}", "java.lang.String");
+    }
+
+    @Test
+    public void testNoErrorsOnFQNStaticMethodCall () {
+	testTypeSetOnVariable ("package foo; class A { void foo () { java.lang.String.join (\".\", \"a\", \"b\"); }}", "java.lang.String");
+    }
+
+    private void testTypeSetOnVariable (String txt, String expectedType) {
+	TypeDeclaration t = getFirstType (txt);
+	MethodDeclarationBase md = t.getMethods ().get (0);
+	Block block = (Block)md.getMethodBody ();
+	List<ParseTreeNode> statements = block.get ();
+	ExpressionStatement es = (ExpressionStatement)statements.get (0);
+	MethodInvocation mi = (MethodInvocation)es.getStatement ();
+	ParseTreeNode on = mi.getOn ();
+	DottedName dn = (DottedName)on;
+	FullNameHandler fn = dn.getFullNameHandler ();
+	assert fn != null : "Expected to find type";
+	assert fn.getFullDotName ().equals (expectedType) : "Expected to have correct type, but got: " + fn.getFullDotName ();
 	assert diagnostics.errorCount () == 0 : "Errors found";
     }
 
     @Test
     public void testNoErrorsOnStaticFieldMethodCall () {
-	TypeDeclaration t1 = getFirstType ("package foo; class A { void foo () { System.out.println (\"Hello World!\"); }}");
-	// TODO: check that String is set correctly
+	getFirstType ("package foo; class A { void foo () { System.out.println (\"Hello World!\"); }}");
 	assert diagnostics.errorCount () == 0 : "Errors found";
     }
 
     @Test
-    public void testNoErrorsOnFQNStaticMethodCall () {
-	TypeDeclaration t1 = getFirstType ("package foo; class A { void foo () { java.lang.System.out.println (\"Hello World!\"); }}");
-	// TODO: check that String is set correctly
+    public void testNoErrorsOnFQNStaticFieldMethodCall () {
+	getFirstType ("package foo; class A { void foo () { java.lang.System.out.println (\"Hello World!\"); }}");
 	assert diagnostics.errorCount () == 0 : "Errors found";
+    }
+
+    @Test
+    public void testFieldConflictsWithInnerClass () {
+	getFirstType ("class G { class T{}; String T; void foo () { T = null; }}");
+	assert diagnostics.errorCount () == 0 : "Errors found";
+    }
+
+    @Test
+    public void testOwnPrivateFieldIsAccessible () {
+	getFirstType ("class C { private String s; void foo () { s.length (); }}");
+	assert diagnostics.errorCount () == 0 : "Errors found";
+    }
+
+    @Test
+    public void testOtherPrivateFieldIsAccessible () {
+	getTypes ("class C { private String s; } class D { void foo (C c) { c.s.length (); }}", 1);
     }
 
     private TypeDeclaration getFirstType (String txt) {
@@ -189,10 +235,14 @@ public class TestClassSetter {
     }
 
     private List<TypeDeclaration> getTypes (String txt) {
+	return getTypes (txt, 0);
+    }
+
+    private List<TypeDeclaration> getTypes (String txt, int expectedErrors) {
 	ParsedEntry tree = syntaxTree (txt);
 	cip.addTypes (tree.getRoot (), tree.getOrigin ());
 	ClassSetter.fillInClasses (cip, List.of (tree), diagnostics);
-	assert !diagnostics.hasError () : "Got parser errors: " + TestParserHelper.getParseOutput (diagnostics);
+	assert diagnostics.errorCount () == expectedErrors : "Got unexpected number of errors: " + TestParserHelper.getParseOutput (diagnostics);
 	OrdinaryCompilationUnit ocu = (OrdinaryCompilationUnit)tree.getRoot ();
 	return ocu.getTypes ();
     }

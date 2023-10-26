@@ -38,4 +38,8 @@ public class MethodInvocation extends SyntaxTreeNode {
 	    v.accept (types);
 	v.accept (mi);
     }
+
+    public ParseTreeNode getOn () {
+	return on;
+    }
 }

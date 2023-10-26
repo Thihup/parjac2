@@ -165,7 +165,7 @@ public class Compiler {
     }
 
     private void setFlag (Flagged ft) {
-	int flags = ft.getFlags ();
+	int flags = ft.flags ();
 	if (!Flags.isPrivate (flags) && !Flags.isProtected (flags))
 	    ft.makePublic ();
     }

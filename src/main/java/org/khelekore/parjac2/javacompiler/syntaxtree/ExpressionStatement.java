@@ -21,4 +21,8 @@ public class ExpressionStatement extends SyntaxTreeNode {
     @Override public void visitChildNodes (NodeVisitor v) {
 	v.accept (statementExpression);
     }
+
+    public ParseTreeNode getStatement () {
+	return statementExpression;
+    }
 }

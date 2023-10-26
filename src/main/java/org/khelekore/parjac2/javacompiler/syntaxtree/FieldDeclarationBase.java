@@ -10,7 +10,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public abstract class FieldDeclarationBase extends FlaggedBase {
     private List<ParseTreeNode> modifiers;
-    private ParseTreeNode type;
+    private ParseTreeNode type;  // may be ClassType or TokenType (for char and similar)
     private VariableDeclaratorList list;
 
     public FieldDeclarationBase (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children, FlagCalculator flagCalculator) {

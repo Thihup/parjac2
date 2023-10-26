@@ -231,14 +231,26 @@ public class ClassSetter {
     }
 
     private EnclosingTypes setFormalParameterListTypes (EnclosingTypes et, FormalParameterList args) {
+	Map<String, VariableInfo> variables = new HashMap<> ();
 	if (args != null) {
 	    for (FormalParameterBase fp : args.getParameters ()) {
 		checkFormalParameterModifiers (et, fp.getModifiers ());
 		setType (et, fp.getType ());
+		String id = fp.name ();
+		VariableInfo previous = variables.put (id, fp);
+		if (previous != null) {
+		    error (fp, "ClassSetter.setFormalParameterListTypes: name %s already in use", id);
+		}
 	    }
 	}
-	// TODO: qwerty create a scope with argument names.
-	return et;
+	return enclosingVariables (et, variables);
+    }
+
+    private void checkFormalParameterModifiers (EnclosingTypes et, List<ParseTreeNode> modifiers) {
+	for (ParseTreeNode n : modifiers) {
+	    if (n instanceof Annotation a)
+		setType (et, a.getTypeName ());
+	}
     }
 
     private void setTypesForMethodStatement (EnclosingTypes et, ParseTreeNode p) {
@@ -248,8 +260,8 @@ public class ClassSetter {
 	    ParseTreeNode pp = partsToHandle.removeFirst ();
 	    switch (pp) {
 	    case ClassType ct -> setType (et, ct);
-	    case AmbiguousName an -> {} // qwerty
-	    case ExpressionName en -> {} // qwerty 
+	    case AmbiguousName an -> reclassifyAmbiguousName (et, an);
+	    case ExpressionName en -> reclassifyAmbiguousName (et, en);
 	    case DottedName dt -> setType (et, dt);
 	    case MethodReference mr -> {
 		// skip for now
@@ -260,6 +272,72 @@ public class ClassSetter {
 	}
     }
 
+    private void reclassifyAmbiguousName (EnclosingTypes et, DottedName an) {
+	if (an.size () == 1) {
+	    tryToSetFullNameOnSimpleName (et, an);
+	} else {
+	    DottedName leftPart = an.allButLast ();
+	    reclassifyAmbiguousName (et, leftPart);
+	    FullNameHandler fn = leftPart.getFullNameHandler ();
+	    if (fn == null) { // (part of) package name
+		// since name is fully specified we do not want to check outer enclosures
+		FullNameHandler fqn = getVisibleType (null, FullNameHandler.ofSimpleClassName (an.getDotName ()));
+		if (fqn != null)
+		    an.setFullName (fqn);
+	    } else { // we have a type
+		String id = an.getLastPart ();
+		VariableInfo fi = cip.getFieldInformation (fn, id);
+		if (fi != null) {
+		    if (!isAccessible (et, fn, fi))
+			error (an, "Field: %s in class %s is not accessible", id, fn.getFullDotName ());
+		} else {
+		    FullNameHandler innerClassCandidate = fn.getInnerClass (id);
+		    FullNameHandler foundInnerClass = getVisibleType (null, innerClassCandidate);
+		    if (foundInnerClass != null)
+			an.setFullName (foundInnerClass);
+		    else
+			error (an, "No field: %s, found in class: %s", id, fn.getFullDotName ());
+		}
+	    }
+	}
+    }
+
+    private FullNameHandler tryToSetFullNameOnSimpleName (EnclosingTypes et, DottedName an) {
+	String name = an.getLastPart ();
+	VariableInfo fi = getVariable (et, name);
+	if (fi != null) { // known variable
+	    ParseTreeNode p = fi.getType ();
+	    if (p instanceof TokenNode) {
+		// TODO: we should probably set ExpressionType or someting?
+	    } else if (p instanceof ClassType ct) {
+		an.setFullName (ct.getFullNameHandler ());
+	    } else {
+		throw new IllegalStateException ("Unhandled type: " + p.getClass ().getName () + ": " + p);
+	    }
+	} else {
+	    FullNameHandler fn = FullNameHandler.ofSimpleClassName (name);
+	    ResolvedClass fqn = resolve (et, fn, an.getPosition ());
+	    if (fqn != null)
+		an.setFullName (fqn.type);
+	}
+	return an.getFullNameHandler ();
+    }
+
+    private VariableInfo getVariable (EnclosingTypes et, String name) {
+	while (et != null) {
+	    VariableInfo fi = et.enclosure ().getField (name);
+	    if (fi != null)
+		return fi;
+	    et = et.previous ();
+	}
+	return null;
+    }
+
+    private boolean isAccessible (EnclosingTypes et, FullNameHandler fqn, VariableInfo fi) {
+	FullNameHandler topLevelClass = et == null ? null : lastFQN (et);
+	return isAccessible (et, fqn, topLevelClass, fi.flags ());
+    }
+
     private void checkAnnotations (EnclosingTypes et, List<? extends ParseTreeNode> annotations) {
 	if (annotations == null)
 	    return;
@@ -268,13 +346,6 @@ public class ClassSetter {
 	    case Annotation a -> setType (et, a.getTypeName ());
 	    default -> error (t, "ClassSetter: Unhandled annotation: %s, %s", t.getClass ().getName (), t);
 	    }
-	}
-    }
-
-    private void checkFormalParameterModifiers (EnclosingTypes et, List<ParseTreeNode> modifiers) {
-	for (ParseTreeNode n : modifiers) {
-	    if (n instanceof Annotation a)
-		setType (et, a.getTypeName ());
 	}
     }
 
@@ -455,11 +526,15 @@ public class ClassSetter {
     }
 
     private boolean isAccessible (EnclosingTypes et, FullNameHandler fqn, FullNameHandler topLevelClass, LookupResult r) {
-	if (Flags.isPublic (r.accessFlags ())) {
+	return isAccessible (et, fqn, topLevelClass, r.accessFlags ());
+    }
+
+    private boolean isAccessible (EnclosingTypes et, FullNameHandler fqn, FullNameHandler topLevelClass, int flags) {
+	if (Flags.isPublic (flags)) {
 	    return true;
-	} else if (Flags.isProtected (r.accessFlags ())) {
+	} else if (Flags.isProtected (flags)) {
 	    return samePackage (fqn, packageName) || insideSuperClass (et, fqn);
-	} else if (Flags.isPrivate (r.accessFlags ())) {
+	} else if (Flags.isPrivate (flags)) {
 	    return sameTopLevelClass (fqn, topLevelClass);
 	}
 	// No access level
@@ -671,7 +746,7 @@ public class ClassSetter {
 	    }
 	}
 	FullNameHandler fqn, visibleType;
-	fqn = tryPackagename (id, pos);
+	fqn = tryPackagename (id);
 	if (fqn != null && (visibleType = getVisibleType (et, fqn)) != null)
 	    return visibleType;
 	fqn = trySingleStaticImport (id);
@@ -691,7 +766,7 @@ public class ClassSetter {
 	return et.getTypeParameter (id);
     }
 
-    private FullNameHandler tryPackagename (String id, ParsePosition pos) {
+    private FullNameHandler tryPackagename (String id) {
 	if (packageName == null)
 	    return null;
 	return FullNameHandler.ofSimpleClassName (packageName + "." + id);
@@ -707,8 +782,9 @@ public class ClassSetter {
 	    }
 	}
 	if (matches.size () > 1) {
+	    List<String> ls = matches.stream ().map (FullNameHandler::getFullDotName).toList ();
 	    diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), pos,
-							 "Ambigous type: %s: %s", id, matches));
+							 "Ambiguous type: %s, possible options: %s", id, ls));
 	}
 	if (matches.isEmpty ())
 	    return null;
@@ -725,7 +801,8 @@ public class ClassSetter {
 
     private FullNameHandler tryStaticImportOnDemand (EnclosingTypes et, String id) {
 	for (StaticImportOnDemandDeclaration siod : ih.siod) {
-	    FullNameHandler visibleType = getVisibleType (et, FullNameHandler.ofDollarNAme (siod.getName ().getDotName () + "$" + id));
+	    FullNameHandler visibleType =
+		getVisibleType (et, FullNameHandler.ofDollarName (siod.getName ().getDotName () + "$" + id));
 	    if (visibleType != null) {
 		siod.markUsed ();
 		return visibleType;
@@ -747,7 +824,7 @@ public class ClassSetter {
 	    String fqn = si.getType ().getDotName ();
 	    String field = si.getInnerId ();
 	    FullNameHandler visibleType = getVisibleType (null, fullName);
-	    if (visibleType == null && cip.getFieldInformation (fqn, field) == null) {
+	    if (visibleType == null && cip.getFieldInformation (visibleType, field) == null) {
 		diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), i.getPosition (),
 							     "Type %s has no symbol: %s", fqn, field));
 		return;
@@ -766,7 +843,11 @@ public class ClassSetter {
 	return new EnclosingTypes (previous, new TypeParameterEnclosure (nameToTypeParameter));
     }
 
-    private record EnclosingTypes (EnclosingTypes previous, Enclosure e)
+    private EnclosingTypes enclosingVariables (EnclosingTypes previous, Map<String, VariableInfo> nameToVariable) {
+	return new EnclosingTypes (previous, new VariableEnclosure (nameToVariable));
+    }
+
+    private record EnclosingTypes (EnclosingTypes previous, Enclosure<?> enclosure)
 	implements Iterable<EnclosingTypes> {
 
 	public Iterator<EnclosingTypes> iterator () {
@@ -774,15 +855,15 @@ public class ClassSetter {
 	}
 
 	public TypeDeclaration td () {
-	    return e.td ();
+	    return enclosure.td ();
 	}
 
 	public FullNameHandler fqn () {
-	    return e.fqn ();
+	    return enclosure.fqn ();
 	}
 
 	public TypeParameter getTypeParameter (String id) {
-	    return e.getTypeParameter (id);
+	    return enclosure.getTypeParameter (id);
 	}
 
 	private static class ETIterator implements Iterator<EnclosingTypes> {
@@ -804,19 +885,27 @@ public class ClassSetter {
 	}
     }
 
-    private interface Enclosure {
+    private interface Enclosure<V extends VariableInfo> {
 	default TypeDeclaration td () { return null; }
 	default FullNameHandler fqn () { return null; }
 	default TypeParameter getTypeParameter (String id) { return null; }
+	Map<String, V> getFields ();
+	default V getField (String name) { return getFields ().get (name); }
     }
 
-    private record TypeEnclosure (TypeDeclaration td, FullNameHandler fqn) implements Enclosure {
+    private record TypeEnclosure (TypeDeclaration td, FullNameHandler fqn) implements Enclosure<FieldInfo> {
 	@Override public TypeDeclaration td () { return td; }
 	@Override public FullNameHandler fqn () { return fqn; }
+	@Override public Map<String, FieldInfo> getFields () { return td.getFields (); }
     }
 
-    private record TypeParameterEnclosure (Map<String, TypeParameter> nameToTypeParameter) implements Enclosure {
+    private record TypeParameterEnclosure (Map<String, TypeParameter> nameToTypeParameter) implements Enclosure<VariableInfo> {
 	@Override public TypeParameter getTypeParameter (String id) { return nameToTypeParameter.get (id); }
+	@Override public Map<String, VariableInfo> getFields () { return Map.of (); }
+    }
+
+    private record VariableEnclosure (Map<String, VariableInfo> variables) implements Enclosure<VariableInfo> {
+	@Override public Map<String, VariableInfo> getFields () { return variables; }
     }
 
     private void error (ParseTreeNode where, String template, Object... args) {

@@ -62,7 +62,7 @@ public class UnqualifiedClassInstanceCreationExpression extends AnonymousClass {
 	return body == null ? false : body.isLocalClass (td);
     }
 
-    @Override public int getFlags () {
+    @Override public int flags () {
 	// TODO: fill in flags
 	return 0;
     }

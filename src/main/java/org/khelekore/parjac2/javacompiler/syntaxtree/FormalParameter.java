@@ -20,7 +20,8 @@ public class FormalParameter extends FormalParameterBase {
 	type = children.get (i++);
 	var = (VariableDeclaratorId)children.get (i);
     }
-    @Override public Object getValue() {
+
+    @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	if (!modifiers.isEmpty ())
 	    sb.append (modifiers).append (" ");
@@ -36,6 +37,10 @@ public class FormalParameter extends FormalParameterBase {
 
     @Override public List<ParseTreeNode> getModifiers () {
 	return modifiers;
+    }
+
+    @Override public String name () {
+	return var.getName ();
     }
 
     @Override public ParseTreeNode getType () {
