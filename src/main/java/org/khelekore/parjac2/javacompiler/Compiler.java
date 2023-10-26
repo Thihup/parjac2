@@ -149,6 +149,16 @@ public class Compiler {
 	 * 2: Set classes for local variables, field access and expressions
 	 */
 	runTimed (() -> ClassSetter.fillInClasses (cip, trees, diagnostics), "Setting classes");
+
+	// TODO: implement
+	// Check constructors and make sure there is a no-args constructor if needed
+	//runTimed (() -> addImplicitMethods (trees), "Checking constructors");
+	//runTimed (() -> checkNamesAndModifiers (trees), "Checking names and modifiers");
+
+	// TODO: not sure about this one.
+	//runTimed (() -> setFieldsAndMethods (trees), "Setting fields and method types");
+
+	//runTimed (() -> checkReturns (trees), "Checking returns");
     }
 
     private void flagInterfaceMembersAsPublic () {
