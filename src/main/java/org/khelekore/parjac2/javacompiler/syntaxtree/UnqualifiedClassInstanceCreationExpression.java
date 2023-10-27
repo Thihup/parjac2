@@ -67,7 +67,7 @@ public class UnqualifiedClassInstanceCreationExpression extends AnonymousClass {
 	return 0;
     }
 
-    public ClassType getSuperType () {
+    public ClassType getSuperClass () {
 	return type.getType ();
     }
 
@@ -79,7 +79,7 @@ public class UnqualifiedClassInstanceCreationExpression extends AnonymousClass {
 	return body.getMethods ();
     }
 
-    public List<ConstructorDeclaration> getConsructors () {
+    public List<ConstructorDeclaration> getConstructors () {
 	return List.of ();
     }
 

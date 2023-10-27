@@ -3,17 +3,22 @@ package org.khelekore.parjac2.javacompiler.syntaxtree;
 import java.util.Collections;
 import java.util.List;
 
+import org.khelekore.parjac2.javacompiler.Context;
+import org.khelekore.parjac2.javacompiler.JavaTokens;
+import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
-public class ConstructorDeclaration extends SyntaxTreeNode implements ConstructorDeclarationBase {
+public class ConstructorDeclaration extends FlaggedBase implements ConstructorDeclarationBase {
     private final List<ParseTreeNode> modifiers;
     private final ConstructorDeclarator declarator;
     private final Throws t;
     private final ConstructorBody body;
 
-    public ConstructorDeclaration (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    private static FlagCalculator flagCalculator = FlagCalculator.SIMPLE_ACCESS;
+
+    public ConstructorDeclaration (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
 	if (children.get (i) instanceof Multiple)
@@ -23,6 +28,25 @@ public class ConstructorDeclaration extends SyntaxTreeNode implements Constructo
 	declarator = (ConstructorDeclarator)children.get (i++);
 	t = (rule.size () > i + 1) ? (Throws)children.get (i++) : null;
 	body = (ConstructorBody)children.get (i);
+	flags = flagCalculator.calculate (ctx, modifiers, getPosition ());
+    }
+
+    public static ConstructorDeclaration create (ParsePosition pos, JavaTokens javaTokens,
+						 int flags, String id, List<ParseTreeNode> superCallArguments) {
+	ConstructorDeclarator d = new ConstructorDeclarator (pos, id);
+	ArgumentList args = new ArgumentList (pos, superCallArguments);
+	ExplicitConstructorInvocation eci = new ExplicitConstructorInvocation (pos, javaTokens, args);
+	ConstructorBody body = new ConstructorBody (pos, eci);
+	return new ConstructorDeclaration (pos, flags, d, body);
+    }
+
+    private ConstructorDeclaration (ParsePosition pos, int flags, ConstructorDeclarator d, ConstructorBody body) {
+	super (pos);
+	this.modifiers = List.of ();
+	this.declarator = d;
+	this.t = null;
+	this.body = body;
+	this.flags = flags;
     }
 
     @Override public Object getValue () {
@@ -50,6 +74,10 @@ public class ConstructorDeclaration extends SyntaxTreeNode implements Constructo
 
     public TypeParameters getTypeParameters () {
 	return declarator.getTypeParameters ();
+    }
+
+    public String getName () {
+	return declarator.getName ();
     }
 
     public ReceiverParameter getReceiverParameter () {

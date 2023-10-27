@@ -18,6 +18,7 @@ public class EnumDeclaration extends TypeDeclaration {
     private final EnumBody body;
 
     private static FlagCalculator flagCalculator = FlagCalculator.SIMPLE_ACCESS;
+    private final static ClassType ENUM_SUPER = new ClassType (FullNameHandler.JL_ENUM);
 
     public EnumDeclaration (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
@@ -65,6 +66,10 @@ public class EnumDeclaration extends TypeDeclaration {
 	return null;
     }
 
+    @Override public ClassType getSuperClass () {
+	return ENUM_SUPER;
+    }
+
     @Override public List<TypeDeclaration> getInnerClasses () {
 	return body.getInnerClasses ();
     }
@@ -85,7 +90,7 @@ public class EnumDeclaration extends TypeDeclaration {
 	return body.getMethods ();
     }
 
-    public List<ConstructorDeclaration> getConsructors () {
+    public List<ConstructorDeclaration> getConstructors () {
 	return body.getConsructors ();
     }
 

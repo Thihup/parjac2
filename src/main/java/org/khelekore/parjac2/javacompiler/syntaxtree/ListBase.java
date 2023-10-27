@@ -3,6 +3,7 @@ package org.khelekore.parjac2.javacompiler.syntaxtree;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -20,6 +21,11 @@ public abstract class ListBase extends SyntaxTreeNode {
 	    for (int i = start, e = z.size (); i < e; i += every)
 		params.add (z.get (i));
 	}
+    }
+
+    public ListBase (ParsePosition pos, List<ParseTreeNode> params) {
+	super (pos);
+	this.params = params;
     }
 
     public List<ParseTreeNode> get () {

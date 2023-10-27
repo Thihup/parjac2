@@ -65,6 +65,10 @@ public class NormalInterfaceDeclaration extends TypeDeclaration {
 	return types;
     }
 
+    @Override public ClassType getSuperClass () {
+	return null;
+    }
+
     public List<ConstantDeclaration> getConstants () {
 	return body.getConstants ();
     }
@@ -98,7 +102,7 @@ public class NormalInterfaceDeclaration extends TypeDeclaration {
 	return body.getMethods ();
     }
 
-    public List<ConstructorDeclaration> getConsructors () {
+    public List<ConstructorDeclaration> getConstructors () {
 	return List.of ();
     }
 

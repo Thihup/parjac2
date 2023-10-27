@@ -3,6 +3,7 @@ package org.khelekore.parjac2.javacompiler.syntaxtree;
 import java.util.List;
 
 import org.khelekore.parjac2.javacompiler.Context;
+import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -18,6 +19,12 @@ public class ConstructorBody extends SyntaxTreeNode {
 	    eci = (ExplicitConstructorInvocation)children.get (i++);
 	if (rule.get (i) == ctx.getGrammar ().getRuleGroupId ("BlockStatements"))
 	    statements = (BlockStatements)children.get (i);
+    }
+
+    public ConstructorBody (ParsePosition pos, ExplicitConstructorInvocation eci) {
+	super (pos);
+	this.eci = eci;
+	statements = null;
     }
 
     @Override public Object getValue () {

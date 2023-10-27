@@ -51,6 +51,10 @@ public class AnnotationTypeDeclaration extends TypeDeclaration {
 	return null;
     }
 
+    @Override public ClassType getSuperClass () {
+	return null;
+    }
+
     @Override public List<TypeDeclaration> getInnerClasses () {
 	return body.getInnerClasses ();
     }
@@ -67,7 +71,7 @@ public class AnnotationTypeDeclaration extends TypeDeclaration {
 	return List.of ();
     }
 
-    public List<ConstructorDeclaration> getConsructors () {
+    public List<ConstructorDeclaration> getConstructors () {
 	return List.of ();
     }
 

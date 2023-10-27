@@ -21,6 +21,7 @@ public class RecordDeclaration extends TypeDeclaration {
     private final RecordBody body;
 
     private static FlagCalculator flagCalculator = FlagCalculator.SIMPLE_ACCESS;
+    private final static ClassType RECORD_SUPER = new ClassType (FullNameHandler.JL_RECORD);
 
     public RecordDeclaration (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
@@ -86,6 +87,10 @@ public class RecordDeclaration extends TypeDeclaration {
 	return typeParameters;
     }
 
+    @Override public ClassType getSuperClass () {
+	return RECORD_SUPER;
+    }
+
     @Override public List<TypeDeclaration> getInnerClasses () {
 	return body.getInnerClasses ();
     }
@@ -106,7 +111,7 @@ public class RecordDeclaration extends TypeDeclaration {
 	return body.getMethods ();
     }
 
-    public List<? extends ConstructorDeclarationBase> getConsructors () {
+    public List<? extends ConstructorDeclarationBase> getConstructors () {
 	List<CompactConstructorDeclaration> lsc = body.getCompactConstructors ();
 	List<ConstructorDeclaration> lsn = body.getConsructors ();
 	if (lsc.isEmpty ())

@@ -127,7 +127,8 @@ public class SyntaxTreeBuilder {
 	register ("ConstructorDeclarator", ConstructorDeclarator::new);
 	register ("SimpleTypeName",this::liftUp);
 	register ("ConstructorBody", ConstructorBody::new);
-	register ("ExplicitConstructorInvocation", ExplicitConstructorInvocation::new);
+	register ("ExplicitConstructorInvocation", (ctx, rule, input, children) ->
+		  new ExplicitConstructorInvocation (ctx, rule, input, children));
 	register ("EnumDeclaration", EnumDeclaration::new);
 	register ("EnumBody", EnumBody::new);
 	register ("EnumConstantList", EnumConstantList::new);

@@ -20,6 +20,8 @@ public abstract class TypeDeclaration extends FlaggedBase {
     /** Get the generic types of this type */
     public abstract TypeParameters getTypeParameters ();
 
+    public abstract ClassType getSuperClass ();
+
     /** Get all the inner classes, enums, interfaces and annotations */
     public abstract List<TypeDeclaration> getInnerClasses ();
 
@@ -53,7 +55,7 @@ public abstract class TypeDeclaration extends FlaggedBase {
 
     public abstract List<? extends MethodDeclarationBase> getMethods ();
 
-    public abstract List<? extends ConstructorDeclarationBase> getConsructors ();
+    public abstract List<? extends ConstructorDeclarationBase> getConstructors ();
 
     public abstract List<SyntaxTreeNode> getInstanceInitializers ();
 

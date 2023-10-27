@@ -90,6 +90,10 @@ public class EnumConstant extends AnonymousClass {
 	return ed;
     }
 
+    @Override public ClassType getSuperClass () {
+	return ed.getSuperClass ();
+    }
+
     @Override public Map<String, FieldInfo> getFields () {
 	return body.getFields ();
     }
@@ -98,7 +102,7 @@ public class EnumConstant extends AnonymousClass {
 	return body.getMethods ();
     }
 
-    public List<ConstructorDeclaration> getConsructors () {
+    public List<ConstructorDeclaration> getConstructors () {
 	return body.getConsructors ();
     }
 

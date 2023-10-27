@@ -39,6 +39,8 @@ public class BytecodeGenerator {
     private final Map<Token, String> tokenToDescriptor = new HashMap<> ();
     private final GenericTypeHelper genericTypeHelper;
 
+    private final TokenNode VOID_RETURN;
+
     private enum ImplicitClassFlags {
 	CLASS_FLAGS (Classfile.ACC_SUPER),
 	ENUM_FLAGS (Classfile.ACC_FINAL | Classfile.ACC_ENUM),
@@ -73,6 +75,7 @@ public class BytecodeGenerator {
 	tokenToDescriptor.put (javaTokens.VOID, "V");
 
 	genericTypeHelper = new GenericTypeHelper (tokenToDescriptor);
+	VOID_RETURN = new TokenNode (javaTokens.VOID, null);
     }
 
     public byte[] generate () {
@@ -131,7 +134,7 @@ public class BytecodeGenerator {
 
     private byte[] generateAnonymousClass (UnqualifiedClassInstanceCreationExpression ac) {
 	return generateClass (ac, ImplicitClassFlags.ANONYMOUS_CLASS_FLAGS, null,
-			      ac.getSuperType (), List.of ());
+			      ac.getSuperClass (), List.of ());
     }
 
     // TODO: we only want to generate a signature if we have any generic thing to deal with.
@@ -175,6 +178,7 @@ public class BytecodeGenerator {
 		addSuperInterfaces (classBuilder, superInterfaces);
 
 		addFields (classBuilder, td);
+		addConstructors (classBuilder, td);
 		addMethods (classBuilder, td);
 
 		/* TODO: check if we want to do this instead
@@ -234,13 +238,36 @@ public class BytecodeGenerator {
 	return null;
     }
 
+    private void addConstructors (ClassBuilder classBuilder, TypeDeclaration td) {
+	td.getConstructors ().forEach (c -> {
+		System.err.println ("About to handle constructor: " + c);
+		int flags = c.flags ();
+		MethodSignatureHolder msh = getMethodSignature (c);
+		classBuilder.withMethod ("<init>", msh.desc, flags, mb -> {
+			mb.withCode (cb -> {
+				cb.lineNumber (c.getPosition ().getLineNumber ()); // not correct, but at least somewhat close
+				cb.aload (0);
+				ClassDesc owner = getClassDesc (td.getSuperClass ());
+				cb.invokespecial (owner, "<init>", msh.desc);
+				cb.return_ ();
+			    });
+			if (msh.signature != null)
+			    mb.with (SignatureAttribute.of (MethodSignature.parseFrom (msh.signature)));
+		    });
+	    });
+    }
+
+    private MethodSignatureHolder getMethodSignature (ConstructorDeclarationBase c) {
+	return getMethodSignature (c.getTypeParameters (), c.getFormalParameterList (), VOID_RETURN);
+    }
+
     private void addMethods (ClassBuilder classBuilder, TypeDeclaration td) {
 	td.getMethods ().forEach (m -> {
 		MethodSignatureHolder msh = getMethodSignature (m);
 		int flags = m.flags ();
 		classBuilder.withMethod (m.getName (), msh.desc, flags, mb -> {
 			mb.withCode (cb -> {
-				cb.lineNumber (42);
+				cb.lineNumber (m.getPosition ().getLineNumber ()); // not correct, but at least somewhat close
 				cb.return_ ();});
 			if (msh.signature != null)
 			    mb.with (SignatureAttribute.of (MethodSignature.parseFrom (msh.signature)));
@@ -249,20 +276,22 @@ public class BytecodeGenerator {
     }
 
     private MethodSignatureHolder getMethodSignature (MethodDeclarationBase m) {
+	return getMethodSignature (m.getTypeParameters (), m.getFormalParameterList (), m.getResult ());
+    }
+
+    private MethodSignatureHolder getMethodSignature (TypeParameters tps, FormalParameterList params, ParseTreeNode result) {
 	StringBuilder sb = new StringBuilder ();
 	boolean foundGenericTypes = false;
-	TypeParameters tps = m.getTypeParameters ();
 	if (tps != null) {
 	    foundGenericTypes = true;
 	    genericTypeHelper.appendTypeParametersSignature (sb, tps, cip, false);
 	}
 
 	List<ClassDesc> paramDescs = List.of ();
-	FormalParameterList params = m.getFormalParameterList ();
 	sb.append ("(");
 	if (params != null) {
 	    paramDescs = new ArrayList<> (params.size ());
-	    for (FormalParameterBase fp : m.getFormalParameterList ().getParameters ()) {
+	    for (FormalParameterBase fp : params.getParameters ()) {
 		ParseTreeNode p = fp.getType ();
 		foundGenericTypes |= hasGenericType (p);
 		paramDescs.add (getParseTreeClassDesc (p));
@@ -271,10 +300,9 @@ public class BytecodeGenerator {
 	}
 	sb.append (")");
 
-	ParseTreeNode p = m.getResult ();
-	foundGenericTypes |= hasGenericType (p);
-	ClassDesc returnDesc = getParseTreeClassDesc (p);
-	sb.append (genericTypeHelper.getGenericType (p, cip, true));
+	foundGenericTypes |= hasGenericType (result);
+	ClassDesc returnDesc = getParseTreeClassDesc (result);
+	sb.append (genericTypeHelper.getGenericType (result, cip, true));
 
 	MethodTypeDesc descriptor = MethodTypeDesc.of (returnDesc, paramDescs.toArray (new ClassDesc[paramDescs.size ()]));
 
@@ -304,6 +332,8 @@ public class BytecodeGenerator {
     }
 
     private ClassDesc getClassDesc (ClassType ct) {
+	if (ct == null)
+	    return ClassDesc.of ("java.lang.Object"); // common for super classes to be null
 	return ClassDesc.of (ct.getFullDollarName ());
     }
 

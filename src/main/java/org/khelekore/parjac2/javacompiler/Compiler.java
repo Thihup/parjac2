@@ -150,9 +150,8 @@ public class Compiler {
 	 */
 	runTimed (() -> ClassSetter.fillInClasses (cip, trees, diagnostics), "Setting classes");
 
-	// TODO: implement
 	// Check constructors and make sure there is a no-args constructor if needed
-	//runTimed (() -> addImplicitMethods (trees), "Checking constructors");
+	runTimed (() -> ImplicitMethodGenerator.addImplicitMethods (javaTokens, trees, diagnostics), "Adding implicit methods");
 	//runTimed (() -> checkNamesAndModifiers (trees), "Checking names and modifiers");
 
 	// TODO: not sure about this one.

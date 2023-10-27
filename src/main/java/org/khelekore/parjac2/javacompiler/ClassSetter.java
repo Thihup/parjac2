@@ -116,7 +116,7 @@ public class ClassSetter {
 		case EnumDeclaration ed -> setTypes (et, ed.getSuperInterfaces ());
 		case NormalInterfaceDeclaration i -> registerSuperTypes (et, i);
 		case RecordDeclaration rd -> setTypes (et, rd.getSuperInterfaces ());
-		case UnqualifiedClassInstanceCreationExpression uc -> setType (et, uc.getSuperType ());
+		case UnqualifiedClassInstanceCreationExpression uc -> setType (et, uc.getSuperClass ());
 		case EnumConstant ec -> setTypes (et, ec.getParent ().getSuperInterfaces ());
 		default -> error (td, "ClassSetter.registerSuperTypes: Unhandled type: %s", td.getClass ().getName ());
 		}
@@ -179,7 +179,7 @@ public class ClassSetter {
 	List<? extends MethodDeclarationBase> methods = td.getMethods ();
 	methods.forEach (m -> setMethodTypes (ett, m));
 
-	List<? extends ConstructorDeclarationBase> constructors = td.getConsructors ();
+	List<? extends ConstructorDeclarationBase> constructors = td.getConstructors ();
 	constructors.forEach (c -> setConstructorTypes (ett, c));
 
 	List<SyntaxTreeNode> instanceInitializers = td.getInstanceInitializers ();

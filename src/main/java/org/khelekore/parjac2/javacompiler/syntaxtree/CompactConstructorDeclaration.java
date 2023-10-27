@@ -3,6 +3,7 @@ package org.khelekore.parjac2.javacompiler.syntaxtree;
 import java.util.Collections;
 import java.util.List;
 
+import org.khelekore.parjac2.javacompiler.Flags;
 import org.khelekore.parjac2.javacompiler.Identifier;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
@@ -40,6 +41,14 @@ public class CompactConstructorDeclaration extends SyntaxTreeNode implements Con
 
     public TypeParameters getTypeParameters () {
 	return null;
+    }
+
+    public int flags () {
+	return Flags.ACC_PUBLIC;
+    }
+
+    public String getName () {
+	return name;
     }
 
     public ReceiverParameter getReceiverParameter () {

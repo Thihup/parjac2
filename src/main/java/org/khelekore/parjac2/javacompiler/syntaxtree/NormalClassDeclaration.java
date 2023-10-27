@@ -112,7 +112,7 @@ public class NormalClassDeclaration extends TypeDeclaration {
 	return body.getMethods ();
     }
 
-    public List<ConstructorDeclaration> getConsructors () {
+    public List<ConstructorDeclaration> getConstructors () {
 	return body.getConsructors ();
     }
 
