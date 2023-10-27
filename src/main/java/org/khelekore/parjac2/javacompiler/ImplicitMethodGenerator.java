@@ -9,7 +9,9 @@ import java.util.stream.Collectors;
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.SourceDiagnostics;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Block;
+import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ConstructorDeclaration;
+import org.khelekore.parjac2.javacompiler.syntaxtree.EnumConstant;
 import org.khelekore.parjac2.javacompiler.syntaxtree.EnumDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.MethodDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.NormalClassDeclaration;
@@ -23,6 +25,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class ImplicitMethodGenerator {
 
+    private final ClassInformationProvider cip;
     private final JavaTokens javaTokens;
     private final ParsedEntry tree;
     private final CompilerDiagnosticCollector diagnostics;
@@ -35,21 +38,24 @@ public class ImplicitMethodGenerator {
      *      Find methods, set type on arguments and add to scope of method
      *      Set type of expression
      */
-    public static void addImplicitMethods (JavaTokens javaTokens,
+    public static void addImplicitMethods (ClassInformationProvider cip,
+					   JavaTokens javaTokens,
 					   List<ParsedEntry> trees,
 					   CompilerDiagnosticCollector diagnostics) {
 	List<ImplicitMethodGenerator> imgs =
 	    trees.stream ()
 	    .filter (pe -> (pe.getRoot () instanceof OrdinaryCompilationUnit))
-	    .map (t -> new ImplicitMethodGenerator (javaTokens, t, diagnostics)).collect (Collectors.toList ());
+	    .map (t -> new ImplicitMethodGenerator (cip, javaTokens, t, diagnostics)).collect (Collectors.toList ());
 	if (diagnostics.hasError ())
 	    return;
 	imgs.parallelStream ().forEach (ImplicitMethodGenerator::addMethods);
     }
 
-    public ImplicitMethodGenerator (JavaTokens javaTokens,
+    public ImplicitMethodGenerator (ClassInformationProvider cip,
+				    JavaTokens javaTokens,
 				    ParsedEntry pe,
 				    CompilerDiagnosticCollector diagnostics) {
+	this.cip = cip;
 	this.javaTokens = javaTokens;
 	tree = pe;
 	this.diagnostics = diagnostics;
@@ -101,8 +107,23 @@ public class ImplicitMethodGenerator {
 	}
     }
 
+    private static final int ENUM_FIELD_FLAGS = Flags.ACC_PUBLIC | Flags.ACC_STATIC | Flags.ACC_FINAL | Flags.ACC_ENUM;
+
     private void addEnumFieldsAndMethods (EnumDeclaration e) {
 	// TODO: implement
+	// fields
+	for (EnumConstant ec : e.constants ()) {
+	    ClassType ct = new ClassType (cip.getFullName (e));
+	    e.addField (new FieldInfo (ec.getName (), ec.position (), ENUM_FIELD_FLAGS, ct, 0));
+	}
+	// E[] values()
+	// E valueOf(String)
+	// private constructor
+	if (e.getConstructors ().isEmpty ()) {
+	    // Add a default one
+	}
+	// private static E[] $values();
+	// static {};
     }
 
     private void forAllTypes (Consumer<TypeDeclaration> handler) {

@@ -315,6 +315,8 @@ public class ClassSetter {
 		// TODO: we should probably set ExpressionType or someting?
 	    } else if (p instanceof ClassType ct) {
 		an.setFullName (ct.getFullNameHandler ());
+	    } else if (p instanceof ArrayType at) {
+		// TODO: we should probably set ExpressionType or someting?
 	    } else {
 		throw new IllegalStateException ("Unhandled type: " + p.getClass ().getName () + ": " + p);
 	    }

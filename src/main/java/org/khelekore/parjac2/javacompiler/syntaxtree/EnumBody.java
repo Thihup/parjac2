@@ -32,7 +32,7 @@ public class EnumBody extends SyntaxTreeNode {
 	}
 	innerClasses = new ArrayList<> ();
 	if (constants != null) {
-	    constants.getConstants ().stream ().filter (EnumConstant::hasBody).forEach (innerClasses::add);
+	    constants.constants ().stream ().filter (EnumConstant::hasBody).forEach (innerClasses::add);
 	}
 	if (declarations != null)
 	    innerClasses.addAll (declarations.getInnerClasses ());
@@ -67,7 +67,7 @@ public class EnumBody extends SyntaxTreeNode {
 
     public void setParents (EnumDeclaration ed) {
 	if (constants != null)
-	    constants.getConstants ().forEach (c -> c.setParent (ed));
+	    constants.constants ().forEach (c -> c.setParent (ed));
     }
 
     public Map<String, FieldInfo> getFields () {
@@ -88,6 +88,10 @@ public class EnumBody extends SyntaxTreeNode {
 
     public List<StaticInitializer> getStaticInitializers () {
 	return declarations.getStaticInitializers ();
+    }
+
+    public List<EnumConstant> constants () {
+	return constants.constants ();
     }
 }
 

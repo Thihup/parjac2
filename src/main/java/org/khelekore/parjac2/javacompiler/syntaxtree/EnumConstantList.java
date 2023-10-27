@@ -31,7 +31,7 @@ public class EnumConstantList extends SyntaxTreeNode {
 	constants.forEach (v::accept);
     }
 
-    public List<EnumConstant> getConstants () {
+    public List<EnumConstant> constants () {
 	return constants;
     }
 }

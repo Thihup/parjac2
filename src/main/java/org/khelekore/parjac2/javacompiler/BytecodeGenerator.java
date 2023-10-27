@@ -215,7 +215,6 @@ public class BytecodeGenerator {
     private void addFields (ClassBuilder classBuilder, TypeDeclaration td) {
 	td.getFields ().forEach ((name, info) -> {
 		ParseTreeNode type = info.type ();
-		System.err.println ("adding field: " + info);
 		ClassDesc desc = getParseTreeClassDesc (type);
 		int arrayRank = info.arrayRank ();
 		if (arrayRank > 0)
@@ -241,7 +240,6 @@ public class BytecodeGenerator {
 
     private void addConstructors (ClassBuilder classBuilder, TypeDeclaration td) {
 	td.getConstructors ().forEach (c -> {
-		System.err.println ("About to handle constructor: " + c);
 		int flags = c.flags ();
 		MethodSignatureHolder msh = getMethodSignature (c);
 		classBuilder.withMethod (ConstantDescs.INIT_NAME, msh.desc, flags, mb -> {

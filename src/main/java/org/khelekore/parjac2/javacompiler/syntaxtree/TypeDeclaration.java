@@ -53,6 +53,10 @@ public abstract class TypeDeclaration extends FlaggedBase {
      */
     public abstract Map<String, FieldInfo> getFields ();
 
+    public void addField (FieldInfo fi) {
+	getFields ().put (fi.name (), fi);
+    }
+
     public abstract List<? extends MethodDeclarationBase> getMethods ();
 
     public abstract List<? extends ConstructorDeclarationBase> getConstructors ();

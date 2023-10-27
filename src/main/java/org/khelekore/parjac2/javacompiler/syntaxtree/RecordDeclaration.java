@@ -107,10 +107,6 @@ public class RecordDeclaration extends TypeDeclaration {
 	return body.getFields ();
     }
 
-    public void addField (FieldInfo fi) {
-	getFields ().put (fi.name (), fi);
-    }
-
     public List<MethodDeclaration> getMethods () {
 	return body.getMethods ();
     }

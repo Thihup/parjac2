@@ -18,8 +18,9 @@ public interface VariableInfo {
 	if (p instanceof TokenNode) {
 	    // TODO: we should probably set ExpressionType or someting?
 	}
-	if (p instanceof ClassType ct)
+	if (p instanceof ClassType ct) {
 	    return ct.getFullNameHandler ();
-	throw new IllegalStateException ("Unhandled type: " + p.getClass ().getName () + ": " + p);
+	}
+	throw new IllegalStateException ("Unhandled type: " + p.getClass ().getName () + ": " + p + ", position: " + p.position ());
     }
 }

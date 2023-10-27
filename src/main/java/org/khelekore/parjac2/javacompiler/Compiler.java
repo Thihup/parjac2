@@ -145,7 +145,7 @@ public class Compiler {
 	runTimed (() -> flagInterfaceMembersAsPublic (), "Flag interface members public");
 
 	// Add default constructors, fields and methods for enums, records and similar
-	runTimed (() -> ImplicitMethodGenerator.addImplicitMethods (javaTokens, trees, diagnostics), "Adding implicit methods");
+	runTimed (() -> ImplicitMethodGenerator.addImplicitMethods (cip, javaTokens, trees, diagnostics), "Adding implicit methods");
 	/*
 	 * 1: Set classes for fields, method parameters and method returns, setup scopes
 	 *    Scope hangs on class, method, for-clause and try (with resource) clause
