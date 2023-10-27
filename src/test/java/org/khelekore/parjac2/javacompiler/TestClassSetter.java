@@ -9,7 +9,6 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.Block;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.DottedName;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ExpressionStatement;
-import org.khelekore.parjac2.javacompiler.syntaxtree.FieldDeclarationBase;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.MethodDeclarationBase;
 import org.khelekore.parjac2.javacompiler.syntaxtree.MethodInvocation;
@@ -271,8 +270,7 @@ public class TestClassSetter {
 				 String expectedFieldType, String expectedTypeParam) {
 	Map<String, FieldInfo> fields = t1.getFields ();
 	FieldInfo fi = fields.get (fieldName);
-	FieldDeclarationBase fd = fi.fd ();
-	checkType ((ClassType)fd.getType (), expectedFieldType, expectedTypeParam);
+	checkType ((ClassType)fi.type (), expectedFieldType, expectedTypeParam);
     }
 
     private void checkType (ClassType type, String expectedType, String expectedTypeParam) {

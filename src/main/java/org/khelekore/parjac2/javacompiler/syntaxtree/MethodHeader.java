@@ -1,35 +1,47 @@
 package org.khelekore.parjac2.javacompiler.syntaxtree;
 
-import java.util.Collections;
 import java.util.List;
 
 import org.khelekore.parjac2.javacompiler.Context;
+import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class MethodHeader extends SyntaxTreeNode {
-    private TypeParameters types;
-    private List<ParseTreeNode> annotations;
-    private ParseTreeNode result;
-    private MethodDeclarator methodDeclarator;
-    private Throws t;
+    private final TypeParameters types;
+    private final List<ParseTreeNode> annotations;
+    private final ParseTreeNode result;
+    private final MethodDeclarator methodDeclarator;
+    private final Throws t;
 
     // Result MethodDeclarator [Throws]
     // TypeParameters {Annotation} Result MethodDeclarator [Throws]
     public MethodHeader (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	int i = 0;
-	annotations = Collections.emptyList ();
+	List<ParseTreeNode> anns = List.of ();
 	if (rule.get (0) == ctx.getGrammar ().getRuleGroupId ("TypeParameters")) {
 	    types = (TypeParameters)children.get (i++);
 	    if (children.get (i) instanceof Multiple)
-		annotations = ((Multiple)children.get (i++)).get ();
+		anns = ((Multiple)children.get (i++)).get ();
+	} else {
+	    types = null;
 	}
+	this.annotations = anns;
 	result = children.get (i++);
 	methodDeclarator = (MethodDeclarator)children.get (i++);
-	if (rule.size () > i)
-	    t = (Throws)children.get (i);
+	t = rule.size () > i ? (Throws)children.get (i) : null;
+    }
+
+    /** Create a method header for a method with a given name and return type, no arguments */
+    public MethodHeader (ParsePosition pos, String name, ParseTreeNode result) {
+	super (pos);
+	types = null;
+	annotations = null;
+	this.result = result;
+	methodDeclarator = new MethodDeclarator (pos, name);
+	t = null;
     }
 
     @Override public Object getValue() {

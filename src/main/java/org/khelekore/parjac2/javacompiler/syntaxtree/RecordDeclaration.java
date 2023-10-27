@@ -107,8 +107,16 @@ public class RecordDeclaration extends TypeDeclaration {
 	return body.getFields ();
     }
 
+    public void addField (FieldInfo fi) {
+	getFields ().put (fi.name (), fi);
+    }
+
     public List<MethodDeclaration> getMethods () {
 	return body.getMethods ();
+    }
+
+    public void addMethod (MethodDeclaration m) {
+	getMethods ().add (m);
     }
 
     public List<? extends ConstructorDeclarationBase> getConstructors () {
@@ -130,5 +138,9 @@ public class RecordDeclaration extends TypeDeclaration {
 
     public List<StaticInitializer> getStaticInitializers () {
 	return body.getStaticInitializers ();
+    }
+
+    public List<RecordComponent> getRecordComponents () {
+	return recordHeader.getRecordComponents ();
     }
 }

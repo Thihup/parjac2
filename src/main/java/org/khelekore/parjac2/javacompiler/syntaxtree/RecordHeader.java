@@ -35,4 +35,8 @@ public class RecordHeader extends SyntaxTreeNode {
     @Override public void visitChildNodes (NodeVisitor v) {
 	recordComponents.forEach (v::accept);
     }
+
+    public List<RecordComponent> getRecordComponents () {
+	return recordComponents;
+    }
 }

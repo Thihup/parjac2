@@ -4,11 +4,12 @@ import java.util.Collections;
 import java.util.List;
 
 import org.khelekore.parjac2.javacompiler.Identifier;
+import org.khelekore.parjac2.javacompiler.VariableInfo;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
-public class SimpleRecordComponent extends SyntaxTreeNode {
+public class SimpleRecordComponent extends SyntaxTreeNode implements VariableInfo {
 
     private final List<ParseTreeNode> modifiers;
     private final ParseTreeNode type;
@@ -32,5 +33,17 @@ public class SimpleRecordComponent extends SyntaxTreeNode {
     @Override public void visitChildNodes (NodeVisitor v) {
 	modifiers.forEach (v::accept);
 	v.accept (type);
+    }
+
+    @Override public int flags () {
+	return 0;
+    }
+
+    @Override public String name () {
+	return id;
+    }
+
+    @Override public ParseTreeNode type () {
+	return type;
     }
 }

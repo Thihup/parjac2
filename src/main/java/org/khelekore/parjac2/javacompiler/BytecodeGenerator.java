@@ -1,6 +1,7 @@
 package org.khelekore.parjac2.javacompiler;
 
 import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
@@ -44,7 +45,7 @@ public class BytecodeGenerator {
     private enum ImplicitClassFlags {
 	CLASS_FLAGS (Classfile.ACC_SUPER),
 	ENUM_FLAGS (Classfile.ACC_FINAL | Classfile.ACC_ENUM),
-	RECORD_FLAGS (Classfile.ACC_FINAL),  // qwerty: there does not seem to be any: Classfile.ACC_RECORD
+	RECORD_FLAGS (Classfile.ACC_FINAL | Classfile.ACC_SUPER),
 	INTERFACE_FLAGS (Classfile.ACC_INTERFACE | Classfile.ACC_ABSTRACT),
 	ANNOTATION_FLAGS (Classfile.ACC_ANNOTATION | Classfile.ACC_INTERFACE),
 	ENUM_CONSTANT_FLAGS (Classfile.ACC_FINAL),
@@ -106,9 +107,9 @@ public class BytecodeGenerator {
 			      enumClassType, List.of ());
     }
 
-    private byte[] generateClass (RecordDeclaration e) {
-	String signature = "Ljava/lang/Record;";
-	return generateClass (e, ImplicitClassFlags.RECORD_FLAGS, signature,
+    private byte[] generateClass (RecordDeclaration r) {
+	String signature = getClassSignature (r.getTypeParameters (), r.getSuperClass (), r.getSuperInterfaces ());
+	return generateClass (r, ImplicitClassFlags.RECORD_FLAGS, signature,
 			      recordClassType, List.of ());
     }
 
@@ -213,15 +214,15 @@ public class BytecodeGenerator {
 
     private void addFields (ClassBuilder classBuilder, TypeDeclaration td) {
 	td.getFields ().forEach ((name, info) -> {
-		FieldDeclarationBase fdb = info.fd ();
-		ParseTreeNode type = fdb.getType ();
+		ParseTreeNode type = info.type ();
+		System.err.println ("adding field: " + info);
 		ClassDesc desc = getParseTreeClassDesc (type);
-		VariableDeclarator vd = info.vd ();
-		if (vd.isArray ())
-		    desc = desc.arrayType (vd.getDims ().rank ());
+		int arrayRank = info.arrayRank ();
+		if (arrayRank > 0)
+		    desc = desc.arrayType (arrayRank);
 		String signature = getGenericSignature (type);
 		classBuilder.withField (name, desc, fb -> {
-			fb.withFlags (fdb.flags ());
+			fb.withFlags (info.flags ());
 			if (signature != null)
 			    fb.with (SignatureAttribute.of (Signature.parseFrom (signature)));
 		    });
@@ -243,12 +244,12 @@ public class BytecodeGenerator {
 		System.err.println ("About to handle constructor: " + c);
 		int flags = c.flags ();
 		MethodSignatureHolder msh = getMethodSignature (c);
-		classBuilder.withMethod ("<init>", msh.desc, flags, mb -> {
+		classBuilder.withMethod (ConstantDescs.INIT_NAME, msh.desc, flags, mb -> {
 			mb.withCode (cb -> {
 				cb.lineNumber (c.getPosition ().getLineNumber ()); // not correct, but at least somewhat close
 				cb.aload (0);
 				ClassDesc owner = getClassDesc (td.getSuperClass ());
-				cb.invokespecial (owner, "<init>", msh.desc);
+				cb.invokespecial (owner, ConstantDescs.INIT_NAME, msh.desc);
 				cb.return_ ();
 			    });
 			if (msh.signature != null)
@@ -292,7 +293,7 @@ public class BytecodeGenerator {
 	if (params != null) {
 	    paramDescs = new ArrayList<> (params.size ());
 	    for (FormalParameterBase fp : params.getParameters ()) {
-		ParseTreeNode p = fp.getType ();
+		ParseTreeNode p = fp.type ();
 		foundGenericTypes |= hasGenericType (p);
 		paramDescs.add (getParseTreeClassDesc (p));
 		sb.append (genericTypeHelper.getGenericType (p, cip, true));
@@ -333,7 +334,7 @@ public class BytecodeGenerator {
 
     private ClassDesc getClassDesc (ClassType ct) {
 	if (ct == null)
-	    return ClassDesc.of ("java.lang.Object"); // common for super classes to be null
+	    return ConstantDescs.CD_Object; // common for super classes to be null
 	return ClassDesc.of (ct.getFullDollarName ());
     }
 

@@ -2,6 +2,7 @@ package org.khelekore.parjac2.javacompiler.syntaxtree;
 
 import java.util.List;
 
+import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -12,6 +13,11 @@ public class ReturnStatement extends SyntaxTreeNode {
     public ReturnStatement (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
 	expression = rule.size () > 2 ? children.get (1) : null;
+    }
+
+    public ReturnStatement (ParsePosition pos, String field) {
+	super (pos);
+	expression = new ExpressionName (pos, field);
     }
 
     @Override public Object getValue () {

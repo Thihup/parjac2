@@ -1,10 +1,10 @@
 package org.khelekore.parjac2.javacompiler.syntaxtree;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.khelekore.parjac2.javacompiler.Context;
+import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -20,10 +20,18 @@ public class MethodDeclarationBase extends FlaggedBase {
 				  List<ParseTreeNode> children, FlagCalculator flagCalculator) {
 	super (n.getPosition ());
 	int i = 0;
-	modifiers = (rule.size () > 2) ? ((Multiple)children.get (i++)).get () : Collections.emptyList ();
+	modifiers = (rule.size () > 2) ? ((Multiple)children.get (i++)).get () : List.of ();
 	header = (MethodHeader)children.get (i++);
 	body = children.get (i);
 	flags = flagCalculator.calculate (ctx, modifiers, getPosition ());
+    }
+
+    public MethodDeclarationBase (ParsePosition pos, int flags, String name, ParseTreeNode result, Block body) {
+	super (pos);
+	modifiers = List.of ();
+	header = new MethodHeader (pos, name, result);
+	this.body = body;
+	this.flags = flags;
     }
 
     @Override public Object getValue () {

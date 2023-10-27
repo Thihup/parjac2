@@ -376,13 +376,13 @@ public class ClassResourceHolder {
 	}
     }
 
-    private record ClassResourceField (String name, int flags, String typeName, String signature) implements VariableInfo {
-	@Override public ParseTreeNode getType () {
+    private record ClassResourceField (String name, int flags, String typeclass, String signature) implements VariableInfo {
+	@Override public ParseTreeNode type () {
 	    return null;
 	}
 
-	@Override public FullNameHandler getTypeName () {
-	    return parseTypeName (typeName);
+	@Override public FullNameHandler typeName () {
+	    return parseTypeName (typeclass);
 	}
     }
 

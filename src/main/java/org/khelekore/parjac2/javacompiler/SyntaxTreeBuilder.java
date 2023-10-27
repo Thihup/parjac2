@@ -108,7 +108,7 @@ public class SyntaxTreeBuilder {
 	register ("UnannArrayType", UnannArrayType::new);
 	register ("MethodDeclaration", MethodDeclaration::new);
 	register ("MethodModifier", this::liftUp);
-	register ("MethodHeader", MethodHeader::new);
+	register ("MethodHeader", (ctx, rule, n, children) -> new MethodHeader (ctx, rule, n, children));
 	register ("Result", this::liftUp);
 	register ("MethodDeclarator", MethodDeclarator::new);
 	register ("ReceiverParameter", ReceiverParameter::new);

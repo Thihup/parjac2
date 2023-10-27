@@ -11,10 +11,10 @@ public interface VariableInfo {
 
     String name ();
 
-    ParseTreeNode getType ();
+    ParseTreeNode type ();
 
-    default FullNameHandler getTypeName () {
-	ParseTreeNode p = getType ();
+    default FullNameHandler typeName () {
+	ParseTreeNode p = type ();
 	if (p instanceof TokenNode) {
 	    // TODO: we should probably set ExpressionType or someting?
 	}

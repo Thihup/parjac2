@@ -2,13 +2,14 @@ package org.khelekore.parjac2.javacompiler.syntaxtree;
 
 import java.util.List;
 
+import org.khelekore.parjac2.javacompiler.VariableInfo;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class RecordComponent extends SyntaxTreeNode {
 
-    private final ParseTreeNode rec;
+    private final VariableInfo rec;
 
     public RecordComponent (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.getPosition ());
@@ -28,6 +29,14 @@ public class RecordComponent extends SyntaxTreeNode {
     }
 
     @Override public void visitChildNodes (NodeVisitor v) {
-	v.accept (rec);
+	v.accept ((SyntaxTreeNode)rec);
+    }
+
+    public String name () {
+	return rec.name ();
+    }
+
+    public ParseTreeNode type () {
+	return rec.type ();
     }
 }

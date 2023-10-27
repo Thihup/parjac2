@@ -20,5 +20,5 @@ public abstract class FormalParameterBase extends SyntaxTreeNode implements Vari
 
     @Override public abstract String name ();
 
-    @Override public abstract ParseTreeNode getType ();
+    @Override public abstract ParseTreeNode type ();
 }

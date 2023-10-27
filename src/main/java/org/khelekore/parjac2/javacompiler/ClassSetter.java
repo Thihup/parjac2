@@ -167,7 +167,7 @@ public class ClassSetter {
     }
 
     private void setFieldType (EnclosingTypes et, String name, FieldInfo info) {
-	setType (et, info.fd ().getType ());
+	setType (et, info.type ());
     }
 
     private void registerMethods () {
@@ -235,7 +235,7 @@ public class ClassSetter {
 	if (args != null) {
 	    for (FormalParameterBase fp : args.getParameters ()) {
 		checkFormalParameterModifiers (et, fp.getModifiers ());
-		setType (et, fp.getType ());
+		setType (et, fp.type ());
 		String id = fp.name ();
 		VariableInfo previous = variables.put (id, fp);
 		if (previous != null) {
@@ -289,7 +289,7 @@ public class ClassSetter {
 		VariableInfo fi = cip.getFieldInformation (fn, id);
 		if (fi != null) {
 		    if (isAccessible (et, fn, fi)) {
-			an.setFullName (fi.getTypeName ());
+			an.setFullName (fi.typeName ());
 			// TODO: we need to store that we found a field access!
 		    } else {
 			error (an, "Field: %s in class %s is not accessible", id, fn.getFullDotName ());
@@ -310,7 +310,7 @@ public class ClassSetter {
 	String name = an.getLastPart ();
 	VariableInfo fi = getVariable (et, name);
 	if (fi != null) { // known variable
-	    ParseTreeNode p = fi.getType ();
+	    ParseTreeNode p = fi.type ();
 	    if (p instanceof TokenNode) {
 		// TODO: we should probably set ExpressionType or someting?
 	    } else if (p instanceof ClassType ct) {

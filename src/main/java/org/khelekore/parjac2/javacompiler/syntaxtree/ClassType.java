@@ -55,6 +55,8 @@ public class ClassType extends SyntaxTreeNode implements NamePartHandler {
     }
 
     public String getFullDollarName () {
+	if (fnh == null)
+	    throw new NullPointerException ("Name not set on: " + this);
 	return fnh.getFullDollarName ();
     }
 

@@ -51,7 +51,7 @@ public class VariableArityParameter extends FormalParameterBase {
 	return id;
     }
 
-    @Override public ParseTreeNode getType () {
+    @Override public ParseTreeNode type () {
 	return type;
     }
 }

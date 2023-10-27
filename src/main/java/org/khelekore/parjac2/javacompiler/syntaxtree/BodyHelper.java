@@ -76,14 +76,16 @@ public class BodyHelper {
     }
 
     public Map<String, FieldInfo> getFields (List<? extends FieldDeclarationBase> fds, Context ctx) {
-	Map<String, FieldInfo> ret = new LinkedHashMap<> ();
+	Map<String, FieldInfo> ret = new LinkedHashMap<> ();  // keep things in order
 	for (FieldDeclarationBase fd : fds) {
 	    for (VariableDeclarator vd : fd.getVariableDeclarators ()) {
 		String name = vd.getName ();
 		if (ret.containsKey (name)) {
 		    ctx.error (vd.getPosition (), "Field with name %s already exists", name);
 		} else {
-		    ret.put (name, new FieldInfo (name, fd, vd));
+		    Dims dims = vd.getDims ();
+		    int rank = dims != null ? dims.rank () : 0;
+		    ret.put (name, new FieldInfo (name, fd.getPosition (), fd.flags (), fd.getType (), rank));
 		}
 	    }
 	}

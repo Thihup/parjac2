@@ -8,10 +8,17 @@ import java.util.stream.Collectors;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.SourceDiagnostics;
+import org.khelekore.parjac2.javacompiler.syntaxtree.Block;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ConstructorDeclaration;
+import org.khelekore.parjac2.javacompiler.syntaxtree.EnumDeclaration;
+import org.khelekore.parjac2.javacompiler.syntaxtree.MethodDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.NormalClassDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.OrdinaryCompilationUnit;
+import org.khelekore.parjac2.javacompiler.syntaxtree.RecordComponent;
+import org.khelekore.parjac2.javacompiler.syntaxtree.RecordDeclaration;
+import org.khelekore.parjac2.javacompiler.syntaxtree.ReturnStatement;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
+import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class ImplicitMethodGenerator {
@@ -50,13 +57,16 @@ public class ImplicitMethodGenerator {
     }
 
     private void addMethods () {
-	forAllTypes (this::addDefaultConstructor);
+	forAllTypes (this::addImplicits);
     }
 
-    private void addDefaultConstructor (TypeDeclaration td) {
-	if (td instanceof NormalClassDeclaration c)
-	    addDefaultConstructor (c);
-	// TODO: handle more types
+    private void addImplicits (TypeDeclaration td) {
+	switch (td) {
+	case NormalClassDeclaration c -> addDefaultConstructor (c);
+	case RecordDeclaration r -> addRecordFieldsAndMethods (r);
+	case EnumDeclaration e -> addEnumFieldsAndMethods (e);
+	default -> {}
+	}
     }
 
     private void addDefaultConstructor (NormalClassDeclaration n) {
@@ -70,6 +80,29 @@ public class ImplicitMethodGenerator {
 	    int flags = Flags.isPublic (n.flags ()) ? Flags.ACC_PUBLIC : 0;
 	    ls.add (ConstructorDeclaration.create (n.getPosition (), javaTokens, flags, id, List.of ()));
 	}
+    }
+
+    private static final int RECORD_FIELD_FLAGS = Flags.ACC_PRIVATE | Flags.ACC_FINAL;
+
+    private void addRecordFieldsAndMethods (RecordDeclaration r) {
+	List<RecordComponent> rcs = r.getRecordComponents ();
+	for (RecordComponent rc : rcs) {
+	    r.addField (new FieldInfo (rc.name (), rc.getPosition (), RECORD_FIELD_FLAGS, rc.type (), 0));
+	}
+	// Add: Constructor, toString(), hashCode(), equals(Object o)
+
+	// Add a field-getter for each field.
+	for (RecordComponent rc : rcs) {
+	    int flags = Flags.ACC_PUBLIC;
+	    ParsePosition pos = rc.getPosition ();
+	    ParseTreeNode res = rc.type ();
+	    r.addMethod (new MethodDeclaration (pos, flags, rc.name (), res,
+						new Block (pos, new ReturnStatement (pos, rc.name ()))));
+	}
+    }
+
+    private void addEnumFieldsAndMethods (EnumDeclaration e) {
+	// TODO: implement
     }
 
     private void forAllTypes (Consumer<TypeDeclaration> handler) {
