@@ -14,14 +14,14 @@ public class Assignment extends SyntaxTreeNode {
     private ParseTreeNode right;
 
     public Assignment (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	left = children.get (0);
 	operator = ((TokenNode)children.get (1)).getToken ();
 	right = children.get (2);
     }
 
     public Assignment (ParseTreeNode left, Token operator, ParseTreeNode right) {
-	super (left.getPosition ());
+	super (left.position ());
 	this.left = left;
 	this.operator = operator;
 	this.right = right;

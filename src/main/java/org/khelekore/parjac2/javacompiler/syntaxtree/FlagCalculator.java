@@ -48,7 +48,7 @@ public class FlagCalculator {
 		Token t = tn.getToken ();
 		modifierFlag = ctx.getFlagValue (t);
 		if ((flags & modifierFlag) != 0)
-		    ctx.error (tn.getPosition (), "Duplicate modifier %s found", t.getName ());
+		    ctx.error (tn.position (), "Duplicate modifier %s found", t.getName ());
 		flags |= modifierFlag;
 	    }
 	}

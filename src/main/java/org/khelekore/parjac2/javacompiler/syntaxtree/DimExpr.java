@@ -11,7 +11,7 @@ public class DimExpr extends SyntaxTreeNode {
     private final ParseTreeNode expression;
 
     public DimExpr (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 0;
 	if (rule.size () > 3)
 	    annotations = ((Multiple)children.get (i++)).get ();

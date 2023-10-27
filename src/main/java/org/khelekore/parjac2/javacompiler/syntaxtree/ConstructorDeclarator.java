@@ -16,7 +16,7 @@ public class ConstructorDeclarator extends SyntaxTreeNode {
     private final FormalParameterList params;
 
     public ConstructorDeclarator (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 0;
 	if (rule.get (i) == ctx.getGrammar ().getRuleGroupId ("TypeParameters"))
 	    types = (TypeParameters)children.get (i++);

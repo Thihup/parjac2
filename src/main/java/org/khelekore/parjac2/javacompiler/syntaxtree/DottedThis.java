@@ -7,7 +7,7 @@ public class DottedThis extends SyntaxTreeNode {
     private final ParseTreeNode type;
 
     public DottedThis (ParseTreeNode type) {
-	super (type.getPosition ());
+	super (type.position ());
 	this.type = type;
     }
 

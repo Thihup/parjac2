@@ -16,7 +16,7 @@ public class DottedName extends SyntaxTreeNode implements NamePartHandler {
     private FullNameHandler fnh;
 
     public DottedName (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	if (rule.size () == 1) {
 	    nameParts = new ArrayList<> ();
 	    nameParts.add (((Identifier)children.get (0)).getValue ());
@@ -57,7 +57,7 @@ public class DottedName extends SyntaxTreeNode implements NamePartHandler {
 
     public DottedName allButLast () {
 	List<String> ls = getParts ().subList (0, size () - 1);
-	return new DottedName (getPosition (), ls);
+	return new DottedName (position (), ls);
     }
 
     public String getLastPart () {

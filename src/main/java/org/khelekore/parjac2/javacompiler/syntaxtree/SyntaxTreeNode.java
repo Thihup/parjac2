@@ -28,7 +28,7 @@ public abstract class SyntaxTreeNode implements ParseTreeNode {
 	throw new IllegalStateException ("Not implemented for: " + getClass ().getName ());
     }
 
-    @Override public ParsePosition getPosition () {
+    @Override public ParsePosition position () {
 	return pos;
     }
 

@@ -12,7 +12,7 @@ public class CatchFormalParameter extends SyntaxTreeNode {
     private final VariableDeclaratorId vid;
 
     public CatchFormalParameter (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 0;
 	variableModifiers = rule.size () > 2 ? ((Multiple)children.get (i++)).get () : List.of ();
 	type = (CatchType)children.get (i++);

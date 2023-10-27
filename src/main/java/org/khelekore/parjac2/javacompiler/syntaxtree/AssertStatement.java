@@ -11,7 +11,7 @@ public class AssertStatement extends SyntaxTreeNode {
     private final ParseTreeNode expression2;
 
     public AssertStatement (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	expression1 = children.get (1);
 	expression2 = (rule.size () > 3) ? children.get (3) : null;
     }

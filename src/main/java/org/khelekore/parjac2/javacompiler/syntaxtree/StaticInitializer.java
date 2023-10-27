@@ -9,7 +9,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 public class StaticInitializer extends SyntaxTreeNode {
     private final Block block;
     public StaticInitializer (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	block = (Block)children.get (1);
     }
 

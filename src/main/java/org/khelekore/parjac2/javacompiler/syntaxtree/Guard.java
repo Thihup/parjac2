@@ -10,7 +10,7 @@ public class Guard extends SyntaxTreeNode {
     private final ParseTreeNode expression;
 
     public Guard (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	expression = children.get (1);
     }
 

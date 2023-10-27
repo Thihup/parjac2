@@ -33,7 +33,7 @@ public class ClassBody extends SyntaxTreeNode {
     private Map<String, FieldInfo> nameToField;
 
     public ClassBody (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	declarations = hasDeclarations (rule) ? ((Multiple)children.get (1)).get () : Collections.emptyList ();
 	TypeDistributor td = DistributorHelper.getClassDistributor (classDeclarations);
 	td.addMapping (Block.class, instanceInitializers);
@@ -59,7 +59,7 @@ public class ClassBody extends SyntaxTreeNode {
 	for (VariableDeclarator vd : ls) {
 	    String name = vd.getName ();
 	    if (vd.hasInitializer ()) {
-		instanceInitializers.add (new Assignment (new Identifier (javaTokens.IDENTIFIER, name, vd.getPosition ()),
+		instanceInitializers.add (new Assignment (new Identifier (javaTokens.IDENTIFIER, name, vd.position ()),
 							  javaTokens.EQUAL,
 							  vd.getInitializer ()));
 	    }

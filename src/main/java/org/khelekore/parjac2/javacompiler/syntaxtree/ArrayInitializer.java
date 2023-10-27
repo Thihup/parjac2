@@ -10,7 +10,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 public class ArrayInitializer extends SyntaxTreeNode {
     private final  VariableInitializerList variableList;
     public ArrayInitializer (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	if (rule.get (1) == ctx.getGrammar ().getRuleGroupId ("VariableInitializerList"))
 	    variableList = (VariableInitializerList)children.get (1);
 	else

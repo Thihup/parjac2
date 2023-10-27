@@ -13,7 +13,7 @@ public class TypeVariable extends SyntaxTreeNode {
     private String id;
 
     public TypeVariable (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	if (rule.size () > 1) {
 	    annotations = ((Multiple)children.get (0)).get ();
 	    id = ((Identifier)children.get (1)).getValue ();

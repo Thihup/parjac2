@@ -10,7 +10,7 @@ public class TypeArguments extends SyntaxTreeNode {
     private final List<ParseTreeNode> typeArgumentList;
 
     public TypeArguments (Rule rule, ParseTreeNode sct, List<ParseTreeNode> children) {
-	super (sct.getPosition ());
+	super (sct.position ());
 	// '<' TypeArgumentList '>'
 	typeArgumentList = ((TypeArgumentList)children.get (1)).get ();
     }

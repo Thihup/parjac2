@@ -11,7 +11,7 @@ public class WhileStatement extends SyntaxTreeNode {
     private final ParseTreeNode statement;
 
     public WhileStatement (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	expression = children.get (2);
 	statement = children.get (4);
     }

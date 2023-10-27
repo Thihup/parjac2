@@ -16,7 +16,7 @@ public class EnumBody extends SyntaxTreeNode {
     private List<TypeDeclaration> innerClasses;
 
     public EnumBody (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 1;
 	if (children.get (i) instanceof EnumConstantList) {
 	    constants = (EnumConstantList)children.get (i++);

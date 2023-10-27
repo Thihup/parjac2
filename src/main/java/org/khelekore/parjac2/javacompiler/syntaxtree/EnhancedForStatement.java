@@ -12,7 +12,7 @@ public class EnhancedForStatement extends SyntaxTreeNode {
     private final ParseTreeNode statement;
 
     public EnhancedForStatement (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 2;
 	if (children.get (2) instanceof LocalVariableDeclaration lv) {
 	    // modern version allows initializers and multiple ids.

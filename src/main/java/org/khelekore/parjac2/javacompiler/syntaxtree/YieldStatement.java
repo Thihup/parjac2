@@ -10,7 +10,7 @@ public class YieldStatement extends SyntaxTreeNode {
     private ParseTreeNode expression;
 
     public YieldStatement (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	expression = children.get (1);
     }
 

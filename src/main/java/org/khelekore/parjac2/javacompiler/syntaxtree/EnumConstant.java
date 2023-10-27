@@ -20,7 +20,7 @@ public class EnumConstant extends AnonymousClass {
     private EnumDeclaration ed;
 
     public EnumConstant (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 0;
 	if (children.get (i) instanceof Multiple) {
 	    modifiers = ((Multiple)children.get (i++)).get ();

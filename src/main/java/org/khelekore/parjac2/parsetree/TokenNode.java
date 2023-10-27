@@ -22,7 +22,7 @@ public class TokenNode implements ParseTreeNode {
 	return token;
     }
 
-    @Override public ParsePosition getPosition () {
+    @Override public ParsePosition position () {
 	return pos;
     }
 

@@ -11,7 +11,7 @@ public class FormalParameterList extends SyntaxTreeNode {
     private List<FormalParameterBase> params;
 
     public FormalParameterList (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	params = new ArrayList<> ();
 	params.add ((FormalParameterBase)children.get (0));
 	if (rule.size () > 1) {

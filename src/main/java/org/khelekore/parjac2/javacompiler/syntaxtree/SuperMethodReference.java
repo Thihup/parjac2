@@ -13,7 +13,7 @@ public class SuperMethodReference extends SyntaxTreeNode implements MethodRefere
     private final String id;
 
     public SuperMethodReference (Rule r, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	type = children.get (0);
 	types = r.size () > 5 ? (TypeArguments)children.get (4) : null;
 	id = ((Identifier)children.get (children.size () - 1)).getValue ();

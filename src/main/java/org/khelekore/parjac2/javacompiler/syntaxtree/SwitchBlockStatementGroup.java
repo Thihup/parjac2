@@ -11,7 +11,7 @@ public class SwitchBlockStatementGroup extends SyntaxTreeNode {
     private final BlockStatements statements;
 
     public SwitchBlockStatementGroup (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	// SwitchLabels BlockStatements
 	labels = ((SwitchLabels)children.get (0)).getLabels ();
 	statements = (BlockStatements)children.get (1);

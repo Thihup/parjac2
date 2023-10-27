@@ -246,7 +246,7 @@ public class BytecodeGenerator {
 		MethodSignatureHolder msh = getMethodSignature (c);
 		classBuilder.withMethod (ConstantDescs.INIT_NAME, msh.desc, flags, mb -> {
 			mb.withCode (cb -> {
-				cb.lineNumber (c.getPosition ().getLineNumber ()); // not correct, but at least somewhat close
+				cb.lineNumber (c.position ().getLineNumber ()); // not correct, but at least somewhat close
 				cb.aload (0);
 				ClassDesc owner = getClassDesc (td.getSuperClass ());
 				cb.invokespecial (owner, ConstantDescs.INIT_NAME, msh.desc);
@@ -268,7 +268,7 @@ public class BytecodeGenerator {
 		int flags = m.flags ();
 		classBuilder.withMethod (m.getName (), msh.desc, flags, mb -> {
 			mb.withCode (cb -> {
-				cb.lineNumber (m.getPosition ().getLineNumber ()); // not correct, but at least somewhat close
+				cb.lineNumber (m.position ().getLineNumber ()); // not correct, but at least somewhat close
 				cb.return_ ();});
 			if (msh.signature != null)
 			    mb.with (SignatureAttribute.of (MethodSignature.parseFrom (msh.signature)));

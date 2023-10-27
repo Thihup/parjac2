@@ -18,7 +18,7 @@ public class ExplicitConstructorInvocation extends SyntaxTreeNode {
     private final ArgumentList argumentList;
 
     public ExplicitConstructorInvocation (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 0;
 	if (rule.get (i) == ctx.getGrammar ().getRuleGroupId ("ExpressionName") ||
 	    rule.get (i) == ctx.getGrammar ().getRuleGroupId ("Primary")) {

@@ -15,7 +15,7 @@ public class UnqualifiedClassInstanceCreationExpression extends AnonymousClass {
     private final ClassBody body;
 
     public UnqualifiedClassInstanceCreationExpression (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 1;
 	types = (children.get (i) instanceof TypeArguments) ? (TypeArguments)children.get (i++) : null;
 	type = (ClassOrInterfaceTypeToInstantiate)children.get (i++);

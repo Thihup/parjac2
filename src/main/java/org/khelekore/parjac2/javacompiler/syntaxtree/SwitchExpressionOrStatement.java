@@ -11,7 +11,7 @@ public class SwitchExpressionOrStatement extends SyntaxTreeNode {
     private final SwitchBlock block;
 
     public SwitchExpressionOrStatement (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	expression = children.get (2);
 	block = (SwitchBlock)children.get (4);
     }

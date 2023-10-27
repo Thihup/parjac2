@@ -10,7 +10,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 public class ExceptionTypeList extends SyntaxTreeNode {
     private List<ClassType> types;
     public ExceptionTypeList (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	types = new ArrayList<> ();
 	types.add ((ClassType)children.get (0));
 	if (rule.size () > 1) {

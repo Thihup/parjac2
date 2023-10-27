@@ -12,7 +12,7 @@ public class UntypedMethodInvocation extends SyntaxTreeNode {
     private final ArgumentList args;
 
     public UntypedMethodInvocation (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	methodName = ((Identifier)children.get (0)).getValue ();
 	if (rule.size () > 3)
 	    args = (ArgumentList)children.get (2);

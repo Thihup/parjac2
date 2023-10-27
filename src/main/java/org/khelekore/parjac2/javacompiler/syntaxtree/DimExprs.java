@@ -11,7 +11,7 @@ public class DimExprs extends SyntaxTreeNode {
     private final List<DimExpr> dims;
 
     public DimExprs (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	if (rule.size () == 1) {
 	    dims = List.of ((DimExpr)children.get (0));
 	} else {

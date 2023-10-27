@@ -450,7 +450,7 @@ public class Parser {
 	    TokenNode n = lexer.toCorrectType (getTokenValue (completedIn - 1), grammar.getToken (token));
 	    Token t = n.getToken ();
 	    if (t == grammar.WILDCARD) {
-		ParsePosition pp = n.getPosition ();
+		ParsePosition pp = n.position ();
 		Token missingToken = grammar.getToken (token);
 		add (new WildcardNode (missingToken, pp));
 		wildcardErrors.add (SourceDiagnostics.error (path, pp, "Added missing %s", missingToken.getName ()));

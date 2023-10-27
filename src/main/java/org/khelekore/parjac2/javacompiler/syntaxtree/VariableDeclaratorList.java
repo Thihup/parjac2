@@ -11,7 +11,7 @@ public class VariableDeclaratorList extends SyntaxTreeNode {
     private final List<VariableDeclarator> declarators;
 
     public VariableDeclaratorList (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	declarators = new ArrayList<> ();
 	declarators.add ((VariableDeclarator)children.get (0));
 	if (rule.size () > 1) {
@@ -22,7 +22,7 @@ public class VariableDeclaratorList extends SyntaxTreeNode {
     }
 
     public VariableDeclaratorList (VariableDeclarator v) {
-	super (v.getPosition ());
+	super (v.position ());
 	declarators = List.of (v);
     }
 

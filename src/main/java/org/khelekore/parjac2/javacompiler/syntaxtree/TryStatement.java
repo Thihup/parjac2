@@ -13,7 +13,7 @@ public class TryStatement extends SyntaxTreeNode {
     private final Finally finallyBlock;
 
     public TryStatement (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 1;
 	if (children.get (i) instanceof ResourceSpecification) {
 	    ResourceSpecification rs = (ResourceSpecification)children.get (i++);

@@ -81,11 +81,11 @@ public class BodyHelper {
 	    for (VariableDeclarator vd : fd.getVariableDeclarators ()) {
 		String name = vd.getName ();
 		if (ret.containsKey (name)) {
-		    ctx.error (vd.getPosition (), "Field with name %s already exists", name);
+		    ctx.error (vd.position (), "Field with name %s already exists", name);
 		} else {
 		    Dims dims = vd.getDims ();
 		    int rank = dims != null ? dims.rank () : 0;
-		    ret.put (name, new FieldInfo (name, fd.getPosition (), fd.flags (), fd.getType (), rank));
+		    ret.put (name, new FieldInfo (name, fd.position (), fd.flags (), fd.getType (), rank));
 		}
 	    }
 	}

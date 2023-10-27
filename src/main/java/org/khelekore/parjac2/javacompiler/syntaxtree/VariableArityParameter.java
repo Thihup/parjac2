@@ -15,7 +15,7 @@ public class VariableArityParameter extends FormalParameterBase {
     private final String id;
 
     public VariableArityParameter (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 0;
 	modifiers = (children.get (i) instanceof Multiple) ?
 	    ((Multiple)children.get (i++)).get () : Collections.emptyList ();

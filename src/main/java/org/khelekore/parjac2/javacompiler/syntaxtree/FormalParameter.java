@@ -14,7 +14,7 @@ public class FormalParameter extends FormalParameterBase {
 
     // since we have the formalParameter method we do not have to care about VariableArityParameter
     public FormalParameter (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 0;
 	modifiers = (rule.size () > 2) ? ((Multiple)children.get (i++)).get () : Collections.emptyList ();
 	type = children.get (i++);

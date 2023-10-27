@@ -14,7 +14,7 @@ public class CastExpression extends SyntaxTreeNode {
     private ParseTreeNode expression;
 
     public CastExpression (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	// starts with (
 	int i = 1;
 	baseType = children.get (i++);

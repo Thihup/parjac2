@@ -12,7 +12,7 @@ public class BlockStatements extends SyntaxTreeNode {
     private List<ParseTreeNode> statements;
 
     public BlockStatements (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	statements = new ArrayList<> ();
 	statements.add (children.get (0));
 	if (rule.size () > 1)

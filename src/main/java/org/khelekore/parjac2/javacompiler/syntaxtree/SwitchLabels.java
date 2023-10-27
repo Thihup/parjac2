@@ -11,7 +11,7 @@ public class SwitchLabels extends SyntaxTreeNode {
     private final List<SwitchLabelColon> labels = new ArrayList<> ();
 
     public SwitchLabels (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	if (children.size () > 1) {
 	    Multiple m = (Multiple)children.get (0);
 	    labels.addAll (m.get ());

@@ -9,7 +9,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 public final class StaticImportOnDemandDeclaration extends ImportDeclaration {
     private TypeName typename;
     public StaticImportOnDemandDeclaration (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	this.typename = (TypeName)children.get (2);
     }
 

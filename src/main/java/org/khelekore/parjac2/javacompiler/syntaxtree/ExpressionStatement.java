@@ -10,7 +10,7 @@ public class ExpressionStatement extends SyntaxTreeNode {
     private ParseTreeNode statementExpression;
 
     public ExpressionStatement (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	statementExpression = children.get (0);
     }
 

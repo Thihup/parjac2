@@ -11,7 +11,7 @@ public class RecordHeader extends SyntaxTreeNode {
     private List<RecordComponent> recordComponents;
 
     public RecordHeader (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	if (rule.size () == 2) {
 	    recordComponents = List.of ();
 	} else {

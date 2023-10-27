@@ -19,7 +19,7 @@ public class PackageDeclaration extends SyntaxTreeNode {
     private final String dottedName;
 
     public PackageDeclaration (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 0;
 	if (children.get (i) instanceof Multiple) {
 	    Multiple z = (Multiple)children.get (i++);

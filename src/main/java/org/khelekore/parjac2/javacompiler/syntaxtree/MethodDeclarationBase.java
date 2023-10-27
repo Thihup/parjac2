@@ -18,12 +18,12 @@ public class MethodDeclarationBase extends FlaggedBase {
     //  {MethodModifier} MethodHeader MethodBody
     public MethodDeclarationBase (Context ctx, Rule rule, ParseTreeNode n,
 				  List<ParseTreeNode> children, FlagCalculator flagCalculator) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 0;
 	modifiers = (rule.size () > 2) ? ((Multiple)children.get (i++)).get () : List.of ();
 	header = (MethodHeader)children.get (i++);
 	body = children.get (i);
-	flags = flagCalculator.calculate (ctx, modifiers, getPosition ());
+	flags = flagCalculator.calculate (ctx, modifiers, position ());
     }
 
     public MethodDeclarationBase (ParsePosition pos, int flags, String name, ParseTreeNode result, Block body) {

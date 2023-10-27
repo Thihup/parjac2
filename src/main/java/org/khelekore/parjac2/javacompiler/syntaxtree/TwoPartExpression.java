@@ -13,7 +13,7 @@ public class TwoPartExpression extends SyntaxTreeNode {
     private ParseTreeNode part2;
 
     public TwoPartExpression (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	part1 = children.get (0);
 	operator = (TokenNode)children.get (1);
 	part2 = children.get (2);

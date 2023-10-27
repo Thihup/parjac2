@@ -13,7 +13,7 @@ public abstract class ListBase extends SyntaxTreeNode {
 
     public ListBase (Rule rule, ParseTreeNode n, List<ParseTreeNode> children,
 		     int start, int every) {
-	super (n.getPosition ());
+	super (n.position ());
 	params = new ArrayList<> ();
 	params.add (children.get (0));
 	if (rule.size () > 1) {

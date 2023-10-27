@@ -15,7 +15,7 @@ public interface Flagged {
     }
 
     /** Get the position of this type */
-    ParsePosition getPosition ();
+    ParsePosition position ();
 
     /** Get the expression type of this type */
     default ExpressionType getExpressionType () {

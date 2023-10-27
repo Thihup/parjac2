@@ -357,14 +357,14 @@ public class SyntaxTreeBuilder {
 	if (rule.size () == 1) {
 	    List<SimpleClassType> ls = new ArrayList<> ();
 	    ls.add ((SimpleClassType)children.get (0));
-	    return new ClassType (ct.getPosition (), ls);
+	    return new ClassType (ct.position (), ls);
 	}
 	// ClassType . SimpleClassType
 	ClassType cct = (ClassType)children.get (0);
 	SimpleClassType csct = (SimpleClassType)children.get (2);
 	List<SimpleClassType> ls = cct.getTypes ();
 	ls.add (csct);
-	return new ClassType (ct.getPosition (), ls);
+	return new ClassType (ct.position (), ls);
     }
 
     private ParseTreeNode additionalBound (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
@@ -380,7 +380,7 @@ public class SyntaxTreeBuilder {
 	}
 	TypeIdentifier i = (TypeIdentifier)children.get (0);
 	TypeArguments tas = children.size () > 1 ? (TypeArguments)children.get (1) : null;
-	SimpleClassType sct = new SimpleClassType (n.getPosition (), i.getValue (), tas);
+	SimpleClassType sct = new SimpleClassType (n.position (), i.getValue (), tas);
 	return new UnannClassType (sct);
     }
 
@@ -403,7 +403,7 @@ public class SyntaxTreeBuilder {
 	} else if (ruleId == javaTokens.PROVIDES.getId ()) {
 	    return new ProvidesDirective (rule, n, children);
 	} else {
-	    ctx.error (n.getPosition (), "Unhandled rule: %d, %s", ruleId, rule.toReadableString (grammar));
+	    ctx.error (n.position (), "Unhandled rule: %d, %s", ruleId, rule.toReadableString (grammar));
 	    throw new CompilationException ();
 	}
     }
@@ -414,10 +414,10 @@ public class SyntaxTreeBuilder {
 	//'default'
 	TokenNode tn = (TokenNode)children.get (0);
 	if (tn.getToken () == ctx.getTokens ().DEFAULT)
-	    return new DefaultLabel (n.getPosition ());
+	    return new DefaultLabel (n.position ());
 	if (rule.get (1) == ctx.getGrammar ().getRuleGroupId ("CasePattern"))
-	    return new CasePatternLabel (n.getPosition (), children);
-	return new CaseLabel (ctx, n.getPosition (), children);
+	    return new CasePatternLabel (n.position (), children);
+	return new CaseLabel (ctx, n.position (), children);
     }
 
     private ParseTreeNode tryStatement (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
@@ -444,12 +444,12 @@ public class SyntaxTreeBuilder {
 
     private ParseTreeNode typeArgumentsOrDiamond (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	if (rule.size () > 1)
-	    return new Diamond (n.getPosition ());
+	    return new Diamond (n.position ());
 	return children.get (0);
     }
 
     private SyntaxTreeNode methodInvocation (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	ParsePosition pos = children.get (0).getPosition ();
+	ParsePosition pos = children.get (0).position ();
 	if (rule.size () == 1) {
 	    return new MethodInvocation (pos, null, false, null, (UntypedMethodInvocation)children.get (0));
 	}
@@ -505,14 +505,14 @@ public class SyntaxTreeBuilder {
 
     private ParseTreeNode lambdaParameter (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	if (rule.size () == 1)  // VariableArityParameter
-	    return new VarArgLambdaParameter (n.getPosition (), (VariableArityParameter)children.get (0));
+	    return new VarArgLambdaParameter (n.position (), (VariableArityParameter)children.get (0));
 	int i = 0;
 	List<ParseTreeNode> modifiers = Collections.emptyList ();
 	if (rule.size () > 2)
 	    modifiers = ((Multiple)children.get (i++)).get ();
 	ParseTreeNode type = children.get (i++);
 	VariableDeclaratorId vid = (VariableDeclaratorId)children.get (i);
-	return new FullTypeLambdaParameter (n.getPosition (), modifiers, type, vid);
+	return new FullTypeLambdaParameter (n.position (), modifiers, type, vid);
     }
 
     private ParseTreeNode shiftOp (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
@@ -520,11 +520,11 @@ public class SyntaxTreeBuilder {
 	case 1:
 	    return children.get (0);
 	case 2:
-	    return new TokenNode (javaTokens.RIGHT_SHIFT, n.getPosition ());
+	    return new TokenNode (javaTokens.RIGHT_SHIFT, n.position ());
 	case 3:
-	    return new TokenNode (javaTokens.RIGHT_SHIFT_UNSIGNED, n.getPosition ());
+	    return new TokenNode (javaTokens.RIGHT_SHIFT_UNSIGNED, n.position ());
 	}
-	ctx.error (n.getPosition (), "%s got unexpected size %d, children: %d",
+	ctx.error (n.position (), "%s got unexpected size %d, children: %d",
 		   rule.toReadableString (grammar), rule.size (), children);
 	    throw new CompilationException ();
     }
@@ -557,7 +557,7 @@ public class SyntaxTreeBuilder {
 	    z.addAll (children.subList (1, children.size ()));
 	    return z;
 	} else {
-	    return new Multiple (node.getPosition (), rule.get (0), rule.getName (),
+	    return new Multiple (node.position (), rule.get (0), rule.getName (),
 				 new ArrayList<> (children));
 	}
     }

@@ -7,7 +7,7 @@ public class ListOfLambdaParameters extends LambdaParameters {
     private final LambdaParameterList<?> params;
 
     public ListOfLambdaParameters (ParseTreeNode n, LambdaParameterList<?> params) {
-	super (n.getPosition ());
+	super (n.position ());
 	this.params = params;
     }
 

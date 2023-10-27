@@ -11,13 +11,13 @@ public class VariableDeclarator extends SyntaxTreeNode {
     private final ParseTreeNode initializer;
 
     public VariableDeclarator (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	id = (VariableDeclaratorId)children.get (0);
 	initializer = rule.size () > 1 ? children.get (2) : null;
     }
 
     public VariableDeclarator (VariableDeclaratorId id) {
-	super (id.getPosition ());
+	super (id.position ());
 	this.id = id;
 	initializer = null;
     }

@@ -15,7 +15,7 @@ public class CompactConstructorDeclaration extends SyntaxTreeNode implements Con
     private final ConstructorBody body;
 
     public CompactConstructorDeclaration (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	// {ConstructorModifier} SimpleTypeName ConstructorBody
 	int i = 0;
 	modifiers = (rule.size () > 2) ? ((Multiple)children.get (i++)).get () : Collections.emptyList ();

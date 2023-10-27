@@ -11,7 +11,7 @@ public class DoStatement extends SyntaxTreeNode {
     private final ParseTreeNode expression;
 
     public DoStatement (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	statement = children.get (1);
 	expression = children.get (4);
     }

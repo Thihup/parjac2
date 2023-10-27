@@ -12,7 +12,7 @@ public class RecordComponent extends SyntaxTreeNode {
     private final VariableInfo rec;
 
     public RecordComponent (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 
 	int s = rule.size ();
 	if (s == 1) {

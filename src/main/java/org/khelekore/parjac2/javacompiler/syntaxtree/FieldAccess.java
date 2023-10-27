@@ -14,7 +14,7 @@ public class FieldAccess extends SyntaxTreeNode {
     private final String id;
 
     public FieldAccess (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	if (rule.get (0) != ctx.getTokens ().SUPER.getId ()) {
 	    from = children.get (0);
 	    isSuper = rule.size () > 3;

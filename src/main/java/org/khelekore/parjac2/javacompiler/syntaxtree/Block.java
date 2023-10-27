@@ -11,7 +11,7 @@ public class Block extends SyntaxTreeNode {
     private final BlockStatements statements;
 
     public Block (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	statements = (rule.size () > 2) ? (BlockStatements)children.get (1) : null;
     }
 

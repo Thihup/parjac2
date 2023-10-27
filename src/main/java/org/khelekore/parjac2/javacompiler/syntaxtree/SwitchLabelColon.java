@@ -10,7 +10,7 @@ public class SwitchLabelColon extends SyntaxTreeNode {
     private SwitchLabel label;
 
     public SwitchLabelColon (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	label = (SwitchLabel)children.get (0);
     }
 

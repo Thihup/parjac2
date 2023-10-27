@@ -24,7 +24,7 @@ public class RecordDeclaration extends TypeDeclaration {
     private final static ClassType RECORD_SUPER = new ClassType (FullNameHandler.JL_RECORD);
 
     public RecordDeclaration (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 
 	// {ClassModifier} 'record' TypeIdentifier [TypeParameters] RecordHeader [ClassImplements] RecordBody
 	int i = 0;
@@ -51,7 +51,7 @@ public class RecordDeclaration extends TypeDeclaration {
 	    classImplements = null;
 	    body = (RecordBody)tn;
 	}
-	flags = flagCalculator.calculate (ctx, modifiers, getPosition ());
+	flags = flagCalculator.calculate (ctx, modifiers, position ());
     }
 
     @Override public Object getValue () {

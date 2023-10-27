@@ -11,7 +11,7 @@ public class ElementValueList extends SyntaxTreeNode {
     private final List<ParseTreeNode> values;
 
     public ElementValueList (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	if (rule.size () == 1) {
 	    values = List.of (children.get (0));
 	} else {

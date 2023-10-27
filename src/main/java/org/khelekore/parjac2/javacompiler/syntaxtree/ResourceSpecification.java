@@ -9,7 +9,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 public class ResourceSpecification extends SyntaxTreeNode {
     private final ResourceList resources;
     public ResourceSpecification (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	resources = (ResourceList)children.get (1);
     }
 

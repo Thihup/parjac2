@@ -12,7 +12,7 @@ public class RequiresDirective extends ModuleDirective {
     private final ModuleName moduleName;
 
     public RequiresDirective (Rule r, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 1;
 	modifiers = (r.size () > 3) ? ((Multiple)children.get (i++)).get () : Collections.emptyList ();
 	moduleName = (ModuleName)children.get (i);

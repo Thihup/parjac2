@@ -14,7 +14,7 @@ public class Resource extends SyntaxTreeNode {
     private ParseTreeNode expression;
 
     public Resource (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 0;
 	modifiers = rule.size () > 4 ? ((Multiple)children.get (i++)).get () : List.of ();
 	type = children.get (i++);

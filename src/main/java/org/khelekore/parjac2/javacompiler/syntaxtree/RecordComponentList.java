@@ -11,7 +11,7 @@ public class RecordComponentList extends SyntaxTreeNode {
     private final List<RecordComponent> components = new ArrayList<> ();
 
     public RecordComponentList (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	components.add ((RecordComponent)children.get (0));
 	if (rule.size () > 1) {
 	    Multiple z = (Multiple)children.get (1);

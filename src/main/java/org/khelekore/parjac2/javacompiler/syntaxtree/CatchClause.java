@@ -11,7 +11,7 @@ public class CatchClause extends SyntaxTreeNode {
     private final Block block;
 
     public CatchClause (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	param = (CatchFormalParameter)children.get (2);
 	block = (Block)children.get (4);
     }

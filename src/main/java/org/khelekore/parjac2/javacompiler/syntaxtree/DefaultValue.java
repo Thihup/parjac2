@@ -9,7 +9,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 public class DefaultValue extends SyntaxTreeNode {
     private ParseTreeNode value;
     public DefaultValue (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	this.value = children.get (1);
     }
 

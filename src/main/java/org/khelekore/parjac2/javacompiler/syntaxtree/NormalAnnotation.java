@@ -9,7 +9,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 public class NormalAnnotation extends Annotation {
     private ParseTreeNode elementValuePairList;
     public NormalAnnotation (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition (), children);
+	super (n.position (), children);
 	elementValuePairList = rule.size () > 4 ? children.get (3) : null;
     }
 

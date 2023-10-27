@@ -14,12 +14,12 @@ public abstract class FieldDeclarationBase extends FlaggedBase {
     private VariableDeclaratorList list;
 
     public FieldDeclarationBase (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children, FlagCalculator flagCalculator) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 0;
 	modifiers = (rule.size () > 3) ? ((Multiple)children.get (i++)).get () : Collections.emptyList ();
 	type = children.get (i++);
 	list = (VariableDeclaratorList)children.get (i++);
-	flags = flagCalculator.calculate (ctx, modifiers, n.getPosition ());
+	flags = flagCalculator.calculate (ctx, modifiers, n.position ());
     }
 
     @Override public Object getValue() {

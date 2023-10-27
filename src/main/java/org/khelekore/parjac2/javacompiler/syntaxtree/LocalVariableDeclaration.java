@@ -12,7 +12,7 @@ public class LocalVariableDeclaration extends SyntaxTreeNode {
     private final VariableDeclaratorList list;
 
     public LocalVariableDeclaration (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 0;
 	if (rule.size () > 2) {
 	    modifiers = ((Multiple)children.get (i++)).get ();
@@ -24,7 +24,7 @@ public class LocalVariableDeclaration extends SyntaxTreeNode {
     }
 
     public LocalVariableDeclaration (List<ParseTreeNode> modifiers, ParseTreeNode type, VariableDeclaratorList list) {
-	super (!modifiers.isEmpty () ? modifiers.get (0).getPosition () : type.getPosition ());
+	super (!modifiers.isEmpty () ? modifiers.get (0).position () : type.position ());
 	this.modifiers = modifiers;
 	this.type = type;
 	this.list = list;

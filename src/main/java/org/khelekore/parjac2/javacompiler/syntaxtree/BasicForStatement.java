@@ -14,7 +14,7 @@ public class BasicForStatement extends SyntaxTreeNode {
     private final ParseTreeNode statement;
 
     public BasicForStatement (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	// for' '(' [ForInit] ';' [Expression] ';' [ForUpdate] ')' Statement
 	int i = 2;
 	forInit = ctx.getGrammar ().isRule (rule.get (i)) ? children.get (i++) : null;

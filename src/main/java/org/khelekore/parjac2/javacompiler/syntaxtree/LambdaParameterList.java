@@ -13,7 +13,7 @@ public abstract class LambdaParameterList<T> extends SyntaxTreeNode {
 
     private LambdaParameterList (Rule rule, ParseTreeNode n, List<ParseTreeNode> children,
 				 Function<ParseTreeNode, T> nodeConverter) {
-	super (n.getPosition ());
+	super (n.position ());
 	if (rule.size () == 1) {
 	    params = List.of (nodeConverter.apply (children.get (0)));
 	} else {

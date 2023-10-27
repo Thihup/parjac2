@@ -16,14 +16,14 @@ public class ClassOrInterfaceTypeToInstantiate extends SyntaxTreeNode {
     private final ParseTreeNode types;
 
     public ClassOrInterfaceTypeToInstantiate (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	ids = new ArrayList<> ();
 	int i = 0;
 	List<Annotation> annotations = List.of ();
 	if (children.get (i) instanceof Multiple)
 	    annotations = getAnnotations ((Multiple)children.get (i++));
 	Identifier id = (Identifier)children.get (i++);
-	ids.add (new AnnotatedIdentifier (n.getPosition (), annotations, id));
+	ids.add (new AnnotatedIdentifier (n.position (), annotations, id));
 	if (children.size () > i && children.get (i) instanceof Multiple) {
 	    Multiple z = (Multiple)children.get (i++);
 	    List<ParseTreeNode> ls = z.getChildren ();
@@ -36,12 +36,12 @@ public class ClassOrInterfaceTypeToInstantiate extends SyntaxTreeNode {
 		    annotations = List.of ();
 		    id = (Identifier)ptn;
 		}
-		ids.add (new AnnotatedIdentifier (ptn.getPosition (), annotations, id));
+		ids.add (new AnnotatedIdentifier (ptn.position (), annotations, id));
 	    }
 	}
 	types = (rule.size () > i) ? children.get (i) : null;
 
-	ParsePosition pos = n.getPosition ();
+	ParsePosition pos = n.position ();
 	List<SimpleClassType> scts = new ArrayList<> ();
 	ids.forEach (ai -> scts.add (new SimpleClassType (pos, ai.getIdentifier (), null)));
 	type = new ClassType (pos, scts);

@@ -11,7 +11,7 @@ public class PermitsBase extends SyntaxTreeNode {
     private List<TypeName> permits = new ArrayList<> ();
 
     public PermitsBase (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	permits.add ((TypeName)children.get (1));
 	if (rule.size () > 2) {
 	    Multiple z = (Multiple)children.get (2);

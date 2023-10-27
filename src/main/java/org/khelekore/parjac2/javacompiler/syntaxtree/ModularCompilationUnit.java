@@ -12,7 +12,7 @@ public class ModularCompilationUnit extends SyntaxTreeNode {
     private ModuleDeclaration moduleDeclaration;
 
     public ModularCompilationUnit (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 0;
 	imports = (rule.size () > 1) ? ((Multiple)children.get (i++)).get () : Collections.emptyList ();
 	moduleDeclaration = (ModuleDeclaration)children.get (i++);

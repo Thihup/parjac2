@@ -11,7 +11,7 @@ public class ArrayAccess extends SyntaxTreeNode {
     private final ParseTreeNode expression;
 
     public ArrayAccess (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	from = children.get (0);
 	expression = children.get (2);
     }

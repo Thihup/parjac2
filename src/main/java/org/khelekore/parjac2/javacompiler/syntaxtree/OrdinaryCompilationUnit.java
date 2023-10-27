@@ -16,7 +16,7 @@ public class OrdinaryCompilationUnit extends SyntaxTreeNode {
     private List<TypeDeclaration> types;
 
     public OrdinaryCompilationUnit (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 0;
 	if (rule.size () > i && rule.get (i) == ctx.getGrammar ().getRuleGroupId ("PackageDeclaration"))
 	    packageDeclarataion = (PackageDeclaration)children.get (i++);
@@ -35,7 +35,7 @@ public class OrdinaryCompilationUnit extends SyntaxTreeNode {
 		if (c instanceof TypeDeclaration tc)
 		    types.add (tc);
 		else
-		    ctx.warning (c.getPosition (), "Empty type / Extra ';'");
+		    ctx.warning (c.position (), "Empty type / Extra ';'");
 	    }
 	} else {
 	    types = Collections.emptyList ();

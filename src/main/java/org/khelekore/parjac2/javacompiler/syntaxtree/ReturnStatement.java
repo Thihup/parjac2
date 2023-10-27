@@ -11,7 +11,7 @@ public class ReturnStatement extends SyntaxTreeNode {
     private final ParseTreeNode expression;
 
     public ReturnStatement (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	expression = rule.size () > 2 ? children.get (1) : null;
     }
 

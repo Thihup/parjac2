@@ -10,7 +10,7 @@ public class ArrayType extends SyntaxTreeNode {
     private ParseTreeNode type;
     private Dims dims;
     public ArrayType (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	type = children.get (0); // primitive or class type
 	dims = (Dims)children.get (1);
     }

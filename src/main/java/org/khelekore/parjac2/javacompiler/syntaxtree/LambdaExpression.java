@@ -11,7 +11,7 @@ public class LambdaExpression extends SyntaxTreeNode {
     private ParseTreeNode body;
 
     public LambdaExpression (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	params = (LambdaParameters)children.get (0);
 	body = children.get (2);
     }

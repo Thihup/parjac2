@@ -13,7 +13,7 @@ public class WildcardBounds extends SyntaxTreeNode {
     private ParseTreeNode referenceType;
 
     public WildcardBounds (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	type = ((TokenNode)children.get (0)).getToken ();
 	referenceType = children.get (1);
     }

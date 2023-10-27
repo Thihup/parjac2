@@ -12,7 +12,7 @@ public class VariableDeclaratorId extends SyntaxTreeNode {
     private Dims dims;
 
     public VariableDeclaratorId (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	id = ((Identifier)children.get (0)).getValue ();
 	if (rule.size () > 1)
 	    dims = (Dims)children.get (1);

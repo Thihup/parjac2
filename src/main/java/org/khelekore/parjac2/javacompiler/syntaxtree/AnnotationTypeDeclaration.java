@@ -18,7 +18,7 @@ public class AnnotationTypeDeclaration extends TypeDeclaration {
     private static FlagCalculator flagCalculator = FlagCalculator.SIMPLE_ACCESS;
 
     public AnnotationTypeDeclaration (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 0;
 	if (children.get (i) instanceof Multiple)
 	    modifiers = ((Multiple)children.get (i++)).get ();
@@ -27,7 +27,7 @@ public class AnnotationTypeDeclaration extends TypeDeclaration {
 	i += 2;
 	id = ((TypeIdentifier)children.get (i++)).getValue ();
 	body = (AnnotationTypeBody)children.get (i);
-	flags = flagCalculator.calculate (ctx, modifiers, getPosition ());
+	flags = flagCalculator.calculate (ctx, modifiers, position ());
     }
 
     @Override public Object getValue () {

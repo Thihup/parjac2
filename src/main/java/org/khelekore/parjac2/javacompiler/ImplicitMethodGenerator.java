@@ -78,7 +78,7 @@ public class ImplicitMethodGenerator {
 	}
 	if (ls.isEmpty ()) {
 	    int flags = Flags.isPublic (n.flags ()) ? Flags.ACC_PUBLIC : 0;
-	    ls.add (ConstructorDeclaration.create (n.getPosition (), javaTokens, flags, id, List.of ()));
+	    ls.add (ConstructorDeclaration.create (n.position (), javaTokens, flags, id, List.of ()));
 	}
     }
 
@@ -87,14 +87,14 @@ public class ImplicitMethodGenerator {
     private void addRecordFieldsAndMethods (RecordDeclaration r) {
 	List<RecordComponent> rcs = r.getRecordComponents ();
 	for (RecordComponent rc : rcs) {
-	    r.addField (new FieldInfo (rc.name (), rc.getPosition (), RECORD_FIELD_FLAGS, rc.type (), 0));
+	    r.addField (new FieldInfo (rc.name (), rc.position (), RECORD_FIELD_FLAGS, rc.type (), 0));
 	}
 	// Add: Constructor, toString(), hashCode(), equals(Object o)
 
 	// Add a field-getter for each field.
 	for (RecordComponent rc : rcs) {
 	    int flags = Flags.ACC_PUBLIC;
-	    ParsePosition pos = rc.getPosition ();
+	    ParsePosition pos = rc.position ();
 	    ParseTreeNode res = rc.type ();
 	    r.addMethod (new MethodDeclaration (pos, flags, rc.name (), res,
 						new Block (pos, new ReturnStatement (pos, rc.name ()))));
@@ -116,6 +116,6 @@ public class ImplicitMethodGenerator {
     }
 
     private void error (ParseTreeNode where, String template, Object... args) {
-	diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), where.getPosition (), template, args));
+	diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), where.position (), template, args));
     }
 }

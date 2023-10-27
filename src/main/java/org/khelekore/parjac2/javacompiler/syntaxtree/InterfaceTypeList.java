@@ -11,7 +11,7 @@ public class InterfaceTypeList extends SyntaxTreeNode {
     private List<ClassType> types;
 
     public InterfaceTypeList (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	types = new ArrayList<> ();
 	types.add ((ClassType)children.get (0));
 	if (children.size () > 1) {

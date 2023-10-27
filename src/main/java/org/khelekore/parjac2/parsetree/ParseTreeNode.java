@@ -16,7 +16,7 @@ public interface ParseTreeNode {
     /** Get the child nodes for this token, empty list for leaf nodes */
     List<ParseTreeNode> getChildren ();
     /** Get the parse position for this node of the tree. */
-    ParsePosition getPosition ();
+    ParsePosition position ();
     /** Visit the child nodes */
     void visitChildNodes (NodeVisitor v);
 }

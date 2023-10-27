@@ -12,7 +12,7 @@ public class Ternary extends SyntaxTreeNode {
     private ParseTreeNode elsePart;
 
     public Ternary (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	test = children.get (0);
 	thenPart = children.get (2);
 	elsePart = children.get (4);

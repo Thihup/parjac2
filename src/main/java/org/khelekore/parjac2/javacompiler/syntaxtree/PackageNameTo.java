@@ -13,7 +13,7 @@ public abstract class PackageNameTo<T extends DottedName, S extends DottedName> 
 
     @SuppressWarnings("unchecked")
     public PackageNameTo (Rule r, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	packageName = (T)children.get (1);
 	if (r.size () > 3) {
 	    exportedTo = new ArrayList<> ();

@@ -13,7 +13,7 @@ public class UnaryExpression extends SyntaxTreeNode {
     private ParseTreeNode exp;
 
     public UnaryExpression (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	operator = ((TokenNode)children.get (0)).getToken ();
 	exp = children.get (1);
     }

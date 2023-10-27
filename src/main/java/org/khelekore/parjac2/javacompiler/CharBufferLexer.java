@@ -133,12 +133,12 @@ public class CharBufferLexer implements Lexer {
 
     @Override public TokenNode toCorrectType (TokenNode n, Token wantedActualToken) {
 	if (wantedActualToken == javaTokens.VAR)
-	    return new TokenNode (wantedActualToken, n.getPosition ());
+	    return new TokenNode (wantedActualToken, n.position ());
 	if (n instanceof Identifier i) {
 	    if (wantedActualToken == javaTokens.TYPE_IDENTIFIER && allowedTypeIdentifier (i))
-		return new TypeIdentifier (wantedActualToken, i.getValue (), n.getPosition ());
+		return new TypeIdentifier (wantedActualToken, i.getValue (), n.position ());
 	    if (wantedActualToken == javaTokens.UNQUALIFIED_METHOD_IDENTIFIER && allowedUnqualifieldMethodIdentifier (i))
-		return new UnqualifiedMethodIdentifier (wantedActualToken, i.getValue (), n.getPosition ());
+		return new UnqualifiedMethodIdentifier (wantedActualToken, i.getValue (), n.position ());
 	}
 	return n;
     }

@@ -12,7 +12,7 @@ public class CatchType extends SyntaxTreeNode {
     private final List<ClassType> otherTypes;
 
     public CatchType (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	firstType = (UnannClassType)children.get (0);
 	if (rule.size () > 1) {
 	    Multiple z = (Multiple)children.get (1);

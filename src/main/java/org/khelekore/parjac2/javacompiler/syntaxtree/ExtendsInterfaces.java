@@ -10,7 +10,7 @@ public class ExtendsInterfaces extends SyntaxTreeNode {
     private final InterfaceTypeList interfaceTypes;
 
     public ExtendsInterfaces (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	interfaceTypes = (InterfaceTypeList)children.get (1);
     }
 

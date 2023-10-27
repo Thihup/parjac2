@@ -10,7 +10,7 @@ public class LocalVariableDeclarationStatement extends SyntaxTreeNode {
     private final LocalVariableDeclaration decl;
 
     public LocalVariableDeclarationStatement (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	decl = (LocalVariableDeclaration)children.get (0);
     }
 

@@ -10,7 +10,7 @@ public class ElementValueArrayInitializer extends SyntaxTreeNode {
     private final List<ParseTreeNode> values;
 
     public ElementValueArrayInitializer (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	if (children.get (1) instanceof ElementValueList)
 	    values = ((ElementValueList)children.get (1)).getValues ();
 	else

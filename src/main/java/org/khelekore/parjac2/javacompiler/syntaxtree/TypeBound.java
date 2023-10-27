@@ -13,7 +13,7 @@ public class TypeBound extends SyntaxTreeNode {
     private List<ClassType> additionalBounds;
 
     public TypeBound (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	base = (ClassType)children.get (1);
 	if (rule.size () > 2) {
 	    additionalBounds = new ArrayList<> ();

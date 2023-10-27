@@ -31,7 +31,7 @@ public abstract class SwitchBlock extends SyntaxTreeNode {
 	private final List<SwitchLabelColon> trailingLabels;
 
 	public SwitchBlockStatements (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	    super (n.getPosition ());
+	    super (n.position ());
 
 	    ls = new ArrayList<> ();
 	    trailingLabels = new ArrayList<> ();
@@ -70,7 +70,7 @@ public abstract class SwitchBlock extends SyntaxTreeNode {
 	private List<SwitchRule> rules = new ArrayList<> ();
 
 	public SwitchBlockRule (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	    super (n.getPosition ());
+	    super (n.position ());
 	    rules.add ((SwitchRule)children.get (1));
 	    if (rule.size () > 3)
 		rules.addAll (((Multiple)children.get (2)).get ());

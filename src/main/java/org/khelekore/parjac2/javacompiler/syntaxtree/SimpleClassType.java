@@ -16,7 +16,7 @@ public class SimpleClassType extends SyntaxTreeNode {
     private final TypeArguments typeArguments;
 
     public SimpleClassType (Rule rule, ParseTreeNode sct, List<ParseTreeNode> children) {
-	super (sct.getPosition ());
+	super (sct.position ());
 	int i = 0;
 	ParseTreeNode n = children.get (i++);
 	if (n instanceof Multiple) {

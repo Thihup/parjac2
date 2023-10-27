@@ -13,7 +13,7 @@ public class ConstructorBody extends SyntaxTreeNode {
     private BlockStatements statements;
 
     public ConstructorBody (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 1;
 	if (rule.get (i) == ctx.getGrammar ().getRuleGroupId ("ExplicitConstructorInvocation"))
 	    eci = (ExplicitConstructorInvocation)children.get (i++);

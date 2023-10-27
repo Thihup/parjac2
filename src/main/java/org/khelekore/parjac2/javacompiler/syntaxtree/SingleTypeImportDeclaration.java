@@ -9,7 +9,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 public final class SingleTypeImportDeclaration extends ImportDeclaration {
     private TypeName typename;
     public SingleTypeImportDeclaration (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	this.typename = (TypeName)children.get (1);
     }
 

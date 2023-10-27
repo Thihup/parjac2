@@ -10,7 +10,7 @@ public class UsesDirective extends ModuleDirective {
     private TypeName typeName;
 
     public UsesDirective (Rule r, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	typeName = (TypeName)children.get (1);
     }
 

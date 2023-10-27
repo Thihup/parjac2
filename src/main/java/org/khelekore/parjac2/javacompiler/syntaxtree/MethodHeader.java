@@ -18,7 +18,7 @@ public class MethodHeader extends SyntaxTreeNode {
     // Result MethodDeclarator [Throws]
     // TypeParameters {Annotation} Result MethodDeclarator [Throws]
     public MethodHeader (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 0;
 	List<ParseTreeNode> anns = List.of ();
 	if (rule.get (0) == ctx.getGrammar ().getRuleGroupId ("TypeParameters")) {

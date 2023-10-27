@@ -7,7 +7,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public interface ConstructorDeclarationBase {
 
-    ParsePosition getPosition ();
+    ParsePosition position ();
 
     List<? extends ParseTreeNode> getAnnotations ();
 

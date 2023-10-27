@@ -13,7 +13,7 @@ public class ArrayCreationExpression extends SyntaxTreeNode {
     private final ArrayInitializer initializer;
 
     public ArrayCreationExpression (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 1;
 	type = (SyntaxTreeNode)children.get (i++);
 	dimExprs = (children.get (i) instanceof DimExprs) ? (DimExprs)children.get (i++) : null;

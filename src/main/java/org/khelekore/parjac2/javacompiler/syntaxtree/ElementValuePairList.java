@@ -11,7 +11,7 @@ public class ElementValuePairList extends SyntaxTreeNode {
     private final List<ElementValuePair> values;
 
     public ElementValuePairList (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	if (rule.size () == 1) {
 	    values = List.of ((ElementValuePair)children.get (0));
 	} else {

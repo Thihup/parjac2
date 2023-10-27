@@ -12,7 +12,7 @@ public class ClassInstanceCreationExpression extends SyntaxTreeNode {
     private UnqualifiedClassInstanceCreationExpression exp;
 
     public ClassInstanceCreationExpression (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	ParseTreeNode tn = children.get (0);
 	if (children.size () > 1) {
 	    if (tn instanceof ExpressionName) {

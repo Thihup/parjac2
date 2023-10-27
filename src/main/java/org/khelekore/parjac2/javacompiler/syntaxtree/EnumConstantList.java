@@ -11,7 +11,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 public class EnumConstantList extends SyntaxTreeNode {
     private List<EnumConstant> constants;
     public EnumConstantList (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	if (rule.size () == 1) {
 	    constants = List.of ((EnumConstant)children.get (0));
 	} else {

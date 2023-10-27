@@ -12,7 +12,7 @@ public class NormalMethodReference extends SyntaxTreeNode implements MethodRefer
     private final TypeArguments types;
     private final String id;
     public NormalMethodReference (Rule r, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	type = children.get (0);
 	types = r.size () > 3 ? (TypeArguments)children.get (2) : null;
 	id = ((Identifier)children.get (children.size () - 1)).getValue ();

@@ -11,7 +11,7 @@ public class ConstructorMethodReference extends SyntaxTreeNode implements Method
     private final TypeArguments types;
 
     public ConstructorMethodReference (Rule r, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	type = children.get (0);
 	types = r.size () > 3 ? (TypeArguments)children.get (2) : null;
     }

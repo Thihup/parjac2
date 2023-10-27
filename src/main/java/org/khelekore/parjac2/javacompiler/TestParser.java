@@ -137,7 +137,7 @@ public class TestParser {
 
     private void printTree (ParseTreeNode n, String indent) {
 	System.out.print (indent);
-	System.out.print (n.getId () + " " + n.getPosition ().toShortString ());
+	System.out.print (n.getId () + " " + n.position ().toShortString ());
 	printValue (n);
 	System.out.println ();
 	n.visitChildNodes (c -> printTree (c, indent + " "));

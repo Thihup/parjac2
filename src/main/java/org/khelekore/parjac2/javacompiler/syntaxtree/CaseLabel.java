@@ -39,18 +39,18 @@ public class CaseLabel extends SwitchLabel {
 	    if (p instanceof TokenNode tn) {
 		if (tn.getToken () == ctx.getTokens ().DEFAULT) {
 		    if (defaultFound > 0 || otherFound > 0 || nullFound != 1) {
-			ctx.error (p.getPosition (), "default not allowed here");
+			ctx.error (p.position (), "default not allowed here");
 		    }
 		    defaultFound++;
 		} else if (tn.getToken () == ctx.getTokens ().NULL) {
 		    if (nullFound > 0 || otherFound > 0 || defaultFound > 0)
-			ctx.error (p.getPosition (), "null not allowed here");
+			ctx.error (p.position (), "null not allowed here");
 		    nullFound++;
 		} else {
 		    if (nullFound > 0)
-			ctx.error (p.getPosition (), "CaseConstant can not follow null");
+			ctx.error (p.position (), "CaseConstant can not follow null");
 		    else if (defaultFound > 0)
-			ctx.error (p.getPosition (), "CaseConstant can not follow default");
+			ctx.error (p.position (), "CaseConstant can not follow default");
 		    otherFound++;
 		}
  	    }

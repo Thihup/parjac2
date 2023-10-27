@@ -21,7 +21,7 @@ public class EnumDeclaration extends TypeDeclaration {
     private final static ClassType ENUM_SUPER = new ClassType (FullNameHandler.JL_ENUM);
 
     public EnumDeclaration (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 0;
 	if (children.get (0) instanceof Multiple) {
 	    modifiers = ((Multiple)children.get (i++)).get ();
@@ -37,7 +37,7 @@ public class EnumDeclaration extends TypeDeclaration {
 	}
 	body = (EnumBody)children.get (i);
 	body.setParents (this);
-	flags = flagCalculator.calculate (ctx, modifiers, getPosition ());
+	flags = flagCalculator.calculate (ctx, modifiers, position ());
     }
 
     @Override public Object getValue () {

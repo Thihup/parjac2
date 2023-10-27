@@ -10,7 +10,7 @@ public final class TypeImportOnDemandDeclaration extends ImportDeclaration {
     private final PackageOrTypeName typename;
 
     public TypeImportOnDemandDeclaration (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	this.typename = (PackageOrTypeName)children.get (1);
     }
 

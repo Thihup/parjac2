@@ -20,7 +20,7 @@ public class ModuleDeclaration extends SyntaxTreeNode {
     private List<ModuleDirective> directives;
 
     public ModuleDeclaration (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	relativePath = ctx.getRelativePath ();
 	int i = 0;
 	if (children.get (i) instanceof Multiple)

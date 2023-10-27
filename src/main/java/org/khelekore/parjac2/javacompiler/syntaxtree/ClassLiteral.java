@@ -10,7 +10,7 @@ public class ClassLiteral extends SyntaxTreeNode {
     private final ParseTreeNode type;
     private final int dims;
     public ClassLiteral (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 0;
 	type = children.get (i++);
 	if (children.get (i) instanceof Multiple)

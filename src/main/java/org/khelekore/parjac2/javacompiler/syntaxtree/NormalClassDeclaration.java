@@ -23,7 +23,7 @@ public class NormalClassDeclaration extends TypeDeclaration {
     private static FlagCalculator flagCalculator = FlagCalculator.SIMPLE_ACCESS;
 
     public NormalClassDeclaration (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	// {ClassModifier} class TypeIdentifier [TypeParameters] [ClassExtends] [ClassImplements] [ClassPermits] ClassBody
 	int i = 0;
 	if (children.get (i) instanceof Multiple)
@@ -49,7 +49,7 @@ public class NormalClassDeclaration extends TypeDeclaration {
 	    i++;
 	}
 	body = (ClassBody)children.get (i++);
-	flags = flagCalculator.calculate (ctx, modifiers, getPosition ());
+	flags = flagCalculator.calculate (ctx, modifiers, position ());
     }
 
     @Override public Object getValue () {

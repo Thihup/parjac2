@@ -5,7 +5,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class ThisPrimary extends SyntaxTreeNode {
     public ThisPrimary (ParseTreeNode n) {
-	super (n.getPosition ());
+	super (n.position ());
     }
 
     @Override public Object getValue () {

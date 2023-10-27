@@ -14,7 +14,7 @@ public class PrimitiveType extends SyntaxTreeNode {
     private Token type;
 
     public PrimitiveType (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	if (rule.size () > 1) {
 	    annotations = ((Multiple)children.get (0)).get ();
 	    type = ((TokenNode)children.get (1)).getToken ();

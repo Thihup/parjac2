@@ -17,7 +17,7 @@ public class MethodDeclarator extends SyntaxTreeNode {
 
     // Identifier ( [ReceiverParameter ,] [FormalParameterList] ) [Dims] 
     public MethodDeclarator (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	id = ((Identifier)children.get (0)).getValue ();
 	int i = 2;
 	if (rule.get (i) == ctx.getGrammar ().getRuleGroupId ("ReceiverParameter")) {

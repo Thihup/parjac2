@@ -25,9 +25,9 @@ public class InterfaceMethodDeclaration extends MethodDeclarationBase {
 	int clash = flags & (Flags.ACC_DEFAULT | Flags.ACC_PRIVATE | Flags.ACC_STATIC);
 	if (clash > 0 &&
 	    !(body instanceof Block))
-	    ctx.error (getPosition (), "Method marked as %s requires a body",
+	    ctx.error (position (), "Method marked as %s requires a body",
 		       ctx.getTokenNameString (clash));
 	if ((flags & Flags.ACC_ABSTRACT) > 0 && body instanceof Block)
-	    ctx.error (getPosition (), "Abstract method may not have a body");
+	    ctx.error (position (), "Abstract method may not have a body");
     }
 }

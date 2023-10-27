@@ -12,7 +12,7 @@ public class Wildcard extends SyntaxTreeNode {
     private final WildcardBounds bounds;
 
     public Wildcard (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 0;
 	if (children.get (0) instanceof Multiple)
 	    annotations = ((Multiple)children.get (i++)).get ();

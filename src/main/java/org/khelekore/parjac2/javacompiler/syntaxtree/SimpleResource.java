@@ -6,7 +6,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 public class SimpleResource extends SyntaxTreeNode {
     private final ParseTreeNode t; // ExpressionName or FieldAccess
     public SimpleResource (ParseTreeNode t) {
-	super (t.getPosition ());
+	super (t.position ());
 	this.t = t;
     }
 

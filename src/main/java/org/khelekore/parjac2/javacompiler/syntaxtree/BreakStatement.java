@@ -11,7 +11,7 @@ public class BreakStatement extends SyntaxTreeNode {
     private final String id;
 
     public BreakStatement (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	id = rule.size () > 2 ? ((Identifier)children.get (1)).getValue () : null;
     }
 

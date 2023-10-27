@@ -9,7 +9,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 public class PreDecrementExpression extends SyntaxTreeNode {
     private ParseTreeNode expression;
     public PreDecrementExpression (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	expression = children.get (1);
     }
 

@@ -12,7 +12,7 @@ public final class SingleStaticImportDeclaration extends ImportDeclaration {
     private String id;
 
     public SingleStaticImportDeclaration (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	this.typename = (TypeName)children.get (2);
 	this.id = ((Identifier)children.get (4)).getValue ();
     }

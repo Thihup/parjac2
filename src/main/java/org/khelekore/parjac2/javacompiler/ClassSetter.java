@@ -320,7 +320,7 @@ public class ClassSetter {
 	    }
 	} else {
 	    FullNameHandler fn = FullNameHandler.ofSimpleClassName (name);
-	    ResolvedClass fqn = resolve (et, fn, an.getPosition ());
+	    ResolvedClass fqn = resolve (et, fn, an.position ());
 	    if (fqn != null)
 		an.setFullName (fqn.type);
 	}
@@ -390,14 +390,14 @@ public class ClassSetter {
 	    return;
 	// "List" and "java.util.List" are easy to resolve
 	FullNameHandler id = ct.getFullNameAsSimpleDottedName ();
-	ResolvedClass fqn = resolve (et, id, ct.getPosition ());
+	ResolvedClass fqn = resolve (et, id, ct.position ());
 	if (fqn == null && ct.size () > 1) {
 	    // ok, someone probably wrote something like "HashMap.Entry" or
 	    // "java.util.HashMap.Entry" which is somewhat problematic, but legal
-	    fqn = tryAllParts (et, ct, ct.getPosition ());
+	    fqn = tryAllParts (et, ct, ct.position ());
 	}
 	if (fqn == null) {
-	    diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), ct.getPosition (),
+	    diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), ct.position (),
 							 "Failed to find class for type: %s", id));
 	    return;
 	}
@@ -415,12 +415,12 @@ public class ClassSetter {
 	if (tn.hasFullName ())
 	    return;
 	FullNameHandler id = tn.getFullNameAsSimpleDottedName ();
-	ResolvedClass fqn = resolve (et, id, tn.getPosition ());
+	ResolvedClass fqn = resolve (et, id, tn.position ());
 	if (fqn == null && tn.size () > 1) {
-	    fqn = tryAllParts (et, tn, tn.getPosition ());
+	    fqn = tryAllParts (et, tn, tn.position ());
 	}
 	if (fqn == null) {
-	    diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), tn.getPosition (),
+	    diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), tn.position (),
 							 "Failed to find class for dotted name: %s", id));
 	    return;
 	}
@@ -455,13 +455,13 @@ public class ClassSetter {
 	    FullNameHandler name = FullNameHandler.ofSimpleClassName (dotName);
 	    FullNameHandler visibleType = getVisibleType (null, name);
 	    if (visibleType == null) {
-		diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), i.getPosition (),
+		diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), i.position (),
 							     "Imported type not found: %s", name));
 		i.markUsed (); // Unused, but already flagged as bad, don't want multiple lines
 	    }
 	    ImportHolder prev = stid.put (dn.getLastPart (), new ImportHolder (i, dotName));
 	    if (prev != null) {
-		diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), i.getPosition (),
+		diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), i.position (),
 							     "Name clash for import: %s", dn.getLastPart ()));
 	    }
 	}
@@ -471,7 +471,7 @@ public class ClassSetter {
 	    FullNameHandler name = FullNameHandler.ofSimpleClassName (dotName);
 	    FullNameHandler visibleType = getVisibleType (null, name);
 	    if (visibleType == null) {
-		diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), i.getPosition (),
+		diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), i.position (),
 							     "Imported type not found: %s", dotName));
 		i.markUsed (); // Unused, but already flagged as bad, don't want multiple lines
 		return;
@@ -828,13 +828,13 @@ public class ClassSetter {
 	    String field = si.getInnerId ();
 	    FullNameHandler visibleType = getVisibleType (null, fullName);
 	    if (visibleType == null && cip.getFieldInformation (visibleType, field) == null) {
-		diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), i.getPosition (),
+		diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), i.position (),
 							     "Type %s has no symbol: %s", fqn, field));
 		return;
 	    }
 	}
 	diagnostics.report (SourceDiagnostics.warning (tree.getOrigin (),
-						       i.getPosition (),
+						       i.position (),
 						       "Unused import: %s", i.getValue ()));
     }
 
@@ -912,6 +912,6 @@ public class ClassSetter {
     }
 
     private void error (ParseTreeNode where, String template, Object... args) {
-	diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), where.getPosition (), template, args));
+	diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), where.position (), template, args));
     }
 }

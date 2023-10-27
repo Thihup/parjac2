@@ -27,7 +27,7 @@ public class InterfaceBody extends SyntaxTreeNode {
     private Map<String, FieldInfo> nameToField;
 
     public InterfaceBody (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	if (rule.size () > 2) {
 	    declarations = ((Multiple)children.get (1)).get ();
 	} else {
@@ -46,7 +46,7 @@ public class InterfaceBody extends SyntaxTreeNode {
 	    int flags = i.flags ();
 	    int clash = flags & (Flags.ACC_PRIVATE | Flags.ACC_PROTECTED);
 	    if (clash > 0) {
-		ctx.error (i.getPosition (), "Interface member type may not be %s",
+		ctx.error (i.position (), "Interface member type may not be %s",
 			   ctx.getTokenNameString (clash));
 	    }
 	    flags |= Flags.ACC_PUBLIC | Flags.ACC_STATIC;

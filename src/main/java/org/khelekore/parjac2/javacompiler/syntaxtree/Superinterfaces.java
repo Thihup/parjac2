@@ -11,7 +11,7 @@ public class Superinterfaces extends SyntaxTreeNode {
     private List<ClassType> types;
 
     public Superinterfaces (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	InterfaceTypeList l = (InterfaceTypeList)children.get (1);
 	types = l.getTypes ();
     }

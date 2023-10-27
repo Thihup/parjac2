@@ -11,7 +11,7 @@ import org.khelekore.parjac2.parsetree.TokenNode;
 
 public class MarkerAnnotation extends Annotation {
     public MarkerAnnotation (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition (), children);
+	super (n.position (), children);
     }
 
     public MarkerAnnotation (ParsePosition pos, TokenNode at, TypeName typename) {

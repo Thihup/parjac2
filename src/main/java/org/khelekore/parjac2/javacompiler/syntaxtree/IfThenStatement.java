@@ -12,7 +12,7 @@ public class IfThenStatement extends SyntaxTreeNode {
     private final ParseTreeNode elseStatement;
 
     public IfThenStatement (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	exp = children.get (2);
 	ifStatement = children.get (4);
 	elseStatement = rule.size () > 6 ? children.get (6) : null;

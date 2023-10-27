@@ -11,7 +11,7 @@ public class SwitchRule extends SyntaxTreeNode {
     private final ParseTreeNode handler;
 
     public SwitchRule (Rule r, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	label = (SwitchLabel)children.get (0);
 	handler = children.get (2);
     }

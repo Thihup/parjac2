@@ -10,7 +10,7 @@ public class Finally extends SyntaxTreeNode {
     private final Block block;
 
     public Finally (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	block = (Block)children.get (1);
     }
 

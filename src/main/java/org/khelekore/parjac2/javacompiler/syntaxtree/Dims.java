@@ -12,7 +12,7 @@ public class Dims extends SyntaxTreeNode {
     // one list of annotations per dim
     List<List<ParseTreeNode>> annotations;
     public Dims (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	annotations = new ArrayList<> ();
 	int i = 0;
 	if (children.get (0) instanceof Multiple)

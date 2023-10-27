@@ -33,8 +33,8 @@ public class RuleNode implements ParseTreeNode {
 	return children;
     }
 
-    @Override public ParsePosition getPosition () {
-	return children.get (0).getPosition ();
+    @Override public ParsePosition position () {
+	return children.get (0).position ();
     }
 
     public Rule getRule () {

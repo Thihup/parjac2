@@ -11,7 +11,7 @@ public class LabeledStatement extends SyntaxTreeNode {
     private String id;
     private ParseTreeNode statement;
     public LabeledStatement (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	id = ((Identifier)children.get (0)).getValue ();
 	statement = children.get (2);
     }

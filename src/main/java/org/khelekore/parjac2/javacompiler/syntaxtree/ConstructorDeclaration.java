@@ -19,7 +19,7 @@ public class ConstructorDeclaration extends FlaggedBase implements ConstructorDe
     private static FlagCalculator flagCalculator = FlagCalculator.SIMPLE_ACCESS;
 
     public ConstructorDeclaration (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 0;
 	if (children.get (i) instanceof Multiple)
 	    modifiers = ((Multiple)children.get (i++)).get ();
@@ -28,7 +28,7 @@ public class ConstructorDeclaration extends FlaggedBase implements ConstructorDe
 	declarator = (ConstructorDeclarator)children.get (i++);
 	t = (rule.size () > i + 1) ? (Throws)children.get (i++) : null;
 	body = (ConstructorBody)children.get (i);
-	flags = flagCalculator.calculate (ctx, modifiers, getPosition ());
+	flags = flagCalculator.calculate (ctx, modifiers, position ());
     }
 
     public static ConstructorDeclaration create (ParsePosition pos, JavaTokens javaTokens,

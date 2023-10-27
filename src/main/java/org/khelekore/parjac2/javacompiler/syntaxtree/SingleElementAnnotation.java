@@ -10,7 +10,7 @@ public class SingleElementAnnotation extends Annotation {
     private ParseTreeNode value;
 
     public SingleElementAnnotation (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition (), children);
+	super (n.position (), children);
 	value = children.get (3);
     }
 

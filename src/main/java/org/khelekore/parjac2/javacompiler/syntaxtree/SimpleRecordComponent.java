@@ -16,7 +16,7 @@ public class SimpleRecordComponent extends SyntaxTreeNode implements VariableInf
     private final String id;
 
     public SimpleRecordComponent (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	int i = 0;
 	modifiers = (rule.size () > 2) ? ((Multiple)children.get (i++)).get () : Collections.emptyList ();
 	type = children.get (i++);

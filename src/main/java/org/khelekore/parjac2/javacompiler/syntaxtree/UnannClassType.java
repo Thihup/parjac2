@@ -6,6 +6,6 @@ import java.util.List;
 public class UnannClassType extends ClassType {
 
     public UnannClassType (SimpleClassType sct) {
-	super (sct.getPosition (), new ArrayList<> (List.of (sct)));
+	super (sct.position (), new ArrayList<> (List.of (sct)));
     }
 }

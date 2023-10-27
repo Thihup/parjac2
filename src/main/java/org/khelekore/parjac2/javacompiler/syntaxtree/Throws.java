@@ -10,7 +10,7 @@ public class Throws extends SyntaxTreeNode {
     private ExceptionTypeList exceptionTypeList;
 
     public Throws (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	exceptionTypeList = (ExceptionTypeList)children.get (1);
     }
 

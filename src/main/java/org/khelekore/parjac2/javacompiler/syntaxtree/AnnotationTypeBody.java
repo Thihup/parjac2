@@ -22,7 +22,7 @@ public class AnnotationTypeBody extends SyntaxTreeNode {
     private Map<String, FieldInfo> nameToField;
 
     public AnnotationTypeBody (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (n.getPosition ());
+	super (n.position ());
 	if (rule.size () > 2) {
 	    declarations = ((Multiple)children.get (1)).get ();
 	} else {
