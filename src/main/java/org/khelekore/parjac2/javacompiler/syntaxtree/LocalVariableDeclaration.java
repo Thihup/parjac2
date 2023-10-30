@@ -30,7 +30,7 @@ public class LocalVariableDeclaration extends SyntaxTreeNode {
 	this.list = list;
     }
 
-    @Override public Object getValue() {
+    @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	if (!modifiers.isEmpty ())
 	    sb.append (modifiers).append (" ");
@@ -50,5 +50,9 @@ public class LocalVariableDeclaration extends SyntaxTreeNode {
 
     public ParseTreeNode getType () {
 	return type;
+    }
+
+    public List<VariableDeclarator> getDeclarators () {
+	return list.getDeclarators ();
     }
 }

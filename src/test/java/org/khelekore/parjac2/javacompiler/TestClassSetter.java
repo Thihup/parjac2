@@ -226,6 +226,7 @@ public class TestClassSetter {
 
     @Test
     public void testOtherPrivateFieldIsAccessible () {
+	// we only want one error for this.
 	getTypes ("class C { private String s; } class D { void foo (C c) { c.s.length (); }}", 1);
     }
 
@@ -256,7 +257,7 @@ public class TestClassSetter {
     public void testAmbigousNameWithPrimitiveTypeFromCompiledClass () {
 	getFirstType ("""
 		      class F { public static int P = 1; }
-		      class C { void foo () { int f = Flags.P; }}
+		      class C { void foo () { int f = F.P; }}
 		      """);
     }
 
@@ -272,7 +273,9 @@ public class TestClassSetter {
 	ParsedEntry tree = syntaxTree (txt);
 	cip.addTypes (tree.getRoot (), tree.getOrigin ());
 	ClassSetter.fillInClasses (cip, List.of (tree), diagnostics);
-	assert diagnostics.errorCount () == expectedErrors : "Got unexpected number of errors: " + TestParserHelper.getParseOutput (diagnostics);
+	assert diagnostics.errorCount () == expectedErrors
+	    : String.format ("Got unexpected number of errors: %d, expected %d: errors:\n%s",
+			     diagnostics.errorCount (), expectedErrors, TestParserHelper.getParseOutput (diagnostics));
 	OrdinaryCompilationUnit ocu = (OrdinaryCompilationUnit)tree.getRoot ();
 	return ocu.getTypes ();
     }

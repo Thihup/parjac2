@@ -48,6 +48,10 @@ public class VariableDeclarator extends SyntaxTreeNode {
 	return id.getDims ();
     }
 
+    public int rank () {
+	return id.rank ();
+    }
+
     public boolean hasInitializer () {
 	return initializer != null;
     }

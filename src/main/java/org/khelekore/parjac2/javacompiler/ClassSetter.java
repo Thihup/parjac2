@@ -33,6 +33,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.FormalParameterBase;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FormalParameterList;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ImportDeclaration;
+import org.khelekore.parjac2.javacompiler.syntaxtree.LocalVariableDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.MethodDeclarationBase;
 import org.khelekore.parjac2.javacompiler.syntaxtree.MethodReference;
 import org.khelekore.parjac2.javacompiler.syntaxtree.NamePartHandler;
@@ -57,6 +58,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.TypeName;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeParameter;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeParameters;
 import org.khelekore.parjac2.javacompiler.syntaxtree.UnqualifiedClassInstanceCreationExpression;
+import org.khelekore.parjac2.javacompiler.syntaxtree.VariableDeclarator;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Wildcard;
 import org.khelekore.parjac2.javacompiler.syntaxtree.WildcardBounds;
 import org.khelekore.parjac2.parser.ParsePosition;
@@ -92,7 +94,7 @@ public class ClassSetter {
 	classSetters.parallelStream ().forEach (ClassSetter::registerSuperTypes);
 
 	classSetters.parallelStream ().forEach (ClassSetter::registerFields);
-	classSetters.parallelStream ().sequential ().forEach (ClassSetter::registerMethods); // qwerty
+	classSetters.parallelStream ().forEach (ClassSetter::registerMethods);
 
 	classSetters.parallelStream ().forEach (cs -> cs.checkUnusedImport ());
     }
@@ -206,10 +208,11 @@ public class ClassSetter {
 	}
 	ParseTreeNode body = md.getMethodBody ();
 	if (body instanceof Block block) {
+	    EnclosingTypes ms = enclosingBlock (rt);
 	    BlockStatements bs = block.getStatements ();
 	    if (bs != null) {
 		List<ParseTreeNode> statements = bs.getStatements ();
-		statements.forEach (s -> setTypesForMethodStatement (rt, s));
+		statements.forEach (s -> setTypesForMethodStatement (ms, s));
 	    }
 	}
     }
@@ -218,8 +221,9 @@ public class ClassSetter {
 	checkAnnotations (bt, cdb.getAnnotations ());
 	EnclosingTypes et = registerTypeParameters (bt, cdb.getTypeParameters ());
 	EnclosingTypes rt = setFormalParameterListTypes (et, cdb.getFormalParameterList ());
+	EnclosingTypes ms = enclosingBlock (rt);
 	List<ParseTreeNode> statements = cdb.getStatements ();
-	statements.forEach (s -> setTypesForMethodStatement (rt, s));
+	statements.forEach (s -> setTypesForMethodStatement (ms, s));
     }
 
     private void setInstanceInitializerTypes (EnclosingTypes et, SyntaxTreeNode n) {
@@ -254,10 +258,10 @@ public class ClassSetter {
     }
 
     private void setTypesForMethodStatement (EnclosingTypes et, ParseTreeNode p) {
-	Deque<ParseTreeNode> partsToHandle = new ArrayDeque<> ();
+	Deque<Object> partsToHandle = new ArrayDeque<> ();
 	partsToHandle.add (p);
 	while (!partsToHandle.isEmpty ()) {
-	    ParseTreeNode pp = partsToHandle.removeFirst ();
+	    Object pp = partsToHandle.removeFirst ();
 	    switch (pp) {
 	    case ClassType ct -> setType (et, ct);
 	    case AmbiguousName an -> reclassifyAmbiguousName (et, an);
@@ -267,17 +271,30 @@ public class ClassSetter {
 		// skip for now
 	    }
 	    case ClassOrInterfaceTypeToInstantiate coitti -> setType (et, coitti.getType ());
-	    default -> pp.visitChildNodes (partsToHandle::add);
+
+	    // Since we add first we will evaluate variable addition after the parts, which is what we want.
+	    case LocalVariableDeclaration lv -> { addVariable (partsToHandle, lv); addParts (partsToHandle, lv); }
+
+	    case ParseTreeNode ptn -> addParts (partsToHandle, ptn);
+
+	    case AddVariable av -> av.add (et);
+	    default -> throw new IllegalStateException ("Unhandled type: " + pp);
 	    }
 	}
     }
 
     private void reclassifyAmbiguousName (EnclosingTypes et, DottedName an) {
+	reclassifyAndSetTypeOnAmbiguousName (et, an);
+	if (an.getFullNameHandler () == null)
+	    error (an, "Unable to find symbol: %s", an.getDotName ());
+    }
+
+    private void reclassifyAndSetTypeOnAmbiguousName (EnclosingTypes et, DottedName an) {
 	if (an.size () == 1) {
 	    tryToSetFullNameOnSimpleName (et, an);
 	} else {
 	    DottedName leftPart = an.allButLast ();
-	    reclassifyAmbiguousName (et, leftPart);
+	    reclassifyAndSetTypeOnAmbiguousName (et, leftPart);
 	    FullNameHandler fn = leftPart.getFullNameHandler ();
 	    if (fn == null) { // (part of) package name
 		// since name is fully specified we do not want to check outer enclosures
@@ -287,20 +304,16 @@ public class ClassSetter {
 	    } else { // we have a type
 		String id = an.getLastPart ();
 		VariableInfo fi = cip.getFieldInformation (fn, id);
-		if (fi != null) {
-		    if (isAccessible (et, fn, fi)) {
-			an.setFullName (fi.typeName ());
-			// TODO: we need to store that we found a field access!
-		    } else {
-			error (an, "Field: %s in class %s is not accessible", id, fn.getFullDotName ());
-		    }
+		// if we find a field we can not access we can not log an error since doing so will
+		// result in us reporting multiple errors. We have to rely on the "unable to find symbol" from above.
+		if (fi != null && isAccessible (et, fn, fi)) {
+		    an.setFullName (fi.typeName ());
+		    // TODO: we need to store that we found a field access!
 		} else {
 		    FullNameHandler innerClassCandidate = fn.getInnerClass (id);
 		    FullNameHandler foundInnerClass = getVisibleType (null, innerClassCandidate);
 		    if (foundInnerClass != null)
 			an.setFullName (foundInnerClass);
-		    else
-			error (an, "No field: %s, found in class: %s", id, fn.getFullDotName ());
 		}
 	    }
 	}
@@ -337,6 +350,23 @@ public class ClassSetter {
 	    et = et.previous ();
 	}
 	return null;
+    }
+
+    private void addParts (Deque<Object> partsToHandle, ParseTreeNode pp) {
+	List<ParseTreeNode> parts = pp.getChildren ();
+	for (int i = parts.size () - 1; i >= 0; i--)
+	    partsToHandle.addFirst (parts.get (i));
+    }
+
+    private void addVariable (Deque<Object> partsToHandle, LocalVariableDeclaration lv) {
+	partsToHandle.add (new AddVariable (lv));
+    }
+
+    private static record AddVariable (LocalVariableDeclaration lv) {
+	public void add (EnclosingTypes et) {
+	    BlockEnclosure be = (BlockEnclosure)et.enclosure ();
+	    be.add (lv);
+	}
     }
 
     private boolean isAccessible (EnclosingTypes et, FullNameHandler fqn, VariableInfo fi) {
@@ -852,6 +882,10 @@ public class ClassSetter {
 	return new EnclosingTypes (previous, new VariableEnclosure (nameToVariable));
     }
 
+    private static EnclosingTypes enclosingBlock (EnclosingTypes previous) {
+	return new EnclosingTypes (previous, new BlockEnclosure ());
+    }
+
     private record EnclosingTypes (EnclosingTypes previous, Enclosure<?> enclosure)
 	implements Iterable<EnclosingTypes> {
 
@@ -911,6 +945,24 @@ public class ClassSetter {
 
     private record VariableEnclosure (Map<String, VariableInfo> variables) implements Enclosure<VariableInfo> {
 	@Override public Map<String, VariableInfo> getFields () { return variables; }
+    }
+
+    private static class BlockEnclosure implements Enclosure<VariableInfo> {
+	private Map<String, VariableInfo> locals = Map.of ();
+
+	private void add (LocalVariableDeclaration lv) {
+	    if (locals.isEmpty ())
+		locals = new HashMap<> ();
+	    for (VariableDeclarator vd : lv.getDeclarators ()) {
+		String name = vd.getName ();
+		VariableInfo vi = new FieldInfo (name, vd.position (), Flags.ACC_PUBLIC, lv.getType (), vd.rank ());
+		locals.put (name, vi);
+	    }
+	}
+
+	@Override public Map<String, VariableInfo> getFields () {
+	    return locals;
+	}
     }
 
     private void error (ParseTreeNode where, String template, Object... args) {

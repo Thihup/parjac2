@@ -42,4 +42,8 @@ public class VariableDeclaratorId extends SyntaxTreeNode {
     public Dims getDims () {
 	return dims;
     }
+
+    public int rank () {
+	return dims == null ? 0 : dims.rank ();
+    }
 }
