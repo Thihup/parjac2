@@ -35,31 +35,31 @@ public class CompactConstructorDeclaration extends SyntaxTreeNode implements Con
 	v.accept (body);
     }
 
-    public List<? extends ParseTreeNode> getAnnotations () {
+    @Override public List<? extends ParseTreeNode> getAnnotations () {
 	return null;
     }
 
-    public TypeParameters getTypeParameters () {
+    @Override public TypeParameters getTypeParameters () {
 	return null;
     }
 
-    public int flags () {
+    @Override public int flags () {
 	return Flags.ACC_PUBLIC;
     }
 
-    public String getName () {
+    @Override public String getName () {
 	return name;
     }
 
-    public ReceiverParameter getReceiverParameter () {
+    @Override public ReceiverParameter getReceiverParameter () {
 	return null;
     }
 
-    public FormalParameterList getFormalParameterList () {
+    @Override public FormalParameterList getFormalParameterList () {
 	return null;  // TODO: not sure how to deal with this, should probably return RecordComponentList
     }
 
-    public List<ParseTreeNode> getStatements () {
+    @Override public List<ParseTreeNode> getStatements () {
 	return body.getStatements ();
     }
 }

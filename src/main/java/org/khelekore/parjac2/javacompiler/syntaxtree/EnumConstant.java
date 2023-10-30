@@ -98,19 +98,19 @@ public class EnumConstant extends AnonymousClass {
 	return body.getFields ();
     }
 
-    public List<MethodDeclaration> getMethods () {
+    @Override public List<MethodDeclaration> getMethods () {
 	return body.getMethods ();
     }
 
-    public List<ConstructorDeclaration> getConstructors () {
+    @Override public List<ConstructorDeclaration> getConstructors () {
 	return body.getConsructors ();
     }
 
-    public List<SyntaxTreeNode> getInstanceInitializers () {
+    @Override public List<SyntaxTreeNode> getInstanceInitializers () {
 	return body.getInstanceInitializers ();
     }
 
-    public List<StaticInitializer> getStaticInitializers () {
+    @Override public List<StaticInitializer> getStaticInitializers () {
 	return body.getStaticInitializers ();
     }
 }

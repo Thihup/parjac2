@@ -67,19 +67,19 @@ public class AnnotationTypeDeclaration extends TypeDeclaration {
 	return body.getFields ();
     }
 
-    public List<MethodDeclaration> getMethods () {
+    @Override public List<MethodDeclaration> getMethods () {
 	return List.of ();
     }
 
-    public List<ConstructorDeclaration> getConstructors () {
+    @Override public List<ConstructorDeclaration> getConstructors () {
 	return List.of ();
     }
 
-    public List<SyntaxTreeNode> getInstanceInitializers () {
+    @Override public List<SyntaxTreeNode> getInstanceInitializers () {
 	return List.of ();
     }
 
-    public List<StaticInitializer> getStaticInitializers () {
+    @Override public List<StaticInitializer> getStaticInitializers () {
 	return List.of ();
     }
 }

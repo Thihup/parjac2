@@ -68,11 +68,11 @@ public class DottedName extends SyntaxTreeNode implements NamePartHandler {
 	return StringHelper.dotted (nameParts);
     }
 
-    public int size () {
+    @Override public int size () {
 	return nameParts.size ();
     }
 
-    public String getNamePart (int i) {
+    @Override public String getNamePart (int i) {
 	return nameParts.get (i);
     }
 

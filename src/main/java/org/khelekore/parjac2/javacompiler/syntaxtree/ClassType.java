@@ -68,7 +68,7 @@ public class ClassType extends SyntaxTreeNode implements NamePartHandler {
 	return tp;
     }
 
-    public int size () {
+    @Override public int size () {
 	return types.size ();
     }
 
@@ -76,7 +76,7 @@ public class ClassType extends SyntaxTreeNode implements NamePartHandler {
 	return types;
     }
 
-    public String getNamePart (int i) {
+    @Override public String getNamePart (int i) {
 	return types.get (i).getId ();
     }
 

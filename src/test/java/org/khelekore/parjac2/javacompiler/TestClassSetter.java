@@ -239,6 +239,27 @@ public class TestClassSetter {
 	getTypes ("package foo; class C { class D { class E { class F {}}} void foo () {foo.C.D.E.F f = null; }}");
     }
 
+    @Test
+    public void testAmbigousNameWithPrimitiveTypeFromClasspathClass () {
+	getFirstType ("""
+		      import java.io.File;
+		      class Crash {
+			  void getPath () {
+			      String packageName = "foo.bar";
+			      String path = packageName.replace ('.', File.separatorChar);
+			  }
+		      }
+		      """);
+    }
+
+    @Test
+    public void testAmbigousNameWithPrimitiveTypeFromCompiledClass () {
+	getFirstType ("""
+		      class F { public static int P = 1; }
+		      class C { void foo () { int f = Flags.P; }}
+		      """);
+    }
+
     private TypeDeclaration getFirstType (String txt) {
 	return getTypes (txt).get (0);
     }

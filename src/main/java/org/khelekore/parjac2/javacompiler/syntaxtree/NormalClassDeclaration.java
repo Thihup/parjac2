@@ -84,7 +84,7 @@ public class NormalClassDeclaration extends TypeDeclaration {
 	return id;
     }
 
-    public TypeParameters getTypeParameters () {
+    @Override public TypeParameters getTypeParameters () {
 	return typeParameters;
     }
 
@@ -96,7 +96,7 @@ public class NormalClassDeclaration extends TypeDeclaration {
 	return body.isLocalClass (td);
     }
 
-    public ClassType getSuperClass () {
+    @Override public ClassType getSuperClass () {
 	return (superClass != null) ? superClass.getType () : null;
     }
 
@@ -108,19 +108,19 @@ public class NormalClassDeclaration extends TypeDeclaration {
 	return body.getFields ();
     }
 
-    public List<MethodDeclaration> getMethods () {
+    @Override public List<MethodDeclaration> getMethods () {
 	return body.getMethods ();
     }
 
-    public List<ConstructorDeclaration> getConstructors () {
+    @Override public List<ConstructorDeclaration> getConstructors () {
 	return body.getConsructors ();
     }
 
-    public List<SyntaxTreeNode> getInstanceInitializers () {
+    @Override public List<SyntaxTreeNode> getInstanceInitializers () {
 	return body.getInstanceInitializers ();
     }
 
-    public List<StaticInitializer> getStaticInitializers () {
+    @Override public List<StaticInitializer> getStaticInitializers () {
 	return body.getStaticInitializers ();
     }
 }

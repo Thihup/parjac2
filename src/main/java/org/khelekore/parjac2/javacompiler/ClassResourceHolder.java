@@ -346,10 +346,8 @@ public class ClassResourceHolder {
 	    r.superTypes = new ArrayList<> (size);
 	    if (r.superClass != null)
 		r.superTypes.add (r.superClass);
-	    if (interfaces != null) {
-		for (ClassEntry ce : interfaces)
-		    r.superTypes.add (getFullName (ce));
-	    }
+	    for (ClassEntry ce : interfaces)
+		r.superTypes.add (getFullName (ce));
 	}
 
 	private FullNameHandler getFullName (ClassEntry ce) {
@@ -392,7 +390,12 @@ public class ClassResourceHolder {
 	    String slashName = typeName.substring (0, typeName.length () - 1);
 	    String dollarName = slashName.replace ('/', '.');
 	    return FullNameHandler.ofDollarName (dollarName);
+	} else if (typeName.length () == 1) {
+	    FullNameHandler fh = FullNameHandler.getPrimitiveType (typeName);
+	    if (fh != null)
+		return fh;
 	}
+
 	throw new IllegalArgumentException ("Unhandled type: " + typeName);
     }
 }

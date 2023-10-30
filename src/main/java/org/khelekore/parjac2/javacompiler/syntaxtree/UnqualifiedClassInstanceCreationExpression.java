@@ -58,7 +58,7 @@ public class UnqualifiedClassInstanceCreationExpression extends AnonymousClass {
 	return body == null ? List.of () : body.getInnerClasses ();
     }
 
-    public boolean isLocalClass (TypeDeclaration td) {
+    @Override public boolean isLocalClass (TypeDeclaration td) {
 	return body == null ? false : body.isLocalClass (td);
     }
 
@@ -67,7 +67,7 @@ public class UnqualifiedClassInstanceCreationExpression extends AnonymousClass {
 	return 0;
     }
 
-    public ClassType getSuperClass () {
+    @Override public ClassType getSuperClass () {
 	return type.getType ();
     }
 
@@ -75,19 +75,19 @@ public class UnqualifiedClassInstanceCreationExpression extends AnonymousClass {
 	return body.getFields ();
     }
 
-    public List<MethodDeclaration> getMethods () {
+    @Override public List<MethodDeclaration> getMethods () {
 	return body.getMethods ();
     }
 
-    public List<ConstructorDeclaration> getConstructors () {
+    @Override public List<ConstructorDeclaration> getConstructors () {
 	return List.of ();
     }
 
-    public List<SyntaxTreeNode> getInstanceInitializers () {
+    @Override public List<SyntaxTreeNode> getInstanceInitializers () {
 	return body.getInstanceInitializers ();
     }
 
-    public List<StaticInitializer> getStaticInitializers () {
+    @Override public List<StaticInitializer> getStaticInitializers () {
 	return body.getStaticInitializers ();
     }
 }

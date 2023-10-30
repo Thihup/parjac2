@@ -107,7 +107,7 @@ public class RecordDeclaration extends TypeDeclaration {
 	return body.getFields ();
     }
 
-    public List<MethodDeclaration> getMethods () {
+    @Override public List<MethodDeclaration> getMethods () {
 	return body.getMethods ();
     }
 
@@ -115,7 +115,7 @@ public class RecordDeclaration extends TypeDeclaration {
 	getMethods ().add (m);
     }
 
-    public List<? extends ConstructorDeclarationBase> getConstructors () {
+    @Override public List<? extends ConstructorDeclarationBase> getConstructors () {
 	List<CompactConstructorDeclaration> lsc = body.getCompactConstructors ();
 	List<ConstructorDeclaration> lsn = body.getConsructors ();
 	if (lsc.isEmpty ())
@@ -128,11 +128,11 @@ public class RecordDeclaration extends TypeDeclaration {
 	return ret;
     }
 
-    public List<SyntaxTreeNode> getInstanceInitializers () {
+    @Override public List<SyntaxTreeNode> getInstanceInitializers () {
 	return body.getInstanceInitializers ();
     }
 
-    public List<StaticInitializer> getStaticInitializers () {
+    @Override public List<StaticInitializer> getStaticInitializers () {
 	return body.getStaticInitializers ();
     }
 

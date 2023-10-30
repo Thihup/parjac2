@@ -15,8 +15,8 @@ public interface VariableInfo {
 
     default FullNameHandler typeName () {
 	ParseTreeNode p = type ();
-	if (p instanceof TokenNode) {
-	    // TODO: we should probably set ExpressionType or someting?
+	if (p instanceof TokenNode tn) {
+	    return FullNameHandler.getPrimitive (tn.getToken ());
 	}
 	if (p instanceof ClassType ct) {
 	    return ct.getFullNameHandler ();

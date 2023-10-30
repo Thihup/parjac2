@@ -47,7 +47,7 @@ public class SimpleClassType extends SyntaxTreeNode {
 	    v.accept (typeArguments);
     }
 
-    public String getId () {
+    @Override public String getId () {
 	return id;
     }
 

@@ -41,7 +41,7 @@ public class TypeParameter extends SyntaxTreeNode {
 	    v.accept (bound);
     }
 
-    public String getId () {
+    @Override public String getId () {
 	return id;
     }
 

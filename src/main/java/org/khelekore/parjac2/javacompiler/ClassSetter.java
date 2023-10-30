@@ -92,7 +92,7 @@ public class ClassSetter {
 	classSetters.parallelStream ().forEach (ClassSetter::registerSuperTypes);
 
 	classSetters.parallelStream ().forEach (ClassSetter::registerFields);
-	classSetters.parallelStream ().forEach (ClassSetter::registerMethods);
+	classSetters.parallelStream ().sequential ().forEach (ClassSetter::registerMethods); // qwerty
 
 	classSetters.parallelStream ().forEach (cs -> cs.checkUnusedImport ());
     }
@@ -368,8 +368,8 @@ public class ClassSetter {
 
     private void setType (EnclosingTypes et, ParseTreeNode type) {
 	switch (type) {
-	case TokenNode t -> {}
-	case PrimitiveType p -> {}
+	case TokenNode t -> { /* empty */ }
+	case PrimitiveType p -> { /* empty */ }
 	case ClassType ct -> setType (et, ct);
 	case DottedName dn -> setType (et, dn);
 	case ArrayType at -> setType (et, at.getType ());
@@ -483,14 +483,14 @@ public class ClassSetter {
 	}
 
 	private class StaticImportType {
-	    private final SingleStaticImportDeclaration ssid;
+	    private final SingleStaticImportDeclaration id;
 	    private final String containingClass;
 	    private final String fullName;
 
-	    public StaticImportType (SingleStaticImportDeclaration ssid) {
-		this.ssid = ssid;
-		containingClass = ssid.getType ().getDotName ();
-		fullName = containingClass + "." + ssid.getInnerId ();
+	    public StaticImportType (SingleStaticImportDeclaration id) {
+		this.id = id;
+		containingClass = id.getType ().getDotName ();
+		fullName = containingClass + "." + id.getInnerId ();
 	    }
 	}
     }
@@ -800,7 +800,7 @@ public class ClassSetter {
 	ImportHandler.StaticImportType sit = ih.ssid.get (id);
 	if (sit == null)
 	    return null;
-	sit.ssid.markUsed ();
+	sit.id.markUsed ();
 	return FullNameHandler.ofSimpleClassName (sit.fullName);
     }
 
@@ -844,18 +844,18 @@ public class ClassSetter {
 	return new EnclosingTypes (previous, new TypeEnclosure (td, cip.getFullName (td)));
     }
 
-    private EnclosingTypes enclosingTypeParameter (EnclosingTypes previous, Map<String, TypeParameter> nameToTypeParameter) {
+    private static EnclosingTypes enclosingTypeParameter (EnclosingTypes previous, Map<String, TypeParameter> nameToTypeParameter) {
 	return new EnclosingTypes (previous, new TypeParameterEnclosure (nameToTypeParameter));
     }
 
-    private EnclosingTypes enclosingVariables (EnclosingTypes previous, Map<String, VariableInfo> nameToVariable) {
+    private static EnclosingTypes enclosingVariables (EnclosingTypes previous, Map<String, VariableInfo> nameToVariable) {
 	return new EnclosingTypes (previous, new VariableEnclosure (nameToVariable));
     }
 
     private record EnclosingTypes (EnclosingTypes previous, Enclosure<?> enclosure)
 	implements Iterable<EnclosingTypes> {
 
-	public Iterator<EnclosingTypes> iterator () {
+	@Override public Iterator<EnclosingTypes> iterator () {
 	    return new ETIterator (this);
 	}
 
@@ -878,11 +878,11 @@ public class ClassSetter {
 		this.e = e;
 	    }
 
-	    public boolean hasNext () {
+	    @Override public boolean hasNext () {
 		return e != null;
 	    }
 
-	    public EnclosingTypes next () {
+	    @Override public EnclosingTypes next () {
 		EnclosingTypes ret = e;
 		e = e.previous ();
 		return ret;

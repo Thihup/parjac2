@@ -98,19 +98,19 @@ public class NormalInterfaceDeclaration extends TypeDeclaration {
 	return body.getConstantFields ();
     }
 
-    public List<InterfaceMethodDeclaration> getMethods () {
+    @Override public List<InterfaceMethodDeclaration> getMethods () {
 	return body.getMethods ();
     }
 
-    public List<ConstructorDeclaration> getConstructors () {
+    @Override public List<ConstructorDeclaration> getConstructors () {
 	return List.of ();
     }
 
-    public List<SyntaxTreeNode> getInstanceInitializers () {
+    @Override public List<SyntaxTreeNode> getInstanceInitializers () {
 	return List.of ();
     }
 
-    public List<StaticInitializer> getStaticInitializers () {
+    @Override public List<StaticInitializer> getStaticInitializers () {
 	return List.of ();
     }
 }

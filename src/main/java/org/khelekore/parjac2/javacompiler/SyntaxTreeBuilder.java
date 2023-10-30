@@ -478,9 +478,9 @@ public class SyntaxTreeBuilder {
 	    if (rule.size () > 4)
 		return new SuperMethodReference (rule, n, children);
 	    return new NormalMethodReference (rule, n, children);
-	} else { // NEW
-	    return new ConstructorMethodReference (rule, n, children);
 	}
+	// NEW
+	return new ConstructorMethodReference (rule, n, children);
     }
 
     private ParseTreeNode lambdaParameters (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
@@ -556,9 +556,8 @@ public class SyntaxTreeBuilder {
 	    Multiple z = (Multiple)children.get (0);
 	    z.addAll (children.subList (1, children.size ()));
 	    return z;
-	} else {
-	    return new Multiple (node.position (), rule.get (0), rule.getName (),
-				 new ArrayList<> (children));
 	}
+	return new Multiple (node.position (), rule.get (0), rule.getName (),
+			     new ArrayList<> (children));
     }
 }

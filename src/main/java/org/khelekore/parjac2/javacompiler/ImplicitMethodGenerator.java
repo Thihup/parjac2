@@ -71,7 +71,7 @@ public class ImplicitMethodGenerator {
 	case NormalClassDeclaration c -> addDefaultConstructor (c);
 	case RecordDeclaration r -> addRecordFieldsAndMethods (r);
 	case EnumDeclaration e -> addEnumFieldsAndMethods (e);
-	default -> {}
+	default -> { /* empty */ }
 	}
     }
 

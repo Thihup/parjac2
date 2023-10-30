@@ -720,9 +720,8 @@ public class CharBufferLexer implements Lexer {
 		pushBack ();
 		return javaTokens.INT_LITERAL;
 	    }
-	} else {
-	    currentIntValue = BigInteger.ZERO;
 	}
+	currentIntValue = BigInteger.ZERO;
 	return javaTokens.INT_LITERAL;
     }
 

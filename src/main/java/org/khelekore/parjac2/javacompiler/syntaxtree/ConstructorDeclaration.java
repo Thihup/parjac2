@@ -68,27 +68,27 @@ public class ConstructorDeclaration extends FlaggedBase implements ConstructorDe
 	v.accept (body);
     }
 
-    public List<ParseTreeNode> getAnnotations () {
+    @Override public List<ParseTreeNode> getAnnotations () {
 	return Annotation.getAnnotations (modifiers);
     }
 
-    public TypeParameters getTypeParameters () {
+    @Override public TypeParameters getTypeParameters () {
 	return declarator.getTypeParameters ();
     }
 
-    public String getName () {
+    @Override public String getName () {
 	return declarator.getName ();
     }
 
-    public ReceiverParameter getReceiverParameter () {
+    @Override public ReceiverParameter getReceiverParameter () {
 	return declarator.getReceiverParameter ();
     }
 
-    public FormalParameterList getFormalParameterList () {
+    @Override public FormalParameterList getFormalParameterList () {
 	return declarator.getFormalParameterList ();
     }
 
-    public List<ParseTreeNode> getStatements () {
+    @Override public List<ParseTreeNode> getStatements () {
 	return body.getStatements ();
     }
 }

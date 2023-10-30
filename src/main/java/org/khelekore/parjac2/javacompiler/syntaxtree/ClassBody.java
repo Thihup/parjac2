@@ -52,8 +52,7 @@ public class ClassBody extends SyntaxTreeNode {
 	// empty
     }
 
-    private void handleFields (JavaTokens javaTokens, FieldDeclaration t) {
-	FieldDeclaration fd = (FieldDeclaration)t;
+    private void handleFields (JavaTokens javaTokens, FieldDeclaration fd) {
 	fieldDeclarations.add (fd);
 	List<VariableDeclarator> ls = fd.getVariableDeclarators ();
 	for (VariableDeclarator vd : ls) {
