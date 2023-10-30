@@ -1,28 +1,21 @@
 package org.khelekore.parjac2.javacompiler;
 
 import java.util.List;
-import java.util.Map;
 
 import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Dims;
+import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeArguments;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeBound;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeParameter;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeParameters;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Wildcard;
 import org.khelekore.parjac2.javacompiler.syntaxtree.WildcardBounds;
-import org.khelekore.parjac2.parser.Token;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.khelekore.parjac2.parsetree.TokenNode;
 
 public class GenericTypeHelper {
-
-    private final Map<Token, String> tokenToDescriptor;
-
-    public GenericTypeHelper (Map<Token, String> tokenToDescriptor) {
-	this.tokenToDescriptor = tokenToDescriptor;
-    }
 
     public String getGenericType (ParseTreeNode tn, ClassInformationProvider cip, boolean shortForm) {
 	if (tn instanceof ClassType ct) {
@@ -31,8 +24,7 @@ public class GenericTypeHelper {
 		return "T" + tp.getId () + ";";
 	    return "L" + ct.getFullNameHandler ().getSignature (this, cip, shortForm, ct.getTypeArguments ()) + ";";
 	} else if (tn instanceof TokenNode tkn) {
-	    Token t = tkn.getToken ();
-	    return tokenToDescriptor.get (t);
+	    return FullNameHandler.getPrimitive (tkn.getToken ()).getSignature ();
 	} else if (tn instanceof ArrayType at) {
 	    ParseTreeNode type = at.getType ();
 	    Dims dims = at.getDims ();

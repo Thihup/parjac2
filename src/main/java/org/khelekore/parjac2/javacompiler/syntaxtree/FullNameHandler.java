@@ -29,7 +29,7 @@ public interface FullNameHandler {
 
     public static final FullNameHandler NULL = new NullType ();
 
-    public static Map<String, FullNameHandler> signatureLookup = new HashMap<> () {
+    public static Map<String, PrimitiveType> signatureLookup = new HashMap<> () {
 	    {
 		put (BYTE.signature (), BYTE);
 		put (SHORT.signature (), SHORT);
@@ -43,7 +43,7 @@ public interface FullNameHandler {
 	    }
 	};
 
-    public static Map<String, FullNameHandler> typeLookup = new HashMap<> () {
+    public static Map<String, PrimitiveType> typeLookup = new HashMap<> () {
 	    {
 		put (BYTE.name (), BYTE);
 		put (SHORT.name (), SHORT);
@@ -82,6 +82,10 @@ public interface FullNameHandler {
 	return false;
     }
 
+    /** Get the signature of this type.
+     * Note the signature will be something like "java/lang/String" or "C", it will not
+     * start with "L" or end with ";" since those depends on context of the signature.
+     */
     default String getSignature (GenericTypeHelper gth, ClassInformationProvider cip,
 				 boolean shortForm, TypeArguments ta) {
 	String slashName = getSlashName ();
@@ -109,11 +113,11 @@ public interface FullNameHandler {
 	return SimpleNameHandler.of (dot, dollar);
     }
 
-    static FullNameHandler getPrimitiveType (String signature) {
+    static PrimitiveType getPrimitiveType (String signature) {
 	return signatureLookup.get (signature);
     }
 
-    static FullNameHandler getPrimitive (Token t) {
+    static PrimitiveType getPrimitive (Token t) {
 	return typeLookup.get (t.getName ());
     }
 
@@ -169,6 +173,10 @@ public interface FullNameHandler {
 
 	@Override public String getSignature (GenericTypeHelper gth, ClassInformationProvider cip,
 					      boolean shortForm, TypeArguments ta) {
+	    return signature;
+	}
+
+	public String getSignature () {
 	    return signature;
 	}
     }

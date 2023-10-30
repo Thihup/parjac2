@@ -7,9 +7,7 @@ import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import io.github.dmlloyd.classfile.ClassBuilder;
@@ -23,7 +21,6 @@ import io.github.dmlloyd.classfile.attribute.SignatureAttribute;
 import io.github.dmlloyd.classfile.attribute.SourceFileAttribute;
 
 import org.khelekore.parjac2.javacompiler.syntaxtree.*;
-import org.khelekore.parjac2.parser.Token;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.khelekore.parjac2.parsetree.TokenNode;
 
@@ -37,7 +34,6 @@ public class BytecodeGenerator {
     private static final ClassType recordClassType = new ClassType (FullNameHandler.JL_RECORD);
     private static final ClassType objectClassType = new ClassType (FullNameHandler.JL_OBJECT);
 
-    private final Map<Token, String> tokenToDescriptor = new HashMap<> ();
     private final GenericTypeHelper genericTypeHelper;
 
     private final TokenNode VOID_RETURN;
@@ -64,18 +60,7 @@ public class BytecodeGenerator {
 	this.cip = cip;
 	this.name = cip.getFullName (td);
 
-	tokenToDescriptor.put (javaTokens.BYTE, "B");
-	tokenToDescriptor.put (javaTokens.SHORT, "S");
-	tokenToDescriptor.put (javaTokens.CHAR, "C");
-	tokenToDescriptor.put (javaTokens.INT, "I");
-	tokenToDescriptor.put (javaTokens.LONG, "J");
-	tokenToDescriptor.put (javaTokens.FLOAT, "F");
-	tokenToDescriptor.put (javaTokens.DOUBLE, "D");
-	tokenToDescriptor.put (javaTokens.BOOLEAN, "Z");
-
-	tokenToDescriptor.put (javaTokens.VOID, "V");
-
-	genericTypeHelper = new GenericTypeHelper (tokenToDescriptor);
+	genericTypeHelper = new GenericTypeHelper ();
 	VOID_RETURN = new TokenNode (javaTokens.VOID, null);
     }
 
@@ -324,9 +309,7 @@ public class BytecodeGenerator {
     }
 
     private ClassDesc getClassDesc (TokenNode tn) {
-	String descriptor = tokenToDescriptor.get (tn.getToken ());
-	if (descriptor == null)
-	    throw new IllegalStateException ("BytecodeGenerator: Unhandled token type " + tn);
+	String descriptor = FullNameHandler.getPrimitive (tn.getToken ()).getSignature ();
 	return ClassDesc.ofDescriptor (descriptor);
     }
 
