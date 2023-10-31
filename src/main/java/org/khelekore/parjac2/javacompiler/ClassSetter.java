@@ -29,6 +29,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.EnumConstant;
 import org.khelekore.parjac2.javacompiler.syntaxtree.EnumDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ExceptionTypeList;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ExpressionName;
+import org.khelekore.parjac2.javacompiler.syntaxtree.FieldAccess;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FormalParameterBase;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FormalParameterList;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
@@ -97,7 +98,7 @@ public class ClassSetter {
 	classSetters.parallelStream ().forEach (ClassSetter::registerFields);
 	classSetters.parallelStream ().forEach (ClassSetter::registerMethods);
 
-	classSetters.parallelStream ().forEach (ClassSetter::checkMethodCalls);
+	classSetters.parallelStream ().forEach (ClassSetter::checkMethodInvocations);
 
 	classSetters.parallelStream ().forEach (cs -> cs.checkUnusedImport ());
     }
@@ -311,7 +312,8 @@ public class ClassSetter {
 		// result in us reporting multiple errors. We have to rely on the "unable to find symbol" from above.
 		if (fi != null && isAccessible (et, fn, fi)) {
 		    an.setFullName (fi.typeName ());
-		    // TODO: we need to store that we found a field access!
+		    // TODO: probably need to handle ExpressionName as well
+		    an.replace (new FieldAccess (an.position (), leftPart, id));
 		} else {
 		    FullNameHandler innerClassCandidate = fn.getInnerClass (id);
 		    FullNameHandler foundInnerClass = getVisibleType (null, innerClassCandidate);
@@ -326,21 +328,16 @@ public class ClassSetter {
 	String name = an.getLastPart ();
 	VariableInfo fi = getVariable (et, name);
 	if (fi != null) { // known variable
-	    ParseTreeNode p = fi.type ();
-	    if (p instanceof TokenNode) {
-		// TODO: we should probably set ExpressionType or someting?
-	    } else if (p instanceof ClassType ct) {
-		an.setFullName (ct.getFullNameHandler ());
-	    } else if (p instanceof ArrayType at) {
-		// TODO: we should probably set ExpressionType or someting?
-	    } else {
-		throw new IllegalStateException ("Unhandled type: " + p.getClass ().getName () + ": " + p);
-	    }
+	    FieldAccess access = new FieldAccess (an.position (), null, name);
+	    an.replace (access);
+	    an.setFullName (FullNameHandler.type (fi.type ()));
 	} else {
 	    FullNameHandler fn = FullNameHandler.ofSimpleClassName (name);
 	    ResolvedClass fqn = resolve (et, fn, an.position ());
-	    if (fqn != null)
+	    if (fqn != null) {
 		an.setFullName (fqn.type);
+		an.replace (new ClassType (fqn.type));
+	    }
 	}
 	return an.getFullNameHandler ();
     }
@@ -849,16 +846,16 @@ public class ClassSetter {
 	return null;
     }
 
-    private void checkMethodCalls () {
-	forAllTypes (this::checkMethodCalls);
+    private void checkMethodInvocations () {
+	forAllTypes (this::checkMethodInvocations);
     }
 
-    private void checkMethodCalls (TypeDeclaration td, EnclosingTypes et) {
-	td.getMethods ().forEach (m -> checkMethodCalls (td, m.getMethodBody ()));
+    private void checkMethodInvocations (TypeDeclaration td, EnclosingTypes et) {
+	td.getMethods ().forEach (m -> checkMethodInvocations (td, m.getMethodBody ()));
 	// TODO: add constructors, initializers, static initializers
     }
 
-    private void checkMethodCalls (TypeDeclaration td, ParseTreeNode body) {
+    private void checkMethodInvocations (TypeDeclaration td, ParseTreeNode body) {
 	FullNameHandler fn = cip.getFullName (td);
 	Deque<Object> partsToHandle = new ArrayDeque<> ();
 	partsToHandle.add (body);
@@ -881,7 +878,7 @@ public class ClassSetter {
 	FullNameHandler methodOn = nameOfCurrentClass;
 	if (on != null) {
 	    // TODO: set methodOn
-	    methodOn = getType (on);
+	    methodOn = FullNameHandler.type (on);
 	}
 	if (isSuper) {
 	    // TODO: set methodOn
@@ -898,21 +895,26 @@ public class ClassSetter {
 	    return;
 	}
 	for (MethodInfo info : options) {
-	    if (match (args, info))
-		return;
+	    if (match (on, args, info)) {
+		mi.result (info.result ());
+	    }
 	}
+	if (mi.result () == null)
+	    error (mi, "No matching method found");
     }
 
-    private boolean match (List<ParseTreeNode> args, MethodInfo info) {
-	// TODO: implement
+    private boolean match (ParseTreeNode on, List<ParseTreeNode> args, MethodInfo info) {
+	if (on instanceof DottedName dn)
+	    on = dn.replaced ();
+	boolean requireInstance = !Flags.isStatic (info.flags ());
+	if (args.size () != info.numberOfArguments ())
+	    return false;
+
+	if (requireInstance && on instanceof ClassType)
+	    return false;
+
+	// TODO: check types
 	return true;
-    }
-
-    private FullNameHandler getType (ParseTreeNode p) {
-	return switch (p) {
-	case AmbiguousName an -> an.getFullNameHandler ();
-	default -> throw new IllegalArgumentException ("Unhandled type: " + p + ", " + p.getClass ().getName ());
-	};
     }
 
     public void checkUnusedImport () {

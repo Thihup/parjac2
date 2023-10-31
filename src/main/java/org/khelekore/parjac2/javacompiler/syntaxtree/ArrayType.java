@@ -32,4 +32,8 @@ public class ArrayType extends SyntaxTreeNode {
     public Dims getDims () {
 	return dims;
     }
+
+    public int rank () {
+	return dims.rank ();
+    }
 }

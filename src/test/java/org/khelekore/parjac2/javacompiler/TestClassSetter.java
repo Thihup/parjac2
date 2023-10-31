@@ -172,7 +172,7 @@ public class TestClassSetter {
 
     @Test
     public void testNoErrorsOnFieldMethodCall () {
-	testTypeSetOnVariable ("package foo; class A { A a; void foo () { a.foo (null); }}", "foo.A");
+	testTypeSetOnVariable ("package foo; class A { A a; void foo (Object o) { a.foo (null); }}", "foo.A");
     }
 
     @Test
@@ -246,8 +246,8 @@ public class TestClassSetter {
 		      import java.io.File;
 		      class Crash {
 			  void getPath () {
-			      String packageName = "foo.bar";
-			      String path = packageName.replace ('.', File.separatorChar);
+			      String pkg = "foo.bar";
+			      String p = pkg.replace ('.', File.separatorChar);
 			  }
 		      }
 		      """);
@@ -264,6 +264,21 @@ public class TestClassSetter {
     @Test
     public void testMissingMethodGivesError () {
 	getTypes ("class C { void foo (C c) { c.bar(); }}", 1);
+    }
+
+    @Test
+    public void testMissingArgumentGivesError () {
+	getTypes ("class C { void foo (C c) { c.foo(); }}", 1);
+    }
+
+    @Test
+    public void testTooManyArgumentsGivesError () {
+	getTypes ("class C { void foo (C c) { c.foo(null, null); }}", 1);
+    }
+
+    @Test
+    public void testCallingInstanceMethodOnClassGivesError () {
+	getTypes ("class C { void foo () { String.equals (null); }}", 1);
     }
 
     private TypeDeclaration getFirstType (String txt) {

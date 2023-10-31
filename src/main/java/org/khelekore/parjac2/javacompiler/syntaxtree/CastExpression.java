@@ -29,6 +29,10 @@ public class CastExpression extends SyntaxTreeNode {
 	expression = children.get (i);
     }
 
+    public ParseTreeNode baseType () {
+	return baseType;
+    }
+
     @Override public Object getValue() {
 	StringBuilder sb = new StringBuilder ();
 	sb.append ("(").append (baseType);

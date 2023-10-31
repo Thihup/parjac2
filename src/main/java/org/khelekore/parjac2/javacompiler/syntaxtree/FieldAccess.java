@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.khelekore.parjac2.javacompiler.Context;
 import org.khelekore.parjac2.javacompiler.Identifier;
+import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -25,12 +26,22 @@ public class FieldAccess extends SyntaxTreeNode {
 	id = ((Identifier)children.get (children.size () - 1)).getValue ();
     }
 
+    public FieldAccess (ParsePosition pos, ParseTreeNode from, String id) {
+	super (pos);
+	this.from = from;
+	this.isSuper = false;
+	this.id = id;
+    }
+
     @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	if (from != null)
-	    sb.append (from).append (".");
-	if (isSuper)
+	    sb.append (from);
+	if (isSuper) {
+	    if (!sb.isEmpty ())
+		sb.append (".");
 	    sb.append ("super");
+	}
 	sb.append (".").append (id);
 	return sb.toString ();
     }

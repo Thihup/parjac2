@@ -419,6 +419,14 @@ public class ClassResourceHolder {
     private record ClassResourceMethod (String name, int flags, ClassDesc returnType,
 					List<ClassDesc> argTypes, String signature) implements MethodInfo {
 	// empty
+	@Override public int numberOfArguments () {
+	    return argTypes.size ();
+	}
+
+	@Override public FullNameHandler result () {
+	    String desc = returnType.descriptorString ();
+	    return parseTypeName (desc);
+	}
     }
 
     private static FullNameHandler parseTypeName (String typeName) {
@@ -431,6 +439,13 @@ public class ClassResourceHolder {
 	    FullNameHandler fh = FullNameHandler.getPrimitiveType (typeName);
 	    if (fh != null)
 		return fh;
+	}
+	int rank = 0;
+	while (typeName.charAt (rank) == '[')
+	    rank++;
+	if (rank > 0) {
+	    FullNameHandler fn = parseTypeName (typeName.substring (rank));
+	    return fn.array (rank);
 	}
 
 	throw new IllegalArgumentException ("Unhandled type: " + typeName);

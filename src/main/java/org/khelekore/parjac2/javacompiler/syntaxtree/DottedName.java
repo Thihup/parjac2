@@ -14,6 +14,7 @@ import org.khelekore.parjac2.util.StringHelper;
 public class DottedName extends SyntaxTreeNode implements NamePartHandler {
     private final List<String> nameParts;
     private FullNameHandler fnh;
+    private ParseTreeNode replaced;
 
     public DottedName (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
@@ -32,12 +33,22 @@ public class DottedName extends SyntaxTreeNode implements NamePartHandler {
 	this.nameParts = new ArrayList<> (parts);
     }
 
+    public void replace (ParseTreeNode replaced) {
+	this.replaced = replaced;
+    }
+
+    public ParseTreeNode replaced () {
+	return replaced == null ? this : replaced;
+    }
+
     @Override public Object getValue () {
 	return StringHelper.dotted (nameParts);
     }
 
     @Override public void visitChildNodes (NodeVisitor v) {
-	// empty
+	if (replaced != null)
+	    replaced.visitChildNodes (v);
+	// else: no children
     }
 
     @Override public boolean equals (Object o) {
@@ -48,7 +59,7 @@ public class DottedName extends SyntaxTreeNode implements NamePartHandler {
 	if (o.getClass () != getClass ())
 	    return false;
 	DottedName dn = (DottedName)o;
-	return Objects.equals (nameParts, dn.nameParts);
+	return Objects.equals (replaced, dn.replaced) && Objects.equals (nameParts, dn.nameParts);
     }
 
     public List<String> getParts () {

@@ -7,6 +7,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.khelekore.parjac2.javacompiler.ClassInformationProvider;
 import org.khelekore.parjac2.javacompiler.GenericTypeHelper;
 import org.khelekore.parjac2.parser.Token;
+import org.khelekore.parjac2.parsetree.ParseTreeNode;
+import org.khelekore.parjac2.parsetree.TokenNode;
 
 public interface FullNameHandler {
 
@@ -82,6 +84,11 @@ public interface FullNameHandler {
 	return false;
     }
 
+    /** Get the array rank */
+    default int rank () {
+	return 0;
+    }
+
     /** Get the signature of this type.
      * Note the signature will be something like "java/lang/String" or "C", it will not
      * start with "L" or end with ";" since those depends on context of the signature.
@@ -119,6 +126,27 @@ public interface FullNameHandler {
 
     static PrimitiveType getPrimitive (Token t) {
 	return typeLookup.get (t.getName ());
+    }
+
+    static FullNameHandler arrayOf (FullNameHandler fn, int rank) {
+	return new ArrayHandler (fn, rank);
+    }
+
+    default FullNameHandler array (int rank) {
+	return new ArrayHandler (this, rank);
+    }
+
+    static FullNameHandler type (ParseTreeNode p) {
+	return switch (p) {
+	case ClassType ct -> ct.getFullNameHandler ();
+	case MethodInvocation mi -> mi.result ();
+	case DottedName an -> an.getFullNameHandler ();
+	case TokenNode tn -> getPrimitive (tn.getToken ());
+	case ArrayType at -> arrayOf (type (at.getType ()), at.rank ());
+	case ArrayAccess aa -> aa.type ();
+	case CastExpression ce -> type (ce.baseType ());
+	default -> throw new IllegalArgumentException ("Unhandled type: " + p + ", " + p.getClass ().getName ());
+	};
     }
 
     public record DotNameHandler (String dotName)  implements FullNameHandler {
@@ -197,6 +225,25 @@ public interface FullNameHandler {
 	@Override public String getSignature (GenericTypeHelper gth, ClassInformationProvider cip,
 					      boolean shortForm, TypeArguments ta) {
 	    return "V";
+	}
+    }
+
+    public record ArrayHandler (FullNameHandler fn, int rank) implements FullNameHandler {
+	@Override public String getFullDotName () {
+	    return "[" + fn.getFullDotName ();
+	}
+
+	@Override public String getFullDollarName () {
+	    return "[" + fn.getFullDollarName ();
+	}
+
+	@Override public String getSlashName () {
+	    return "[" + fn.getSlashName ();
+	}
+
+	@Override public String getSignature (GenericTypeHelper gth, ClassInformationProvider cip,
+					      boolean shortForm, TypeArguments ta) {
+	    return "[" + fn.getSignature (gth, cip, shortForm, ta);
 	}
     }
 }

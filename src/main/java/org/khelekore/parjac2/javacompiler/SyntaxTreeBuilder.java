@@ -254,7 +254,7 @@ public class SyntaxTreeBuilder {
 	register ("UnqualifiedClassInstanceCreationExpression", UnqualifiedClassInstanceCreationExpression::new);
 	register ("ClassOrInterfaceTypeToInstantiate", ClassOrInterfaceTypeToInstantiate::new);
 	register ("TypeArgumentsOrDiamond", this::typeArgumentsOrDiamond);
-	register ("FieldAccess", FieldAccess::new);
+	register ("FieldAccess", (ctx, rule, n, children) -> new FieldAccess (ctx, rule, n, children));
 	register ("ArrayAccess", ArrayAccess::new);
 	register ("MethodInvocation", this::methodInvocation);
 	register ("UntypedMethodInvocation", UntypedMethodInvocation::new);

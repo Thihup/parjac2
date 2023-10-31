@@ -7,10 +7,11 @@ import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class MethodInvocation extends SyntaxTreeNode {
-    private ParseTreeNode on;
-    private boolean isSuper;
-    private TypeArguments types;
-    private UntypedMethodInvocation mi;
+    private final ParseTreeNode on;
+    private final boolean isSuper;
+    private final TypeArguments types;
+    private final UntypedMethodInvocation mi;
+    private FullNameHandler result;
 
     public MethodInvocation (ParsePosition pos, ParseTreeNode on, boolean isSuper,
 			     TypeArguments types, UntypedMethodInvocation mi) {
@@ -19,6 +20,14 @@ public class MethodInvocation extends SyntaxTreeNode {
 	this.types = types;
 	this.isSuper = isSuper;
 	this.mi = mi;
+    }
+
+    public void result (FullNameHandler result) {
+	this.result = result;
+    }
+
+    public FullNameHandler result () {
+	return result;
     }
 
     @Override public Object getValue () {

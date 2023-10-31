@@ -74,6 +74,10 @@ public class MethodDeclarationBase extends FlaggedBase implements MethodInfo {
 	return header.getResult ();
     }
 
+    @Override public FullNameHandler result () {
+	return FullNameHandler.type (getResult ());
+    }
+
     @Override public String name () {
 	return header.getName ();
     }
@@ -84,6 +88,11 @@ public class MethodDeclarationBase extends FlaggedBase implements MethodInfo {
 
     public FormalParameterList getFormalParameterList () {
 	return header.getFormalParameterList ();
+    }
+
+    @Override public int numberOfArguments () {
+	FormalParameterList ls = getFormalParameterList ();
+	return ls == null ? 0 : ls.size ();
     }
 
     public Dims getDims () {

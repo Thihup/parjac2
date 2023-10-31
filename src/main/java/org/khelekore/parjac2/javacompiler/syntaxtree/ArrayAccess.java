@@ -16,6 +16,11 @@ public class ArrayAccess extends SyntaxTreeNode {
 	expression = children.get (2);
     }
 
+    public FullNameHandler type () {
+	FullNameHandler.ArrayHandler ah = (FullNameHandler.ArrayHandler)FullNameHandler.type (from);
+	return ah.fn ();
+    }
+
     @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	sb.append (from).append ("[").append (expression).append ("]");
