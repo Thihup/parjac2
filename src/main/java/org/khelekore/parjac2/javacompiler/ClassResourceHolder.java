@@ -3,6 +3,8 @@ package org.khelekore.parjac2.javacompiler;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -23,6 +25,7 @@ import io.github.dmlloyd.classfile.Attributes;
 import io.github.dmlloyd.classfile.ClassModel;
 import io.github.dmlloyd.classfile.Classfile;
 import io.github.dmlloyd.classfile.FieldModel;
+import io.github.dmlloyd.classfile.MethodModel;
 import io.github.dmlloyd.classfile.attribute.SignatureAttribute;
 import io.github.dmlloyd.classfile.constantpool.ClassEntry;
 
@@ -153,7 +156,16 @@ public class ClassResourceHolder {
 	ClasspathClassInformation r = foundClasses.get (fqn);
 	if (r == null)
 	    return null;
+	loadNoCheckedException (r);
 	return r.fields.get (field);
+    }
+
+    public List<MethodInfo> getMethodInformation (String fqn, String methodName) {
+	ClasspathClassInformation r = foundClasses.get (fqn);
+	if (r == null)
+	    return null;
+	loadNoCheckedException (r);
+	return r.methods.get (methodName);
     }
 
     public boolean isInterface (String fqn) {
@@ -187,6 +199,7 @@ public class ClassResourceHolder {
 	private List<FullNameHandler> superTypes;
 	private int accessFlags;
 	private Map<String, VariableInfo> fields;
+	private Map<String, List<MethodInfo>> methods;
 
 	public ClasspathClassInformation (FullNameHandler fullName) {
 	    this.fullName = fullName;
@@ -199,10 +212,6 @@ public class ClassResourceHolder {
 	public String getFullDotName () {
 	    return fullName.getFullDotName ();
 	}
-
-	// TODO: implement
-	//private Map<String, AsmField> fieldTypes = new HashMap<> ();
-	//private Map<String, List<MethodInformation>> methods = new HashMap<> ();
 
 	public synchronized void ensureNodeIsLoaded () throws IOException {
 	    if (loaded)
@@ -328,6 +337,7 @@ public class ClassResourceHolder {
 	    parseAccessFlags ();
 	    parseSuperTypes ();
 	    parseFields ();
+	    parseMethods ();
 	}
 
 	private void parseAccessFlags () {
@@ -372,6 +382,28 @@ public class ClassResourceHolder {
 	    }
 	    r.fields = fields;
 	}
+
+	private void parseMethods () {
+	    Map<String, List<MethodInfo>> methods = new HashMap<> ();
+	    for (MethodModel mm : model.methods ()) {
+		String name = mm.methodName ().stringValue ();
+		int flags = mm.flags ().flagsMask ();
+		MethodTypeDesc md = mm.methodTypeSymbol ();
+		ClassDesc returnType = md.returnType ();
+		List<ClassDesc> argTypes = md.parameterList ();
+		Optional<SignatureAttribute> osa = mm.findAttribute (Attributes.SIGNATURE);
+		String signature = null;
+		if (osa.isPresent ()) {
+		    signature = osa.get ().signature ().stringValue ();
+		    // TODO: parse signature
+		    // TODO: example from String.transform
+		    // TODO:   <R:Ljava/lang/Object;>(Ljava/util/function/Function<-Ljava/lang/String;+TR;>;)TR;
+		}
+		List<MethodInfo> ls = methods.computeIfAbsent (name, n -> new ArrayList<> ());
+		ls.add (new ClassResourceMethod (name, flags, returnType, argTypes, signature));
+	    }
+	    r.methods = methods;
+	}
     }
 
     private record ClassResourceField (String name, int flags, String typeclass, String signature) implements VariableInfo {
@@ -384,10 +416,15 @@ public class ClassResourceHolder {
 	}
     }
 
+    private record ClassResourceMethod (String name, int flags, ClassDesc returnType,
+					List<ClassDesc> argTypes, String signature) implements MethodInfo {
+	// empty
+    }
+
     private static FullNameHandler parseTypeName (String typeName) {
 	// TODO: this needs more work!
 	if (typeName.startsWith ("L") && typeName.endsWith (";")) {
-	    String slashName = typeName.substring (0, typeName.length () - 1);
+	    String slashName = typeName.substring (1, typeName.length () - 1);
 	    String dollarName = slashName.replace ('/', '.');
 	    return FullNameHandler.ofDollarName (dollarName);
 	} else if (typeName.length () == 1) {

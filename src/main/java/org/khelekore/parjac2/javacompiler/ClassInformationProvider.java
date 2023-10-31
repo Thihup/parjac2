@@ -124,6 +124,16 @@ public class ClassInformationProvider {
 	return crh.getFieldInformation (dotName, field);
     }
 
+    public List<MethodInfo> getMethods (FullNameHandler fqn, String methodName) {
+	if (fqn == null)
+	    throw new NullPointerException ("null not a valid class name, methodName: " + methodName);
+	String dotName = fqn.getFullDotName ();
+	TypeDeclaration td = cth.getType (dotName);
+	if (td != null)
+	    return td.getMethodInformation (methodName);
+	return crh.getMethodInformation (dotName, methodName);
+    }
+
     public boolean isInterface (String fqn) {
 	TypeDeclaration td = cth.getType (fqn);
 	if (td instanceof NormalInterfaceDeclaration)

@@ -4,12 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.khelekore.parjac2.javacompiler.Context;
+import org.khelekore.parjac2.javacompiler.MethodInfo;
 import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
-public class MethodDeclarationBase extends FlaggedBase {
+public class MethodDeclarationBase extends FlaggedBase implements MethodInfo {
 
     private final List<ParseTreeNode> modifiers;
     private final MethodHeader header;
@@ -73,7 +74,7 @@ public class MethodDeclarationBase extends FlaggedBase {
 	return header.getResult ();
     }
 
-    public String getName () {
+    @Override public String name () {
 	return header.getName ();
     }
 

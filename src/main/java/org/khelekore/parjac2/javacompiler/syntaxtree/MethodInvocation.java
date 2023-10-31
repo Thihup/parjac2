@@ -1,5 +1,7 @@
 package org.khelekore.parjac2.javacompiler.syntaxtree;
 
+import java.util.List;
+
 import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -41,5 +43,17 @@ public class MethodInvocation extends SyntaxTreeNode {
 
     public ParseTreeNode getOn () {
 	return on;
+    }
+
+    public boolean isSuper () {
+	return isSuper;
+    }
+
+    public String getMethodName () {
+	return mi.getMethodName ();
+    }
+
+    public List<ParseTreeNode> getArguments () {
+	return mi.getArguments ();
     }
 }

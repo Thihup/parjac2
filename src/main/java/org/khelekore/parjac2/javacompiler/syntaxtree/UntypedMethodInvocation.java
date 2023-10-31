@@ -37,4 +37,8 @@ public class UntypedMethodInvocation extends SyntaxTreeNode {
     public String getMethodName () {
 	return methodName;
     }
+
+    public List<ParseTreeNode> getArguments () {
+	return args == null ? List.of () : args.get ();
+    }
 }

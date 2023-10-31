@@ -1,14 +1,18 @@
 package org.khelekore.parjac2.javacompiler.syntaxtree;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.khelekore.parjac2.javacompiler.FieldInfo;
+import org.khelekore.parjac2.javacompiler.MethodInfo;
 import org.khelekore.parjac2.parser.ParsePosition;
 
 public abstract class TypeDeclaration extends FlaggedBase {
     protected TypeDeclaration outerClass;
     protected String localName;
+    protected Map<String, List<MethodInfo>> methodInfos;
 
     public TypeDeclaration (ParsePosition pos) {
 	super (pos);
@@ -58,6 +62,20 @@ public abstract class TypeDeclaration extends FlaggedBase {
     }
 
     public abstract List<? extends MethodDeclarationBase> getMethods ();
+
+    public List<MethodInfo> getMethodInformation (String methodName) {
+	synchronized (this) {
+	    if (methodInfos == null) {
+		methodInfos = new HashMap<> ();
+		for (MethodDeclarationBase md : getMethods ()) {
+		    String name = md.name ();
+		    List<MethodInfo> ls = methodInfos.computeIfAbsent (name, n -> new ArrayList<> ());
+		    ls.add (md);
+		}
+	    }
+	}
+	return methodInfos.get (methodName);
+    }
 
     public abstract List<? extends ConstructorDeclarationBase> getConstructors ();
 

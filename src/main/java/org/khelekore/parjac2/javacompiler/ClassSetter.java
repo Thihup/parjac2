@@ -35,6 +35,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ImportDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.LocalVariableDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.MethodDeclarationBase;
+import org.khelekore.parjac2.javacompiler.syntaxtree.MethodInvocation;
 import org.khelekore.parjac2.javacompiler.syntaxtree.MethodReference;
 import org.khelekore.parjac2.javacompiler.syntaxtree.NamePartHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.NormalClassDeclaration;
@@ -95,6 +96,8 @@ public class ClassSetter {
 
 	classSetters.parallelStream ().forEach (ClassSetter::registerFields);
 	classSetters.parallelStream ().forEach (ClassSetter::registerMethods);
+
+	classSetters.parallelStream ().forEach (ClassSetter::checkMethodCalls);
 
 	classSetters.parallelStream ().forEach (cs -> cs.checkUnusedImport ());
     }
@@ -844,6 +847,72 @@ public class ClassSetter {
 	    }
 	}
 	return null;
+    }
+
+    private void checkMethodCalls () {
+	forAllTypes (this::checkMethodCalls);
+    }
+
+    private void checkMethodCalls (TypeDeclaration td, EnclosingTypes et) {
+	td.getMethods ().forEach (m -> checkMethodCalls (td, m.getMethodBody ()));
+	// TODO: add constructors, initializers, static initializers
+    }
+
+    private void checkMethodCalls (TypeDeclaration td, ParseTreeNode body) {
+	FullNameHandler fn = cip.getFullName (td);
+	Deque<Object> partsToHandle = new ArrayDeque<> ();
+	partsToHandle.add (body);
+	while (!partsToHandle.isEmpty ()) {
+	    Object pp = partsToHandle.removeFirst ();
+	    switch (pp) {
+	    case MethodInvocation mi -> checkMethodCall (fn, mi);
+	    case ParseTreeNode ptn -> addParts (partsToHandle, ptn);
+	    default -> throw new IllegalStateException ("Unhandled type: " + pp.getClass ().getName () + ": " + pp);
+	    }
+	}
+    }
+
+    private void checkMethodCall (FullNameHandler nameOfCurrentClass, MethodInvocation mi) {
+	ParseTreeNode on = mi.getOn ();
+	boolean isSuper = mi.isSuper ();
+	String name = mi.getMethodName ();
+	List<ParseTreeNode> args = mi.getArguments ();
+
+	FullNameHandler methodOn = nameOfCurrentClass;
+	if (on != null) {
+	    // TODO: set methodOn
+	    methodOn = getType (on);
+	}
+	if (isSuper) {
+	    // TODO: set methodOn
+	}
+
+	// AmbiguousName that could not be resolved and similar, no need for NPE or another error
+	if (methodOn == null)
+	    return;
+
+	// TODO: verify method arguments match
+	List<MethodInfo> options = cip.getMethods (methodOn, name);
+	if (options == null) {
+	    error (mi, "No method named %s found in %s", name, methodOn);
+	    return;
+	}
+	for (MethodInfo info : options) {
+	    if (match (args, info))
+		return;
+	}
+    }
+
+    private boolean match (List<ParseTreeNode> args, MethodInfo info) {
+	// TODO: implement
+	return true;
+    }
+
+    private FullNameHandler getType (ParseTreeNode p) {
+	return switch (p) {
+	case AmbiguousName an -> an.getFullNameHandler ();
+	default -> throw new IllegalArgumentException ("Unhandled type: " + p + ", " + p.getClass ().getName ());
+	};
     }
 
     public void checkUnusedImport () {

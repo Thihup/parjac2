@@ -249,7 +249,7 @@ public class BytecodeGenerator {
 	td.getMethods ().forEach (m -> {
 		MethodSignatureHolder msh = getMethodSignature (m);
 		int flags = m.flags ();
-		classBuilder.withMethod (m.getName (), msh.desc, flags, mb -> {
+		classBuilder.withMethod (m.name (), msh.desc, flags, mb -> {
 			mb.withCode (cb -> {
 				cb.lineNumber (m.position ().getLineNumber ()); // not correct, but at least somewhat close
 				cb.return_ ();});

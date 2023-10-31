@@ -261,6 +261,11 @@ public class TestClassSetter {
 		      """);
     }
 
+    @Test
+    public void testMissingMethodGivesError () {
+	getTypes ("class C { void foo (C c) { c.bar(); }}", 1);
+    }
+
     private TypeDeclaration getFirstType (String txt) {
 	return getTypes (txt).get (0);
     }
