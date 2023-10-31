@@ -49,8 +49,6 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.SimpleClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SingleStaticImportDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SingleTypeImportDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.StaticImportOnDemandDeclaration;
-import org.khelekore.parjac2.javacompiler.syntaxtree.StaticInitializer;
-import org.khelekore.parjac2.javacompiler.syntaxtree.SyntaxTreeNode;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Throws;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeArguments;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeBound;
@@ -98,7 +96,8 @@ public class ClassSetter {
 	classSetters.parallelStream ().forEach (ClassSetter::registerFields);
 	classSetters.parallelStream ().forEach (ClassSetter::registerMethods);
 
-	classSetters.parallelStream ().forEach (ClassSetter::checkMethodInvocations);
+	// now that we know what types, fields and methods we have we check the method contents
+	classSetters.parallelStream ().forEach (ClassSetter::checkMethodBodies);
 
 	classSetters.parallelStream ().forEach (cs -> cs.checkUnusedImport ());
     }
@@ -177,21 +176,13 @@ public class ClassSetter {
     }
 
     private void registerMethods () {
-	forAllTypes (this::setMethodTypes);
+	forAllTypes (this::registerMethods);
     }
 
-    private void setMethodTypes (TypeDeclaration td, EnclosingTypes et) {
+    private void registerMethods (TypeDeclaration td, EnclosingTypes et) {
 	EnclosingTypes ett = registerTypeParameters (et, td.getTypeParameters ());
-	List<? extends MethodDeclarationBase> methods = td.getMethods ();
-	methods.forEach (m -> setMethodTypes (ett, m));
-
-	List<? extends ConstructorDeclarationBase> constructors = td.getConstructors ();
-	constructors.forEach (c -> setConstructorTypes (ett, c));
-
-	List<SyntaxTreeNode> instanceInitializers = td.getInstanceInitializers ();
-	instanceInitializers.forEach (c -> setInstanceInitializerTypes (ett, c));
-	List<StaticInitializer> staticInitializers = td.getStaticInitializers ();
-	staticInitializers.forEach (c -> setStaticInitializerType (ett, c));
+	td.getMethods ().forEach (m -> setMethodTypes (ett, m));
+	td.getConstructors ().forEach (c -> setConstructorTypes (ett, c));
     }
 
     private void setMethodTypes (EnclosingTypes bt, MethodDeclarationBase md) {
@@ -210,32 +201,12 @@ public class ClassSetter {
 	    ExceptionTypeList exceptions = t.getExceptions ();
 	    setTypes (rt, exceptions.get ());
 	}
-	ParseTreeNode body = md.getMethodBody ();
-	if (body instanceof Block block) {
-	    EnclosingTypes ms = enclosingBlock (rt);
-	    BlockStatements bs = block.getStatements ();
-	    if (bs != null) {
-		List<ParseTreeNode> statements = bs.getStatements ();
-		statements.forEach (s -> setTypesForMethodStatement (ms, s));
-	    }
-	}
     }
 
     private void setConstructorTypes (EnclosingTypes bt, ConstructorDeclarationBase cdb) {
 	checkAnnotations (bt, cdb.getAnnotations ());
 	EnclosingTypes et = registerTypeParameters (bt, cdb.getTypeParameters ());
-	EnclosingTypes rt = setFormalParameterListTypes (et, cdb.getFormalParameterList ());
-	EnclosingTypes ms = enclosingBlock (rt);
-	List<ParseTreeNode> statements = cdb.getStatements ();
-	statements.forEach (s -> setTypesForMethodStatement (ms, s));
-    }
-
-    private void setInstanceInitializerTypes (EnclosingTypes et, SyntaxTreeNode n) {
-	setTypesForMethodStatement (et, n);
-    }
-
-    private void setStaticInitializerType (EnclosingTypes et, StaticInitializer s) {
-	setTypesForMethodStatement (et, s);
+	setFormalParameterListTypes (et, cdb.getFormalParameterList ());
     }
 
     private EnclosingTypes setFormalParameterListTypes (EnclosingTypes et, FormalParameterList args) {
@@ -261,9 +232,51 @@ public class ClassSetter {
 	}
     }
 
-    private void setTypesForMethodStatement (EnclosingTypes et, ParseTreeNode p) {
+    private void checkMethodBodies () {
+	forAllTypes (this::checkMethodBodies);
+    }
+
+    // TODO: qwerty: remove copy paste from registerMethods/setMethodTypes
+    private void checkMethodBodies (TypeDeclaration td, EnclosingTypes et) {
+	EnclosingTypes ett = registerTypeParameters (et, td.getTypeParameters ());
+	td.getMethods ().forEach (m -> checkMethodBodies (ett, m));
+
+	td.getConstructors ().forEach (c -> checkConstructorBodies (ett, c));
+	td.getInstanceInitializers ().forEach (c -> checkInstanceInitializerBodies (ett, c));
+	td.getStaticInitializers ().forEach (c -> checkStaticInitializerBodies (ett, c));
+    }
+
+    private void checkMethodBodies (EnclosingTypes et, MethodDeclarationBase md) {
+	EnclosingTypes tt = registerTypeParameters (et, md.getTypeParameters ());
+	EnclosingTypes rt = setFormalParameterListTypes (tt, md.getFormalParameterList ());
+	ParseTreeNode body = md.getMethodBody ();
+	if (body instanceof Block block) {
+	    EnclosingTypes ms = enclosingBlock (rt);
+	    BlockStatements bs = block.getStatements ();
+	    if (bs != null) {
+		List<ParseTreeNode> statements = bs.getStatements ();
+		statements.forEach (s -> setTypesForMethodStatement (ms, List.of (s)));
+	    }
+	}
+    }
+
+    private void checkConstructorBodies (EnclosingTypes et, ConstructorDeclarationBase cdb) {
+	et = registerTypeParameters (et, cdb.getTypeParameters ());
+	et = setFormalParameterListTypes (et, cdb.getFormalParameterList ());
+	setTypesForMethodStatement (et, cdb.getStatements ());
+    }
+
+    private void checkInstanceInitializerBodies (EnclosingTypes et, ParseTreeNode p) {
+	setTypesForMethodStatement (et, List.of (p));
+    }
+
+    private void checkStaticInitializerBodies (EnclosingTypes et, ParseTreeNode p) {
+	setTypesForMethodStatement (et, List.of (p));
+    }
+
+    private void setTypesForMethodStatement (EnclosingTypes et, List<ParseTreeNode> ps) {
 	Deque<Object> partsToHandle = new ArrayDeque<> ();
-	partsToHandle.add (p);
+	partsToHandle.addAll (ps);
 	while (!partsToHandle.isEmpty ()) {
 	    Object pp = partsToHandle.removeFirst ();
 	    switch (pp) {
@@ -277,11 +290,15 @@ public class ClassSetter {
 	    case ClassOrInterfaceTypeToInstantiate coitti -> setType (et, coitti.getType ());
 
 	    // Since we add first we will evaluate variable addition after the parts, which is what we want.
-	    case LocalVariableDeclaration lv -> { addVariable (partsToHandle, lv); addParts (partsToHandle, lv); }
+	    case LocalVariableDeclaration lv -> { partsToHandle.add (new AddVariable (lv)); addParts (partsToHandle, lv); }
+
+	    // Check method once we know all parts
+	    case MethodInvocation mi -> { partsToHandle.add (new MethodInvocationCheck (mi, this)); addParts (partsToHandle, mi); }
 
 	    case ParseTreeNode ptn -> addParts (partsToHandle, ptn);
 
-	    case AddVariable av -> av.add (et);
+	    case CustomHandler ch -> ch.run (et);
+
 	    default -> throw new IllegalStateException ("Unhandled type: " + pp);
 	    }
 	}
@@ -358,15 +375,70 @@ public class ClassSetter {
 	    partsToHandle.addFirst (parts.get (i));
     }
 
-    private void addVariable (Deque<Object> partsToHandle, LocalVariableDeclaration lv) {
-	partsToHandle.add (new AddVariable (lv));
-    }
-
-    private static record AddVariable (LocalVariableDeclaration lv) {
-	public void add (EnclosingTypes et) {
+    private static record AddVariable (LocalVariableDeclaration lv) implements CustomHandler {
+	@Override public void run (EnclosingTypes et) {
 	    BlockEnclosure be = (BlockEnclosure)et.enclosure ();
 	    be.add (lv);
 	}
+    }
+
+    private record MethodInvocationCheck (MethodInvocation mi, ClassSetter cs) implements CustomHandler {
+	@Override public void run (EnclosingTypes et) {
+	    FullNameHandler currentClass = cs.currentClass (et);
+	    cs.checkMethodCall (currentClass, mi);
+	}
+    }
+
+    private interface CustomHandler {
+	void run (EnclosingTypes et);
+    }
+
+    private void checkMethodCall (FullNameHandler nameOfCurrentClass, MethodInvocation mi) {
+	ParseTreeNode on = mi.getOn ();
+	boolean isSuper = mi.isSuper ();
+	String name = mi.getMethodName ();
+	List<ParseTreeNode> args = mi.getArguments ();
+
+	FullNameHandler methodOn = nameOfCurrentClass;
+	if (on != null) {
+	    // TODO: set methodOn
+	    methodOn = FullNameHandler.type (on);
+	}
+	if (isSuper) {
+	    // TODO: set methodOn
+	}
+
+	// AmbiguousName that could not be resolved and similar, no need for NPE or another error
+	if (methodOn == null)
+	    return;
+
+	// TODO: verify method arguments match
+	List<MethodInfo> options = cip.getMethods (methodOn, name);
+	if (options == null) {
+	    error (mi, "No method named %s found in %s", name, methodOn);
+	    return;
+	}
+	for (MethodInfo info : options) {
+	    if (match (on, args, info)) {
+		mi.result (info.result ());
+	    }
+	}
+	if (mi.result () == null)
+	    error (mi, "No matching method found");
+    }
+
+    private boolean match (ParseTreeNode on, List<ParseTreeNode> args, MethodInfo info) {
+	if (on instanceof DottedName dn)
+	    on = dn.replaced ();
+	boolean requireInstance = !Flags.isStatic (info.flags ());
+	if (args.size () != info.numberOfArguments ())
+	    return false;
+
+	if (requireInstance && on instanceof ClassType)
+	    return false;
+
+	// TODO: check types
+	return true;
     }
 
     private boolean isAccessible (EnclosingTypes et, FullNameHandler fqn, VariableInfo fi) {
@@ -844,77 +916,6 @@ public class ClassSetter {
 	    }
 	}
 	return null;
-    }
-
-    private void checkMethodInvocations () {
-	forAllTypes (this::checkMethodInvocations);
-    }
-
-    private void checkMethodInvocations (TypeDeclaration td, EnclosingTypes et) {
-	td.getMethods ().forEach (m -> checkMethodInvocations (td, m.getMethodBody ()));
-	// TODO: add constructors, initializers, static initializers
-    }
-
-    private void checkMethodInvocations (TypeDeclaration td, ParseTreeNode body) {
-	FullNameHandler fn = cip.getFullName (td);
-	Deque<Object> partsToHandle = new ArrayDeque<> ();
-	partsToHandle.add (body);
-	while (!partsToHandle.isEmpty ()) {
-	    Object pp = partsToHandle.removeFirst ();
-	    switch (pp) {
-	    case MethodInvocation mi -> checkMethodCall (fn, mi);
-	    case ParseTreeNode ptn -> addParts (partsToHandle, ptn);
-	    default -> throw new IllegalStateException ("Unhandled type: " + pp.getClass ().getName () + ": " + pp);
-	    }
-	}
-    }
-
-    private void checkMethodCall (FullNameHandler nameOfCurrentClass, MethodInvocation mi) {
-	ParseTreeNode on = mi.getOn ();
-	boolean isSuper = mi.isSuper ();
-	String name = mi.getMethodName ();
-	List<ParseTreeNode> args = mi.getArguments ();
-
-	FullNameHandler methodOn = nameOfCurrentClass;
-	if (on != null) {
-	    // TODO: set methodOn
-	    methodOn = FullNameHandler.type (on);
-	}
-	if (isSuper) {
-	    // TODO: set methodOn
-	}
-
-	// AmbiguousName that could not be resolved and similar, no need for NPE or another error
-	if (methodOn == null)
-	    return;
-
-	// TODO: verify method arguments match
-	List<MethodInfo> options = cip.getMethods (methodOn, name);
-	if (options == null) {
-	    error (mi, "No method named %s found in %s", name, methodOn);
-	    return;
-	}
-	for (MethodInfo info : options) {
-	    if (match (on, args, info)) {
-		mi.result (info.result ());
-	    }
-	}
-	if (mi.result () == null)
-	    error (mi, "No matching method found");
-    }
-
-    private boolean match (ParseTreeNode on, List<ParseTreeNode> args, MethodInfo info) {
-	if (on instanceof DottedName dn)
-	    on = dn.replaced ();
-	boolean requireInstance = !Flags.isStatic (info.flags ());
-	if (args.size () != info.numberOfArguments ())
-	    return false;
-
-	if (requireInstance && on instanceof ClassType)
-	    return false;
-
-	// TODO: check types
-	return true;
     }
 
     public void checkUnusedImport () {
