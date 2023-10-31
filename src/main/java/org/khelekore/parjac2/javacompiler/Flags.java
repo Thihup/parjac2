@@ -15,6 +15,7 @@ public class Flags {
     public static final int ACC_SYNCHRONIZED = Classfile.ACC_SYNCHRONIZED;
     public static final int ACC_INTERFACE = Classfile.ACC_INTERFACE;
     public static final int ACC_ENUM = Classfile.ACC_ENUM;
+    public static final int ACC_VARARGS = Classfile.ACC_VARARGS;
 
     // This one does not exist in Classfile.
     public static final int ACC_DEFAULT = 262144;
@@ -41,6 +42,10 @@ public class Flags {
 
     public static boolean isInterface (int flag) {
 	return (flag & ACC_INTERFACE) == ACC_INTERFACE;
+    }
+
+    public static boolean isVarArgs (int flag) {
+	return (flag & ACC_VARARGS) == ACC_VARARGS;
     }
 }
 

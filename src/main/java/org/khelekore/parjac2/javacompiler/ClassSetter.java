@@ -263,14 +263,17 @@ public class ClassSetter {
     private void checkConstructorBodies (EnclosingTypes et, ConstructorDeclarationBase cdb) {
 	et = registerTypeParameters (et, cdb.getTypeParameters ());
 	et = setFormalParameterListTypes (et, cdb.getFormalParameterList ());
+	et = enclosingBlock (et);
 	setTypesForMethodStatement (et, cdb.getStatements ());
     }
 
     private void checkInstanceInitializerBodies (EnclosingTypes et, ParseTreeNode p) {
+	et = enclosingBlock (et);
 	setTypesForMethodStatement (et, List.of (p));
     }
 
     private void checkStaticInitializerBodies (EnclosingTypes et, ParseTreeNode p) {
+	et = enclosingBlock (et);
 	setTypesForMethodStatement (et, List.of (p));
     }
 
@@ -431,7 +434,8 @@ public class ClassSetter {
 	if (on instanceof DottedName dn)
 	    on = dn.replaced ();
 	boolean requireInstance = !Flags.isStatic (info.flags ());
-	if (args.size () != info.numberOfArguments ())
+	boolean varArgs = Flags.isVarArgs (info.flags ());
+	if (!varArgs && args.size () != info.numberOfArguments ())
 	    return false;
 
 	if (requireInstance && on instanceof ClassType)
