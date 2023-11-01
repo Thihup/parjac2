@@ -356,6 +356,12 @@ public class ClassSetter {
 	    } else { // we have a type
 		String id = an.getNamePart (i);
 		VariableInfo fi = cip.getFieldInformation (fn, id);
+		if (an.replaced () instanceof ClassType) {
+		    if (!Flags.isStatic (fi.flags ())) {
+			error (an, nonStaticAccess (id));
+			return;
+		    }
+		}
 		// if we find a field we can not access we can not log an error since doing so will
 		// result in us reporting multiple errors. We have to rely on the "unable to find symbol" from above.
 		if (fi != null && isAccessible (et, fn, fi)) {
@@ -401,12 +407,16 @@ public class ClassSetter {
 	    if (fi != null) {
 		if (!onlyStatic || Flags.isStatic (fi.flags ()))
 		    return new VariableOrError (fi, null);
-		return new VariableOrError (null, String.format ("non-static variable %s cannot be referenced from a static context", name));
+		return new VariableOrError (null, nonStaticAccess (name));
 	    }
 	    onlyStatic |= et.isStatic ();
 	    et = et.previous ();
 	}
 	return new VariableOrError (null, null); // not found, but also not an error
+    }
+
+    private String nonStaticAccess (String name) {
+	return String.format ("non-static variable %s cannot be referenced from a static context", name);
     }
 
     private record VariableOrError (VariableInfo vi, String error) {

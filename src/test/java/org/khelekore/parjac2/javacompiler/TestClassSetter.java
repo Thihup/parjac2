@@ -307,8 +307,18 @@ public class TestClassSetter {
     }
 
     @Test
-	public void testStaticMethodAccessingInstanceFieldsWithOuterClassHavingStaticFieldGivesError () {
+    public void testStaticMethodAccessingInstanceFieldsWithOuterClassHavingStaticFieldGivesError () {
 	getTypes ("class O { static int x; class C { int x; static void foo () { x++; }}}", 1);
+    }
+
+    @Test
+    public void accessingFieldsFromTypeGivesError () {
+	getTypes ("import java.awt.Point; class C { void foo () { int x = Point.x; }}", 1);
+    }
+
+    @Test
+    public void accessingFieldsOnInstanceGivesNoError () {
+	getTypes ("import java.awt.Point; class C { void foo (Point p) { int x = p.x; }}", 0);
     }
 
     private TypeDeclaration getFirstType (String txt) {
