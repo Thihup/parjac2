@@ -49,6 +49,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.SimpleClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SingleStaticImportDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SingleTypeImportDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.StaticImportOnDemandDeclaration;
+import org.khelekore.parjac2.javacompiler.syntaxtree.ThisPrimary;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Throws;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeArguments;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeBound;
@@ -247,42 +248,43 @@ public class ClassSetter {
     }
 
     private void checkMethodBodies (EnclosingTypes et, MethodDeclarationBase md) {
-	EnclosingTypes tt = registerTypeParameters (et, md.getTypeParameters ());
-	EnclosingTypes rt = setFormalParameterListTypes (tt, md.getFormalParameterList ());
+	et = registerTypeParameters (et, md.getTypeParameters ());
+	et = setFormalParameterListTypes (et, md.getFormalParameterList ());
 	ParseTreeNode body = md.getMethodBody ();
 	if (body instanceof Block block) {
-	    EnclosingTypes ms = enclosingBlock (rt);
+	    et = enclosingBlock (et, md.isStatic ());
 	    BlockStatements bs = block.getStatements ();
-	    if (bs != null) {
-		List<ParseTreeNode> statements = bs.getStatements ();
-		statements.forEach (s -> setTypesForMethodStatement (ms, List.of (s)));
-	    }
+	    if (bs != null)
+		setTypesForMethodStatement (et, bs.getStatements ());
 	}
     }
 
     private void checkConstructorBodies (EnclosingTypes et, ConstructorDeclarationBase cdb) {
 	et = registerTypeParameters (et, cdb.getTypeParameters ());
 	et = setFormalParameterListTypes (et, cdb.getFormalParameterList ());
-	et = enclosingBlock (et);
+	et = enclosingBlock (et, false);
 	setTypesForMethodStatement (et, cdb.getStatements ());
     }
 
     private void checkInstanceInitializerBodies (EnclosingTypes et, ParseTreeNode p) {
-	et = enclosingBlock (et);
+	et = enclosingBlock (et, false);
 	setTypesForMethodStatement (et, List.of (p));
     }
 
     private void checkStaticInitializerBodies (EnclosingTypes et, ParseTreeNode p) {
-	et = enclosingBlock (et);
+	et = enclosingBlock (et, true);
 	setTypesForMethodStatement (et, List.of (p));
     }
 
-    private void setTypesForMethodStatement (EnclosingTypes et, List<ParseTreeNode> ps) {
-	Deque<Object> partsToHandle = new ArrayDeque<> ();
-	partsToHandle.addAll (ps);
+    private void setTypesForMethodStatement (EnclosingTypes initial, List<ParseTreeNode> ps) {
+	Deque<StatementHandler> partsToHandle = new ArrayDeque<> ();
+	ps.forEach (n -> partsToHandle.add (new StatementHandler (initial, n)));
 	while (!partsToHandle.isEmpty ()) {
-	    Object pp = partsToHandle.removeFirst ();
+	    StatementHandler s = partsToHandle.removeFirst ();
+	    Object pp = s.handler;
+	    EnclosingTypes et = s.et;
 	    switch (pp) {
+	    case Block b -> runInBlock (et, b, partsToHandle);
 	    case ClassType ct -> setType (et, ct);
 	    case AmbiguousName an -> reclassifyAmbiguousName (et, an);
 	    case ExpressionName en -> reclassifyAmbiguousName (et, en);
@@ -290,15 +292,15 @@ public class ClassSetter {
 	    case MethodReference mr -> {
 		// skip for now
 	    }
+	    case FieldAccess fa -> setType (et, fa);
 	    case ClassOrInterfaceTypeToInstantiate coitti -> setType (et, coitti.getType ());
 
-	    // Since we add first we will evaluate variable addition after the parts, which is what we want.
-	    case LocalVariableDeclaration lv -> { partsToHandle.add (new AddVariable (lv)); addParts (partsToHandle, lv); }
+	    case LocalVariableDeclaration lv -> handlePartsAndRegisterVariable (et, lv, partsToHandle);
 
 	    // Check method once we know all parts
-	    case MethodInvocation mi -> { partsToHandle.add (new MethodInvocationCheck (mi, this)); addParts (partsToHandle, mi); }
+	    case MethodInvocation mi -> handlePartsAndCheckMethodInvokation (et, mi, partsToHandle);
 
-	    case ParseTreeNode ptn -> addParts (partsToHandle, ptn);
+	    case ParseTreeNode ptn -> addParts (et, ptn, partsToHandle);
 
 	    case CustomHandler ch -> ch.run (et);
 
@@ -307,33 +309,61 @@ public class ClassSetter {
 	}
     }
 
-    private void reclassifyAmbiguousName (EnclosingTypes et, DottedName an) {
-	reclassifyAndSetTypeOnAmbiguousName (et, an);
-	if (an.getFullNameHandler () == null)
-	    error (an, "Unable to find symbol: %s", an.getDotName ());
+    private record StatementHandler (EnclosingTypes et, Object handler) {
+	// empty
     }
 
-    private void reclassifyAndSetTypeOnAmbiguousName (EnclosingTypes et, DottedName an) {
-	if (an.size () == 1) {
-	    tryToSetFullNameOnSimpleName (et, an);
-	} else {
-	    DottedName leftPart = an.allButLast ();
-	    reclassifyAndSetTypeOnAmbiguousName (et, leftPart);
-	    FullNameHandler fn = leftPart.getFullNameHandler ();
+    private void runInBlock (EnclosingTypes et, Block b, Deque<StatementHandler> partsToHandle) {
+	EnclosingTypes bt = enclosingBlock (et, et.isStatic ());
+	addParts (bt, b, partsToHandle);
+    }
+
+    private void handlePartsAndRegisterVariable (EnclosingTypes et, LocalVariableDeclaration lv, Deque<StatementHandler> partsToHandle) {
+	// Since we add first we will evaluate variable addition after the parts, which is what we want.
+	partsToHandle.addFirst (new StatementHandler (et, new AddVariable (lv)));
+	addParts (et, lv, partsToHandle);
+    }
+
+    private void handlePartsAndCheckMethodInvokation (EnclosingTypes et, MethodInvocation mi, Deque<StatementHandler> partsToHandle) {
+	partsToHandle.addFirst (new StatementHandler (et, new MethodInvocationCheck (mi, this)));
+	addParts (et, mi, partsToHandle);
+    }
+
+    private void addParts (EnclosingTypes et, ParseTreeNode pp, Deque<StatementHandler> partsToHandle) {
+	List<ParseTreeNode> parts = pp.getChildren ();
+	for (int i = parts.size () - 1; i >= 0; i--)
+	    partsToHandle.addFirst (new StatementHandler (et, parts.get (i)));
+    }
+
+    private void reclassifyAmbiguousName (EnclosingTypes et, DottedName an) {
+	String start = an.getNamePart (0);
+	VariableOrError voe = getVariable (et, start);
+	if (voe.error != null) {
+	    error (an, voe.error);
+	    return;
+	}
+	tryToSetFullNameOnSimpleName (et, an, start, voe.vi);
+
+	for (int i = 1; i < an.size (); i++) {
+	    FullNameHandler fn = an.getFullNameHandler ();
+
 	    if (fn == null) { // (part of) package name
 		// since name is fully specified we do not want to check outer enclosures
-		FullNameHandler fqn = getVisibleType (null, FullNameHandler.ofSimpleClassName (an.getDotName ()));
+		FullNameHandler currentName = an.dotName (i);
+		FullNameHandler fqn = getVisibleType (null, currentName);
 		if (fqn != null)
 		    an.setFullName (fqn);
 	    } else { // we have a type
-		String id = an.getLastPart ();
+		String id = an.getNamePart (i);
 		VariableInfo fi = cip.getFieldInformation (fn, id);
 		// if we find a field we can not access we can not log an error since doing so will
 		// result in us reporting multiple errors. We have to rely on the "unable to find symbol" from above.
 		if (fi != null && isAccessible (et, fn, fi)) {
 		    an.setFullName (fi.typeName ());
 		    // TODO: probably need to handle ExpressionName as well
-		    an.replace (new FieldAccess (an.position (), leftPart, id));
+		    FieldAccess fa = new FieldAccess (an.position (), an.replaced (), id);
+		    fa.setFullName (fi.typeName ());
+		    an.replace (fa);
 		} else {
 		    FullNameHandler innerClassCandidate = fn.getInnerClass (id);
 		    FullNameHandler foundInnerClass = getVisibleType (null, innerClassCandidate);
@@ -342,15 +372,18 @@ public class ClassSetter {
 		}
 	    }
 	}
+	if (an.getFullNameHandler () == null)
+	    error (an, "Unable to find symbol: %s", an.getDotName ());
     }
 
-    private FullNameHandler tryToSetFullNameOnSimpleName (EnclosingTypes et, DottedName an) {
-	String name = an.getLastPart ();
-	VariableInfo fi = getVariable (et, name);
+    private void tryToSetFullNameOnSimpleName (EnclosingTypes et, DottedName an, String name, VariableInfo fi) {
+	// We do not need to test for accessible, we asked for a field in our enclosure
 	if (fi != null) { // known variable
 	    FieldAccess access = new FieldAccess (an.position (), null, name);
 	    an.replace (access);
-	    an.setFullName (FullNameHandler.type (fi.type ()));
+	    FullNameHandler fn = FullNameHandler.type (fi.type ());
+	    an.setFullName (fn);
+	    access.setFullName (fn);
 	} else {
 	    FullNameHandler fn = FullNameHandler.ofSimpleClassName (name);
 	    ResolvedClass fqn = resolve (et, fn, an.position ());
@@ -359,23 +392,25 @@ public class ClassSetter {
 		an.replace (new ClassType (fqn.type));
 	    }
 	}
-	return an.getFullNameHandler ();
     }
 
-    private VariableInfo getVariable (EnclosingTypes et, String name) {
+    private VariableOrError getVariable (EnclosingTypes et, String name) {
+	boolean onlyStatic = false;
 	while (et != null) {
 	    VariableInfo fi = et.enclosure ().getField (name);
-	    if (fi != null)
-		return fi;
+	    if (fi != null) {
+		if (!onlyStatic || Flags.isStatic (fi.flags ()))
+		    return new VariableOrError (fi, null);
+		return new VariableOrError (null, String.format ("non-static variable %s cannot be referenced from a static context", name));
+	    }
+	    onlyStatic |= et.isStatic ();
 	    et = et.previous ();
 	}
-	return null;
+	return new VariableOrError (null, null); // not found, but also not an error
     }
 
-    private void addParts (Deque<Object> partsToHandle, ParseTreeNode pp) {
-	List<ParseTreeNode> parts = pp.getChildren ();
-	for (int i = parts.size () - 1; i >= 0; i--)
-	    partsToHandle.addFirst (parts.get (i));
+    private record VariableOrError (VariableInfo vi, String error) {
+	// empty
     }
 
     private static record AddVariable (LocalVariableDeclaration lv) implements CustomHandler {
@@ -533,6 +568,20 @@ public class ClassSetter {
 	    return;
 	}
 	tn.setFullName (fqn.type);
+    }
+
+    private void setType (EnclosingTypes et, FieldAccess fa) {
+	FullNameHandler fn = currentClass (et);
+	ParseTreeNode from = fa.getFrom ();
+	if (from != null) {
+	    if (!(from instanceof ThisPrimary))
+		fn = FullNameHandler.type (from);
+	}
+
+	String id = fa.getName ();
+	VariableInfo fi = cip.getFieldInformation (fn, id);
+	FullNameHandler result = FullNameHandler.type (fi.type ());
+	fa.setFullName (result);
     }
 
     private class ImportHandler {
@@ -958,8 +1007,8 @@ public class ClassSetter {
 	return new EnclosingTypes (previous, new VariableEnclosure (nameToVariable));
     }
 
-    private static EnclosingTypes enclosingBlock (EnclosingTypes previous) {
-	return new EnclosingTypes (previous, new BlockEnclosure ());
+    private static EnclosingTypes enclosingBlock (EnclosingTypes previous, boolean staticContext) {
+	return new EnclosingTypes (previous, new BlockEnclosure (staticContext));
     }
 
     private record EnclosingTypes (EnclosingTypes previous, Enclosure<?> enclosure)
@@ -967,6 +1016,10 @@ public class ClassSetter {
 
 	@Override public Iterator<EnclosingTypes> iterator () {
 	    return new ETIterator (this);
+	}
+
+	public boolean isStatic () {
+	    return enclosure.isStatic ();
 	}
 
 	public TypeDeclaration td () {
@@ -1001,6 +1054,7 @@ public class ClassSetter {
     }
 
     private interface Enclosure<V extends VariableInfo> {
+	boolean isStatic ();
 	default TypeDeclaration td () { return null; }
 	default FullNameHandler fqn () { return null; }
 	default TypeParameter getTypeParameter (String id) { return null; }
@@ -1009,22 +1063,34 @@ public class ClassSetter {
     }
 
     private record TypeEnclosure (TypeDeclaration td, FullNameHandler fqn) implements Enclosure<FieldInfo> {
+	@Override public boolean isStatic () { return Flags.isStatic (td.flags ()); }
 	@Override public TypeDeclaration td () { return td; }
 	@Override public FullNameHandler fqn () { return fqn; }
 	@Override public Map<String, FieldInfo> getFields () { return td.getFields (); }
     }
 
     private record TypeParameterEnclosure (Map<String, TypeParameter> nameToTypeParameter) implements Enclosure<VariableInfo> {
+	@Override public boolean isStatic () { return false; }
 	@Override public TypeParameter getTypeParameter (String id) { return nameToTypeParameter.get (id); }
 	@Override public Map<String, VariableInfo> getFields () { return Map.of (); }
     }
 
     private record VariableEnclosure (Map<String, VariableInfo> variables) implements Enclosure<VariableInfo> {
+	@Override public boolean isStatic () { return false; }
 	@Override public Map<String, VariableInfo> getFields () { return variables; }
     }
 
     private static class BlockEnclosure implements Enclosure<VariableInfo> {
+	private final boolean isStatic;
 	private Map<String, VariableInfo> locals = Map.of ();
+
+	public BlockEnclosure (boolean isStatic) {
+	    this.isStatic = isStatic;
+	}
+
+	@Override public boolean isStatic () {
+	    return isStatic;
+	}
 
 	private void add (LocalVariableDeclaration lv) {
 	    if (locals.isEmpty ())

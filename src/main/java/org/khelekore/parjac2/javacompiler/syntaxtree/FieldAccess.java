@@ -13,6 +13,7 @@ public class FieldAccess extends SyntaxTreeNode {
     private final ParseTreeNode from;
     private final boolean isSuper;
     private final String id;
+    private FullNameHandler fnh;
 
     public FieldAccess (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
@@ -33,6 +34,22 @@ public class FieldAccess extends SyntaxTreeNode {
 	this.id = id;
     }
 
+    public ParseTreeNode getFrom () {
+	return from;
+    }
+
+    public String getName () {
+	return id;
+    }
+
+    public void setFullName (FullNameHandler fnh) {
+	this.fnh = fnh;
+    }
+
+    public FullNameHandler getFullName () {
+	return fnh;
+    }
+
     @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	if (from != null)
@@ -42,7 +59,9 @@ public class FieldAccess extends SyntaxTreeNode {
 		sb.append (".");
 	    sb.append ("super");
 	}
-	sb.append (".").append (id);
+	if (!sb.isEmpty ())
+	    sb.append (".");
+	sb.append (id);
 	return sb.toString ();
     }
 

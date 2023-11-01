@@ -100,7 +100,12 @@ public class DottedName extends SyntaxTreeNode implements NamePartHandler {
     }
 
     public FullNameHandler getFullNameAsSimpleDottedName () {
-	String dotName = String.join (".", getParts ());
+	String dotName = String.join (".", nameParts);
+	return FullNameHandler.ofSimpleClassName (dotName);
+    }
+
+    public FullNameHandler dotName (int upToAndIncluding) {
+	String dotName = String.join (".", nameParts.subList (0, upToAndIncluding + 1));
 	return FullNameHandler.ofSimpleClassName (dotName);
     }
 }

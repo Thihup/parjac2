@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.khelekore.parjac2.javacompiler.Context;
+import org.khelekore.parjac2.javacompiler.Flags;
 import org.khelekore.parjac2.javacompiler.MethodInfo;
 import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
@@ -51,6 +52,10 @@ public class MethodDeclarationBase extends FlaggedBase implements MethodInfo {
 
     public List<ParseTreeNode> getModifiers () {
 	return modifiers;
+    }
+
+    public boolean isStatic () {
+	return Flags.isStatic (flags);
     }
 
     public TypeParameters getTypeParameters () {

@@ -281,6 +281,36 @@ public class TestClassSetter {
 	getTypes ("class C { void foo () { String.equals (null); }}", 1);
     }
 
+    @Test
+    public void testStaticMethodAccessingInstanceFieldGivesError () {
+	getTypes ("class C { int x; static void foo () { x++; }}", 1);
+    }
+
+    @Test
+    public void testInnerClassCanAccessFieldsInsideStaticMethod () {
+	getTypes ("class C { static class I { int x; void foo () { x = 3; }}}", 0);
+    }
+
+    @Test
+    public void testStaticMethodAccessingStaticFieldGivesNoErrors () {
+	getTypes ("class C { static int x; static void foo () { x++; }}", 0);
+    }
+
+    @Test
+    public void testMethodAccessingFieldGivesNoErrors () {
+	getTypes ("class C { int x; void foo () { x++; }}", 0);
+    }
+
+    @Test
+    public void testLocalVariableIsNotAccessibleAfterBlock () {
+	getTypes ("class C { void foo () { int x = 3; { int y; y = x + 3;} y++; }}", 1);
+    }
+
+    @Test
+	public void testStaticMethodAccessingInstanceFieldsWithOuterClassHavingStaticFieldGivesError () {
+	getTypes ("class O { static int x; class C { int x; static void foo () { x++; }}}", 1);
+    }
+
     private TypeDeclaration getFirstType (String txt) {
 	return getTypes (txt).get (0);
     }
