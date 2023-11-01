@@ -298,7 +298,7 @@ public class ClassSetter {
 	    case LocalVariableDeclaration lv -> handlePartsAndRegisterVariable (et, lv, partsToHandle);
 
 	    // Check method once we know all parts
-	    case MethodInvocation mi -> handlePartsAndCheckMethodInvokation (et, mi, partsToHandle);
+	    case MethodInvocation mi -> handlePartsAndCheckMethodInvocation (et, mi, partsToHandle);
 
 	    case ParseTreeNode ptn -> addParts (et, ptn, partsToHandle);
 
@@ -324,7 +324,7 @@ public class ClassSetter {
 	addParts (et, lv, partsToHandle);
     }
 
-    private void handlePartsAndCheckMethodInvokation (EnclosingTypes et, MethodInvocation mi, Deque<StatementHandler> partsToHandle) {
+    private void handlePartsAndCheckMethodInvocation (EnclosingTypes et, MethodInvocation mi, Deque<StatementHandler> partsToHandle) {
 	partsToHandle.addFirst (new StatementHandler (et, new MethodInvocationCheck (mi, this)));
 	addParts (et, mi, partsToHandle);
     }
@@ -356,20 +356,22 @@ public class ClassSetter {
 	    } else { // we have a type
 		String id = an.getNamePart (i);
 		VariableInfo fi = cip.getFieldInformation (fn, id);
-		if (an.replaced () instanceof ClassType) {
-		    if (!Flags.isStatic (fi.flags ())) {
-			error (an, nonStaticAccess (id));
-			return;
+		if (fi != null) {
+		    if (an.replaced () instanceof ClassType) {
+			if (!Flags.isStatic (fi.flags ())) {
+			    error (an, nonStaticAccess (id));
+			    return;
+			}
 		    }
-		}
-		// if we find a field we can not access we can not log an error since doing so will
-		// result in us reporting multiple errors. We have to rely on the "unable to find symbol" from above.
-		if (fi != null && isAccessible (et, fn, fi)) {
-		    an.setFullName (fi.typeName ());
-		    // TODO: probably need to handle ExpressionName as well
-		    FieldAccess fa = new FieldAccess (an.position (), an.replaced (), id);
-		    fa.setFullName (fi.typeName ());
-		    an.replace (fa);
+		    // if we find a field we can not access we can not log an error since doing so will
+		    // result in us reporting multiple errors. We have to rely on the "unable to find symbol" from above.
+		    if (isAccessible (et, fn, fi)) {
+			an.setFullName (fi.typeName ());
+			// TODO: probably need to handle ExpressionName as well
+			FieldAccess fa = new FieldAccess (an.position (), an.replaced (), id);
+			fa.setFullName (fi.typeName ());
+			an.replace (fa);
+		    }
 		} else {
 		    FullNameHandler innerClassCandidate = fn.getInnerClass (id);
 		    FullNameHandler foundInnerClass = getVisibleType (null, innerClassCandidate);
