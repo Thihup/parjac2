@@ -643,8 +643,12 @@ public class ClassSetter {
 
 	String id = fa.getName ();
 	VariableInfo fi = getField (fn, id);
-	FullNameHandler result = FullNameHandler.type (fi.type ());
-	fa.setFullName (result);
+	if (fi != null) {
+	    FullNameHandler result = FullNameHandler.type (fi.type ());
+	    fa.setFullName (result);
+	} else {
+	    error (fa, "Unable to find field: %s in type: %s", id, fn.getFullDotName ());
+	}
     }
 
     private VariableInfo getField (FullNameHandler fn, String name) {
