@@ -89,6 +89,11 @@ public interface FullNameHandler {
 	return 0;
     }
 
+    /** Check if this type is an array type */
+    default boolean isArray () {
+	return rank () > 0;
+    }
+
     /** Get the signature of this type.
      * Note the signature will be something like "java/lang/String" or "C", it will not
      * start with "L" or end with ";" since those depends on context of the signature.
@@ -145,6 +150,9 @@ public interface FullNameHandler {
 	case ArrayType at -> arrayOf (type (at.getType ()), at.rank ());
 	case ArrayAccess aa -> aa.type ();
 	case CastExpression ce -> type (ce.baseType ());
+	case ClassLiteral cl -> JL_CLASS;
+	case ThisPrimary tp -> tp.type ();
+	case FieldAccess fa -> fa.getFullName ();
 	default -> throw new IllegalArgumentException ("Unhandled type: " + p + ", " + p.getClass ().getName ());
 	};
     }

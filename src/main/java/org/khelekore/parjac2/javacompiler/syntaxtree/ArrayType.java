@@ -9,10 +9,17 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 public class ArrayType extends SyntaxTreeNode {
     private ParseTreeNode type;
     private Dims dims;
+
     public ArrayType (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
 	type = children.get (0); // primitive or class type
 	dims = (Dims)children.get (1);
+    }
+
+    public ArrayType (ClassType ct, int rank) {
+	super (ct.position ());
+	type = ct;
+	dims = new Dims (ct.position (), 1);
     }
 
     @Override public Object getValue () {

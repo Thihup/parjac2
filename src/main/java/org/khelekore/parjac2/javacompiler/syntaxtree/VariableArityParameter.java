@@ -10,7 +10,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class VariableArityParameter extends FormalParameterBase {
     private final List<ParseTreeNode> modifiers;
-    private final ParseTreeNode type;
+    private final ArrayType type;
     private final List<Annotation> annotations;
     private final String id;
 
@@ -19,14 +19,18 @@ public class VariableArityParameter extends FormalParameterBase {
 	int i = 0;
 	modifiers = (children.get (i) instanceof Multiple) ?
 	    ((Multiple)children.get (i++)).get () : Collections.emptyList ();
-	type = children.get (i++);
+	type = array ((ClassType)children.get (i++));
 	annotations = (children.get (i) instanceof Multiple) ?
 	    ((Multiple)children.get (i++)).get () : Collections.emptyList ();
 	i++; // ...
 	id = ((Identifier)children.get (i)).getValue ();
     }
 
-    @Override public Object getValue() {
+    private ArrayType array (ClassType ct) {
+	return new ArrayType (ct, 1);
+    }
+
+    @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	if (!modifiers.isEmpty ())
 	    sb.append (modifiers).append (" ");
@@ -51,7 +55,7 @@ public class VariableArityParameter extends FormalParameterBase {
 	return id;
     }
 
-    @Override public ParseTreeNode type () {
+    @Override public ArrayType type () {
 	return type;
     }
 }

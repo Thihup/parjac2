@@ -9,8 +9,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
@@ -92,13 +93,13 @@ public class ClassSetter {
 	    .map (t -> new ClassSetter (cip, t, diagnostics)).collect (Collectors.toList ());
 	if (diagnostics.hasError ())
 	    return;
-	classSetters.parallelStream ().forEach (ClassSetter::registerSuperTypes);
+	classSetters.parallelStream ().forEach (ClassSetter::registerSuperTypes); // qwerty
 
 	classSetters.parallelStream ().forEach (ClassSetter::registerFields);
 	classSetters.parallelStream ().forEach (ClassSetter::registerMethods);
 
 	// now that we know what types, fields and methods we have we check the method contents
-	classSetters.parallelStream ().forEach (ClassSetter::checkMethodBodies);
+	classSetters.parallelStream ().sequential ().forEach (ClassSetter::checkMethodBodies); //qwerty
 
 	classSetters.parallelStream ().forEach (cs -> cs.checkUnusedImport ());
     }
@@ -195,7 +196,7 @@ public class ClassSetter {
 	    checkAnnotations (et, rp.getAnnotations ());
 	    setType (et, rp.getType ());
 	}
-	EnclosingTypes rt = setFormalParameterListTypes (et, md.getFormalParameterList ());
+	EnclosingTypes rt = setFormalParameterListTypes (et, md.getFormalParameterList (), md.isStatic ());
 
 	Throws t = md.getThrows ();
 	if (t != null) {
@@ -207,10 +208,10 @@ public class ClassSetter {
     private void setConstructorTypes (EnclosingTypes bt, ConstructorDeclarationBase cdb) {
 	checkAnnotations (bt, cdb.getAnnotations ());
 	EnclosingTypes et = registerTypeParameters (bt, cdb.getTypeParameters ());
-	setFormalParameterListTypes (et, cdb.getFormalParameterList ());
+	setFormalParameterListTypes (et, cdb.getFormalParameterList (), false);
     }
 
-    private EnclosingTypes setFormalParameterListTypes (EnclosingTypes et, FormalParameterList args) {
+    private EnclosingTypes setFormalParameterListTypes (EnclosingTypes et, FormalParameterList args, boolean isStatic) {
 	Map<String, VariableInfo> variables = new HashMap<> ();
 	if (args != null) {
 	    for (FormalParameterBase fp : args.getParameters ()) {
@@ -223,7 +224,7 @@ public class ClassSetter {
 		}
 	    }
 	}
-	return enclosingVariables (et, variables);
+	return enclosingVariables (et, variables, isStatic);
     }
 
     private void checkFormalParameterModifiers (EnclosingTypes et, List<ParseTreeNode> modifiers) {
@@ -238,9 +239,10 @@ public class ClassSetter {
     }
 
     // TODO: qwerty: remove copy paste from registerMethods/setMethodTypes
+    // We should just keep the EnclosingTypes around so we can easily just call check the method bodies.
     private void checkMethodBodies (TypeDeclaration td, EnclosingTypes et) {
 	EnclosingTypes ett = registerTypeParameters (et, td.getTypeParameters ());
-	td.getMethods ().forEach (m -> checkMethodBodies (ett, m));
+	td.getMethods ().forEach (m -> checkMethodBodies (et, m));
 
 	td.getConstructors ().forEach (c -> checkConstructorBodies (ett, c));
 	td.getInstanceInitializers ().forEach (c -> checkInstanceInitializerBodies (ett, c));
@@ -249,10 +251,10 @@ public class ClassSetter {
 
     private void checkMethodBodies (EnclosingTypes et, MethodDeclarationBase md) {
 	et = registerTypeParameters (et, md.getTypeParameters ());
-	et = setFormalParameterListTypes (et, md.getFormalParameterList ());
+	et = setFormalParameterListTypes (et, md.getFormalParameterList (), md.isStatic ());
 	ParseTreeNode body = md.getMethodBody ();
 	if (body instanceof Block block) {
-	    et = enclosingBlock (et, md.isStatic ());
+	    et = enclosingBlock (et, false);
 	    BlockStatements bs = block.getStatements ();
 	    if (bs != null)
 		setTypesForMethodStatement (et, bs.getStatements ());
@@ -261,7 +263,7 @@ public class ClassSetter {
 
     private void checkConstructorBodies (EnclosingTypes et, ConstructorDeclarationBase cdb) {
 	et = registerTypeParameters (et, cdb.getTypeParameters ());
-	et = setFormalParameterListTypes (et, cdb.getFormalParameterList ());
+	et = setFormalParameterListTypes (et, cdb.getFormalParameterList (), false);
 	et = enclosingBlock (et, false);
 	setTypesForMethodStatement (et, cdb.getStatements ());
     }
@@ -283,6 +285,8 @@ public class ClassSetter {
 	    StatementHandler s = partsToHandle.removeFirst ();
 	    Object pp = s.handler;
 	    EnclosingTypes et = s.et;
+	    // quite useful when debugging
+	    //System.err.println ("Looking at: " + pp + ", " + pp.getClass ().getSimpleName ());
 	    switch (pp) {
 	    case Block b -> runInBlock (et, b, partsToHandle);
 	    case ClassType ct -> setType (et, ct);
@@ -292,7 +296,8 @@ public class ClassSetter {
 	    case MethodReference mr -> {
 		// skip for now
 	    }
-	    case FieldAccess fa -> setType (et, fa);
+	    case ThisPrimary tp -> setType (et, tp);
+	    case FieldAccess fa -> handlePartsAndField (et, fa, partsToHandle);
 	    case ClassOrInterfaceTypeToInstantiate coitti -> setType (et, coitti.getType ());
 
 	    case LocalVariableDeclaration lv -> handlePartsAndRegisterVariable (et, lv, partsToHandle);
@@ -316,6 +321,12 @@ public class ClassSetter {
     private void runInBlock (EnclosingTypes et, Block b, Deque<StatementHandler> partsToHandle) {
 	EnclosingTypes bt = enclosingBlock (et, et.isStatic ());
 	addParts (bt, b, partsToHandle);
+    }
+
+    private void handlePartsAndField (EnclosingTypes et, FieldAccess fa, Deque<StatementHandler> partsToHandle) {
+	CustomHandler h = e -> setType (e, fa);
+	partsToHandle.addFirst (new StatementHandler (et, h));
+	addParts (et, fa, partsToHandle);
     }
 
     private void handlePartsAndRegisterVariable (EnclosingTypes et, LocalVariableDeclaration lv, Deque<StatementHandler> partsToHandle) {
@@ -405,7 +416,7 @@ public class ClassSetter {
     private VariableOrError getVariable (EnclosingTypes et, String name) {
 	boolean onlyStatic = false;
 	while (et != null) {
-	    VariableInfo fi = et.enclosure ().getField (name);
+	    VariableInfo fi = findField (et, name);
 	    if (fi != null) {
 		if (!onlyStatic || Flags.isStatic (fi.flags ()))
 		    return new VariableOrError (fi, null);
@@ -415,6 +426,10 @@ public class ClassSetter {
 	    et = et.previous ();
 	}
 	return new VariableOrError (null, null); // not found, but also not an error
+    }
+
+    private VariableInfo findField (EnclosingTypes et, String name) {
+	return getField (n -> et.enclosure ().getField (n), () -> et.getSuperClasses (cip), name);
     }
 
     private String nonStaticAccess (String name) {
@@ -427,15 +442,13 @@ public class ClassSetter {
 
     private static record AddVariable (LocalVariableDeclaration lv) implements CustomHandler {
 	@Override public void run (EnclosingTypes et) {
-	    BlockEnclosure be = (BlockEnclosure)et.enclosure ();
-	    be.add (lv);
+	    ((BlockEnclosure)et.enclosure ()).add (lv);
 	}
     }
 
     private record MethodInvocationCheck (MethodInvocation mi, ClassSetter cs) implements CustomHandler {
 	@Override public void run (EnclosingTypes et) {
-	    FullNameHandler currentClass = cs.currentClass (et);
-	    cs.checkMethodCall (currentClass, mi);
+	    cs.checkMethodCall (et, mi);
 	}
     }
 
@@ -443,41 +456,69 @@ public class ClassSetter {
 	void run (EnclosingTypes et);
     }
 
-    private void checkMethodCall (FullNameHandler nameOfCurrentClass, MethodInvocation mi) {
+    private void checkMethodCall (EnclosingTypes et, MethodInvocation mi) {
 	ParseTreeNode on = mi.getOn ();
 	boolean isSuper = mi.isSuper ();
 	String name = mi.getMethodName ();
 	List<ParseTreeNode> args = mi.getArguments ();
 
-	FullNameHandler methodOn = nameOfCurrentClass;
+	FullNameHandler methodOn = null;
 	if (on != null) {
-	    // TODO: set methodOn
 	    methodOn = FullNameHandler.type (on);
+
+	    // AmbiguousName that could not be resolved and similar, no need for NPE or another error
+	    if (methodOn == null)
+		return;
 	}
 	if (isSuper) {
 	    // TODO: set methodOn
 	}
 
-	// AmbiguousName that could not be resolved and similar, no need for NPE or another error
-	if (methodOn == null)
-	    return;
-
 	// TODO: verify method arguments match
-	List<MethodInfo> options = cip.getMethods (methodOn, name);
-	if (options == null) {
-	    error (mi, "No method named %s found in %s", name, methodOn);
-	    return;
-	}
-	for (MethodInfo info : options) {
-	    if (match (on, args, info)) {
-		mi.result (info.result ());
+	boolean insideStatic = false;
+	while (et != null) {
+	    insideStatic |= et.isStatic ();
+	    if (et.enclosure instanceof TypeEnclosure) {
+		if (on == null) {
+		    methodOn = currentClass (et);
+		}
+
+		MethodInfo info = getMethod (mi, methodOn, on, name, args, insideStatic);
+		if (info != null) {
+		    mi.result (info.result ());
+		    break;
+		}
 	    }
+	    et = et.previous;
 	}
 	if (mi.result () == null)
-	    error (mi, "No matching method found");
+	    error (mi, "No matching method named %s found in %s", name, methodOn.getFullDotName ());
     }
 
-    private boolean match (ParseTreeNode on, List<ParseTreeNode> args, MethodInfo info) {
+    private MethodInfo getMethod (MethodInvocation mi, FullNameHandler methodOn,
+				  ParseTreeNode on, String name, List<ParseTreeNode> args, boolean insideStatic) {
+	MethodInfo info = getMatching (cip.getMethods (methodOn, name), on, args, insideStatic);
+	if (info == null) {
+	    List<FullNameHandler> supers = getSuperClasses (methodOn);
+	    if (supers != null) {
+		for (FullNameHandler sfn : supers) {
+		    info = getMatching (cip.getMethods (sfn, name), on, args, insideStatic);
+		    if (info != null)
+			break;
+		}
+	    }
+	}
+	return info;
+    }
+
+    private MethodInfo getMatching (List<MethodInfo> options, ParseTreeNode on, List<ParseTreeNode> args, boolean insideStatic) {
+	for (MethodInfo info : options)
+	    if (match (on, args, info, insideStatic))
+		return info;
+	return null;
+    }
+
+    private boolean match (ParseTreeNode on, List<ParseTreeNode> args, MethodInfo info, boolean insideStatic) {
 	if (on instanceof DottedName dn)
 	    on = dn.replaced ();
 	boolean requireInstance = !Flags.isStatic (info.flags ());
@@ -485,8 +526,14 @@ public class ClassSetter {
 	if (!varArgs && args.size () != info.numberOfArguments ())
 	    return false;
 
-	if (requireInstance && on instanceof ClassType)
-	    return false;
+	if (requireInstance) {
+	    // Object.equals (foo)
+	    if (on instanceof ClassType)
+		return false;
+	    // we can not use implicit or explicit "this" inside static method
+	    if (insideStatic && (on == null || on instanceof ThisPrimary))
+		return false;
+	}
 
 	// TODO: check types
 	return true;
@@ -582,6 +629,10 @@ public class ClassSetter {
 	tn.setFullName (fqn.type);
     }
 
+    private void setType (EnclosingTypes et, ThisPrimary tp) {
+	tp.type (currentClass (et));
+    }
+
     private void setType (EnclosingTypes et, FieldAccess fa) {
 	FullNameHandler fn = currentClass (et);
 	ParseTreeNode from = fa.getFrom ();
@@ -591,9 +642,30 @@ public class ClassSetter {
 	}
 
 	String id = fa.getName ();
-	VariableInfo fi = cip.getFieldInformation (fn, id);
+	VariableInfo fi = getField (fn, id);
 	FullNameHandler result = FullNameHandler.type (fi.type ());
 	fa.setFullName (result);
+    }
+
+    private VariableInfo getField (FullNameHandler fn, String name) {
+	return getField (n -> cip.getFieldInformation (fn, n), () -> getSuperClasses (fn), name);
+    }
+
+    private VariableInfo getField (Function<String, VariableInfo> fieldGetter,
+				   Supplier<List<FullNameHandler>> superClassesGetter,
+				   String name) {
+	VariableInfo fi = fieldGetter.apply (name);
+	if (fi == null) {
+	    List<FullNameHandler> supers = superClassesGetter.get ();
+	    if (supers != null) {
+		for (FullNameHandler sfn : supers) {
+		    fi = cip.getFieldInformation (sfn, name);
+		    if (fi != null)
+			break;
+		}
+	    }
+	}
+	return fi;
     }
 
     private class ImportHandler {
@@ -733,15 +805,13 @@ public class ClassSetter {
 
     private boolean insideSuperClass (FullNameHandler fqn, FullNameHandler currentClass) {
 	try {
-	    Optional<List<FullNameHandler>> supers = cip.getSuperTypes (currentClass.getFullDotName (), false);
-	    if (supers.isPresent ()) {
-		for (FullNameHandler s :  supers.get ()) {
-		    if (startsWithOuter (fqn, s)) {
-			return true;
-		    }
-		    if (insideSuperClass (fqn, s))
-			return true;
+	    List<FullNameHandler> supers = cip.getSuperTypes (currentClass.getFullDotName (), false);
+	    for (FullNameHandler s :  supers) {
+		if (startsWithOuter (fqn, s)) {
+		    return true;
 		}
+		if (insideSuperClass (fqn, s))
+		    return true;
 	    }
 	} catch (IOException e) {
 	    return false;
@@ -886,22 +956,23 @@ public class ClassSetter {
 	if (fullCtn == null)
 	    return null;
 	List<FullNameHandler> superclasses = getSuperClasses (fullCtn);
-	for (FullNameHandler superclass : superclasses) {
-	    FullNameHandler candidate = superclass.getInnerClass (id);
-	    FullNameHandler visibleType = getVisibleType (et, candidate);
-	    if (visibleType != null)
-		return visibleType;
-	    FullNameHandler ssn = checkSuperClassesHasInnerClass (et, superclass, id);
-	    if (ssn != null)
-		return ssn;
+	if (superclasses != null) {
+	    for (FullNameHandler superclass : superclasses) {
+		FullNameHandler candidate = superclass.getInnerClass (id);
+		FullNameHandler visibleType = getVisibleType (et, candidate);
+		if (visibleType != null)
+		    return visibleType;
+		FullNameHandler ssn = checkSuperClassesHasInnerClass (et, superclass, id);
+		if (ssn != null)
+		    return ssn;
+	    }
 	}
 	return null;
     }
 
     private List<FullNameHandler> getSuperClasses (FullNameHandler type) {
 	try {
-	    Optional<List<FullNameHandler>> supers = cip.getSuperTypes (type.getFullDotName (), false);
-	    return supers.isPresent () ? supers.get () : Collections.emptyList ();
+	    return cip.getSuperTypes (type.getFullDotName (), type.isArray ());
 	} catch (IOException e) {
 	    diagnostics.report (new NoSourceDiagnostics ("Failed to load class: " + type, e));
 	}
@@ -1015,8 +1086,8 @@ public class ClassSetter {
 	return new EnclosingTypes (previous, new TypeParameterEnclosure (nameToTypeParameter));
     }
 
-    private static EnclosingTypes enclosingVariables (EnclosingTypes previous, Map<String, VariableInfo> nameToVariable) {
-	return new EnclosingTypes (previous, new VariableEnclosure (nameToVariable));
+    private static EnclosingTypes enclosingVariables (EnclosingTypes previous, Map<String, VariableInfo> nameToVariable, boolean isStatic) {
+	return new EnclosingTypes (previous, new VariableEnclosure (nameToVariable, isStatic));
     }
 
     private static EnclosingTypes enclosingBlock (EnclosingTypes previous, boolean staticContext) {
@@ -1040,6 +1111,10 @@ public class ClassSetter {
 
 	public FullNameHandler fqn () {
 	    return enclosure.fqn ();
+	}
+
+	public List<FullNameHandler> getSuperClasses (ClassInformationProvider cip) {
+	    return enclosure.getSuperClasses (cip);
 	}
 
 	public TypeParameter getTypeParameter (String id) {
@@ -1070,6 +1145,7 @@ public class ClassSetter {
 	default TypeDeclaration td () { return null; }
 	default FullNameHandler fqn () { return null; }
 	default TypeParameter getTypeParameter (String id) { return null; }
+	default List<FullNameHandler> getSuperClasses (ClassInformationProvider cip) { return List.of (); }
 	Map<String, V> getFields ();
 	default V getField (String name) { return getFields ().get (name); }
     }
@@ -1078,6 +1154,13 @@ public class ClassSetter {
 	@Override public boolean isStatic () { return Flags.isStatic (td.flags ()); }
 	@Override public TypeDeclaration td () { return td; }
 	@Override public FullNameHandler fqn () { return fqn; }
+	@Override public List<FullNameHandler> getSuperClasses (ClassInformationProvider cip) {
+	    try {
+		return cip.getSuperTypes (fqn.getFullDotName (), false);
+	    } catch (IOException e) {
+		throw new RuntimeException ("Unable to load superclasses of: " + td.getName ());
+	    }
+	}
 	@Override public Map<String, FieldInfo> getFields () { return td.getFields (); }
     }
 
@@ -1087,8 +1170,7 @@ public class ClassSetter {
 	@Override public Map<String, VariableInfo> getFields () { return Map.of (); }
     }
 
-    private record VariableEnclosure (Map<String, VariableInfo> variables) implements Enclosure<VariableInfo> {
-	@Override public boolean isStatic () { return false; }
+    private record VariableEnclosure (Map<String, VariableInfo> variables, boolean isStatic) implements Enclosure<VariableInfo> {
 	@Override public Map<String, VariableInfo> getFields () { return variables; }
     }
 

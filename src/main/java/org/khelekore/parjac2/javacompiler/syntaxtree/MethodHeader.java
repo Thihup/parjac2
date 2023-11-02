@@ -38,7 +38,7 @@ public class MethodHeader extends SyntaxTreeNode {
     public MethodHeader (ParsePosition pos, String name, ParseTreeNode result) {
 	super (pos);
 	types = null;
-	annotations = null;
+	annotations = List.of ();
 	this.result = result;
 	methodDeclarator = new MethodDeclarator (pos, name);
 	t = null;

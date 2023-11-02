@@ -4,8 +4,18 @@ import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class ThisPrimary extends SyntaxTreeNode {
+    private FullNameHandler type;
+
     public ThisPrimary (ParseTreeNode n) {
 	super (n.position ());
+    }
+
+    public void type (FullNameHandler type) {
+	this.type = type;
+    }
+
+    public FullNameHandler type () {
+	return type;
     }
 
     @Override public Object getValue () {

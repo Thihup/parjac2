@@ -144,12 +144,12 @@ public class ClassResourceHolder {
 	return LookupResult.NOT_FOUND;
     }
 
-    public Optional<List<FullNameHandler>> getSuperTypes (String fqn) throws IOException {
+    public List<FullNameHandler> getSuperTypes (String fqn) throws IOException {
 	ClasspathClassInformation r = foundClasses.get (fqn);
 	if (r == null)
-	    return Optional.empty ();
+	    return null;
 	loadNoCheckedException (r);
-	return Optional.of (r.superTypes);
+	return r.superTypes;
     }
 
     public VariableInfo getFieldInformation (String fqn, String field) {
@@ -165,7 +165,8 @@ public class ClassResourceHolder {
 	if (r == null)
 	    return null;
 	loadNoCheckedException (r);
-	return r.methods.get (methodName);
+	List<MethodInfo> ret = r.methods.get (methodName);
+	return ret == null ? List.of () : ret;
     }
 
     public boolean isInterface (String fqn) {

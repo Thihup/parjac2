@@ -321,6 +321,86 @@ public class TestClassSetter {
 	getTypes ("import java.awt.Point; class C { void foo (Point p) { int x = p.x; }}", 0);
     }
 
+    @Test
+    public void testAccessingFieldFromMethodCall () {
+	getTypes ("class C { int X = 2; C foo () { return new C (); } void bar () { int y = foo().X; }}");
+    }
+
+    @Test
+    public void testVarArgParameterSetting () {
+	getTypes ("class C { void foo (Object... arr) { arr[3].toString (); }}");
+    }
+
+    @Test
+    public void testClassLiteral () {
+	getTypes ("class C { void foo () { C.class.getResource (\"a\"); }}");
+    }
+
+    @Test
+    public void testConstructorParameterIsUsable () {
+	getTypes ("class C { C (String s) { int l = s.length (); }}");
+    }
+
+    @Test
+    public void testFieldsFromSuperClassIsFound () {
+	getTypes ("class B { int flags; } class C extends B { B () { flags = 3; }}");
+    }
+
+    @Test
+    public void testThisFieldsFromSuperClassIsFound () {
+	getTypes ("class B { int flags; } class C extends B { B () { this.flags = 3; }}");
+    }
+
+    @Test
+    public void testMethodIsFound () {
+	getTypes ("class C { void foo () {} void bar () { foo (); }}");
+    }
+
+    @Test
+    public void testThisMethodIsFound () {
+	getTypes ("class C { void foo () {} void bar () { this.foo (); }}");
+    }
+
+    @Test
+    public void testStaticMethodIsFound () {
+	getTypes ("class C { static void foo () {} void bar () { this.foo (); }}");
+    }
+
+    @Test
+    public void testInstanceMethodNotAllowedFromStatic () {
+	getTypes ("class C { void foo () {} static void bar () { foo (); }}", 1);
+    }
+
+    @Test
+    public void testInstanceMethodNotAllowedFromStaticThis () {
+	getTypes ("class C { void foo () {} static void bar () { this.foo (); }}", 1);
+    }
+
+    @Test
+    public void testSuperClassMethodIsFound () {
+	getTypes ("class B { void foo () {} } class C extends B { void bar () { foo (); }}");
+    }
+
+    @Test
+    public void testThisPrimaryUsedForMethod () {
+	getTypes ("class C { void foo () { String s = this.getClass ().getName (); }}");
+    }
+
+    @Test
+    public void testMethodFromOuterClassIsReachable () {
+	getTypes ("class C { void foo () {} class D { void bar () { foo (); }}}");
+    }
+
+    @Test
+    public void testMethodArgsFound () {
+	getTypes ("class C { void foo (String[] args) {if (args[3].equals (\"-\")) {}}}");
+    }
+
+    @Test
+    public void testStaticMethodArgsFound () {
+	getTypes ("class C { static void foo (String[] args) {if (args[3].equals (\"-\")) {}}}");
+    }
+
     private TypeDeclaration getFirstType (String txt) {
 	return getTypes (txt).get (0);
     }

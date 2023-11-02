@@ -74,7 +74,8 @@ public abstract class TypeDeclaration extends FlaggedBase {
 		}
 	    }
 	}
-	return methodInfos.get (methodName);
+	List<MethodInfo> ret = methodInfos.get (methodName);
+	return ret == null ? List.of () : ret;
     }
 
     public abstract List<? extends ConstructorDeclarationBase> getConstructors ();

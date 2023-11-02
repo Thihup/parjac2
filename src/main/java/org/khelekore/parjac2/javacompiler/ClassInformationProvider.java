@@ -42,15 +42,15 @@ public class ClassInformationProvider {
     }
 
 
-    public Optional<List<FullNameHandler>> getSuperTypes (String fqn, boolean isArray) throws IOException {
+    public List<FullNameHandler> getSuperTypes (String fqn, boolean isArray) throws IOException {
 	if (isArray)
-	    return Optional.of (Collections.singletonList (FullNameHandler.JL_OBJECT));
+	    return List.of (FullNameHandler.JL_OBJECT);
 	Optional<List<FullNameHandler>> supers = cth.getSuperTypes (fqn);
 	if (supers.isPresent ())
-	    return supers;
+	    return supers.get ();
 	TypeParameter tp = nameToType.get (fqn);
 	if (tp != null)
-	    return Optional.of (getSuperTypes (tp));
+	    return getSuperTypes (tp);
 	return crh.getSuperTypes (fqn);
     }
 

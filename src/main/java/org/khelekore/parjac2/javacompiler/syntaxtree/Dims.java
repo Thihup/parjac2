@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -11,6 +12,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 public class Dims extends SyntaxTreeNode {
     // one list of annotations per dim
     List<List<ParseTreeNode>> annotations;
+
     public Dims (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
 	annotations = new ArrayList<> ();
@@ -25,9 +27,14 @@ public class Dims extends SyntaxTreeNode {
 		if (z.get (j) instanceof Multiple)
 		    annotations.add (((Multiple)z.get (j++)).get ());
 		else
-		    annotations.add (Collections.emptyList ());
+		    annotations.add (List.of ());
 	    }
 	}
+    }
+
+    public Dims (ParsePosition pos, int rank) {
+	super (pos);
+	annotations = List.of (List.of ());
     }
 
     @Override public Object getValue () {
