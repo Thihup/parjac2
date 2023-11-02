@@ -17,12 +17,14 @@ public class ConstructorDeclarator extends SyntaxTreeNode {
 
     public ConstructorDeclarator (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
+	// [TypeParameters] SimpleTypeName '(' [ReceiverParameter ','] [FormalParameterList] ')'
 	int i = 0;
 	if (rule.get (i) == ctx.getGrammar ().getRuleGroupId ("TypeParameters"))
 	    types = (TypeParameters)children.get (i++);
 	else
 	    types = null;
 	id = ((Identifier)children.get (i++)).getValue ();
+	i++; // (
 	if (rule.get (i) == ctx.getGrammar ().getRuleGroupId ("ReceiverParameter")) {
 	    rp = (ReceiverParameter)children.get (i);
 	    i += 2;
@@ -33,6 +35,7 @@ public class ConstructorDeclarator extends SyntaxTreeNode {
 	    params = (FormalParameterList)children.get (i++);
 	else
 	    params = null;
+	// another ) here
     }
 
     public ConstructorDeclarator (ParsePosition pos, String id) {
