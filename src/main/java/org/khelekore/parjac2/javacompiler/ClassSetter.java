@@ -92,7 +92,7 @@ public class ClassSetter {
 	    .map (t -> new ClassSetter (cip, t, diagnostics)).collect (Collectors.toList ());
 	if (diagnostics.hasError ())
 	    return;
-	classSetters.parallelStream ().forEach (ClassSetter::registerSuperTypes); // qwerty
+	classSetters.parallelStream ().forEach (ClassSetter::registerSuperTypes);
 
 	classSetters.parallelStream ().forEach (ClassSetter::registerFields);
 	classSetters.parallelStream ().forEach (ClassSetter::registerMethods);
