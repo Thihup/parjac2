@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -481,7 +480,7 @@ public class ClassSetter {
 	boolean insideStatic = false;
 	while (et != null) {
 	    insideStatic |= et.isStatic ();
-	    if (et.enclosure instanceof TypeEnclosure) {
+	    if (et.enclosure () instanceof TypeEnclosure) {
 		if (on == null) {
 		    methodOn = currentClass (et);
 		}
@@ -492,7 +491,7 @@ public class ClassSetter {
 		    break;
 		}
 	    }
-	    et = et.previous;
+	    et = et.previous ();
 	}
 	if (mi.result () == null)
 	    error (mi, "No matching method named %s found in %s", name, methodOn.getFullDotName ());
@@ -556,10 +555,13 @@ public class ClassSetter {
     private void setTernaryType (EnclosingTypes et, Ternary t) {
 	FullNameHandler thenType = FullNameHandler.type (t.thenPart ());
 	FullNameHandler elseType = FullNameHandler.type (t.elsePart ());
-	t.type (merge (thenType, elseType));
+	t.type (commonType (thenType, elseType));
     }
 
-    private FullNameHandler merge (FullNameHandler f1, FullNameHandler f2) {
+    private FullNameHandler commonType (FullNameHandler f1, FullNameHandler f2) {
+	if (f1.equals (f2))
+	    return f1;
+
 	// TODO: implement this correctly
 	return f1;
     }
@@ -960,26 +962,6 @@ public class ClassSetter {
 	return null;
     }
 
-
-    private static class ResolvedClass {
-	public final FullNameHandler type;
-	public final TypeParameter tp;
-
-	public ResolvedClass (FullNameHandler type) {
-	    this.type = type;
-	    this.tp = null;
-	}
-
-	public ResolvedClass (TypeParameter tp) {
-	    this.type = tp.getExpressionType ().getFullNameHandler ();
-	    this.tp = tp;
-	}
-
-	@Override public String toString () {
-	    return "ResolvedClass{type: " + type.getFullDollarName () + ", tp: " + tp + "}";
-	}
-    }
-
     private FullNameHandler checkSuperClassesHasInnerClass (EnclosingTypes et, FullNameHandler fullCtn, String id) {
 	if (fullCtn == null)
 	    return null;
@@ -1120,62 +1102,6 @@ public class ClassSetter {
 
     private static EnclosingTypes enclosingBlock (EnclosingTypes previous, boolean staticContext) {
 	return new EnclosingTypes (previous, new BlockEnclosure (staticContext));
-    }
-
-    private record EnclosingTypes (EnclosingTypes previous, Enclosure<?> enclosure)
-	implements Iterable<EnclosingTypes> {
-
-	@Override public Iterator<EnclosingTypes> iterator () {
-	    return new ETIterator (this);
-	}
-
-	public boolean isStatic () {
-	    return enclosure.isStatic ();
-	}
-
-	public TypeDeclaration td () {
-	    return enclosure.td ();
-	}
-
-	public FullNameHandler fqn () {
-	    return enclosure.fqn ();
-	}
-
-	public List<FullNameHandler> getSuperClasses (ClassInformationProvider cip) {
-	    return enclosure.getSuperClasses (cip);
-	}
-
-	public TypeParameter getTypeParameter (String id) {
-	    return enclosure.getTypeParameter (id);
-	}
-
-	private static class ETIterator implements Iterator<EnclosingTypes> {
-	    private EnclosingTypes e;
-
-	    public ETIterator (EnclosingTypes e) {
-		this.e = e;
-	    }
-
-	    @Override public boolean hasNext () {
-		return e != null;
-	    }
-
-	    @Override public EnclosingTypes next () {
-		EnclosingTypes ret = e;
-		e = e.previous ();
-		return ret;
-	    }
-	}
-    }
-
-    private interface Enclosure<V extends VariableInfo> {
-	boolean isStatic ();
-	default TypeDeclaration td () { return null; }
-	default FullNameHandler fqn () { return null; }
-	default TypeParameter getTypeParameter (String id) { return null; }
-	default List<FullNameHandler> getSuperClasses (ClassInformationProvider cip) { return List.of (); }
-	Map<String, V> getFields ();
-	default V getField (String name) { return getFields ().get (name); }
     }
 
     private record TypeEnclosure (TypeDeclaration td, FullNameHandler fqn) implements Enclosure<FieldInfo> {
