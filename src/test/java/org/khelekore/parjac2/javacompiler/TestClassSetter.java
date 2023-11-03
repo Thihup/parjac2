@@ -411,6 +411,11 @@ public class TestClassSetter {
 	getTypes ("class C { void foo () { Object o = \"a\"; int l = ((String)o).length (); }}");
     }
 
+    @Test
+    public void testGenericReturn () {
+	getTypes ("import java.util.Map; class C { Map<String, String> m; void foo () { int l = m.get (\"\").length (); }}");
+    }
+
     private TypeDeclaration getFirstType (String txt) {
 	return getTypes (txt).get (0);
     }

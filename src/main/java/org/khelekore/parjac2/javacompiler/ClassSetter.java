@@ -60,7 +60,6 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.TypeName;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeParameter;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeParameters;
 import org.khelekore.parjac2.javacompiler.syntaxtree.UnqualifiedClassInstanceCreationExpression;
-import org.khelekore.parjac2.javacompiler.syntaxtree.VariableDeclarator;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Wildcard;
 import org.khelekore.parjac2.javacompiler.syntaxtree.WildcardBounds;
 import org.khelekore.parjac2.parser.ParsePosition;
@@ -160,7 +159,7 @@ public class ClassSetter {
 		bound.getAdditionalBounds ().forEach (b -> setType (et, b));
 	    }
 	}
-	return enclosingTypeParameter (et, nameToTypeParameter);
+	return et.enclosingTypeParameter (nameToTypeParameter);
     }
 
     private void registerFields () {
@@ -224,7 +223,7 @@ public class ClassSetter {
 		}
 	    }
 	}
-	return enclosingVariables (et, variables, isStatic);
+	return et.enclosingVariables (variables, isStatic);
     }
 
     private void checkFormalParameterModifiers (EnclosingTypes et, List<ParseTreeNode> modifiers) {
@@ -254,7 +253,7 @@ public class ClassSetter {
 	et = setFormalParameterListTypes (et, md.getFormalParameterList (), md.isStatic ());
 	ParseTreeNode body = md.getMethodBody ();
 	if (body instanceof Block block) {
-	    et = enclosingBlock (et, false);
+	    et = et.enclosingBlock (false);
 	    BlockStatements bs = block.getStatements ();
 	    if (bs != null)
 		setTypesForMethodStatement (et, bs.getStatements ());
@@ -264,17 +263,17 @@ public class ClassSetter {
     private void checkConstructorBodies (EnclosingTypes et, ConstructorDeclarationBase cdb) {
 	et = registerTypeParameters (et, cdb.getTypeParameters ());
 	et = setFormalParameterListTypes (et, cdb.getFormalParameterList (), false);
-	et = enclosingBlock (et, false);
+	et = et.enclosingBlock (false);
 	setTypesForMethodStatement (et, cdb.getStatements ());
     }
 
     private void checkInstanceInitializerBodies (EnclosingTypes et, ParseTreeNode p) {
-	et = enclosingBlock (et, false);
+	et = et.enclosingBlock (false);
 	setTypesForMethodStatement (et, List.of (p));
     }
 
     private void checkStaticInitializerBodies (EnclosingTypes et, ParseTreeNode p) {
-	et = enclosingBlock (et, true);
+	et = et.enclosingBlock (true);
 	setTypesForMethodStatement (et, List.of (p));
     }
 
@@ -320,7 +319,7 @@ public class ClassSetter {
     }
 
     private void runInBlock (EnclosingTypes et, Block b, Deque<StatementHandler> partsToHandle) {
-	EnclosingTypes bt = enclosingBlock (et, et.isStatic ());
+	EnclosingTypes bt = et.enclosingBlock (et.isStatic ());
 	addParts (bt, b, partsToHandle);
     }
 
@@ -448,7 +447,7 @@ public class ClassSetter {
 
     private static record AddVariable (LocalVariableDeclaration lv) implements CustomHandler {
 	@Override public void run (EnclosingTypes et) {
-	    ((BlockEnclosure)et.enclosure ()).add (lv);
+	    ((EnclosingTypes.BlockEnclosure)et.enclosure ()).add (lv);
 	}
     }
 
@@ -480,7 +479,7 @@ public class ClassSetter {
 	boolean insideStatic = false;
 	while (et != null) {
 	    insideStatic |= et.isStatic ();
-	    if (et.enclosure () instanceof TypeEnclosure) {
+	    if (et.enclosure () instanceof EnclosingTypes.TypeEnclosure) {
 		if (on == null) {
 		    methodOn = currentClass (et);
 		}
@@ -583,12 +582,12 @@ public class ClassSetter {
 
     private void forAllTypes (BiConsumer<TypeDeclaration, EnclosingTypes> handler) {
 	Deque<EnclosingTypes> typesToHandle = new ArrayDeque<> ();
-	ocu.getTypes ().stream ().map (td -> enclosingTypes (null, td)).forEach (typesToHandle::add);
+	ocu.getTypes ().stream ().map (td -> EnclosingTypes.topLevel (td, cip)).forEach (typesToHandle::add);
 	while (!typesToHandle.isEmpty ()) {
 	    EnclosingTypes et = typesToHandle.removeFirst ();
 	    TypeDeclaration td = et.td ();
 	    handler.accept (td, et);
-	    td.getInnerClasses ().stream ().map (i -> enclosingTypes (et, i)).forEach (typesToHandle::add);
+	    td.getInnerClasses ().stream ().map (i -> et.enclosingTypes (i, cip)).forEach (typesToHandle::add);
 	}
     }
 
@@ -1086,73 +1085,6 @@ public class ClassSetter {
 	diagnostics.report (SourceDiagnostics.warning (tree.getOrigin (),
 						       i.position (),
 						       "Unused import: %s", i.getValue ()));
-    }
-
-    private EnclosingTypes enclosingTypes (EnclosingTypes previous, TypeDeclaration td) {
-	return new EnclosingTypes (previous, new TypeEnclosure (td, cip.getFullName (td)));
-    }
-
-    private static EnclosingTypes enclosingTypeParameter (EnclosingTypes previous, Map<String, TypeParameter> nameToTypeParameter) {
-	return new EnclosingTypes (previous, new TypeParameterEnclosure (nameToTypeParameter));
-    }
-
-    private static EnclosingTypes enclosingVariables (EnclosingTypes previous, Map<String, VariableInfo> nameToVariable, boolean isStatic) {
-	return new EnclosingTypes (previous, new VariableEnclosure (nameToVariable, isStatic));
-    }
-
-    private static EnclosingTypes enclosingBlock (EnclosingTypes previous, boolean staticContext) {
-	return new EnclosingTypes (previous, new BlockEnclosure (staticContext));
-    }
-
-    private record TypeEnclosure (TypeDeclaration td, FullNameHandler fqn) implements Enclosure<FieldInfo> {
-	@Override public boolean isStatic () { return Flags.isStatic (td.flags ()); }
-	@Override public TypeDeclaration td () { return td; }
-	@Override public FullNameHandler fqn () { return fqn; }
-	@Override public List<FullNameHandler> getSuperClasses (ClassInformationProvider cip) {
-	    try {
-		return cip.getSuperTypes (fqn.getFullDotName (), false);
-	    } catch (IOException e) {
-		throw new RuntimeException ("Unable to load superclasses of: " + td.getName ());
-	    }
-	}
-	@Override public Map<String, FieldInfo> getFields () { return td.getFields (); }
-    }
-
-    private record TypeParameterEnclosure (Map<String, TypeParameter> nameToTypeParameter) implements Enclosure<VariableInfo> {
-	@Override public boolean isStatic () { return false; }
-	@Override public TypeParameter getTypeParameter (String id) { return nameToTypeParameter.get (id); }
-	@Override public Map<String, VariableInfo> getFields () { return Map.of (); }
-    }
-
-    private record VariableEnclosure (Map<String, VariableInfo> variables, boolean isStatic) implements Enclosure<VariableInfo> {
-	@Override public Map<String, VariableInfo> getFields () { return variables; }
-    }
-
-    private static class BlockEnclosure implements Enclosure<VariableInfo> {
-	private final boolean isStatic;
-	private Map<String, VariableInfo> locals = Map.of ();
-
-	public BlockEnclosure (boolean isStatic) {
-	    this.isStatic = isStatic;
-	}
-
-	@Override public boolean isStatic () {
-	    return isStatic;
-	}
-
-	private void add (LocalVariableDeclaration lv) {
-	    if (locals.isEmpty ())
-		locals = new HashMap<> ();
-	    for (VariableDeclarator vd : lv.getDeclarators ()) {
-		String name = vd.getName ();
-		VariableInfo vi = new FieldInfo (name, vd.position (), Flags.ACC_PUBLIC, lv.getType (), vd.rank ());
-		locals.put (name, vi);
-	    }
-	}
-
-	@Override public Map<String, VariableInfo> getFields () {
-	    return locals;
-	}
     }
 
     private void error (ParseTreeNode where, String template, Object... args) {
