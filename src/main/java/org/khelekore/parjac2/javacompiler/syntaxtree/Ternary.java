@@ -7,15 +7,24 @@ import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class Ternary extends SyntaxTreeNode {
-    private ParseTreeNode test;
-    private ParseTreeNode thenPart;
-    private ParseTreeNode elsePart;
+    private final ParseTreeNode test;
+    private final ParseTreeNode thenPart;
+    private final ParseTreeNode elsePart;
+    private FullNameHandler type;
 
     public Ternary (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
 	test = children.get (0);
 	thenPart = children.get (2);
 	elsePart = children.get (4);
+    }
+
+    public void type (FullNameHandler type) {
+	this.type = type;
+    }
+
+    public FullNameHandler type () {
+	return type;
     }
 
     @Override public Object getValue () {
@@ -26,5 +35,13 @@ public class Ternary extends SyntaxTreeNode {
 	v.accept (test);
 	v.accept (thenPart);
 	v.accept (elsePart);
+    }
+
+    public ParseTreeNode thenPart () {
+	return thenPart;
+    }
+
+    public ParseTreeNode elsePart () {
+	return thenPart;
     }
 }

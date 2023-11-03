@@ -50,6 +50,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.SimpleClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SingleStaticImportDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SingleTypeImportDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.StaticImportOnDemandDeclaration;
+import org.khelekore.parjac2.javacompiler.syntaxtree.Ternary;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ThisPrimary;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Throws;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeArguments;
@@ -304,6 +305,7 @@ public class ClassSetter {
 
 	    // Check method once we know all parts
 	    case MethodInvocation mi -> handlePartsAndCheckMethodInvocation (et, mi, partsToHandle);
+	    case Ternary t -> handlePartsAndSetType (et, t, partsToHandle);
 
 	    case ParseTreeNode ptn -> addParts (et, ptn, partsToHandle);
 
@@ -338,6 +340,11 @@ public class ClassSetter {
     private void handlePartsAndCheckMethodInvocation (EnclosingTypes et, MethodInvocation mi, Deque<StatementHandler> partsToHandle) {
 	partsToHandle.addFirst (new StatementHandler (et, new MethodInvocationCheck (mi, this)));
 	addParts (et, mi, partsToHandle);
+    }
+
+    private void handlePartsAndSetType (EnclosingTypes et, Ternary t, Deque<StatementHandler> partsToHandle) {
+	partsToHandle.addFirst (new StatementHandler (et, new TernaryCheck (t, this)));
+	addParts (et, t, partsToHandle);
     }
 
     private void addParts (EnclosingTypes et, ParseTreeNode pp, Deque<StatementHandler> partsToHandle) {
@@ -452,10 +459,6 @@ public class ClassSetter {
 	}
     }
 
-    private interface CustomHandler {
-	void run (EnclosingTypes et);
-    }
-
     private void checkMethodCall (EnclosingTypes et, MethodInvocation mi) {
 	ParseTreeNode on = mi.getOn ();
 	boolean isSuper = mi.isSuper ();
@@ -542,6 +545,27 @@ public class ClassSetter {
     private boolean isAccessible (EnclosingTypes et, FullNameHandler fqn, VariableInfo fi) {
 	FullNameHandler topLevelClass = et == null ? null : lastFQN (et);
 	return isAccessible (et, fqn, topLevelClass, fi.flags ());
+    }
+
+    private record TernaryCheck (Ternary t, ClassSetter cs) implements CustomHandler {
+	@Override public void run (EnclosingTypes et) {
+	    cs.setTernaryType (et, t);
+	}
+    }
+
+    private void setTernaryType (EnclosingTypes et, Ternary t) {
+	FullNameHandler thenType = FullNameHandler.type (t.thenPart ());
+	FullNameHandler elseType = FullNameHandler.type (t.elsePart ());
+	t.type (merge (thenType, elseType));
+    }
+
+    private FullNameHandler merge (FullNameHandler f1, FullNameHandler f2) {
+	// TODO: implement this correctly
+	return f1;
+    }
+
+    private interface CustomHandler {
+	void run (EnclosingTypes et);
     }
 
     private void checkAnnotations (EnclosingTypes et, List<? extends ParseTreeNode> annotations) {

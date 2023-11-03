@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.khelekore.parjac2.javacompiler.ClassInformationProvider;
 import org.khelekore.parjac2.javacompiler.GenericTypeHelper;
+import org.khelekore.parjac2.javacompiler.StringLiteral;
 import org.khelekore.parjac2.parser.Token;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.khelekore.parjac2.parsetree.TokenNode;
@@ -146,6 +147,7 @@ public interface FullNameHandler {
 	case ClassType ct -> ct.getFullNameHandler ();
 	case MethodInvocation mi -> mi.result ();
 	case DottedName an -> an.getFullNameHandler ();
+	case StringLiteral s -> JL_STRING;
 	case TokenNode tn -> getPrimitive (tn.getToken ());
 	case ArrayType at -> arrayOf (type (at.getType ()), at.rank ());
 	case ArrayAccess aa -> aa.type ();
@@ -153,6 +155,7 @@ public interface FullNameHandler {
 	case ClassLiteral cl -> JL_CLASS;
 	case ThisPrimary tp -> tp.type ();
 	case FieldAccess fa -> fa.getFullName ();
+	case Ternary t -> t.type ();
 	default -> throw new IllegalArgumentException ("Unhandled type: " + p + ", " + p.getClass ().getName ());
 	};
     }

@@ -401,6 +401,16 @@ public class TestClassSetter {
 	getTypes ("class C { static void foo (String[] args) {if (args[3].equals (\"-\")) {}}}");
     }
 
+    @Test
+    public void testTernary () {
+	getTypes ("class C { void foo (boolean b) { int x = (b ? \"Yes\" : \"No\").length (); }}");
+    }
+
+    @Test
+    public void testCast () {
+	getTypes ("class C { void foo () { Object o = \"a\"; int l = ((String)o).length (); }}");
+    }
+
     private TypeDeclaration getFirstType (String txt) {
 	return getTypes (txt).get (0);
     }
