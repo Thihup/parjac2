@@ -14,7 +14,7 @@ public class UnaryExpression extends SyntaxTreeNode {
 
     public UnaryExpression (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
-	operator = ((TokenNode)children.get (0)).getToken ();
+	operator = ((TokenNode)children.get (0)).token ();
 	exp = children.get (1);
     }
 

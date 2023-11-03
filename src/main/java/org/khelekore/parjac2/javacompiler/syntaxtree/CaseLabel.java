@@ -37,12 +37,12 @@ public class CaseLabel extends SwitchLabel {
 	*/
 	for (ParseTreeNode p : expressions) {
 	    if (p instanceof TokenNode tn) {
-		if (tn.getToken () == ctx.getTokens ().DEFAULT) {
+		if (tn.token () == ctx.getTokens ().DEFAULT) {
 		    if (defaultFound > 0 || otherFound > 0 || nullFound != 1) {
 			ctx.error (p.position (), "default not allowed here");
 		    }
 		    defaultFound++;
-		} else if (tn.getToken () == ctx.getTokens ().NULL) {
+		} else if (tn.token () == ctx.getTokens ().NULL) {
 		    if (nullFound > 0 || otherFound > 0 || defaultFound > 0)
 			ctx.error (p.position (), "null not allowed here");
 		    nullFound++;

@@ -16,7 +16,7 @@ public class Assignment extends SyntaxTreeNode {
     public Assignment (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
 	left = children.get (0);
-	operator = ((TokenNode)children.get (1)).getToken ();
+	operator = ((TokenNode)children.get (1)).token ();
 	right = children.get (2);
     }
 

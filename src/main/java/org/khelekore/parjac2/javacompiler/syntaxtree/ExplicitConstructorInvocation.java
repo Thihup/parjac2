@@ -31,7 +31,7 @@ public class ExplicitConstructorInvocation extends SyntaxTreeNode {
 	    types = (TypeArguments)children.get (i++);
 	else
 	    types = null;
-	where = ((TokenNode)children.get (i++)).getToken ();
+	where = ((TokenNode)children.get (i++)).token ();
 	i++; // (
 	if (rule.get (i) == ctx.getGrammar ().getRuleGroupId ("ArgumentList"))
 	    argumentList = (ArgumentList)children.get (i);

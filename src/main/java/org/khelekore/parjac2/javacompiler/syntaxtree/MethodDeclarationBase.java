@@ -80,7 +80,7 @@ public class MethodDeclarationBase extends FlaggedBase implements MethodInfo {
     }
 
     @Override public FullNameHandler result () {
-	return FullNameHandler.type (getResult ());
+	return FullNameHelper.type (getResult ());
     }
 
     @Override public String name () {

@@ -45,7 +45,7 @@ public class FlagCalculator {
 	    int modifierFlag = 0;
 	    if (m instanceof TokenNode) {
 		TokenNode tn = (TokenNode)m;
-		Token t = tn.getToken ();
+		Token t = tn.token ();
 		modifierFlag = ctx.getFlagValue (t);
 		if ((flags & modifierFlag) != 0)
 		    ctx.error (tn.position (), "Duplicate modifier %s found", t.getName ());

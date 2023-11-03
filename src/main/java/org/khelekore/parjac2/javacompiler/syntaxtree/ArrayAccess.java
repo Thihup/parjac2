@@ -17,7 +17,7 @@ public class ArrayAccess extends SyntaxTreeNode {
     }
 
     public FullNameHandler type () {
-	FullNameHandler.ArrayHandler ah = (FullNameHandler.ArrayHandler)FullNameHandler.type (from);
+	FullNameHandler.ArrayHandler ah = (FullNameHandler.ArrayHandler)FullNameHelper.type (from);
 	return ah.fn ();
     }
 

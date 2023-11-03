@@ -2,6 +2,7 @@ package org.khelekore.parjac2.javacompiler;
 
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
+import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHelper;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.khelekore.parjac2.parsetree.TokenNode;
 
@@ -16,7 +17,7 @@ public interface VariableInfo {
     default FullNameHandler typeName () {
 	ParseTreeNode p = type ();
 	if (p instanceof TokenNode tn) {
-	    return FullNameHandler.getPrimitive (tn.getToken ());
+	    return FullNameHelper.getPrimitive (tn);
 	}
 	if (p instanceof ClassType ct) {
 	    return ct.getFullNameHandler ();

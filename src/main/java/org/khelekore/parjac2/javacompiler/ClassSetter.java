@@ -33,6 +33,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.FieldAccess;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FormalParameterBase;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FormalParameterList;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
+import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHelper;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ImportDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.LocalVariableDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.MethodDeclarationBase;
@@ -52,6 +53,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.StaticImportOnDemandDeclara
 import org.khelekore.parjac2.javacompiler.syntaxtree.Ternary;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ThisPrimary;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Throws;
+import org.khelekore.parjac2.javacompiler.syntaxtree.TwoPartExpression;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeArguments;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeBound;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
@@ -304,6 +306,7 @@ public class ClassSetter {
 	    // Check method once we know all parts
 	    case MethodInvocation mi -> handlePartsAndCheckMethodInvocation (et, mi, partsToHandle);
 	    case Ternary t -> handlePartsAndSetType (et, t, partsToHandle);
+	    case TwoPartExpression t -> handlePartsAndSetType (et, t, partsToHandle);
 
 	    case ParseTreeNode ptn -> addParts (et, ptn, partsToHandle);
 
@@ -341,7 +344,14 @@ public class ClassSetter {
     }
 
     private void handlePartsAndSetType (EnclosingTypes et, Ternary t, Deque<StatementHandler> partsToHandle) {
-	partsToHandle.addFirst (new StatementHandler (et, new TernaryCheck (t, this)));
+	CustomHandler h = e -> setTernaryType (et, t);
+	partsToHandle.addFirst (new StatementHandler (et, h));
+	addParts (et, t, partsToHandle);
+    }
+
+    private void handlePartsAndSetType (EnclosingTypes et, TwoPartExpression t, Deque<StatementHandler> partsToHandle) {
+	CustomHandler h = e -> setTwoPartExpressionType (et, t);
+	partsToHandle.addFirst (new StatementHandler (et, h));
 	addParts (et, t, partsToHandle);
     }
 
@@ -405,7 +415,7 @@ public class ClassSetter {
 	if (fi != null) { // known variable
 	    FieldAccess access = new FieldAccess (an.position (), null, name);
 	    an.replace (access);
-	    FullNameHandler fn = FullNameHandler.type (fi.type ());
+	    FullNameHandler fn = FullNameHelper.type (fi.type ());
 	    an.setFullName (fn);
 	    access.setFullName (fn);
 	} else {
@@ -465,7 +475,7 @@ public class ClassSetter {
 
 	FullNameHandler methodOn = null;
 	if (on != null) {
-	    methodOn = FullNameHandler.type (on);
+	    methodOn = FullNameHelper.type (on);
 
 	    // AmbiguousName that could not be resolved and similar, no need for NPE or another error
 	    if (methodOn == null)
@@ -545,15 +555,9 @@ public class ClassSetter {
 	return isAccessible (et, fqn, topLevelClass, fi.flags ());
     }
 
-    private record TernaryCheck (Ternary t, ClassSetter cs) implements CustomHandler {
-	@Override public void run (EnclosingTypes et) {
-	    cs.setTernaryType (et, t);
-	}
-    }
-
     private void setTernaryType (EnclosingTypes et, Ternary t) {
-	FullNameHandler thenType = FullNameHandler.type (t.thenPart ());
-	FullNameHandler elseType = FullNameHandler.type (t.elsePart ());
+	FullNameHandler thenType = FullNameHelper.type (t.thenPart ());
+	FullNameHandler elseType = FullNameHelper.type (t.elsePart ());
 	t.type (commonType (thenType, elseType));
     }
 
@@ -561,6 +565,25 @@ public class ClassSetter {
 	if (f1.equals (f2))
 	    return f1;
 
+	// TODO: implement this correctly
+	return f1;
+    }
+
+    private void setTwoPartExpressionType (EnclosingTypes et, TwoPartExpression t) {
+	FullNameHandler part1 = FullNameHelper.type (t.part1 ());
+	FullNameHandler part2 = FullNameHelper.type (t.part2 ());
+	if (part1 == null || part2 == null) // missing thingy, reported elsewhere
+	    return;
+	if (part1.isPrimitive () && part2.isPrimitive ()) {
+	    t.type (wider (part1, part2));
+	} else if (part1.equals (FullNameHandler.JL_STRING) || part2.equals (FullNameHandler.JL_STRING)) {
+	    t.type (FullNameHandler.JL_STRING);
+	} else {
+	    error (t, "Unhandled type in two part expression: %t: (%s, %s)", t, part1.getFullDotName (), part2.getFullDotName ());
+	}
+    }
+
+    private FullNameHandler wider (FullNameHandler f1, FullNameHandler f2) {
 	// TODO: implement this correctly
 	return f1;
     }
@@ -663,13 +686,13 @@ public class ClassSetter {
 	ParseTreeNode from = fa.getFrom ();
 	if (from != null) {
 	    if (!(from instanceof ThisPrimary))
-		fn = FullNameHandler.type (from);
+		fn = FullNameHelper.type (from);
 	}
 
 	String id = fa.getName ();
 	VariableInfo fi = getField (fn, id);
 	if (fi != null) {
-	    FullNameHandler result = FullNameHandler.type (fi.type ());
+	    FullNameHandler result = FullNameHelper.type (fi.type ());
 	    fa.setFullName (result);
 	} else {
 	    error (fa, "Unable to find field: %s in type: %s", id, fn.getFullDotName ());

@@ -309,7 +309,7 @@ public class BytecodeGenerator {
     }
 
     private ClassDesc getClassDesc (TokenNode tn) {
-	String descriptor = FullNameHandler.getPrimitive (tn.getToken ()).getSignature ();
+	String descriptor = FullNameHelper.getPrimitive (tn).getSignature ();
 	return ClassDesc.ofDescriptor (descriptor);
     }
 

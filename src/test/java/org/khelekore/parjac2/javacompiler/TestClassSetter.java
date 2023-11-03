@@ -412,8 +412,28 @@ public class TestClassSetter {
     }
 
     @Test
-    public void testGenericReturn () {
-	getTypes ("import java.util.Map; class C { Map<String, String> m; void foo () { int l = m.get (\"\").length (); }}");
+    public void testTwoPartString () {
+	getTypes ("class C { void foo () { int l = (\"a\" + \"b\").length (); }}");
+    }
+
+    @Test
+    public void testTwoPartStringInt () {
+	getTypes ("class C { void foo () { int l = (\"a\" + 1).length (); }}");
+    }
+
+    @Test
+    public void testTwoPartIntString () {
+	getTypes ("class C { void foo () { int l = (1 + \"a\").length (); }}");
+    }
+
+    @Test
+    public void testTwoPartIntInt () {
+	getTypes ("class C { void foo () { int x = 3; int l = 1 + x;}}");
+    }
+
+    @Test
+    public void testTwoPartMissingPartial () {
+	getTypes ("class C { void foo () { int l = 1 + x;}}", 1);
     }
 
     private TypeDeclaration getFirstType (String txt) {

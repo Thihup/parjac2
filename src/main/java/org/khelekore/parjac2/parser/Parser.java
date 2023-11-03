@@ -448,7 +448,7 @@ public class Parser {
 	    if (DEBUG)
 		System.out.println ("Accepting token: " + grammar.getToken (token));
 	    TokenNode n = lexer.toCorrectType (getTokenValue (completedIn - 1), grammar.getToken (token));
-	    Token t = n.getToken ();
+	    Token t = n.token ();
 	    if (t == grammar.WILDCARD) {
 		ParsePosition pp = n.position ();
 		Token missingToken = grammar.getToken (token);

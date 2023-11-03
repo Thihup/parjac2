@@ -19,6 +19,7 @@ import java.util.jar.JarFile;
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.NoSourceDiagnostics;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
+import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHelper;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 import io.github.dmlloyd.classfile.Attributes;
@@ -437,7 +438,7 @@ public class ClassResourceHolder {
 	    String dollarName = slashName.replace ('/', '.');
 	    return FullNameHandler.ofDollarName (dollarName);
 	} else if (typeName.length () == 1) {
-	    FullNameHandler fh = FullNameHandler.getPrimitiveType (typeName);
+	    FullNameHandler fh = FullNameHelper.getPrimitiveType (typeName);
 	    if (fh != null)
 		return fh;
 	}

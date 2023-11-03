@@ -1,15 +1,9 @@
 package org.khelekore.parjac2.javacompiler.syntaxtree;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.khelekore.parjac2.javacompiler.ClassInformationProvider;
 import org.khelekore.parjac2.javacompiler.GenericTypeHelper;
-import org.khelekore.parjac2.javacompiler.StringLiteral;
-import org.khelekore.parjac2.parser.Token;
-import org.khelekore.parjac2.parsetree.ParseTreeNode;
-import org.khelekore.parjac2.parsetree.TokenNode;
 
 public interface FullNameHandler {
 
@@ -31,34 +25,6 @@ public interface FullNameHandler {
     public static final PrimitiveType VOID = new PrimitiveType ("V", "void");
 
     public static final FullNameHandler NULL = new NullType ();
-
-    public static Map<String, PrimitiveType> signatureLookup = new HashMap<> () {
-	    {
-		put (BYTE.signature (), BYTE);
-		put (SHORT.signature (), SHORT);
-		put (CHAR.signature (), CHAR);
-		put (INT.signature (), INT);
-		put (LONG.signature (), LONG);
-		put (FLOAT.signature (), FLOAT);
-		put (DOUBLE.signature (), DOUBLE);
-		put (BOOLEAN.signature (), BOOLEAN);
-		put (VOID.signature (), VOID);
-	    }
-	};
-
-    public static Map<String, PrimitiveType> typeLookup = new HashMap<> () {
-	    {
-		put (BYTE.name (), BYTE);
-		put (SHORT.name (), SHORT);
-		put (CHAR.name (), CHAR);
-		put (INT.name (), INT);
-		put (LONG.name (), LONG);
-		put (FLOAT.name (), FLOAT);
-		put (DOUBLE.name (), DOUBLE);
-		put (BOOLEAN.name (), BOOLEAN);
-		put (VOID.name (), VOID);
-	    }
-	};
 
     public enum Type {
 	OBJECT, PRIMITIVE;
@@ -95,6 +61,10 @@ public interface FullNameHandler {
 	return rank () > 0;
     }
 
+    default boolean isPrimitive () {
+	return false;
+    }
+
     /** Get the signature of this type.
      * Note the signature will be something like "java/lang/String" or "C", it will not
      * start with "L" or end with ";" since those depends on context of the signature.
@@ -126,38 +96,12 @@ public interface FullNameHandler {
 	return SimpleNameHandler.of (dot, dollar);
     }
 
-    static PrimitiveType getPrimitiveType (String signature) {
-	return signatureLookup.get (signature);
-    }
-
-    static PrimitiveType getPrimitive (Token t) {
-	return typeLookup.get (t.getName ());
-    }
-
     static FullNameHandler arrayOf (FullNameHandler fn, int rank) {
 	return new ArrayHandler (fn, rank);
     }
 
     default FullNameHandler array (int rank) {
 	return new ArrayHandler (this, rank);
-    }
-
-    static FullNameHandler type (ParseTreeNode p) {
-	return switch (p) {
-	case ClassType ct -> ct.getFullNameHandler ();
-	case MethodInvocation mi -> mi.result ();
-	case DottedName an -> an.getFullNameHandler ();
-	case StringLiteral s -> JL_STRING;
-	case TokenNode tn -> getPrimitive (tn.getToken ());
-	case ArrayType at -> arrayOf (type (at.getType ()), at.rank ());
-	case ArrayAccess aa -> aa.type ();
-	case CastExpression ce -> type (ce.baseType ());
-	case ClassLiteral cl -> JL_CLASS;
-	case ThisPrimary tp -> tp.type ();
-	case FieldAccess fa -> fa.getFullName ();
-	case Ternary t -> t.type ();
-	default -> throw new IllegalArgumentException ("Unhandled type: " + p + ", " + p.getClass ().getName ());
-	};
     }
 
     public record DotNameHandler (String dotName)  implements FullNameHandler {
@@ -217,6 +161,10 @@ public interface FullNameHandler {
 
 	public String getSignature () {
 	    return signature;
+	}
+
+	@Override public boolean isPrimitive () {
+	    return true;
 	}
     }
 

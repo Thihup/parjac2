@@ -413,7 +413,7 @@ public class SyntaxTreeBuilder {
 	//'case' CasePattern [Guard]
 	//'default'
 	TokenNode tn = (TokenNode)children.get (0);
-	if (tn.getToken () == ctx.getTokens ().DEFAULT)
+	if (tn.token () == ctx.getTokens ().DEFAULT)
 	    return new DefaultLabel (n.position ());
 	if (rule.get (1) == ctx.getGrammar ().getRuleGroupId ("CasePattern"))
 	    return new CasePatternLabel (n.position (), children);

@@ -17,10 +17,10 @@ public class PrimitiveType extends SyntaxTreeNode {
 	super (n.position ());
 	if (rule.size () > 1) {
 	    annotations = ((Multiple)children.get (0)).get ();
-	    type = ((TokenNode)children.get (1)).getToken ();
+	    type = ((TokenNode)children.get (1)).token ();
 	} else {
 	    annotations = Collections.emptyList ();
-	    type = ((TokenNode)children.get (0)).getToken ();
+	    type = ((TokenNode)children.get (0)).token ();
 	}
     }
 

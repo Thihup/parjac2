@@ -18,7 +18,7 @@ public class TokenNode implements ParseTreeNode {
 	return token.getName ();
     }
 
-    public Token getToken () {
+    public Token token () {
 	return token;
     }
 
