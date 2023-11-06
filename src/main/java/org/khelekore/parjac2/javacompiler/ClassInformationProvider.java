@@ -130,7 +130,7 @@ public class ClassInformationProvider {
 	String dotName = fqn.getFullDotName ();
 	TypeDeclaration td = cth.getType (dotName);
 	if (td != null)
-	    return td.getMethodInformation (methodName);
+	    return td.getMethodInformation (fqn, methodName);
 	return crh.getMethodInformation (dotName, methodName);
     }
 

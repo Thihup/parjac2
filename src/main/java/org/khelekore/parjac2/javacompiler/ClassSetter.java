@@ -496,7 +496,7 @@ public class ClassSetter {
 
 		MethodInfo info = getMethod (mi, methodOn, on, name, args, insideStatic);
 		if (info != null) {
-		    mi.result (info.result ());
+		    mi.info (info);
 		    break;
 		}
 	    }

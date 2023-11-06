@@ -12,7 +12,7 @@ public class StringLiteral extends TokenNode {
 	this.value = value;
     }
 
-    @Override public Object getValue () {
+    @Override public String getValue () {
 	return value;
     }
 }

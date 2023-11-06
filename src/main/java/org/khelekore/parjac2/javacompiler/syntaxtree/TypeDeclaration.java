@@ -63,11 +63,12 @@ public abstract class TypeDeclaration extends FlaggedBase {
 
     public abstract List<? extends MethodDeclarationBase> getMethods ();
 
-    public List<MethodInfo> getMethodInformation (String methodName) {
+    public List<MethodInfo> getMethodInformation (FullNameHandler fqn, String methodName) {
 	synchronized (this) {
 	    if (methodInfos == null) {
 		methodInfos = new HashMap<> ();
 		for (MethodDeclarationBase md : getMethods ()) {
+		    md.owner (fqn);
 		    String name = md.name ();
 		    List<MethodInfo> ls = methodInfos.computeIfAbsent (name, n -> new ArrayList<> ());
 		    ls.add (md);

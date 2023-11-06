@@ -402,13 +402,14 @@ public class ClassResourceHolder {
 		    // TODO:   <R:Ljava/lang/Object;>(Ljava/util/function/Function<-Ljava/lang/String;+TR;>;)TR;
 		}
 		List<MethodInfo> ls = methods.computeIfAbsent (name, n -> new ArrayList<> ());
-		ls.add (new ClassResourceMethod (name, flags, returnType, argTypes, signature));
+		ls.add (new ClassResourceMethod (r.fullName, name, flags, returnType, argTypes, signature));
 	    }
 	    r.methods = methods;
 	}
     }
 
-    private record ClassResourceField (String name, int flags, String typeclass, String signature) implements VariableInfo {
+    private record ClassResourceField (String name, int flags,
+				       String typeclass, String signature) implements VariableInfo {
 	@Override public ParseTreeNode type () {
 	    return null;
 	}
@@ -418,7 +419,8 @@ public class ClassResourceHolder {
 	}
     }
 
-    private record ClassResourceMethod (String name, int flags, ClassDesc returnType,
+    private record ClassResourceMethod (FullNameHandler owner, String name, int flags,
+					ClassDesc returnType,
 					List<ClassDesc> argTypes, String signature) implements MethodInfo {
 	// empty
 	@Override public int numberOfArguments () {

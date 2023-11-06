@@ -36,6 +36,10 @@ public class Flags {
 	return (flag & ACC_STATIC) == ACC_STATIC;
     }
 
+    public static boolean isAbstract (int flag) {
+	return (flag & ACC_ABSTRACT) == ACC_ABSTRACT;
+    }
+
     public static boolean isFinal (int flag) {
 	return (flag & ACC_FINAL) == ACC_FINAL;
     }

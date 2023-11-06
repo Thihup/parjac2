@@ -13,6 +13,7 @@ import java.util.Optional;
 import io.github.dmlloyd.classfile.ClassBuilder;
 import io.github.dmlloyd.classfile.ClassSignature;
 import io.github.dmlloyd.classfile.Classfile;
+import io.github.dmlloyd.classfile.CodeBuilder;
 import io.github.dmlloyd.classfile.MethodSignature;
 import io.github.dmlloyd.classfile.Signature;
 import io.github.dmlloyd.classfile.attribute.InnerClassInfo;
@@ -178,9 +179,7 @@ public class BytecodeGenerator {
 		if (origin != null) {
 		    classBuilder.with (SourceFileAttribute.of (origin.getFileName ().toString ()));
 		}
-		// add nest host attribute: top level class
 
-		// add inner class attributes
 		addInnerClassAttributes (classBuilder, tdt);
 	    });
 	return b;
@@ -249,14 +248,78 @@ public class BytecodeGenerator {
 	td.getMethods ().forEach (m -> {
 		MethodSignatureHolder msh = getMethodSignature (m);
 		int flags = m.flags ();
+		ParseTreeNode body = m.getMethodBody ();
 		classBuilder.withMethod (m.name (), msh.desc, flags, mb -> {
-			mb.withCode (cb -> {
-				cb.lineNumber (m.position ().getLineNumber ()); // not correct, but at least somewhat close
-				cb.return_ ();});
+			if (!m.isAbstract ()) {
+			    mb.withCode (cb -> {
+				    addMethodContent (cb, (Block)body);
+				});
+			}
 			if (msh.signature != null)
 			    mb.with (SignatureAttribute.of (MethodSignature.parseFrom (msh.signature)));
 		    });
 	    });
+    }
+
+    private void addMethodContent (CodeBuilder cb, Block body) {
+	Deque<Object> partsToHandle = new ArrayDeque<> ();
+	partsToHandle.addAll (body.get ());
+	while (!partsToHandle.isEmpty ()) {
+	    handleStatement (cb, partsToHandle, partsToHandle.removeFirst ());
+	}
+	cb.return_ (); // TODO: only add if there is no return in the method
+    }
+
+    private void handleStatement (CodeBuilder cb, Deque<Object> partsToHandle, Object p) {
+	//System.err.println ("looking at: " + p);
+	//cb.lineNumber (p.position ().getLineNumber ()); // not correct, but at least somewhat close
+	switch (p) {
+	case FieldAccess fa -> fieldAccess (cb, fa);
+	case MethodInvocation mi -> methodInvocation (cb, partsToHandle, mi);
+	case StringLiteral l -> cb.ldc (l.getValue ());
+	case ParseTreeNode n -> addChildren (partsToHandle, n);
+	case Handler h -> h.run (cb);
+	default -> throw new IllegalArgumentException ("Unknown type: " + p + ", " + p.getClass ().getName ());
+	}
+    }
+
+    private interface Handler {
+	void run (CodeBuilder cb);
+    }
+
+    private void fieldAccess (CodeBuilder cb, FieldAccess fa) {
+	ParseTreeNode from = fa.getFrom ();
+	ClassDesc owner = ClassDesc.of (((ClassType)from).getFullDollarName ());
+	String name = fa.getName ();
+	ClassDesc type = ClassDesc.of (fa.getFullName ().getFullDollarName ());
+	cb.lineNumber (fa.position ().getLineNumber ()); // not correct, but at least somewhat close
+	cb.getstatic (owner, name, type);
+    }
+
+    private void methodInvocation (CodeBuilder cb, Deque<Object> partsToHandle, MethodInvocation mi) {
+	// TODO: need to deal with static
+	ParseTreeNode on = mi.getOn ();
+	if (on instanceof AmbiguousName an)
+	    on = an.replaced ();
+	if (on == null)
+	    on = new ThisPrimary (mi);
+	MethodInfo info = mi.info ();
+	ClassDesc owner = info.ownerDesc ();
+	String name = info.name ();
+	MethodTypeDesc type = info.methodTypeDesc ();
+	Handler h = b -> { b.lineNumber (mi.position ().getLineNumber ()); b.invokevirtual (owner, name, type); };
+	partsToHandle.add (h);
+	for (ParseTreeNode a : mi.getArguments ()) {
+	    partsToHandle.addFirst (a);
+	}
+
+	partsToHandle.addFirst (on);
+    }
+
+    private void addChildren (Deque<Object> partsToHandle, ParseTreeNode p) {
+	List<ParseTreeNode> parts = p.getChildren ();
+	for (int i = parts.size () - 1; i >= 0; i--)
+	    partsToHandle.addFirst (parts.get (i));
     }
 
     private MethodSignatureHolder getMethodSignature (MethodDeclarationBase m) {

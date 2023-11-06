@@ -16,6 +16,7 @@ public class MethodDeclarationBase extends FlaggedBase implements MethodInfo {
     private final List<ParseTreeNode> modifiers;
     private final MethodHeader header;
     protected final ParseTreeNode body; // either ';' or a Block.
+    private FullNameHandler owner;
 
     //  {MethodModifier} MethodHeader MethodBody
     public MethodDeclarationBase (Context ctx, Rule rule, ParseTreeNode n,
@@ -34,6 +35,14 @@ public class MethodDeclarationBase extends FlaggedBase implements MethodInfo {
 	header = new MethodHeader (pos, name, result);
 	this.body = body;
 	this.flags = flags;
+    }
+
+    public void owner (FullNameHandler owner) {
+	this.owner = owner;
+    }
+
+    @Override public FullNameHandler owner () {
+	return owner;
     }
 
     @Override public Object getValue () {
@@ -56,6 +65,10 @@ public class MethodDeclarationBase extends FlaggedBase implements MethodInfo {
 
     public boolean isStatic () {
 	return Flags.isStatic (flags);
+    }
+
+    public boolean isAbstract () {
+	return Flags.isAbstract (flags);
     }
 
     public TypeParameters getTypeParameters () {
