@@ -436,6 +436,31 @@ public class TestClassSetter {
 	getTypes ("class C { void foo () { int l = 1 + x;}}", 1);
     }
 
+    @Test
+    public void testMissMatchedGenericTypes () {
+	getTypes ("import java.util.Map; class C { Map<String> m; void foo () { int l = m.size (); }}", 1);
+    }
+
+    @Test
+    public void testInterfaceInGenericType () {
+	getTypes ("interface I {} class B<T extends I> {} class C { B<I> bs; }");
+    }
+
+    @Test
+    public void testSubtypeGenericType () {
+	getTypes ("interface I {} class A implements I {} class B<T extends I> {} class C { B<A> bs; }");
+    }
+
+    @Test
+    public void testWrongGenericType () {
+	getTypes ("interface I {} class B<T extends I> {} class C { B<String> bs; }", 1);
+    }
+
+    @Test
+    public void testGenericReturn () {
+	getTypes ("import java.util.Map; class C { Map<String, String> m; void foo () { int l = m.get (\"\").length (); }}");
+    }
+
     private TypeDeclaration getFirstType (String txt) {
 	return getTypes (txt).get (0);
     }

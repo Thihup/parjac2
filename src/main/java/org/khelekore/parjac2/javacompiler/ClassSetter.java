@@ -171,7 +171,7 @@ public class ClassSetter {
     private void setFieldTypes (TypeDeclaration td, EnclosingTypes et) {
 	EnclosingTypes ett = registerTypeParameters (et, td.getTypeParameters ());
 	Map<String, FieldInfo> fields = td.getFields ();
-	fields.forEach ((name, info) ->  setFieldType (ett, name, info));
+	fields.forEach ((name, info) -> setFieldType (ett, name, info));
     }
 
     private void setFieldType (EnclosingTypes et, String name, FieldInfo info) {
