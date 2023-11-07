@@ -502,7 +502,7 @@ public class ClassSetter {
 	    }
 	    et = et.previous ();
 	}
-	if (mi.result () == null)
+	if (mi.info () == null)
 	    error (mi, "No matching method named %s found in %s", name, methodOn.getFullDotName ());
     }
 
