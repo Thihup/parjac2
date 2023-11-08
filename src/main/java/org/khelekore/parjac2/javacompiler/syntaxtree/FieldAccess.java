@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.khelekore.parjac2.javacompiler.Context;
 import org.khelekore.parjac2.javacompiler.Identifier;
+import org.khelekore.parjac2.javacompiler.VariableInfo;
 import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
@@ -13,7 +14,7 @@ public class FieldAccess extends SyntaxTreeNode {
     private final ParseTreeNode from;
     private final boolean isSuper;
     private final String id;
-    private FullNameHandler fnh;
+    private VariableInfo vi;
 
     public FieldAccess (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
@@ -42,12 +43,16 @@ public class FieldAccess extends SyntaxTreeNode {
 	return id;
     }
 
-    public void setFullName (FullNameHandler fnh) {
-	this.fnh = fnh;
+    public void variableInfo (VariableInfo vi) {
+	this.vi = vi;
+    }
+
+    public VariableInfo variableInfo () {
+	return vi;
     }
 
     public FullNameHandler getFullName () {
-	return fnh;
+	return FullNameHelper.type (vi.type ());
     }
 
     @Override public Object getValue () {

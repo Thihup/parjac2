@@ -267,13 +267,9 @@ public class BytecodeGenerator {
     }
 
     private void addMethodContent (CodeBuilder cb, Block body, TypeKind returnType) {
-	Deque<Object> partsToHandle = new ArrayDeque<> ();
 	List<ParseTreeNode> statements = body.get ();
 	boolean needReturn = !endsWithReturn (statements);
-	partsToHandle.addAll (statements);
-	while (!partsToHandle.isEmpty ()) {
-	    handleStatement (cb, partsToHandle, partsToHandle.removeFirst ());
-	}
+	handleStatements (cb, statements);
 	if (needReturn)
 	    cb.returnInstruction (returnType);
     }
@@ -283,16 +279,30 @@ public class BytecodeGenerator {
 	return parts.size () > 0 && parts.get (parts.size () - 1) instanceof ReturnStatement;
     }
 
+    private void handleStatements (CodeBuilder cb, ParseTreeNode statement) {
+	handleStatements (cb, List.of (statement));
+    }
+
+    private void handleStatements (CodeBuilder cb, List<ParseTreeNode> statements) {
+	Deque<Object> partsToHandle = new ArrayDeque<> ();
+	partsToHandle.addAll (statements);
+	while (!partsToHandle.isEmpty ()) {
+	    handleStatement (cb, partsToHandle, partsToHandle.removeFirst ());
+	}
+    }
+
     private void handleStatement (CodeBuilder cb, Deque<Object> partsToHandle, Object p) {
-	//System.err.println ("looking at: " + p + ", " + p.getClass ().getName ());
+	System.err.println ("looking at: " + p + ", " + p.getClass ().getName ());
 	switch (p) {
 	case Handler h -> h.run (cb);
-	case ExpressionName e -> cb.iload (0); // TODO: not correct!
+	case ExpressionName e -> runParts (partsToHandle, e.replaced ());
 	case FieldAccess fa -> fieldAccess (cb, fa);
 	case MethodInvocation mi -> methodInvocation (cb, partsToHandle, mi);
 	case ReturnStatement r -> handleReturn (cb, partsToHandle, r);
 	case UnaryExpression u -> handleUnaryExpression (cb, partsToHandle, u);
 	case TwoPartExpression tp -> handleTwoPartExpression (cb, partsToHandle, tp);
+	case Ternary t -> handleTernary (cb, partsToHandle, t);
+	case IfThenStatement ifts -> handleIf (cb, partsToHandle, ifts);
 	case StringLiteral l -> cb.ldc (l.getValue ());
 	case IntLiteral i -> handleInt (cb, i);
 	case DoubleLiteral d -> handleDouble (cb, d);
@@ -308,11 +318,22 @@ public class BytecodeGenerator {
 
     private void fieldAccess (CodeBuilder cb, FieldAccess fa) {
 	ParseTreeNode from = fa.getFrom ();
-	ClassDesc owner = ClassDesc.of (((ClassType)from).getFullDollarName ());
-	String name = fa.getName ();
-	ClassDesc type = ClassDesc.of (fa.getFullName ().getFullDollarName ());
-	cb.lineNumber (fa.position ().getLineNumber ()); // not correct, but at least somewhat close
-	cb.getstatic (owner, name, type);
+	if (from != null) {
+	    ClassDesc owner = ClassDesc.of (((ClassType)from).getFullDollarName ());
+	    String name = fa.getName ();
+	    ClassDesc type = ClassDesc.of (fa.getFullName ().getFullDollarName ());
+	    cb.lineNumber (fa.position ().getLineNumber ()); // not correct, but at least somewhat close
+
+	    // Not correct, but works for: hello world!
+	    cb.getstatic (owner, name, type);
+	} else {
+	    VariableInfo vi = fa.variableInfo ();
+	    if (vi instanceof FormalParameter fp) {
+		cb.iload (cb.parameterSlot (fp.slot ()));
+	    } else {
+		cb.iload (0); // TODO: get correct slot
+	    }
+	}
     }
 
     private void methodInvocation (CodeBuilder cb, Deque<Object> partsToHandle, MethodInvocation mi) {
@@ -388,6 +409,21 @@ public class BytecodeGenerator {
 	}
     }
 
+    private void handleTernary (CodeBuilder cb, Deque<Object> partsToHandle, Ternary t) {
+	Handler h = c -> c.ifThenElse (x -> handleStatements (x, t.thenPart ()), x -> handleStatements (x, t.elsePart ()));
+	runParts (partsToHandle, t.test (), h);
+    }
+
+    private void handleIf (CodeBuilder cb, Deque<Object> partsToHandle, IfThenStatement i) {
+	Handler h;
+	if (i.hasElse ()) {
+	    h = c -> c.ifThenElse (x -> handleStatements (x, i.thenPart ()), x -> handleStatements (x, i.elsePart ()));
+	} else {
+	    h = c -> c.ifThen (x -> handleStatements (x, i.thenPart ()));
+	}
+	runParts (partsToHandle, i.test (), h);
+    }
+
     private Handler intEqualHandler (CodeBuilder cb, Opcode opcode) {
 	return c -> c.ifThenElse (opcode, b -> b.iconst_1 (), b -> b.iconst_0 ());
     }
@@ -434,6 +470,11 @@ public class BytecodeGenerator {
 	    cb.aconst_null ();
 	else
 	    throw new IllegalStateException ("Unhandled token type: " + t);
+    }
+
+    private void runParts (Deque<Object> partsToHandle, Object... parts) {
+	for (int i = parts.length - 1; i >= 0; i--)
+	    partsToHandle.addFirst (parts[i]);
     }
 
     private void addChildren (Deque<Object> partsToHandle, ParseTreeNode p) {

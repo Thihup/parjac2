@@ -124,18 +124,48 @@ public class TestFullCompilation {
 
     @Test
     public void testReturnConditional () throws ReflectiveOperationException {
-	testReturnConditional ("C", "class C { public static boolean isZero (int x) { return x == 0; }}");
-	testReturnConditional ("C", "class C { public static boolean isZero (int x) { return 0 == x; }}");
+	testReturnConditional ("C", "class C { public static boolean isZero (int x) { return x == 0; }}", "isZero");
+	testReturnConditional ("C", "class C { public static boolean isZero (int x) { return 0 == x; }}", "isZero");
     }
 
-    private void testReturnConditional (String className, String text) throws ReflectiveOperationException {
-	Class<?> c = getFirstClass (className, text);
-	Method m = c.getMethod ("isZero", Integer.TYPE);
-	m.setAccessible (true);
+    private void testReturnConditional (String className, String text, String methodName) throws ReflectiveOperationException {
+	Method m = getMethod (className, text, methodName, Integer.TYPE);
 	boolean r1 = (Boolean)m.invoke (null, 0);
 	assert r1 == true : "expected true for 0";
 	boolean r2 = (Boolean)m.invoke (null, 1);
 	assert r2 == false : "expected false for non-zero";
+    }
+
+    @Test
+    public void testReturnTernary () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { public static int r (boolean b, int x, int y) { return b ? x : y; }}",
+			      "r", Boolean.TYPE, Integer.TYPE, Integer.TYPE);
+	int trueVal = 3;
+	int falseVal = 7;
+	int r = (Integer)m.invoke (null, true, trueVal, falseVal);
+	assert r == trueVal : "Got wrong number back";
+	r = (Integer)m.invoke (null, false, trueVal, falseVal);
+	assert r == falseVal : "Got wrong number back";
+    }
+
+    // TODO: qwerty remove copy paste from testReturnTernary
+    @Test
+    public void testIfWithReturn () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { public static int r (boolean b, int x, int y) { if (b) return x; else return y; }}",
+			      "r", Boolean.TYPE, Integer.TYPE, Integer.TYPE);
+	int trueVal = 3;
+	int falseVal = 7;
+	int r = (Integer)m.invoke (null, true, trueVal, falseVal);
+	assert r == trueVal : "Got wrong number back";
+	r = (Integer)m.invoke (null, false, trueVal, falseVal);
+	assert r == falseVal : "Got wrong number back";
+    }
+
+    private Method getMethod (String className, String text, String methodName, Class<?> ... types) throws ReflectiveOperationException {
+	Class<?> c = getFirstClass (className, text);
+	Method m = c.getMethod (methodName, types);
+	m.setAccessible (true);
+	return m;
     }
 
     private Class<?> getFirstClass (String className, String input) throws ClassNotFoundException {

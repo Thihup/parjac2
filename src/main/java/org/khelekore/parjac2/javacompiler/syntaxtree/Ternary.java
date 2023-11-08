@@ -37,11 +37,15 @@ public class Ternary extends SyntaxTreeNode {
 	v.accept (elsePart);
     }
 
+    public ParseTreeNode test () {
+	return test;
+    }
+
     public ParseTreeNode thenPart () {
 	return thenPart;
     }
 
     public ParseTreeNode elsePart () {
-	return thenPart;
+	return elsePart;
     }
 }

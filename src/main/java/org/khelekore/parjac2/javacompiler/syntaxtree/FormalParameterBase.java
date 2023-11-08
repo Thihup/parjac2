@@ -8,6 +8,8 @@ import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public abstract class FormalParameterBase extends SyntaxTreeNode implements VariableInfo {
+    private int slot;
+
     public FormalParameterBase (ParsePosition pos) {
 	super (pos);
     }
@@ -21,4 +23,12 @@ public abstract class FormalParameterBase extends SyntaxTreeNode implements Vari
     @Override public abstract String name ();
 
     @Override public abstract ParseTreeNode type ();
+
+    public void slot (int slot) {
+	this.slot = slot;
+    }
+
+    public int slot () {
+	return slot;
+    }
 }

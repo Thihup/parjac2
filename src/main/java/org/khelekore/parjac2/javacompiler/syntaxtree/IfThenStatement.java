@@ -8,28 +8,44 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class IfThenStatement extends SyntaxTreeNode {
     private final ParseTreeNode exp;
-    private final ParseTreeNode ifStatement;
-    private final ParseTreeNode elseStatement;
+    private final ParseTreeNode thenPart;
+    private final ParseTreeNode elsePart;
 
     public IfThenStatement (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
 	exp = children.get (2);
-	ifStatement = children.get (4);
-	elseStatement = rule.size () > 6 ? children.get (6) : null;
+	thenPart = children.get (4);
+	elsePart = rule.size () > 6 ? children.get (6) : null;
     }
 
     @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
-	sb.append ("if (").append (exp).append (") ").append (ifStatement);
-	if (elseStatement != null)
-	    sb.append (" else ").append (elseStatement);
+	sb.append ("if (").append (exp).append (") ").append (thenPart);
+	if (elsePart != null)
+	    sb.append (" else ").append (elsePart);
 	return sb.toString ();
     }
 
     @Override public void visitChildNodes (NodeVisitor v) {
 	v.accept (exp);
-	v.accept (ifStatement);
-	if (elseStatement != null)
-	    v.accept (elseStatement);
+	v.accept (thenPart);
+	if (elsePart != null)
+	    v.accept (elsePart);
+    }
+
+    public ParseTreeNode test () {
+	return exp;
+    }
+
+    public ParseTreeNode thenPart () {
+	return thenPart;
+    }
+
+    public ParseTreeNode elsePart () {
+	return elsePart;
+    }
+
+    public boolean hasElse () {
+	return elsePart != null;
     }
 }

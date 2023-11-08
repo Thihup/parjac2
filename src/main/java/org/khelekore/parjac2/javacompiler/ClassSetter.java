@@ -101,7 +101,7 @@ public class ClassSetter {
 	classSetters.parallelStream ().forEach (ClassSetter::registerMethods);
 
 	// now that we know what types, fields and methods we have we check the method contents
-	classSetters.parallelStream ().sequential ().forEach (ClassSetter::checkMethodBodies); //qwerty
+	classSetters.parallelStream ().forEach (ClassSetter::checkMethodBodies);
 
 	classSetters.parallelStream ().forEach (cs -> cs.checkUnusedImport ());
     }
@@ -216,7 +216,9 @@ public class ClassSetter {
     private EnclosingTypes setFormalParameterListTypes (EnclosingTypes et, FormalParameterList args, boolean isStatic) {
 	Map<String, VariableInfo> variables = new HashMap<> ();
 	if (args != null) {
+	    int i = 0;
 	    for (FormalParameterBase fp : args.getParameters ()) {
+		fp.slot (i++);
 		checkFormalParameterModifiers (et, fp.getModifiers ());
 		setType (et, fp.type ());
 		String id = fp.name ();
@@ -386,7 +388,7 @@ public class ClassSetter {
 			an.setFullName (fi.typeName ());
 			// TODO: probably need to handle ExpressionName as well
 			FieldAccess fa = new FieldAccess (an.position (), an.replaced (), id);
-			fa.setFullName (fi.typeName ());
+			fa.variableInfo (fi);
 			an.replace (fa);
 		    }
 		} else {
@@ -403,12 +405,13 @@ public class ClassSetter {
 
     private void tryToSetFullNameOnSimpleName (EnclosingTypes et, DottedName an, String name, VariableInfo fi) {
 	// We do not need to test for accessible, we asked for a field in our enclosure
+	// TODO: validate this, what about private field in superclass?
 	if (fi != null) { // known variable
 	    FieldAccess access = new FieldAccess (an.position (), null, name);
 	    an.replace (access);
 	    FullNameHandler fn = FullNameHelper.type (fi.type ());
 	    an.setFullName (fn);
-	    access.setFullName (fn);
+	    access.variableInfo (fi);
 	} else {
 	    FullNameHandler fn = FullNameHandler.ofSimpleClassName (name);
 	    ResolvedClass fqn = resolve (et, fn, an.position ());
@@ -691,8 +694,7 @@ public class ClassSetter {
 	String id = fa.getName ();
 	VariableInfo fi = getField (fn, id);
 	if (fi != null) {
-	    FullNameHandler result = FullNameHelper.type (fi.type ());
-	    fa.setFullName (result);
+	    fa.variableInfo (fi);
 	} else {
 	    error (fa, "Unable to find field: %s in type: %s", id, fn.getFullDotName ());
 	}
