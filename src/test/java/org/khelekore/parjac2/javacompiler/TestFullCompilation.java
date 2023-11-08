@@ -157,6 +157,28 @@ public class TestFullCompilation {
 	assert r == falseVal : "Got wrong number back";
     }
 
+    @Test
+    public void testIntAddition () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { public static int r (int x, int y) { return x + y; }}",
+			      "r", Integer.TYPE, Integer.TYPE);
+	int x = 2;
+	int y = 7;
+	int r = (Integer)m.invoke (null, x, y);
+	int expected = x + y;
+	assert r == expected : "Got wrong value back, expected: " + expected + ", but got: " + r;
+    }
+
+    @Test
+    public void testDoubleAddition () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { public static double r (double x, double y) { return x + y; }}",
+			      "r", Double.TYPE, Double.TYPE);
+	double x = 2.5;
+	double y = 7.9;
+	double r = (Double)m.invoke (null, x, y);
+	double expected = x + y;
+	assert r == expected : "Got wrong value back, expected: " + expected + ", but got: " + r;
+    }
+
     private Method getMethod (String className, String text, String methodName, Class<?> ... types) throws ReflectiveOperationException {
 	Class<?> c = getFirstClass (className, text);
 	Method m = c.getMethod (methodName, types);

@@ -328,12 +328,25 @@ public class BytecodeGenerator {
 	    cb.getstatic (owner, name, type);
 	} else {
 	    VariableInfo vi = fa.variableInfo ();
-	    if (vi instanceof FormalParameter fp) {
-		cb.iload (cb.parameterSlot (fp.slot ()));
+	    if (vi instanceof FormalParameterBase fp) {
+		loadParameter (cb, fp);
 	    } else {
 		cb.iload (0); // TODO: get correct slot
 	    }
 	}
+    }
+
+    private void loadParameter (CodeBuilder cb, FormalParameterBase fpb) {
+	int slot = cb.parameterSlot (fpb.slot ());
+	FullNameHandler type = FullNameHelper.type (fpb.type ());
+	if (type == FullNameHandler.INT || type == FullNameHandler.BOOLEAN)
+	    cb.iload (slot);
+	else if (type == FullNameHandler.DOUBLE)
+	    cb.dload (slot);
+	else if (type == FullNameHandler.FLOAT)
+	    cb.fload (slot);
+	else  // TODO: more types
+	    cb.aload (slot);
     }
 
     private void methodInvocation (CodeBuilder cb, Deque<Object> partsToHandle, MethodInvocation mi) {
@@ -397,16 +410,25 @@ public class BytecodeGenerator {
 	Token t = two.token ();
 	if (t == javaTokens.DOUBLE_EQUAL) {
 	    if (two.part2 () instanceof IntLiteral il && il.intValue () == 0) {
-		Handler h = intEqualHandler (cb, Opcode.IFEQ);
-		partsToHandle.addFirst (h);
-		partsToHandle.addFirst (two.part1 ());
+		runParts (partsToHandle, two.part1 (), intEqualHandler (Opcode.IFEQ));
 	    } else {
-		Handler h = intEqualHandler (cb, Opcode.IF_ICMPEQ);
-		partsToHandle.addFirst (h);
-		partsToHandle.addFirst (two.part2 ());
-		partsToHandle.addFirst (two.part1 ());
+		runParts (partsToHandle, two.part1 (), two.part2 (), intEqualHandler (Opcode.IF_ICMPEQ));
 	    }
+	} else if (t == javaTokens.PLUS) {
+	    runParts (partsToHandle, two.part1 (), two.part2 (), plusHandler (two.type ()));
 	}
+    }
+
+    private Handler intEqualHandler (Opcode opcode) {
+	return c -> c.ifThenElse (opcode, b -> b.iconst_1 (), b -> b.iconst_0 ());
+    }
+
+    private Handler plusHandler (FullNameHandler fn) {
+	if (fn == FullNameHandler.INT)
+	    return c -> c.iadd ();
+	if (fn == FullNameHandler.DOUBLE)
+	    return c -> c.dadd ();
+	throw new IllegalStateException ("Unhandled type: " + fn);
     }
 
     private void handleTernary (CodeBuilder cb, Deque<Object> partsToHandle, Ternary t) {
@@ -422,10 +444,6 @@ public class BytecodeGenerator {
 	    h = c -> c.ifThen (x -> handleStatements (x, i.thenPart ()));
 	}
 	runParts (partsToHandle, i.test (), h);
-    }
-
-    private Handler intEqualHandler (CodeBuilder cb, Opcode opcode) {
-	return c -> c.ifThenElse (opcode, b -> b.iconst_1 (), b -> b.iconst_0 ());
     }
 
     private void handleInt (CodeBuilder cb, IntLiteral il) {
