@@ -140,21 +140,17 @@ public class TestFullCompilation {
     public void testReturnTernary () throws ReflectiveOperationException {
 	Method m = getMethod ("C", "class C { public static int r (boolean b, int x, int y) { return b ? x : y; }}",
 			      "r", Boolean.TYPE, Integer.TYPE, Integer.TYPE);
-	int trueVal = 3;
-	int falseVal = 7;
-	int r = (Integer)m.invoke (null, true, trueVal, falseVal);
-	assert r == trueVal : "Got wrong number back";
-	r = (Integer)m.invoke (null, false, trueVal, falseVal);
-	assert r == falseVal : "Got wrong number back";
+	testSimpleTrueFalse (m, 3, 7);
     }
 
-    // TODO: qwerty remove copy paste from testReturnTernary
     @Test
     public void testIfWithReturn () throws ReflectiveOperationException {
 	Method m = getMethod ("C", "class C { public static int r (boolean b, int x, int y) { if (b) return x; else return y; }}",
 			      "r", Boolean.TYPE, Integer.TYPE, Integer.TYPE);
-	int trueVal = 3;
-	int falseVal = 7;
+	testSimpleTrueFalse (m, 72, 98);
+    }
+
+    private void testSimpleTrueFalse (Method m, int trueVal, int falseVal) throws ReflectiveOperationException {
 	int r = (Integer)m.invoke (null, true, trueVal, falseVal);
 	assert r == trueVal : "Got wrong number back";
 	r = (Integer)m.invoke (null, false, trueVal, falseVal);
