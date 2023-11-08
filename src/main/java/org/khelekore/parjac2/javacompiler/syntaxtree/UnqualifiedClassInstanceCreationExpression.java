@@ -68,7 +68,7 @@ public class UnqualifiedClassInstanceCreationExpression extends AnonymousClass {
     }
 
     @Override public ClassType getSuperClass () {
-	return type.getType ();
+	return type.type ();
     }
 
     @Override public Map<String, FieldInfo> getFields () {
@@ -89,5 +89,9 @@ public class UnqualifiedClassInstanceCreationExpression extends AnonymousClass {
 
     @Override public List<StaticInitializer> getStaticInitializers () {
 	return body.getStaticInitializers ();
+    }
+
+    public FullNameHandler type () {
+	return type.fullName ();
     }
 }

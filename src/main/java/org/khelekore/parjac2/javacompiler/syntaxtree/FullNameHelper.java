@@ -70,15 +70,18 @@ public class FullNameHelper {
 	case LongLiteral x ->  LONG;
 	case FloatLiteral x ->  FLOAT;
 	case DoubleLiteral x ->  DOUBLE;
+	case TokenNode tn when tn.token ().getName ().equals ("null") -> NULL;
 	case TokenNode tn -> getPrimitive (tn);
 	case ArrayType at -> arrayOf (type (at.getType ()), at.rank ());
 	case ArrayAccess aa -> aa.type ();
 	case CastExpression ce -> type (ce.baseType ());
+	case ClassInstanceCreationExpression cice -> cice.type ();
 	case ClassLiteral cl -> JL_CLASS;
 	case ThisPrimary tp -> tp.type ();
 	case FieldAccess fa -> fa.getFullName ();
 	case Ternary t -> t.type ();
 	case TwoPartExpression tp -> tp.type ();
+	case UnaryExpression ue when ue.operator ().getName ().equals ("-") -> type (ue.expression ());
 	default -> throw new IllegalArgumentException ("Unhandled type: " + p + ", " + p.getClass ().getName ());
 	};
     }

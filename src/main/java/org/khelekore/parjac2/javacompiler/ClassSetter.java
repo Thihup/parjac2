@@ -46,6 +46,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.OrdinaryCompilationUnit;
 import org.khelekore.parjac2.javacompiler.syntaxtree.PrimitiveType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ReceiverParameter;
 import org.khelekore.parjac2.javacompiler.syntaxtree.RecordDeclaration;
+import org.khelekore.parjac2.javacompiler.syntaxtree.ReturnStatement;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SimpleClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SingleStaticImportDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SingleTypeImportDeclaration;
@@ -299,14 +300,15 @@ public class ClassSetter {
 	    }
 	    case ThisPrimary tp -> setType (et, tp);
 	    case FieldAccess fa -> handlePartsAndField (et, fa, partsToHandle);
-	    case ClassOrInterfaceTypeToInstantiate coitti -> setType (et, coitti.getType ());
+	    case ClassOrInterfaceTypeToInstantiate coitti -> setType (et, coitti.type ());
 
 	    case LocalVariableDeclaration lv -> handlePartsAndRegisterVariable (et, lv, partsToHandle);
 
 	    // Check method once we know all parts
-	    case MethodInvocation mi -> handlePartsAndCheckMethodInvocation (et, mi, partsToHandle);
-	    case Ternary t -> handlePartsAndSetType (et, t, partsToHandle);
-	    case TwoPartExpression t -> handlePartsAndSetType (et, t, partsToHandle);
+	    case MethodInvocation mi -> handlePartsAndHandler (et, mi, new MethodInvocationCheck (mi, this), partsToHandle);
+	    case Ternary t -> handlePartsAndHandler (et, t, e -> setTernaryType (e, t), partsToHandle);
+	    case TwoPartExpression t -> handlePartsAndHandler (et, t, e -> setTwoPartExpressionType (e, t), partsToHandle);
+	    case ReturnStatement r -> handlePartsAndHandler (et, r, e -> setReturnStatementType (e, r), partsToHandle);
 
 	    case ParseTreeNode ptn -> addParts (et, ptn, partsToHandle);
 
@@ -338,21 +340,10 @@ public class ClassSetter {
 	addParts (et, lv, partsToHandle);
     }
 
-    private void handlePartsAndCheckMethodInvocation (EnclosingTypes et, MethodInvocation mi, Deque<StatementHandler> partsToHandle) {
-	partsToHandle.addFirst (new StatementHandler (et, new MethodInvocationCheck (mi, this)));
-	addParts (et, mi, partsToHandle);
-    }
-
-    private void handlePartsAndSetType (EnclosingTypes et, Ternary t, Deque<StatementHandler> partsToHandle) {
-	CustomHandler h = e -> setTernaryType (et, t);
+    private void handlePartsAndHandler (EnclosingTypes et, ParseTreeNode p,
+					CustomHandler h, Deque<StatementHandler> partsToHandle) {
 	partsToHandle.addFirst (new StatementHandler (et, h));
-	addParts (et, t, partsToHandle);
-    }
-
-    private void handlePartsAndSetType (EnclosingTypes et, TwoPartExpression t, Deque<StatementHandler> partsToHandle) {
-	CustomHandler h = e -> setTwoPartExpressionType (et, t);
-	partsToHandle.addFirst (new StatementHandler (et, h));
-	addParts (et, t, partsToHandle);
+	addParts (et, p, partsToHandle);
     }
 
     private void addParts (EnclosingTypes et, ParseTreeNode pp, Deque<StatementHandler> partsToHandle) {
@@ -581,6 +572,14 @@ public class ClassSetter {
 	} else {
 	    error (t, "Unhandled type in two part expression: %t: (%s, %s)", t, part1.getFullDotName (), part2.getFullDotName ());
 	}
+    }
+
+    private void setReturnStatementType (EnclosingTypes et, ReturnStatement r) {
+	ParseTreeNode p = r.expression ();
+	if (p == null)
+	    r.type (FullNameHandler.VOID);
+	else
+	    r.type (FullNameHelper.type (p));
     }
 
     private FullNameHandler wider (FullNameHandler f1, FullNameHandler f2) {

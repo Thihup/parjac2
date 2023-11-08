@@ -32,11 +32,11 @@ public class MethodInvocation extends SyntaxTreeNode {
     }
 
     public FullNameHandler owner () {
-	return info.owner ();
+	return info != null ? info.owner () : null;
     }
 
     public FullNameHandler result () {
-	return info.result ();
+	return info != null ? info.result () : null;
     }
 
     @Override public Object getValue () {

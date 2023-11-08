@@ -15,13 +15,16 @@ import io.github.dmlloyd.classfile.ClassSignature;
 import io.github.dmlloyd.classfile.Classfile;
 import io.github.dmlloyd.classfile.CodeBuilder;
 import io.github.dmlloyd.classfile.MethodSignature;
+import io.github.dmlloyd.classfile.Opcode;
 import io.github.dmlloyd.classfile.Signature;
+import io.github.dmlloyd.classfile.TypeKind;
 import io.github.dmlloyd.classfile.attribute.InnerClassInfo;
 import io.github.dmlloyd.classfile.attribute.InnerClassesAttribute;
 import io.github.dmlloyd.classfile.attribute.SignatureAttribute;
 import io.github.dmlloyd.classfile.attribute.SourceFileAttribute;
 
 import org.khelekore.parjac2.javacompiler.syntaxtree.*;
+import org.khelekore.parjac2.parser.Token;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.khelekore.parjac2.parsetree.TokenNode;
 
@@ -30,6 +33,7 @@ public class BytecodeGenerator {
     private final TypeDeclaration td;
     private final ClassInformationProvider cip;
     private final FullNameHandler name;
+    private final JavaTokens javaTokens;
 
     private static final ClassType enumClassType = new ClassType (FullNameHandler.JL_ENUM);
     private static final ClassType recordClassType = new ClassType (FullNameHandler.JL_RECORD);
@@ -60,6 +64,7 @@ public class BytecodeGenerator {
 	this.td = td;
 	this.cip = cip;
 	this.name = cip.getFullName (td);
+	this.javaTokens = javaTokens;
 
 	genericTypeHelper = new GenericTypeHelper ();
 	VOID_RETURN = new TokenNode (javaTokens.VOID, null);
@@ -155,7 +160,6 @@ public class BytecodeGenerator {
 	return ct != null && (ct.getFullNameHandler ().hasGenericType () || ct.getTypeParameter () != null);
     }
 
-
     private byte[] generateClass (TypeDeclaration tdt, ImplicitClassFlags icf,
 				  String signature, ClassType superType, List<ClassType> superInterfaces) {
 	byte[] b = Classfile.of().build (ClassDesc.of (name.getFullDollarName ()), classBuilder -> {
@@ -248,11 +252,12 @@ public class BytecodeGenerator {
 	td.getMethods ().forEach (m -> {
 		MethodSignatureHolder msh = getMethodSignature (m);
 		int flags = m.flags ();
+		TypeKind returnType = getTypeKind (m.result ());
 		ParseTreeNode body = m.getMethodBody ();
 		classBuilder.withMethod (m.name (), msh.desc, flags, mb -> {
 			if (!m.isAbstract ()) {
 			    mb.withCode (cb -> {
-				    addMethodContent (cb, (Block)body);
+				    addMethodContent (cb, (Block)body, returnType);
 				});
 			}
 			if (msh.signature != null)
@@ -261,24 +266,38 @@ public class BytecodeGenerator {
 	    });
     }
 
-    private void addMethodContent (CodeBuilder cb, Block body) {
+    private void addMethodContent (CodeBuilder cb, Block body, TypeKind returnType) {
 	Deque<Object> partsToHandle = new ArrayDeque<> ();
-	partsToHandle.addAll (body.get ());
+	List<ParseTreeNode> statements = body.get ();
+	boolean needReturn = !endsWithReturn (statements);
+	partsToHandle.addAll (statements);
 	while (!partsToHandle.isEmpty ()) {
 	    handleStatement (cb, partsToHandle, partsToHandle.removeFirst ());
 	}
-	cb.return_ (); // TODO: only add if there is no return in the method
+	if (needReturn)
+	    cb.returnInstruction (returnType);
+    }
+
+    private boolean endsWithReturn (List<ParseTreeNode> parts) {
+	// TODO: handle more cases, for example if/else where both parts return
+	return parts.size () > 0 && parts.get (parts.size () - 1) instanceof ReturnStatement;
     }
 
     private void handleStatement (CodeBuilder cb, Deque<Object> partsToHandle, Object p) {
-	//System.err.println ("looking at: " + p);
-	//cb.lineNumber (p.position ().getLineNumber ()); // not correct, but at least somewhat close
+	//System.err.println ("looking at: " + p + ", " + p.getClass ().getName ());
 	switch (p) {
+	case Handler h -> h.run (cb);
+	case ExpressionName e -> cb.iload (0); // TODO: not correct!
 	case FieldAccess fa -> fieldAccess (cb, fa);
 	case MethodInvocation mi -> methodInvocation (cb, partsToHandle, mi);
+	case ReturnStatement r -> handleReturn (cb, partsToHandle, r);
+	case UnaryExpression u -> handleUnaryExpression (cb, partsToHandle, u);
+	case TwoPartExpression tp -> handleTwoPartExpression (cb, partsToHandle, tp);
 	case StringLiteral l -> cb.ldc (l.getValue ());
+	case IntLiteral i -> handleInt (cb, i);
+	case DoubleLiteral d -> handleDouble (cb, d);
+	case TokenNode t -> handleToken (cb, t);
 	case ParseTreeNode n -> addChildren (partsToHandle, n);
-	case Handler h -> h.run (cb);
 	default -> throw new IllegalArgumentException ("Unknown type: " + p + ", " + p.getClass ().getName ());
 	}
     }
@@ -314,6 +333,107 @@ public class BytecodeGenerator {
 	}
 
 	partsToHandle.addFirst (on);
+    }
+
+    private void handleReturn (CodeBuilder cb, Deque<Object> partsToHandle, ReturnStatement r) {
+	FullNameHandler fn = r.type ();
+	TypeKind tk = getTypeKind (fn);
+	Handler h = b -> b.returnInstruction (tk);
+	partsToHandle.addFirst (h);
+	ParseTreeNode p = r.expression ();
+	if (p != null)
+	    partsToHandle.addFirst (p);
+    }
+
+    private TypeKind getTypeKind (FullNameHandler fn) {
+	if (fn == FullNameHandler.NULL)
+	    return TypeKind.ReferenceType;
+	else if (fn == FullNameHandler.VOID)
+	    return TypeKind.VoidType;
+	else if (fn == FullNameHandler.DOUBLE)
+	    return TypeKind.DoubleType;
+	return TypeKind.IntType;
+    }
+
+    private void handleUnaryExpression (CodeBuilder cb, Deque<Object> partsToHandle, UnaryExpression u) {
+	Token t = u.operator ();
+	if (t == javaTokens.MINUS) {
+	    ParseTreeNode exp = u.expression ();
+	    if (exp instanceof IntLiteral il) {
+		int value = il.getValue ();
+		handleInt (cb, -value);
+	    }
+	}
+	/* TODO: we might need these as well
+	case javaTokens.INCREMENT
+	case javaTokens.DECREMENT
+	case javaTokens.PLUS
+	case javaTokens.NOT
+	*/
+    }
+
+    private void handleTwoPartExpression (CodeBuilder cb, Deque<Object> partsToHandle, TwoPartExpression two) {
+	Token t = two.token ();
+	if (t == javaTokens.DOUBLE_EQUAL) {
+	    if (two.part2 () instanceof IntLiteral il && il.intValue () == 0) {
+		Handler h = intEqualHandler (cb, Opcode.IFEQ);
+		partsToHandle.addFirst (h);
+		partsToHandle.addFirst (two.part1 ());
+	    } else {
+		Handler h = intEqualHandler (cb, Opcode.IF_ICMPEQ);
+		partsToHandle.addFirst (h);
+		partsToHandle.addFirst (two.part2 ());
+		partsToHandle.addFirst (two.part1 ());
+	    }
+	}
+    }
+
+    private Handler intEqualHandler (CodeBuilder cb, Opcode opcode) {
+	return c -> c.ifThenElse (opcode, b -> b.iconst_1 (), b -> b.iconst_0 ());
+    }
+
+    private void handleInt (CodeBuilder cb, IntLiteral il) {
+	int i = il.intValue ();
+	handleInt (cb, i);
+    }
+
+    private void handleInt (CodeBuilder cb, int i) {
+	if (i >= -1 && i <= 5) {
+	    switch (i) {
+	    case -1 -> cb.iconst_m1 ();
+	    case 0 -> cb.iconst_0 ();
+	    case 1 -> cb.iconst_1 ();
+	    case 2 -> cb.iconst_2 ();
+	    case 3 -> cb.iconst_3 ();
+	    case 4 -> cb.iconst_4 ();
+	    case 5 -> cb.iconst_5 ();
+	    }
+	} else if (i >= -128 && i <= 127) {
+	    cb.bipush (i);
+	} else if (i >= -32768 && i <= 32767) {
+	    cb.sipush (i);
+	} else {
+	    cb.ldc (i);
+	}
+    }
+
+    private void handleDouble (CodeBuilder cb, DoubleLiteral dl) {
+	double d = dl.doubleValue ();
+	if (d == 0) {
+	    cb.dconst_0 ();
+	} else if (d == 1) {
+	    cb.dconst_1 ();
+	} else {
+	    cb.ldc (d);
+	}
+    }
+
+    private void handleToken (CodeBuilder cb, TokenNode tn) {
+	Token t = tn.token ();
+	if (t == javaTokens.NULL)
+	    cb.aconst_null ();
+	else
+	    throw new IllegalStateException ("Unhandled token type: " + t);
     }
 
     private void addChildren (Deque<Object> partsToHandle, ParseTreeNode p) {

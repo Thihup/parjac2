@@ -9,6 +9,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class ReturnStatement extends SyntaxTreeNode {
     private final ParseTreeNode expression;
+    private FullNameHandler fn;
 
     public ReturnStatement (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
@@ -27,5 +28,17 @@ public class ReturnStatement extends SyntaxTreeNode {
     @Override public void visitChildNodes (NodeVisitor v) {
 	if (expression != null)
 	    v.accept (expression);
+    }
+
+    public ParseTreeNode expression () {
+	return expression;
+    }
+
+    public void type (FullNameHandler fn) {
+	this.fn = fn;
+    }
+
+    public FullNameHandler type () {
+	return fn;
     }
 }

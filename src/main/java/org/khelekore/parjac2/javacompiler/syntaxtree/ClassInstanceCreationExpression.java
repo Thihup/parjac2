@@ -43,4 +43,8 @@ public class ClassInstanceCreationExpression extends SyntaxTreeNode {
 	    v.accept (primary);
 	v.accept (exp);
     }
+
+    public FullNameHandler type () {
+	return exp.type ();
+    }
 }

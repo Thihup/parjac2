@@ -15,4 +15,8 @@ public class DoubleLiteral extends TokenNode {
     @Override public Object getValue () {
 	return value;
     }
+
+    public double doubleValue () {
+	return value;
+    }
 }

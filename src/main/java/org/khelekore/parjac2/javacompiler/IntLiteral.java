@@ -12,7 +12,11 @@ public class IntLiteral extends TokenNode {
 	this.value = value;
     }
 
-    @Override public Object getValue () {
+    public int intValue () {
+	return value;
+    }
+
+    @Override public Integer getValue () {
 	return value;
     }
 }

@@ -69,7 +69,11 @@ public class ClassOrInterfaceTypeToInstantiate extends SyntaxTreeNode {
 	    v.accept (types);
     }
 
-    public ClassType getType () {
+    public ClassType type () {
 	return type;
+    }
+
+    public FullNameHandler fullName () {
+	return type.getFullNameHandler ();
     }
 }

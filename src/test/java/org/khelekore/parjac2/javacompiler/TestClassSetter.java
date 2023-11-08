@@ -25,7 +25,6 @@ public class TestClassSetter {
 
     private Grammar grammar;
     private CompilationArguments settings;
-
     private CompilerDiagnosticCollector diagnostics;
     private ClassInformationProvider cip;
 

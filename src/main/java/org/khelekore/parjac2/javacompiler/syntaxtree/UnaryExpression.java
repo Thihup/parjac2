@@ -18,11 +18,19 @@ public class UnaryExpression extends SyntaxTreeNode {
 	exp = children.get (1);
     }
 
-    @Override public Object getValue() {
+    @Override public Object getValue () {
 	return operator.toString () + exp;
     }
 
     @Override public void visitChildNodes (NodeVisitor v) {
 	v.accept (exp);
+    }
+
+    public Token operator () {
+	return operator;
+    }
+
+    public ParseTreeNode expression () {
+	return exp;
     }
 }
