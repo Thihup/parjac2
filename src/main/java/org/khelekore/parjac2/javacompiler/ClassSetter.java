@@ -685,13 +685,13 @@ public class ClassSetter {
 
     private void setType (EnclosingTypes et, FieldAccess fa) {
 	FullNameHandler fn = currentClass (et);
-	ParseTreeNode from = fa.getFrom ();
+	ParseTreeNode from = fa.from ();
 	if (from != null) {
 	    if (!(from instanceof ThisPrimary))
 		fn = FullNameHelper.type (from);
 	}
 
-	String id = fa.getName ();
+	String id = fa.name ();
 	VariableInfo fi = getField (fn, id);
 	if (fi != null) {
 	    fa.variableInfo (fi);

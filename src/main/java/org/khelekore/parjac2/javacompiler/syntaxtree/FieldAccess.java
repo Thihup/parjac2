@@ -35,11 +35,11 @@ public class FieldAccess extends SyntaxTreeNode {
 	this.id = id;
     }
 
-    public ParseTreeNode getFrom () {
+    public ParseTreeNode from () {
 	return from;
     }
 
-    public String getName () {
+    public String name () {
 	return id;
     }
 

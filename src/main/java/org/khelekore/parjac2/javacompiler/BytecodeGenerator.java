@@ -292,7 +292,7 @@ public class BytecodeGenerator {
     }
 
     private void handleStatement (CodeBuilder cb, Deque<Object> partsToHandle, Object p) {
-	System.err.println ("looking at: " + p + ", " + p.getClass ().getName ());
+	//System.err.println ("looking at: " + p + ", " + p.getClass ().getName ());
 	switch (p) {
 	case Handler h -> h.run (cb);
 	case ExpressionName e -> runParts (partsToHandle, e.replaced ());
@@ -317,10 +317,10 @@ public class BytecodeGenerator {
     }
 
     private void fieldAccess (CodeBuilder cb, FieldAccess fa) {
-	ParseTreeNode from = fa.getFrom ();
+	ParseTreeNode from = fa.from ();
 	if (from != null) {
 	    ClassDesc owner = ClassDesc.of (((ClassType)from).getFullDollarName ());
-	    String name = fa.getName ();
+	    String name = fa.name ();
 	    ClassDesc type = ClassDesc.of (fa.getFullName ().getFullDollarName ());
 	    cb.lineNumber (fa.position ().getLineNumber ()); // not correct, but at least somewhat close
 
