@@ -49,8 +49,7 @@ public class TypeBound extends SyntaxTreeNode {
 	return 1 + additionalBounds.size ();
     }
 
-    public ExpressionType getExpressionType () {
-	// TODO: do we need to care about additionalBounds?
-	return base.getExpressionType ();
+    public FullNameHandler fullName () {
+	return base.getFullNameHandler ();
     }
 }

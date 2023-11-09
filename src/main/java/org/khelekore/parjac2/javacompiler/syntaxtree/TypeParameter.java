@@ -49,9 +49,9 @@ public class TypeParameter extends SyntaxTreeNode {
 	return bound;
     }
 
-    public ExpressionType getExpressionType () {
+    public FullNameHandler fullName () {
 	if (bound != null)
-	    return bound.getExpressionType ();
-	return ExpressionType.OBJECT;
+	    return bound.fullName ();
+	return FullNameHandler.JL_OBJECT;
     }
 }

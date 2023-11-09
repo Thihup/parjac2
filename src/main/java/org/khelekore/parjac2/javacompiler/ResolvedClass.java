@@ -13,7 +13,7 @@ public class ResolvedClass {
     }
 
     public ResolvedClass (TypeParameter tp) {
-	this.type = tp.getExpressionType ().getFullNameHandler ();
+	this.type = tp.fullName ();
 	this.tp = tp;
     }
 

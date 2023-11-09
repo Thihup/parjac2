@@ -90,12 +90,6 @@ public class ClassType extends SyntaxTreeNode implements NamePartHandler {
 	return ls.get (ls.size () - 1).getTypeArguments ();
     }
 
-    public ExpressionType getExpressionType () {
-	if (fnh != null)
-	    return ExpressionType.getObjectType (fnh);
-	return null;
-    }
-
     public FullNameHandler getFullNameAsSimpleDottedName () {
 	String dotName;
 	if (size () == 1)
