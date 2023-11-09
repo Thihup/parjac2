@@ -85,4 +85,21 @@ public class FullNameHelper {
 	default -> throw new IllegalArgumentException ("Unhandled type: " + p + ", " + p.getClass ().getName ());
 	};
     }
+
+    public static FullNameHandler wider (FullNameHandler f1, FullNameHandler f2) {
+	if (f1 == FullNameHandler.DOUBLE || f2 == FullNameHandler.DOUBLE)
+	    return FullNameHandler.DOUBLE;
+	if (f1 == FullNameHandler.FLOAT || f2 == FullNameHandler.FLOAT)
+	    return FullNameHandler.FLOAT;
+	if (f1 == FullNameHandler.LONG || f2 == FullNameHandler.LONG)
+	    return FullNameHandler.LONG;
+	if (f1 == FullNameHandler.INT || f2 == FullNameHandler.INT)
+	    return FullNameHandler.INT;
+	return f1; // not sure what we do here
+    }
+
+    public static boolean mayAutoCastPrimitives (FullNameHandler from, FullNameHandler to) {
+	List<PrimitiveType> ls = ALLOWED_UPCASTS.get (from);
+	return ls != null && ls.contains (to);
+    }
 }

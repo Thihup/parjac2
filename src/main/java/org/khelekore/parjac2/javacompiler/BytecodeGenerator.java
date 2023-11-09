@@ -317,13 +317,12 @@ public class BytecodeGenerator {
     }
 
     private void fieldAccess (CodeBuilder cb, FieldAccess fa) {
+	cb.lineNumber (fa.position ().getLineNumber ()); // should be good enough
 	ParseTreeNode from = fa.from ();
 	if (from != null) {
 	    ClassDesc owner = ClassDesc.of (((ClassType)from).getFullDollarName ());
 	    String name = fa.name ();
 	    ClassDesc type = ClassDesc.of (fa.getFullName ().getFullDollarName ());
-	    cb.lineNumber (fa.position ().getLineNumber ()); // not correct, but at least somewhat close
-
 	    // Not correct, but works for: hello world!
 	    cb.getstatic (owner, name, type);
 	} else {
@@ -343,6 +342,8 @@ public class BytecodeGenerator {
 	    cb.iload (slot);
 	else if (type == FullNameHandler.DOUBLE)
 	    cb.dload (slot);
+	else if (type == FullNameHandler.LONG)
+	    cb.lload (slot);
 	else if (type == FullNameHandler.FLOAT)
 	    cb.fload (slot);
 	else  // TODO: more types
@@ -370,23 +371,35 @@ public class BytecodeGenerator {
     }
 
     private void handleReturn (CodeBuilder cb, Deque<Object> partsToHandle, ReturnStatement r) {
-	FullNameHandler fn = r.type ();
-	TypeKind tk = getTypeKind (fn);
-	Handler h = b -> b.returnInstruction (tk);
+	FullNameHandler fm = r.type ();
+	TypeKind tkm = getTypeKind (fm);
+	Handler h = b -> b.returnInstruction (tkm);
 	partsToHandle.addFirst (h);
 	ParseTreeNode p = r.expression ();
+	FullNameHandler fr = p == null ? FullNameHandler.VOID : FullNameHelper.type (p);
+	if (fr.getType () == FullNameHandler.Type.PRIMITIVE && !fm.equals (fr)) {
+	    TypeKind tkr = getTypeKind (fr);
+	    h = b -> addPrimitiveCast (cb, tkr, tkm);
+	    partsToHandle.addFirst (h);
+	}
 	if (p != null)
 	    partsToHandle.addFirst (p);
     }
 
     private TypeKind getTypeKind (FullNameHandler fn) {
-	if (fn == FullNameHandler.NULL)
+	if (fn == FullNameHandler.NULL || fn.getType () == FullNameHandler.Type.OBJECT)
 	    return TypeKind.ReferenceType;
 	else if (fn == FullNameHandler.VOID)
 	    return TypeKind.VoidType;
 	else if (fn == FullNameHandler.DOUBLE)
 	    return TypeKind.DoubleType;
+	else if (fn == FullNameHandler.FLOAT)
+	    return TypeKind.FloatType;
 	return TypeKind.IntType;
+    }
+
+    private void addPrimitiveCast (CodeBuilder cb, TypeKind from, TypeKind to) {
+	cb.convertInstruction (from, to);
     }
 
     private void handleUnaryExpression (CodeBuilder cb, Deque<Object> partsToHandle, UnaryExpression u) {
@@ -415,7 +428,12 @@ public class BytecodeGenerator {
 		runParts (partsToHandle, two.part1 (), two.part2 (), intEqualHandler (Opcode.IF_ICMPEQ));
 	    }
 	} else if (t == javaTokens.PLUS) {
-	    runParts (partsToHandle, two.part1 (), two.part2 (), plusHandler (two.type ()));
+	    FullNameHandler fnt = two.type ();
+	    ParseTreeNode p1 = two.part1 ();
+	    ParseTreeNode p2 = two.part2 ();
+	    Handler h1 = c -> widen (c, fnt, p1);
+	    Handler h2 = c -> widen (c, fnt, p2);
+	    runParts (partsToHandle, p1, h1, p2, h2, plusHandler (two.type ()));
 	}
     }
 
@@ -423,11 +441,30 @@ public class BytecodeGenerator {
 	return c -> c.ifThenElse (opcode, b -> b.iconst_1 (), b -> b.iconst_0 ());
     }
 
+    private void widen (CodeBuilder cb, FullNameHandler fn, ParseTreeNode p) {
+	FullNameHandler pfn = FullNameHelper.type (p);
+	if (pfn == fn)
+	    return;
+
+	// TODO: handle more casts
+	if (pfn == FullNameHandler.INT) {
+	    if (fn == FullNameHandler.DOUBLE)
+		cb.i2d ();
+	}
+
+	if (pfn == FullNameHandler.LONG) {
+	    if (fn == FullNameHandler.FLOAT)
+		cb.l2f ();
+	}
+    }
+
     private Handler plusHandler (FullNameHandler fn) {
 	if (fn == FullNameHandler.INT)
 	    return c -> c.iadd ();
 	if (fn == FullNameHandler.DOUBLE)
 	    return c -> c.dadd ();
+	if (fn == FullNameHandler.FLOAT)
+	    return c -> c.fadd ();
 	throw new IllegalStateException ("Unhandled type: " + fn);
     }
 

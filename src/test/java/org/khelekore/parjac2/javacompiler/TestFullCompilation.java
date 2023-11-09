@@ -179,6 +179,39 @@ public class TestFullCompilation {
 	assert r == expected : "Got wrong value back, expected: " + expected + ", but got: " + r;
     }
 
+    @Test
+    public void testDoubleIntAddition () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { public static double r (double x, int y) { return x + y; }}",
+			      "r", Double.TYPE, Integer.TYPE);
+	double x = 2.4;
+	int y = 9;
+	double r = (Double)m.invoke (null, x, y);
+	double expected = x + y;
+	assert r == expected : "Got wrong value back, expected: " + expected + ", but got: " + r;
+    }
+
+    @Test
+    public void testIntDoubleAddition () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { public static double r (int x, double y) { return x + y; }}",
+			      "r", Integer.TYPE, Double.TYPE);
+	int x = 2;
+	double y = 9.91;
+	double r = (Double)m.invoke (null, x, y);
+	double expected = x + y;
+	assert r == expected : "Got wrong value back, expected: " + expected + ", but got: " + r;
+    }
+
+    @Test
+    public void testFloatLongAddtion () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { public static double r (float x, long y) { return x + y; }}",
+			      "r", Float.TYPE, Long.TYPE);
+	float x = 2.1F;
+	long y = 3L;
+	double r = (Double)m.invoke (null, x, y);
+	double expected = x + y;
+	assert r == expected : "Got wrong value back, expected: " + expected + ", but got: " + r;
+    }
+
     private Method getMethod (String className, String text, String methodName, Class<?> ... types) throws ReflectiveOperationException {
 	Class<?> c = getFirstClass (className, text);
 	Method m = c.getMethod (methodName, types);

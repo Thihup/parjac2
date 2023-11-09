@@ -24,6 +24,7 @@ import org.testng.annotations.Test;
 public class TestClassSetter {
 
     private Grammar grammar;
+    private JavaTokens javaTokens;
     private CompilationArguments settings;
     private CompilerDiagnosticCollector diagnostics;
     private ClassInformationProvider cip;
@@ -31,6 +32,7 @@ public class TestClassSetter {
     @BeforeClass
     public void createTools () {
 	grammar = TestParserHelper.getJavaGrammarFromFile ("CompilationUnit", false);
+	javaTokens = TestParserHelper.getTokens ();
 	settings = new CompilationArguments ();
     }
 
@@ -231,7 +233,7 @@ public class TestClassSetter {
 
     @Test
     public void testSeveralNestedFields () {
-	getTypes ("class C { C c; void foo () { return c.c.c.c.c; }}");
+	getTypes ("class C { C c; C foo () { return c.c.c.c.c; }}");
     }
 
     @Test
@@ -431,6 +433,36 @@ public class TestClassSetter {
     }
 
     @Test
+    public void testErrorOnMissMatchedReturn () {
+	getTypes ("class C { int foo () { double d = 3.0; return d; }}", 1);
+    }
+
+    @Test
+    public void testNoErrorOnAllowedUpcast () {
+	getTypes ("class C { double foo () { int i = 4; return i; }}");
+    }
+
+    @Test
+    public void testErrorOnMissmatchedReferenceType () {
+	getTypes ("class C { String foo () { Object o = new Object (); return o; }}", 1);
+    }
+
+    @Test
+    public void testNoErrorOnReturningSubtype () {
+	getTypes ("class C { Object foo () { String s = \"foo\"; return s; }}");
+    }
+
+    @Test
+    public void testErrorOnReturningFromVoid () {
+	getTypes ("class C { void foo () { String s = \"foo\"; return s; }}", 1);
+    }
+
+    @Test
+    public void testErrorOnReturningVoidInNonVoidMethod () {
+	getTypes ("class C { Object foo () { String s = \"foo\"; return; }}", 1);
+    }
+
+    @Test
     public void testTwoPartMissingPartial () {
 	getTypes ("class C { void foo () { int l = 1 + x;}}", 1);
     }
@@ -471,7 +503,7 @@ public class TestClassSetter {
     private List<TypeDeclaration> getTypes (String txt, int expectedErrors) {
 	ParsedEntry tree = syntaxTree (txt);
 	cip.addTypes (tree.getRoot (), tree.getOrigin ());
-	ClassSetter.fillInClasses (cip, List.of (tree), diagnostics);
+	ClassSetter.fillInClasses (javaTokens, cip, List.of (tree), diagnostics);
 	assert diagnostics.errorCount () == expectedErrors
 	    : String.format ("Got unexpected number of errors: %d, expected %d: errors:\n%s",
 			     diagnostics.errorCount (), expectedErrors, TestParserHelper.getParseOutput (diagnostics));

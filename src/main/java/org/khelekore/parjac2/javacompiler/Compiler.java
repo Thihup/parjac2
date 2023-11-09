@@ -151,7 +151,7 @@ public class Compiler {
 	 *    Scope hangs on class, method, for-clause and try (with resource) clause
 	 * 2: Set classes for local variables, field access and expressions
 	 */
-	runTimed (() -> ClassSetter.fillInClasses (cip, trees, diagnostics), "Setting classes");
+	runTimed (() -> ClassSetter.fillInClasses (javaTokens, cip, trees, diagnostics), "Setting classes");
 
 	//runTimed (() -> checkNamesAndModifiers (trees), "Checking names and modifiers");
 

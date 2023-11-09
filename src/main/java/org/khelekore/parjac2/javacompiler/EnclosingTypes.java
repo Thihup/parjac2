@@ -11,6 +11,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.LocalVariableDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeParameter;
 import org.khelekore.parjac2.javacompiler.syntaxtree.VariableDeclarator;
+import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public record EnclosingTypes (EnclosingTypes previous, Enclosure<?> enclosure)
     implements Iterable<EnclosingTypes> {
@@ -51,6 +52,10 @@ public record EnclosingTypes (EnclosingTypes previous, Enclosure<?> enclosure)
 	return new EnclosingTypes (this, new TypeParameterEnclosure (nameToTypeParameter));
     }
 
+    public EnclosingTypes enclosingMethod (ParseTreeNode returnType, Map<String, VariableInfo> nameToVariable, boolean isStatic) {
+	return new EnclosingTypes (this, new MethodEnclosure (returnType, nameToVariable, isStatic));
+    }
+
     public EnclosingTypes enclosingVariables (Map<String, VariableInfo> nameToVariable, boolean isStatic) {
 	return new EnclosingTypes (this, new VariableEnclosure (nameToVariable, isStatic));
     }
@@ -73,13 +78,17 @@ public record EnclosingTypes (EnclosingTypes previous, Enclosure<?> enclosure)
 	@Override public Map<String, FieldInfo> getFields () { return td.getFields (); }
     }
 
-    private record TypeParameterEnclosure (Map<String, TypeParameter> nameToTypeParameter) implements Enclosure<VariableInfo> {
+    public record TypeParameterEnclosure (Map<String, TypeParameter> nameToTypeParameter) implements Enclosure<VariableInfo> {
 	@Override public boolean isStatic () { return false; }
 	@Override public TypeParameter getTypeParameter (String id) { return nameToTypeParameter.get (id); }
 	@Override public Map<String, VariableInfo> getFields () { return Map.of (); }
     }
 
-    private record VariableEnclosure (Map<String, VariableInfo> variables, boolean isStatic) implements Enclosure<VariableInfo> {
+    public record MethodEnclosure (ParseTreeNode returnType, Map<String, VariableInfo> variables, boolean isStatic) implements Enclosure<VariableInfo> {
+	@Override public Map<String, VariableInfo> getFields () { return variables; }
+    }
+
+    public record VariableEnclosure (Map<String, VariableInfo> variables, boolean isStatic) implements Enclosure<VariableInfo> {
 	@Override public Map<String, VariableInfo> getFields () { return variables; }
     }
 

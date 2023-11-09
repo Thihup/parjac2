@@ -6,8 +6,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -66,11 +68,13 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.UnqualifiedClassInstanceCre
 import org.khelekore.parjac2.javacompiler.syntaxtree.Wildcard;
 import org.khelekore.parjac2.javacompiler.syntaxtree.WildcardBounds;
 import org.khelekore.parjac2.parser.ParsePosition;
+import org.khelekore.parjac2.parser.Token;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.khelekore.parjac2.parsetree.TokenNode;
 
 public class ClassSetter {
 
+    private final JavaTokens javaTokens;
     private final ClassInformationProvider cip;
     private final ParsedEntry tree;
     private final CompilerDiagnosticCollector diagnostics;
@@ -86,13 +90,14 @@ public class ClassSetter {
      *      Find methods, set type on arguments and add to scope of method
      *      Set type of expression
      */
-    public static void fillInClasses (ClassInformationProvider cip,
+    public static void fillInClasses (JavaTokens javaTokens,
+				      ClassInformationProvider cip,
 				      List<ParsedEntry> trees,
 				      CompilerDiagnosticCollector diagnostics) {
 	List<ClassSetter> classSetters =
 	    trees.stream ()
 	    .filter (pe -> (pe.getRoot () instanceof OrdinaryCompilationUnit))
-	    .map (t -> new ClassSetter (cip, t, diagnostics)).collect (Collectors.toList ());
+	    .map (t -> new ClassSetter (javaTokens, cip, t, diagnostics)).collect (Collectors.toList ());
 	if (diagnostics.hasError ())
 	    return;
 	classSetters.parallelStream ().forEach (ClassSetter::registerSuperTypes);
@@ -106,9 +111,11 @@ public class ClassSetter {
 	classSetters.parallelStream ().forEach (cs -> cs.checkUnusedImport ());
     }
 
-    public ClassSetter (ClassInformationProvider cip,
+    public ClassSetter (JavaTokens javaTokens,
+			ClassInformationProvider cip,
 			ParsedEntry pe,
 			CompilerDiagnosticCollector diagnostics) {
+	this.javaTokens = javaTokens;
 	this.cip = cip;
 	tree = pe;
 	this.diagnostics = diagnostics;
@@ -198,7 +205,7 @@ public class ClassSetter {
 	    checkAnnotations (et, rp.getAnnotations ());
 	    setType (et, rp.getType ());
 	}
-	EnclosingTypes rt = setFormalParameterListTypes (et, md.getFormalParameterList (), md.isStatic ());
+	EnclosingTypes rt = setFormalParameterListTypes (et, md.getResult (), md.getFormalParameterList (), md.isStatic ());
 
 	Throws t = md.getThrows ();
 	if (t != null) {
@@ -210,10 +217,10 @@ public class ClassSetter {
     private void setConstructorTypes (EnclosingTypes bt, ConstructorDeclarationBase cdb) {
 	checkAnnotations (bt, cdb.getAnnotations ());
 	EnclosingTypes et = registerTypeParameters (bt, cdb.getTypeParameters ());
-	setFormalParameterListTypes (et, cdb.getFormalParameterList (), false);
+	setFormalParameterListTypes (et, null, cdb.getFormalParameterList (), false);
     }
 
-    private EnclosingTypes setFormalParameterListTypes (EnclosingTypes et, FormalParameterList args, boolean isStatic) {
+    private EnclosingTypes setFormalParameterListTypes (EnclosingTypes et, ParseTreeNode result, FormalParameterList args, boolean isStatic) {
 	Map<String, VariableInfo> variables = new HashMap<> ();
 	if (args != null) {
 	    int i = 0;
@@ -228,7 +235,7 @@ public class ClassSetter {
 		}
 	    }
 	}
-	return et.enclosingVariables (variables, isStatic);
+	return et.enclosingMethod (result, variables, isStatic);
     }
 
     private void checkFormalParameterModifiers (EnclosingTypes et, List<ParseTreeNode> modifiers) {
@@ -255,7 +262,7 @@ public class ClassSetter {
 
     private void checkMethodBodies (EnclosingTypes et, MethodDeclarationBase md) {
 	et = registerTypeParameters (et, md.getTypeParameters ());
-	et = setFormalParameterListTypes (et, md.getFormalParameterList (), md.isStatic ());
+	et = setFormalParameterListTypes (et, md.getResult (), md.getFormalParameterList (), md.isStatic ());
 	ParseTreeNode body = md.getMethodBody ();
 	if (body instanceof Block block) {
 	    et = et.enclosingBlock (false);
@@ -267,7 +274,7 @@ public class ClassSetter {
 
     private void checkConstructorBodies (EnclosingTypes et, ConstructorDeclarationBase cdb) {
 	et = registerTypeParameters (et, cdb.getTypeParameters ());
-	et = setFormalParameterListTypes (et, cdb.getFormalParameterList (), false);
+	et = setFormalParameterListTypes (et, null, cdb.getFormalParameterList (), false);
 	et = et.enclosingBlock (false);
 	setTypesForMethodStatement (et, cdb.getStatements ());
     }
@@ -569,7 +576,10 @@ public class ClassSetter {
 	if (part1 == null || part2 == null) // missing thingy, reported elsewhere
 	    return;
 	if (part1.isPrimitive () && part2.isPrimitive ()) {
-	    t.type (wider (part1, part2));
+	    if (isComparisson (t.token ()))
+		t.type (FullNameHandler.BOOLEAN);
+	    else
+		t.type (FullNameHelper.wider (part1, part2));
 	} else if (part1.equals (FullNameHandler.JL_STRING) || part2.equals (FullNameHandler.JL_STRING)) {
 	    t.type (FullNameHandler.JL_STRING);
 	} else {
@@ -577,17 +587,63 @@ public class ClassSetter {
 	}
     }
 
-    private void setReturnStatementType (EnclosingTypes et, ReturnStatement r) {
-	ParseTreeNode p = r.expression ();
-	if (p == null)
-	    r.type (FullNameHandler.VOID);
-	else
-	    r.type (FullNameHelper.type (p));
+    private boolean isComparisson (Token t) {
+	return javaTokens.isComparisson (t);
     }
 
-    private FullNameHandler wider (FullNameHandler f1, FullNameHandler f2) {
-	// TODO: implement this correctly
-	return f1;
+    private void setReturnStatementType (EnclosingTypes et, ReturnStatement r) {
+	ParseTreeNode methodReturn = currentMethodReturn (et);
+	FullNameHandler fm = FullNameHelper.type (methodReturn);
+	ParseTreeNode p = r.expression ();
+	FullNameHandler fr = p == null ? FullNameHandler.VOID : FullNameHelper.type (p);
+	if (!typesMatch (fm, fr)) {
+	    error (r, "Return statement (%s) incompatible with method return type (%s)", fr.getFullDotName (), fm.getFullDotName ());
+	}
+	r.type (fm);
+    }
+
+    private boolean typesMatch (FullNameHandler fm, FullNameHandler fr) {
+	if (fr.equals (fm))
+	    return true;
+	if (FullNameHelper.mayAutoCastPrimitives (fr, fm))
+	    return true;
+	if (fm.getType () == FullNameHandler.Type.OBJECT && fr == FullNameHandler.NULL)
+	    return true;
+	if (isSuperClass (fm, fr))
+	    return true;
+	return false;
+    }
+
+    private boolean isSuperClass (FullNameHandler supertype, FullNameHandler subtype) {
+	Set<FullNameHandler> allSuperTypes = getAllSuperTypes (subtype);
+	return allSuperTypes.contains (supertype);
+    }
+
+    private Set<FullNameHandler> getAllSuperTypes (FullNameHandler subtype) {
+	Set<FullNameHandler> ret = new HashSet<> ();
+	Deque<FullNameHandler> d = new ArrayDeque<> ();
+	d.add (subtype);
+	while (!d.isEmpty ()) {
+	    FullNameHandler s = d.removeFirst ();
+	    List<FullNameHandler> supers = getSuperClasses (s);
+	    if (supers != null) {
+		for (FullNameHandler f : supers) {
+		    if (ret.add (f)) {
+			d.addLast (f);
+		    }
+		}
+	    }
+	}
+	return ret;
+    }
+
+    private ParseTreeNode currentMethodReturn (EnclosingTypes et) {
+	while (et != null) {
+	    if (et.enclosure () instanceof EnclosingTypes.MethodEnclosure me)
+		return me.returnType ();
+	    et = et.previous ();
+	}
+	throw new IllegalStateException ("Unable to find method enclosure");
     }
 
     private interface CustomHandler {
