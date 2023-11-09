@@ -80,8 +80,10 @@ public class ClassSetter {
     private final CompilerDiagnosticCollector diagnostics;
     private final String packageName;          // package name of the file we are looking at
     private final OrdinaryCompilationUnit ocu; // we do not care about ModularCompilationUnit (for now?)
-
     private final ImportHandler ih;            // keep track of the imports we have
+
+    // cache so we do not have to recalculate them, key is MethodDeclarationBase or Constructor or Class
+    private final Map<Object, EnclosingTypes> enclosureCache = new HashMap<> ();
 
     /** High level description:
      *  For each class:
@@ -194,30 +196,34 @@ public class ClassSetter {
 	EnclosingTypes ett = registerTypeParameters (et, td.getTypeParameters ());
 	td.getMethods ().forEach (m -> setMethodTypes (ett, m));
 	td.getConstructors ().forEach (c -> setConstructorTypes (ett, c));
+	enclosureCache.put (td, ett);
     }
 
-    private void setMethodTypes (EnclosingTypes bt, MethodDeclarationBase md) {
-	checkAnnotations (bt, md.getAnnotations ());
-	EnclosingTypes et = registerTypeParameters (bt, md.getTypeParameters ());
+    private void setMethodTypes (EnclosingTypes et, MethodDeclarationBase md) {
+	checkAnnotations (et, md.getAnnotations ());
+	et = registerTypeParameters (et, md.getTypeParameters ());
 	setType (et, md.getResult ());
 	ReceiverParameter rp = md.getReceiverParameter ();
 	if (rp != null) {
 	    checkAnnotations (et, rp.getAnnotations ());
 	    setType (et, rp.getType ());
 	}
-	EnclosingTypes rt = setFormalParameterListTypes (et, md.getResult (), md.getFormalParameterList (), md.isStatic ());
+	et = setFormalParameterListTypes (et, md.getResult (), md.getFormalParameterList (), md.isStatic ());
 
 	Throws t = md.getThrows ();
 	if (t != null) {
 	    ExceptionTypeList exceptions = t.getExceptions ();
-	    setTypes (rt, exceptions.get ());
+	    setTypes (et, exceptions.get ());
 	}
+
+	enclosureCache.put (md, et);
     }
 
-    private void setConstructorTypes (EnclosingTypes bt, ConstructorDeclarationBase cdb) {
-	checkAnnotations (bt, cdb.getAnnotations ());
-	EnclosingTypes et = registerTypeParameters (bt, cdb.getTypeParameters ());
-	setFormalParameterListTypes (et, null, cdb.getFormalParameterList (), false);
+    private void setConstructorTypes (EnclosingTypes et, ConstructorDeclarationBase cdb) {
+	checkAnnotations (et, cdb.getAnnotations ());
+	et = registerTypeParameters (et, cdb.getTypeParameters ());
+	et = setFormalParameterListTypes (et, null, cdb.getFormalParameterList (), false);
+	enclosureCache.put (cdb, et);
     }
 
     private EnclosingTypes setFormalParameterListTypes (EnclosingTypes et, ParseTreeNode result, FormalParameterList args, boolean isStatic) {
@@ -249,20 +255,16 @@ public class ClassSetter {
 	forAllTypes (this::checkMethodBodies);
     }
 
-    // TODO: qwerty: remove copy paste from registerMethods/setMethodTypes
-    // We should just keep the EnclosingTypes around so we can easily just call check the method bodies.
     private void checkMethodBodies (TypeDeclaration td, EnclosingTypes et) {
-	EnclosingTypes ett = registerTypeParameters (et, td.getTypeParameters ());
-	td.getMethods ().forEach (m -> checkMethodBodies (et, m));
-
-	td.getConstructors ().forEach (c -> checkConstructorBodies (ett, c));
+	EnclosingTypes ett = enclosureCache.get (td);
+	td.getMethods ().forEach (m -> checkMethodBodies (m));
+	td.getConstructors ().forEach (c -> checkConstructorBodies (c));
 	td.getInstanceInitializers ().forEach (c -> checkInstanceInitializerBodies (ett, c));
 	td.getStaticInitializers ().forEach (c -> checkStaticInitializerBodies (ett, c));
     }
 
-    private void checkMethodBodies (EnclosingTypes et, MethodDeclarationBase md) {
-	et = registerTypeParameters (et, md.getTypeParameters ());
-	et = setFormalParameterListTypes (et, md.getResult (), md.getFormalParameterList (), md.isStatic ());
+    private void checkMethodBodies (MethodDeclarationBase md) {
+	EnclosingTypes et = enclosureCache.get (md);
 	ParseTreeNode body = md.getMethodBody ();
 	if (body instanceof Block block) {
 	    et = et.enclosingBlock (false);
@@ -272,9 +274,8 @@ public class ClassSetter {
 	}
     }
 
-    private void checkConstructorBodies (EnclosingTypes et, ConstructorDeclarationBase cdb) {
-	et = registerTypeParameters (et, cdb.getTypeParameters ());
-	et = setFormalParameterListTypes (et, null, cdb.getFormalParameterList (), false);
+    private void checkConstructorBodies (ConstructorDeclarationBase cdb) {
+	EnclosingTypes et = enclosureCache.get (cdb);
 	et = et.enclosingBlock (false);
 	setTypesForMethodStatement (et, cdb.getStatements ());
     }
