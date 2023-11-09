@@ -28,7 +28,6 @@ public class TestFullCompilation {
     private CompilerDiagnosticCollector diagnostics;
     private ClassInformationProvider cip;
 
-    // TODO: qwerty remove copy paset from TestClassSetter.java
     @BeforeClass
     public void createTools () throws IOException {
 	grammar = new Grammar ();
