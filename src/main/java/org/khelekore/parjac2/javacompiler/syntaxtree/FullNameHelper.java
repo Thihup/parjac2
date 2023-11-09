@@ -14,6 +14,8 @@ import org.khelekore.parjac2.javacompiler.StringLiteral;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.khelekore.parjac2.parsetree.TokenNode;
 
+import io.github.dmlloyd.classfile.TypeKind;
+
 import static org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler.PrimitiveType;
 import static org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler.*;
 
@@ -21,6 +23,7 @@ public class FullNameHelper {
 
     private static final Map<String, PrimitiveType> SIGNATURE_LOOKUP = new HashMap<> ();
     private static final Map<PrimitiveType, List<PrimitiveType>> ALLOWED_UPCASTS = new HashMap<> ();
+    private static final Map<FullNameHandler, TypeKind> toTypeKind = new HashMap<> ();
 
     static {
 	SIGNATURE_LOOKUP.put (BYTE.signature (), BYTE);
@@ -38,6 +41,16 @@ public class FullNameHelper {
 	ALLOWED_UPCASTS.put (CHAR, Arrays.asList (INT, LONG, FLOAT, DOUBLE));
 	ALLOWED_UPCASTS.put (INT, Arrays.asList (LONG, FLOAT, DOUBLE));
 	ALLOWED_UPCASTS.put (FLOAT, Arrays.asList (DOUBLE));
+
+	toTypeKind.put (BYTE, TypeKind.ByteType);
+	toTypeKind.put (SHORT, TypeKind.ShortType);
+	toTypeKind.put (CHAR, TypeKind.CharType);
+	toTypeKind.put (INT, TypeKind.IntType);
+	toTypeKind.put (LONG, TypeKind.LongType);
+	toTypeKind.put (FLOAT, TypeKind.FloatType);
+	toTypeKind.put (DOUBLE, TypeKind.DoubleType);
+	toTypeKind.put (BOOLEAN, TypeKind.BooleanType);
+	toTypeKind.put (VOID, TypeKind.VoidType);
     };
 
     public static PrimitiveType getPrimitiveType (String signature) {
@@ -101,5 +114,14 @@ public class FullNameHelper {
     public static boolean mayAutoCastPrimitives (FullNameHandler from, FullNameHandler to) {
 	List<PrimitiveType> ls = ALLOWED_UPCASTS.get (from);
 	return ls != null && ls.contains (to);
+    }
+
+    public static TypeKind getTypeKind (FullNameHandler fn) {
+	if (fn == FullNameHandler.NULL || fn.getType () == FullNameHandler.Type.OBJECT)
+	    return TypeKind.ReferenceType;
+	TypeKind tk = toTypeKind.get (fn);
+	if (tk == null)
+	    throw new NullPointerException ("Unable to find TypeKind for: " + fn.getFullDotName ());
+	return tk;
     }
 }

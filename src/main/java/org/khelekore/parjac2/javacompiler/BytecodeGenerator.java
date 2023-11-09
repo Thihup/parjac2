@@ -252,7 +252,7 @@ public class BytecodeGenerator {
 	td.getMethods ().forEach (m -> {
 		MethodSignatureHolder msh = getMethodSignature (m);
 		int flags = m.flags ();
-		TypeKind returnType = getTypeKind (m.result ());
+		TypeKind returnType = FullNameHelper.getTypeKind (m.result ());
 		ParseTreeNode body = m.getMethodBody ();
 		classBuilder.withMethod (m.name (), msh.desc, flags, mb -> {
 			if (!m.isAbstract ()) {
@@ -372,30 +372,18 @@ public class BytecodeGenerator {
 
     private void handleReturn (CodeBuilder cb, Deque<Object> partsToHandle, ReturnStatement r) {
 	FullNameHandler fm = r.type ();
-	TypeKind tkm = getTypeKind (fm);
+	TypeKind tkm = FullNameHelper.getTypeKind (fm);
 	Handler h = b -> b.returnInstruction (tkm);
 	partsToHandle.addFirst (h);
 	ParseTreeNode p = r.expression ();
 	FullNameHandler fr = p == null ? FullNameHandler.VOID : FullNameHelper.type (p);
 	if (fr.getType () == FullNameHandler.Type.PRIMITIVE && !fm.equals (fr)) {
-	    TypeKind tkr = getTypeKind (fr);
+	    TypeKind tkr = FullNameHelper.getTypeKind (fr);
 	    h = b -> addPrimitiveCast (cb, tkr, tkm);
 	    partsToHandle.addFirst (h);
 	}
 	if (p != null)
 	    partsToHandle.addFirst (p);
-    }
-
-    private TypeKind getTypeKind (FullNameHandler fn) {
-	if (fn == FullNameHandler.NULL || fn.getType () == FullNameHandler.Type.OBJECT)
-	    return TypeKind.ReferenceType;
-	else if (fn == FullNameHandler.VOID)
-	    return TypeKind.VoidType;
-	else if (fn == FullNameHandler.DOUBLE)
-	    return TypeKind.DoubleType;
-	else if (fn == FullNameHandler.FLOAT)
-	    return TypeKind.FloatType;
-	return TypeKind.IntType;
     }
 
     private void addPrimitiveCast (CodeBuilder cb, TypeKind from, TypeKind to) {
