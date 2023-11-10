@@ -59,7 +59,11 @@ public class CompactConstructorDeclaration extends SyntaxTreeNode implements Con
 	return null;  // TODO: not sure how to deal with this, should probably return RecordComponentList
     }
 
-    @Override public List<ParseTreeNode> getStatements () {
-	return body.getStatements ();
+    @Override public List<ParseTreeNode> statements () {
+	return body.statements ();
+    }
+
+    @Override public ConstructorBody body () {
+	return body;
     }
 }

@@ -189,20 +189,20 @@ public interface FullNameHandler {
 
     public record ArrayHandler (FullNameHandler fn, int rank) implements FullNameHandler {
 	@Override public String getFullDotName () {
-	    return "[" + fn.getFullDotName ();
+	    return "[".repeat (rank) + fn.getFullDotName ();
 	}
 
 	@Override public String getFullDollarName () {
-	    return "[" + fn.getFullDollarName ();
+	    return "[".repeat (rank) + fn.getFullDollarName ();
 	}
 
 	@Override public String getSlashName () {
-	    return "[" + fn.getSlashName ();
+	    return "[".repeat (rank) + fn.getSlashName ();
 	}
 
 	@Override public String getSignature (GenericTypeHelper gth, ClassInformationProvider cip,
 					      boolean shortForm, TypeArguments ta) {
-	    return "[" + fn.getSignature (gth, cip, shortForm, ta);
+	    return "[".repeat (rank) + fn.getSignature (gth, cip, shortForm, ta);
 	}
     }
 }

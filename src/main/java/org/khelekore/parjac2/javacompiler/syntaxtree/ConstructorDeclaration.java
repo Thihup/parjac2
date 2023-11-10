@@ -88,7 +88,11 @@ public class ConstructorDeclaration extends FlaggedBase implements ConstructorDe
 	return declarator.getFormalParameterList ();
     }
 
-    @Override public List<ParseTreeNode> getStatements () {
-	return body.getStatements ();
+    @Override public List<ParseTreeNode> statements () {
+	return body.statements ();
+    }
+
+    @Override public ConstructorBody body () {
+	return body;
     }
 }

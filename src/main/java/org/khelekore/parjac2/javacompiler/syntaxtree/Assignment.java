@@ -27,12 +27,24 @@ public class Assignment extends SyntaxTreeNode {
 	this.right = right;
     }
 
-    @Override public Object getValue() {
+    @Override public Object getValue () {
 	return left + " " + operator.getName () + " " + right.getValue ();
     }
 
     @Override public void visitChildNodes (NodeVisitor v) {
 	v.accept (left);
 	v.accept (right);
+    }
+
+    public FullNameHandler fullName () {
+	return FullNameHelper.type (left);
+    }
+
+    public ParseTreeNode lhs () {
+	return left;
+    }
+
+    public ParseTreeNode rhs () {
+	return right;
     }
 }

@@ -17,9 +17,11 @@ public interface ConstructorDeclarationBase {
 
     String getName ();
 
-    List<ParseTreeNode> getStatements ();
+    List<ParseTreeNode> statements ();
 
     ReceiverParameter getReceiverParameter ();
 
     FormalParameterList getFormalParameterList ();
+
+    ConstructorBody body ();
 }

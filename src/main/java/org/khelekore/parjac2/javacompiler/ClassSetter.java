@@ -277,7 +277,7 @@ public class ClassSetter {
     private void checkConstructorBodies (ConstructorDeclarationBase cdb) {
 	EnclosingTypes et = enclosureCache.get (cdb);
 	et = et.enclosingBlock (false);
-	setTypesForMethodStatement (et, cdb.getStatements ());
+	setTypesForMethodStatement (et, cdb.statements ());
     }
 
     private void checkInstanceInitializerBodies (EnclosingTypes et, ParseTreeNode p) {

@@ -232,11 +232,7 @@ public class BytecodeGenerator {
 		MethodSignatureHolder msh = getMethodSignature (c);
 		classBuilder.withMethod (ConstantDescs.INIT_NAME, msh.desc, flags, mb -> {
 			mb.withCode (cb -> {
-				cb.lineNumber (c.position ().getLineNumber ()); // not correct, but at least somewhat close
-				cb.aload (0);
-				ClassDesc owner = getClassDesc (td.getSuperClass ());
-				cb.invokespecial (owner, ConstantDescs.INIT_NAME, msh.desc);
-				cb.return_ ();
+				createConstructorContents (cb, td, c, msh);
 			    });
 			if (msh.signature != null)
 			    mb.with (SignatureAttribute.of (MethodSignature.parseFrom (msh.signature)));
@@ -248,6 +244,29 @@ public class BytecodeGenerator {
 	return getMethodSignature (c.getTypeParameters (), c.getFormalParameterList (), VOID_RETURN);
     }
 
+    private void createConstructorContents (CodeBuilder cb, TypeDeclaration td, ConstructorDeclarationBase cdb, MethodSignatureHolder msh) {
+        ConstructorBody body = cdb.body ();
+	List<ParseTreeNode> statements = body.statements ();
+	if (statements.isEmpty () || !firstIsSuperOrThis (statements)) {
+	    addImplicitSuper (cb, cdb);
+	}
+	// TODO: add initializer blocks
+	handleStatements (cb, td, statements);
+	cb.return_ ();
+    }
+
+    private boolean firstIsSuperOrThis (List<ParseTreeNode> statements) {
+	ParseTreeNode p = statements.get (0);
+	return p instanceof ExplicitConstructorInvocation;
+    }
+
+    private void addImplicitSuper (CodeBuilder cb, ConstructorDeclarationBase cdb) {
+	cb.lineNumber (cdb.position ().getLineNumber ()); // about what we want
+	cb.aload (0);
+	ClassDesc owner = getClassDesc (td.getSuperClass ());
+	cb.invokespecial (owner, ConstantDescs.INIT_NAME, MethodTypeDesc.ofDescriptor ("()V"));
+    }
+
     private void addMethods (ClassBuilder classBuilder, TypeDeclaration td) {
 	td.getMethods ().forEach (m -> {
 		MethodSignatureHolder msh = getMethodSignature (m);
@@ -257,7 +276,7 @@ public class BytecodeGenerator {
 		classBuilder.withMethod (m.name (), msh.desc, flags, mb -> {
 			if (!m.isAbstract ()) {
 			    mb.withCode (cb -> {
-				    addMethodContent (cb, (Block)body, returnType);
+				    addMethodContent (cb, td, (Block)body, returnType);
 				});
 			}
 			if (msh.signature != null)
@@ -266,10 +285,10 @@ public class BytecodeGenerator {
 	    });
     }
 
-    private void addMethodContent (CodeBuilder cb, Block body, TypeKind returnType) {
+    private void addMethodContent (CodeBuilder cb, TypeDeclaration td, Block body, TypeKind returnType) {
 	List<ParseTreeNode> statements = body.get ();
 	boolean needReturn = !endsWithReturn (statements);
-	handleStatements (cb, statements);
+	handleStatements (cb, td, statements);
 	if (needReturn)
 	    cb.returnInstruction (returnType);
     }
@@ -279,33 +298,35 @@ public class BytecodeGenerator {
 	return parts.size () > 0 && parts.get (parts.size () - 1) instanceof ReturnStatement;
     }
 
-    private void handleStatements (CodeBuilder cb, ParseTreeNode statement) {
-	handleStatements (cb, List.of (statement));
+    private void handleStatements (CodeBuilder cb, TypeDeclaration td, ParseTreeNode statement) {
+	handleStatements (cb, td, List.of (statement));
     }
 
-    private void handleStatements (CodeBuilder cb, List<ParseTreeNode> statements) {
+    private void handleStatements (CodeBuilder cb, TypeDeclaration td, List<ParseTreeNode> statements) {
 	Deque<Object> partsToHandle = new ArrayDeque<> ();
 	partsToHandle.addAll (statements);
 	while (!partsToHandle.isEmpty ()) {
-	    handleStatement (cb, partsToHandle, partsToHandle.removeFirst ());
+	    handleStatement (cb, td, partsToHandle, partsToHandle.removeFirst ());
 	}
     }
 
-    private void handleStatement (CodeBuilder cb, Deque<Object> partsToHandle, Object p) {
+    private void handleStatement (CodeBuilder cb, TypeDeclaration td, Deque<Object> partsToHandle, Object p) {
 	//System.err.println ("looking at: " + p + ", " + p.getClass ().getName ());
 	switch (p) {
 	case Handler h -> h.run (cb);
 	case ExpressionName e -> runParts (partsToHandle, e.replaced ());
-	case FieldAccess fa -> fieldAccess (cb, fa);
+	case FieldAccess fa -> fieldAccess (cb, td, fa);
 	case MethodInvocation mi -> methodInvocation (cb, partsToHandle, mi);
 	case ReturnStatement r -> handleReturn (cb, partsToHandle, r);
 	case UnaryExpression u -> handleUnaryExpression (cb, partsToHandle, u);
 	case TwoPartExpression tp -> handleTwoPartExpression (cb, partsToHandle, tp);
-	case Ternary t -> handleTernary (cb, partsToHandle, t);
-	case IfThenStatement ifts -> handleIf (cb, partsToHandle, ifts);
+	case Ternary t -> handleTernary (cb, td, partsToHandle, t);
+	case IfThenStatement ifts -> handleIf (cb, td, partsToHandle, ifts);
+	case Assignment a -> handleAssignment (cb, td, partsToHandle, a);
 	case StringLiteral l -> cb.ldc (l.getValue ());
 	case IntLiteral i -> handleInt (cb, i);
 	case DoubleLiteral d -> handleDouble (cb, d);
+	case ThisPrimary t -> cb.aload (cb.receiverSlot ());
 	case TokenNode t -> handleToken (cb, t);
 	case ParseTreeNode n -> addChildren (partsToHandle, n);
 	default -> throw new IllegalArgumentException ("Unknown type: " + p + ", " + p.getClass ().getName ());
@@ -316,7 +337,7 @@ public class BytecodeGenerator {
 	void run (CodeBuilder cb);
     }
 
-    private void fieldAccess (CodeBuilder cb, FieldAccess fa) {
+    private void fieldAccess (CodeBuilder cb, TypeDeclaration td, FieldAccess fa) {
 	cb.lineNumber (fa.position ().getLineNumber ()); // should be good enough
 	ParseTreeNode from = fa.from ();
 	if (from != null) {
@@ -330,7 +351,10 @@ public class BytecodeGenerator {
 	    if (vi instanceof FormalParameterBase fp) {
 		loadParameter (cb, fp);
 	    } else {
-		cb.iload (0); // TODO: get correct slot
+		cb.aload (cb.receiverSlot ());
+		ClassDesc owner = getClassDesc (cip.getFullName (td));
+		ClassDesc type = getClassDesc (fa.getFullName ());
+		cb.getfield (owner, vi.name (), type);
 	    }
 	}
     }
@@ -340,10 +364,10 @@ public class BytecodeGenerator {
 	FullNameHandler type = FullNameHelper.type (fpb.type ());
 	if (type == FullNameHandler.INT || type == FullNameHandler.BOOLEAN)
 	    cb.iload (slot);
-	else if (type == FullNameHandler.DOUBLE)
-	    cb.dload (slot);
 	else if (type == FullNameHandler.LONG)
 	    cb.lload (slot);
+	else if (type == FullNameHandler.DOUBLE)
+	    cb.dload (slot);
 	else if (type == FullNameHandler.FLOAT)
 	    cb.fload (slot);
 	else  // TODO: more types
@@ -456,19 +480,47 @@ public class BytecodeGenerator {
 	throw new IllegalStateException ("Unhandled type: " + fn);
     }
 
-    private void handleTernary (CodeBuilder cb, Deque<Object> partsToHandle, Ternary t) {
-	Handler h = c -> c.ifThenElse (x -> handleStatements (x, t.thenPart ()), x -> handleStatements (x, t.elsePart ()));
+    private void handleTernary (CodeBuilder cb, TypeDeclaration td, Deque<Object> partsToHandle, Ternary t) {
+	Handler h = c -> c.ifThenElse (x -> handleStatements (x, td, t.thenPart ()), x -> handleStatements (x, td, t.elsePart ()));
 	runParts (partsToHandle, t.test (), h);
     }
 
-    private void handleIf (CodeBuilder cb, Deque<Object> partsToHandle, IfThenStatement i) {
+    private void handleIf (CodeBuilder cb, TypeDeclaration td, Deque<Object> partsToHandle, IfThenStatement i) {
 	Handler h;
 	if (i.hasElse ()) {
-	    h = c -> c.ifThenElse (x -> handleStatements (x, i.thenPart ()), x -> handleStatements (x, i.elsePart ()));
+	    h = c -> c.ifThenElse (x -> handleStatements (x, td, i.thenPart ()), x -> handleStatements (x, td, i.elsePart ()));
 	} else {
-	    h = c -> c.ifThen (x -> handleStatements (x, i.thenPart ()));
+	    h = c -> c.ifThen (x -> handleStatements (x, td, i.thenPart ()));
 	}
 	runParts (partsToHandle, i.test (), h);
+    }
+
+    private void handleAssignment (CodeBuilder cb, TypeDeclaration td, Deque<Object> partsToHandle, Assignment a) {
+	ClassDesc owner = getClassDesc (cip.getFullName (td));
+
+	ParseTreeNode p = a.lhs ();
+	if (p instanceof DottedName dn)
+	    p = dn.replaced ();
+	if (p instanceof FieldAccess fa) {
+	    // from, value, putField
+	    // TODO: need to handle from better.
+	    ParseTreeNode from = fa.from ();
+	    if (from != null)
+		handleStatements (cb, td, from);
+	    else // this
+		cb.aload (cb.receiverSlot ());
+	    handleStatements (cb, td, a.rhs ());
+	    ClassDesc type = getClassDesc (a.fullName ());
+	    cb.putfield (owner, fa.name (), type);
+	} else if (p instanceof ArrayAccess aa) {
+	    // field, slot, value, arraystore
+	    TypeKind kind = FullNameHelper.getTypeKind (FullNameHelper.type (p));
+	    handleStatements (cb, td, List.of (aa.from (), aa.slot (), a.rhs ()));
+	    cb.arrayStoreInstruction (kind);
+	} else {
+	    throw new IllegalStateException ("Unhandled assignment type: " + p + ", " + p.getClass ().getName () +
+					     ", " + p.position ().toShortString ());
+	}
     }
 
     private void handleInt (CodeBuilder cb, IntLiteral il) {
@@ -573,6 +625,17 @@ public class BytecodeGenerator {
 	default -> throw new IllegalStateException ("BytecodeGenerator: Unhandled field type: " + type.getClass ().getName () + ": " + type);
 	};
 	return desc;
+    }
+
+    private ClassDesc getClassDesc (FullNameHandler fn) {
+	if (fn.isArray ()) {
+	    FullNameHandler.ArrayHandler a = (FullNameHandler.ArrayHandler)fn;
+	    return getClassDesc (a.fn ()).arrayType ();
+	}
+
+	if (fn.isPrimitive ())
+	    return ClassDesc.ofDescriptor (((FullNameHandler.PrimitiveType)fn).getSignature ());
+	return ClassDesc.of (fn.getFullDollarName ());
     }
 
     private ClassDesc getClassDesc (TokenNode tn) {

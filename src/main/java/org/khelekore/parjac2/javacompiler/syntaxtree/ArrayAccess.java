@@ -21,6 +21,14 @@ public class ArrayAccess extends SyntaxTreeNode {
 	return ah.fn ();
     }
 
+    public ParseTreeNode from () {
+	return from;
+    }
+
+    public ParseTreeNode slot () {
+	return expression;
+    }
+
     @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	sb.append (from).append ("[").append (expression).append ("]");

@@ -1,6 +1,7 @@
 package org.khelekore.parjac2.javacompiler;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.nio.CharBuffer;
 import java.nio.file.Path;
@@ -209,6 +210,27 @@ public class TestFullCompilation {
 	double r = (Double)m.invoke (null, x, y);
 	double expected = x + y;
 	assert r == expected : "Got wrong value back, expected: " + expected + ", but got: " + r;
+    }
+
+    @Test
+    public void testConstructorTakingMultiple () throws ReflectiveOperationException {
+;
+	Class<?> c = getFirstClass ("D", "public class D { public D (int x, int y, int z) { }}");
+	Constructor<?> ctr = c.getConstructor (Integer.TYPE, Integer.TYPE, Integer.TYPE);
+	int x = 3;
+	Object o = ctr.newInstance (x, x, x);
+	assert o != null : "Expected an instance";
+    }
+
+    @Test
+    public void testConstructorAndGetter () throws ReflectiveOperationException {
+	Class<?> c = getFirstClass ("C", "public class C { private int x; public C (int x) { this.x = x; } public int x () { return x; }}");
+	Constructor<?> ctr = c.getConstructor (Integer.TYPE);
+	int x = 3;
+	Object o = ctr.newInstance (x);
+	Method m = c.getMethod ("x");
+	int r = (Integer)m.invoke (o);
+	assert r == x : "Expected to get the same value back, not: " + r;
     }
 
     private Method getMethod (String className, String text, String methodName, Class<?> ... types) throws ReflectiveOperationException {
