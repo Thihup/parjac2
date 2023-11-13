@@ -7,7 +7,7 @@ import java.util.Map;
 
 import org.khelekore.parjac2.javacompiler.Context;
 import org.khelekore.parjac2.javacompiler.FieldInfo;
-import org.khelekore.parjac2.javacompiler.Identifier;
+import org.khelekore.parjac2.javacompiler.Flags;
 import org.khelekore.parjac2.javacompiler.JavaTokens;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
@@ -19,7 +19,7 @@ public class ClassBody extends SyntaxTreeNode {
 
     // either plain blocks or field assignments
     protected List<SyntaxTreeNode> instanceInitializers = new ArrayList<> ();
-    protected List<StaticInitializer> staticInitializers = new ArrayList<> ();
+    protected List<SyntaxTreeNode> staticInitializers = new ArrayList<> ();
     protected List<ConstructorDeclaration> constructorDeclarations = new ArrayList<> ();
 
     // Change this, currently FieldDeclaration have VariableDeclaratorList in them, we want a list of fields.
@@ -58,9 +58,13 @@ public class ClassBody extends SyntaxTreeNode {
 	for (VariableDeclarator vd : ls) {
 	    String name = vd.getName ();
 	    if (vd.hasInitializer ()) {
-		instanceInitializers.add (new Assignment (new Identifier (javaTokens.IDENTIFIER, name, vd.position ()),
-							  javaTokens.EQUAL,
-							  vd.getInitializer ()));
+		Assignment ass = new Assignment (new ExpressionName (vd.position (), name),
+						 javaTokens.EQUAL,
+						 vd.initializer ());
+		if (Flags.isStatic (fd.flags ()))
+		    staticInitializers.add (ass);
+		else
+		    instanceInitializers.add (ass);
 	    }
 	}
     }
@@ -105,7 +109,7 @@ public class ClassBody extends SyntaxTreeNode {
 	return instanceInitializers;
     }
 
-    public List<StaticInitializer> getStaticInitializers () {
+    public List<SyntaxTreeNode> getStaticInitializers () {
 	return staticInitializers;
     }
 }

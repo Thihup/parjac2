@@ -87,7 +87,7 @@ public class UnqualifiedClassInstanceCreationExpression extends AnonymousClass {
 	return body.getInstanceInitializers ();
     }
 
-    @Override public List<StaticInitializer> getStaticInitializers () {
+    @Override public List<SyntaxTreeNode> getStaticInitializers () {
 	return body.getStaticInitializers ();
     }
 

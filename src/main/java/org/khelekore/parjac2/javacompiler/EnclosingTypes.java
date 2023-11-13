@@ -109,7 +109,7 @@ public record EnclosingTypes (EnclosingTypes previous, Enclosure<?> enclosure)
 		locals = new HashMap<> ();
 	    for (VariableDeclarator vd : lv.getDeclarators ()) {
 		String name = vd.getName ();
-		VariableInfo vi = new FieldInfo (name, vd.position (), Flags.ACC_PUBLIC, lv.getType (), vd.rank ());
+		VariableInfo vi = new LocalVariable (name, vd, lv.getType ());
 		locals.put (name, vi);
 	    }
 	}

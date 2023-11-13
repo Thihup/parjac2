@@ -88,31 +88,31 @@ public class BytecodeGenerator {
 
     private byte[] generateClass (NormalClassDeclaration c) {
 	String signature = getClassSignature (c.getTypeParameters (), c.getSuperClass (), c.getSuperInterfaces ());
-	return generateClass (c, ImplicitClassFlags.CLASS_FLAGS, signature,
+	return generateClass (ImplicitClassFlags.CLASS_FLAGS, signature,
 			      c.getSuperClass (), c.getSuperInterfaces ());
     }
 
     private byte[] generateClass (EnumDeclaration e) {
 	String signature = "Ljava/lang/Enum<L" + name.getSlashName () + ";>;";
-	return generateClass (e, ImplicitClassFlags.ENUM_FLAGS, signature,
+	return generateClass (ImplicitClassFlags.ENUM_FLAGS, signature,
 			      enumClassType, List.of ());
     }
 
     private byte[] generateClass (RecordDeclaration r) {
 	String signature = getClassSignature (r.getTypeParameters (), r.getSuperClass (), r.getSuperInterfaces ());
-	return generateClass (r, ImplicitClassFlags.RECORD_FLAGS, signature,
+	return generateClass (ImplicitClassFlags.RECORD_FLAGS, signature,
 			      recordClassType, List.of ());
     }
 
     private byte[] generateInterface (NormalInterfaceDeclaration i) {
 	String signature = getClassSignature (i.getTypeParameters (), null, i.getExtendsInterfaces ());
-	return generateClass (i, ImplicitClassFlags.INTERFACE_FLAGS, signature,
+	return generateClass (ImplicitClassFlags.INTERFACE_FLAGS, signature,
 			      objectClassType, i.getExtendsInterfaces ());
     }
 
     private byte[] generateInterface (AnnotationTypeDeclaration at) {
 	//List<String> superInterfaces = List.of ("java.lang.annotation.Annotation");
-	return generateClass (at, ImplicitClassFlags.ANNOTATION_FLAGS, null,
+	return generateClass (ImplicitClassFlags.ANNOTATION_FLAGS, null,
 			      objectClassType, List.of ()); // TODO: use superInterfaces
     }
 
@@ -120,12 +120,12 @@ public class BytecodeGenerator {
 	// TODO: extend the enum
 	EnumDeclaration ed = ec.getParent ();
 	FullNameHandler parentName = cip.getFullName (ed);
-	return generateClass (ec, ImplicitClassFlags.ENUM_CONSTANT_FLAGS, null,
+	return generateClass (ImplicitClassFlags.ENUM_CONSTANT_FLAGS, null,
 			      new ClassType (parentName), List.of ());
     }
 
     private byte[] generateAnonymousClass (UnqualifiedClassInstanceCreationExpression ac) {
-	return generateClass (ac, ImplicitClassFlags.ANONYMOUS_CLASS_FLAGS, null,
+	return generateClass (ImplicitClassFlags.ANONYMOUS_CLASS_FLAGS, null,
 			      ac.getSuperClass (), List.of ());
     }
 
@@ -160,8 +160,7 @@ public class BytecodeGenerator {
 	return ct != null && (ct.getFullNameHandler ().hasGenericType () || ct.getTypeParameter () != null);
     }
 
-    private byte[] generateClass (TypeDeclaration tdt, ImplicitClassFlags icf,
-				  String signature, ClassType superType, List<ClassType> superInterfaces) {
+    private byte[] generateClass (ImplicitClassFlags icf, String signature, ClassType superType, List<ClassType> superInterfaces) {
 	byte[] b = Classfile.of().build (ClassDesc.of (name.getFullDollarName ()), classBuilder -> {
 		classBuilder.withVersion (Classfile.JAVA_21_VERSION, 0);  // possible minor: PREVIEW_MINOR_VERSION
 		classBuilder.withFlags (td.flags () | icf.flags);
@@ -171,6 +170,7 @@ public class BytecodeGenerator {
 		addFields (classBuilder, td);
 		addConstructors (classBuilder, td);
 		addMethods (classBuilder, td);
+		addStaticBlocks (classBuilder, td);
 
 		/* TODO: check if we want to do this instead
 		classBuilder.with (SignatureAttribute.of (ClassSignature.of (typeParameters,
@@ -184,7 +184,7 @@ public class BytecodeGenerator {
 		    classBuilder.with (SourceFileAttribute.of (origin.getFileName ().toString ()));
 		}
 
-		addInnerClassAttributes (classBuilder, tdt);
+		addInnerClassAttributes (classBuilder);
 	    });
 	return b;
     }
@@ -203,7 +203,7 @@ public class BytecodeGenerator {
     private void addFields (ClassBuilder classBuilder, TypeDeclaration td) {
 	td.getFields ().forEach ((name, info) -> {
 		ParseTreeNode type = info.type ();
-		ClassDesc desc = getParseTreeClassDesc (type);
+		ClassDesc desc = ClassDescUtils.getParseTreeClassDesc (type);
 		int arrayRank = info.arrayRank ();
 		if (arrayRank > 0)
 		    desc = desc.arrayType (arrayRank);
@@ -232,7 +232,7 @@ public class BytecodeGenerator {
 		MethodSignatureHolder msh = getMethodSignature (c);
 		classBuilder.withMethod (ConstantDescs.INIT_NAME, msh.desc, flags, mb -> {
 			mb.withCode (cb -> {
-				createConstructorContents (cb, td, c, msh);
+				createConstructorContents (cb, c, msh);
 			    });
 			if (msh.signature != null)
 			    mb.with (SignatureAttribute.of (MethodSignature.parseFrom (msh.signature)));
@@ -244,26 +244,37 @@ public class BytecodeGenerator {
 	return getMethodSignature (c.getTypeParameters (), c.getFormalParameterList (), VOID_RETURN);
     }
 
-    private void createConstructorContents (CodeBuilder cb, TypeDeclaration td, ConstructorDeclarationBase cdb, MethodSignatureHolder msh) {
+    private void createConstructorContents (CodeBuilder cb, ConstructorDeclarationBase cdb, MethodSignatureHolder msh) {
         ConstructorBody body = cdb.body ();
 	List<ParseTreeNode> statements = body.statements ();
-	if (statements.isEmpty () || !firstIsSuperOrThis (statements)) {
-	    addImplicitSuper (cb, cdb);
+	boolean explicitInvocation = false;
+	if (!statements.isEmpty ()) {
+	    ParseTreeNode p = statements.get (0);
+	    if (isSuperOrThis (p)) {
+		handleStatements (cb, p);
+		explicitInvocation = true;
+		statements = statements.subList (1, statements.size ());
+	    }
 	}
-	// TODO: add initializer blocks
-	handleStatements (cb, td, statements);
+	if (!explicitInvocation)
+	    addImplicitSuper (cb, cdb);
+
+	List<SyntaxTreeNode> initializers = td.getInstanceInitializers ();
+	if (initializers != null) {
+	    handleStatements (cb, initializers);
+	}
+	handleStatements (cb, statements);
 	cb.return_ ();
     }
 
-    private boolean firstIsSuperOrThis (List<ParseTreeNode> statements) {
-	ParseTreeNode p = statements.get (0);
+    private boolean isSuperOrThis (ParseTreeNode p) {
 	return p instanceof ExplicitConstructorInvocation;
     }
 
     private void addImplicitSuper (CodeBuilder cb, ConstructorDeclarationBase cdb) {
 	cb.lineNumber (cdb.position ().getLineNumber ()); // about what we want
 	cb.aload (0);
-	ClassDesc owner = getClassDesc (td.getSuperClass ());
+	ClassDesc owner = ClassDescUtils.getClassDesc (td.getSuperClass ());
 	cb.invokespecial (owner, ConstantDescs.INIT_NAME, MethodTypeDesc.ofDescriptor ("()V"));
     }
 
@@ -276,7 +287,7 @@ public class BytecodeGenerator {
 		classBuilder.withMethod (m.name (), msh.desc, flags, mb -> {
 			if (!m.isAbstract ()) {
 			    mb.withCode (cb -> {
-				    addMethodContent (cb, td, (Block)body, returnType);
+				    addMethodContent (cb, (Block)body, returnType);
 				});
 			}
 			if (msh.signature != null)
@@ -285,10 +296,24 @@ public class BytecodeGenerator {
 	    });
     }
 
-    private void addMethodContent (CodeBuilder cb, TypeDeclaration td, Block body, TypeKind returnType) {
+    private void addStaticBlocks (ClassBuilder classBuilder, TypeDeclaration td) {
+	List<SyntaxTreeNode> ls = td.getStaticInitializers ();
+	if (ls.isEmpty ())
+	    return;
+
+	classBuilder.withMethod ("<clinit>", MethodTypeDesc.ofDescriptor ("()V"), Flags.ACC_STATIC, mb -> {
+		for (SyntaxTreeNode si : ls)
+		    mb.withCode (cb -> {
+			    handleStatements (cb, si);
+			    cb.return_ ();
+			});
+	    });
+    }
+
+    private void addMethodContent (CodeBuilder cb, Block body, TypeKind returnType) {
 	List<ParseTreeNode> statements = body.get ();
 	boolean needReturn = !endsWithReturn (statements);
-	handleStatements (cb, td, statements);
+	handleStatements (cb, statements);
 	if (needReturn)
 	    cb.returnInstruction (returnType);
     }
@@ -298,11 +323,11 @@ public class BytecodeGenerator {
 	return parts.size () > 0 && parts.get (parts.size () - 1) instanceof ReturnStatement;
     }
 
-    private void handleStatements (CodeBuilder cb, TypeDeclaration td, ParseTreeNode statement) {
-	handleStatements (cb, td, List.of (statement));
+    private void handleStatements (CodeBuilder cb, ParseTreeNode statement) {
+	handleStatements (cb, List.of (statement));
     }
 
-    private void handleStatements (CodeBuilder cb, TypeDeclaration td, List<ParseTreeNode> statements) {
+    private void handleStatements (CodeBuilder cb, List<? extends ParseTreeNode> statements) {
 	Deque<Object> partsToHandle = new ArrayDeque<> ();
 	partsToHandle.addAll (statements);
 	while (!partsToHandle.isEmpty ()) {
@@ -315,14 +340,16 @@ public class BytecodeGenerator {
 	switch (p) {
 	case Handler h -> h.run (cb);
 	case ExpressionName e -> runParts (partsToHandle, e.replaced ());
-	case FieldAccess fa -> fieldAccess (cb, td, fa);
+	case FieldAccess fa -> fieldAccess (cb, fa);
 	case MethodInvocation mi -> methodInvocation (cb, partsToHandle, mi);
 	case ReturnStatement r -> handleReturn (cb, partsToHandle, r);
 	case UnaryExpression u -> handleUnaryExpression (cb, partsToHandle, u);
 	case TwoPartExpression tp -> handleTwoPartExpression (cb, partsToHandle, tp);
-	case Ternary t -> handleTernary (cb, td, partsToHandle, t);
-	case IfThenStatement ifts -> handleIf (cb, td, partsToHandle, ifts);
-	case Assignment a -> handleAssignment (cb, td, partsToHandle, a);
+	case Ternary t -> handleTernary (cb, partsToHandle, t);
+	case IfThenStatement ifts -> handleIf (cb, partsToHandle, ifts);
+	case Assignment a -> handleAssignment (cb, partsToHandle, a);
+	case LocalVariableDeclaration lv -> handleLocalVariables (cb, partsToHandle, lv);
+	case PostIncrementExpression pie -> handlePostIncrement (cb, partsToHandle, pie);
 	case StringLiteral l -> cb.ldc (l.getValue ());
 	case IntLiteral i -> handleInt (cb, i);
 	case DoubleLiteral d -> handleDouble (cb, d);
@@ -337,7 +364,7 @@ public class BytecodeGenerator {
 	void run (CodeBuilder cb);
     }
 
-    private void fieldAccess (CodeBuilder cb, TypeDeclaration td, FieldAccess fa) {
+    private void fieldAccess (CodeBuilder cb, FieldAccess fa) {
 	cb.lineNumber (fa.position ().getLineNumber ()); // should be good enough
 	ParseTreeNode from = fa.from ();
 	if (from != null) {
@@ -348,13 +375,16 @@ public class BytecodeGenerator {
 	    cb.getstatic (owner, name, type);
 	} else {
 	    VariableInfo vi = fa.variableInfo ();
-	    if (vi instanceof FormalParameterBase fp) {
-		loadParameter (cb, fp);
-	    } else {
-		cb.aload (cb.receiverSlot ());
-		ClassDesc owner = getClassDesc (cip.getFullName (td));
-		ClassDesc type = getClassDesc (fa.getFullName ());
-		cb.getfield (owner, vi.name (), type);
+	    if (vi.fieldType () == VariableInfo.Type.PARAMETER) {
+		loadParameter (cb, (FormalParameterBase)vi);
+	    } else if (vi.fieldType () == VariableInfo.Type.LOCAL) {
+		LocalVariable lv = (LocalVariable)vi;
+		int slot = lv.vd ().slot ();
+		FullNameHandler fn = FullNameHelper.type (lv.type ());
+		TypeKind kind = FullNameHelper.getTypeKind (fn);
+		cb.loadInstruction (kind, slot);
+	    } else { // field
+		getField (cb, vi);
 	    }
 	}
     }
@@ -423,12 +453,6 @@ public class BytecodeGenerator {
 		handleInt (cb, -value);
 	    }
 	}
-	/* TODO: we might need these as well
-	case javaTokens.INCREMENT
-	case javaTokens.DECREMENT
-	case javaTokens.PLUS
-	case javaTokens.NOT
-	*/
     }
 
     private void handleTwoPartExpression (CodeBuilder cb, Deque<Object> partsToHandle, TwoPartExpression two) {
@@ -480,24 +504,22 @@ public class BytecodeGenerator {
 	throw new IllegalStateException ("Unhandled type: " + fn);
     }
 
-    private void handleTernary (CodeBuilder cb, TypeDeclaration td, Deque<Object> partsToHandle, Ternary t) {
-	Handler h = c -> c.ifThenElse (x -> handleStatements (x, td, t.thenPart ()), x -> handleStatements (x, td, t.elsePart ()));
+    private void handleTernary (CodeBuilder cb, Deque<Object> partsToHandle, Ternary t) {
+	Handler h = c -> c.ifThenElse (x -> handleStatements (x, t.thenPart ()), x -> handleStatements (x, t.elsePart ()));
 	runParts (partsToHandle, t.test (), h);
     }
 
-    private void handleIf (CodeBuilder cb, TypeDeclaration td, Deque<Object> partsToHandle, IfThenStatement i) {
+    private void handleIf (CodeBuilder cb, Deque<Object> partsToHandle, IfThenStatement i) {
 	Handler h;
 	if (i.hasElse ()) {
-	    h = c -> c.ifThenElse (x -> handleStatements (x, td, i.thenPart ()), x -> handleStatements (x, td, i.elsePart ()));
+	    h = c -> c.ifThenElse (x -> handleStatements (x, i.thenPart ()), x -> handleStatements (x, i.elsePart ()));
 	} else {
-	    h = c -> c.ifThen (x -> handleStatements (x, td, i.thenPart ()));
+	    h = c -> c.ifThen (x -> handleStatements (x, i.thenPart ()));
 	}
 	runParts (partsToHandle, i.test (), h);
     }
 
-    private void handleAssignment (CodeBuilder cb, TypeDeclaration td, Deque<Object> partsToHandle, Assignment a) {
-	ClassDesc owner = getClassDesc (cip.getFullName (td));
-
+    private void handleAssignment (CodeBuilder cb, Deque<Object> partsToHandle, Assignment a) {
 	ParseTreeNode p = a.lhs ();
 	if (p instanceof DottedName dn)
 	    p = dn.replaced ();
@@ -505,22 +527,129 @@ public class BytecodeGenerator {
 	    // from, value, putField
 	    // TODO: need to handle from better.
 	    ParseTreeNode from = fa.from ();
-	    if (from != null)
-		handleStatements (cb, td, from);
-	    else // this
-		cb.aload (cb.receiverSlot ());
-	    handleStatements (cb, td, a.rhs ());
-	    ClassDesc type = getClassDesc (a.fullName ());
-	    cb.putfield (owner, fa.name (), type);
+	    VariableInfo vi = fa.variableInfo ();
+	    if (from != null) {
+		handleStatements (cb, from);
+		putField (cb, vi, a.rhs ());
+	    } else { // this or local or static field
+		TypeKind kind = FullNameHelper.getTypeKind (FullNameHelper.type (vi.type ()));
+		switch (vi.fieldType ()) {
+		case VariableInfo.Type.FIELD ->
+		    putField (cb, vi, a.rhs ());
+		case VariableInfo.Type.PARAMETER ->
+		    putInLocalSlot (cb, kind, ((FormalParameterBase)vi).slot (), a.rhs ());
+		case VariableInfo.Type.LOCAL ->
+		    putInLocalSlot (cb, kind, ((LocalVariable)vi).slot (), a.rhs ());
+		}
+	    }
 	} else if (p instanceof ArrayAccess aa) {
 	    // field, slot, value, arraystore
 	    TypeKind kind = FullNameHelper.getTypeKind (FullNameHelper.type (p));
-	    handleStatements (cb, td, List.of (aa.from (), aa.slot (), a.rhs ()));
+	    handleStatements (cb, List.of (aa.from (), aa.slot (), a.rhs ()));
 	    cb.arrayStoreInstruction (kind);
 	} else {
 	    throw new IllegalStateException ("Unhandled assignment type: " + p + ", " + p.getClass ().getName () +
 					     ", " + p.position ().toShortString ());
 	}
+    }
+
+    private void putInLocalSlot (CodeBuilder cb, TypeKind kind, int slot, ParseTreeNode value) {
+	handleStatements (cb, value);
+	cb.storeInstruction (kind, slot);
+    }
+
+    private void handleLocalVariables (CodeBuilder cb, Deque<Object> partsToHandle, LocalVariableDeclaration lvs) {
+	FullNameHandler fn = FullNameHelper.type (lvs.getType ());
+	for (VariableDeclarator lv : lvs.getDeclarators ()) {
+	    // TODO: what about arrays?
+	    TypeKind kind = FullNameHelper.getTypeKind (fn);
+	    int slot = cb.allocateLocal (kind);
+	    lv.localSlot (slot);
+	    if (lv.hasInitializer ()) {
+		handleStatements (cb, lv.initializer ());
+		cb.storeInstruction (kind, slot);
+	    }
+	}
+    }
+
+    private void handlePostIncrement (CodeBuilder cb, Deque<Object> partsToHandle, PostIncrementExpression pie) {
+	ParseTreeNode tn = pie.expression ();
+	if (tn instanceof DottedName dn)
+	    tn = dn.replaced ();
+	if (tn instanceof FieldAccess fa) {
+	    ParseTreeNode from = fa.from ();
+	    if (from != null) {
+		// TODO: implement
+	    } else {
+		VariableInfo vi = fa.variableInfo ();
+		switch (vi.fieldType ()) {
+		case VariableInfo.Type.PARAMETER -> incrementLocalVariable (cb, ((FormalParameterBase)vi).slot (), 1);
+		case VariableInfo.Type.LOCAL -> incrementLocalVariable (cb, ((LocalVariable)vi).slot (), 1);
+		default -> incrementField (cb, vi);
+		}
+	    }
+	} else if (tn instanceof ArrayAccess aa) {
+	    // TODO: implement
+	} else {
+	    throw new IllegalStateException ("Unhandled post increment type: " + tn + ", " + tn.getClass ().getName () +
+					     ", " + tn.position ().toShortString ());
+	}
+    }
+
+    private void incrementLocalVariable (CodeBuilder cb, int slot, int value) {
+	cb.incrementInstruction (slot, value);
+    }
+
+    private void incrementField (CodeBuilder cb, VariableInfo vi) {
+	ClassDesc owner = ClassDescUtils.getClassDesc (cip.getFullName (td));
+	ClassDesc type = vi.typeClassDesc ();
+	if (isInstanceField (vi)) {
+	    cb.aload (cb.receiverSlot ());
+	    cb.dup ();
+	}
+	if (isInstanceField (vi))
+	    cb.getfield (owner, vi.name (), type);
+	else
+	    cb.getstatic (owner, vi.name (), type);
+	cb.iconst_1 ();
+	cb.iadd ();
+	if (isInstanceField (vi))
+	    cb.putfield (owner, vi.name (), type);
+	else
+	    cb.putstatic (owner, vi.name (), type);
+    }
+
+    private void getField (CodeBuilder cb, VariableInfo vi) {
+	ClassDesc owner = ClassDescUtils.getClassDesc (cip.getFullName (td));
+	ClassDesc type = vi.typeClassDesc ();
+	if (isInstanceField (vi)) {
+	    cb.aload (cb.receiverSlot ());
+	    cb.getfield (owner, vi.name (), type);
+	} else {
+	    cb.getstatic (owner, vi.name (), type);
+	}
+    }
+
+    public void putField (CodeBuilder cb, VariableInfo vi, ParseTreeNode value) {
+	Handler h = c -> handleStatements (c, value);
+	putField (cb, vi, h);
+    }
+
+    private void putField (CodeBuilder cb, VariableInfo vi, Handler h) {
+	ClassDesc owner = ClassDescUtils.getClassDesc (cip.getFullName (td));
+	ClassDesc type = vi.typeClassDesc ();
+	if (isInstanceField (vi))
+	    cb.aload (cb.receiverSlot ());
+	h.run (cb);
+	if (isInstanceField (vi)) {
+	    cb.putfield (owner, vi.name (), type);
+	} else {
+	    cb.putstatic (owner, vi.name (), type);
+	}
+    }
+
+    private boolean isInstanceField (VariableInfo vi) {
+	return !Flags.isStatic (vi.flags ());
     }
 
     private void handleInt (CodeBuilder cb, IntLiteral il) {
@@ -597,14 +726,14 @@ public class BytecodeGenerator {
 	    for (FormalParameterBase fp : params.getParameters ()) {
 		ParseTreeNode p = fp.type ();
 		foundGenericTypes |= hasGenericType (p);
-		paramDescs.add (getParseTreeClassDesc (p));
+		paramDescs.add (ClassDescUtils.getParseTreeClassDesc (p));
 		sb.append (genericTypeHelper.getGenericType (p, cip, true));
 	    }
 	}
 	sb.append (")");
 
 	foundGenericTypes |= hasGenericType (result);
-	ClassDesc returnDesc = getParseTreeClassDesc (result);
+	ClassDesc returnDesc = ClassDescUtils.getParseTreeClassDesc (result);
 	sb.append (genericTypeHelper.getGenericType (result, cip, true));
 
 	MethodTypeDesc descriptor = MethodTypeDesc.of (returnDesc, paramDescs.toArray (new ClassDesc[paramDescs.size ()]));
@@ -617,56 +746,16 @@ public class BytecodeGenerator {
 	// empty
     }
 
-    private ClassDesc getParseTreeClassDesc (ParseTreeNode type) {
-	ClassDesc desc = switch (type) {
-	case TokenNode tn -> getClassDesc (tn);
-	case ClassType ct -> getClassDesc (ct);
-	case ArrayType at -> getClassDesc (at);
-	default -> throw new IllegalStateException ("BytecodeGenerator: Unhandled field type: " + type.getClass ().getName () + ": " + type);
-	};
-	return desc;
-    }
-
-    private ClassDesc getClassDesc (FullNameHandler fn) {
-	if (fn.isArray ()) {
-	    FullNameHandler.ArrayHandler a = (FullNameHandler.ArrayHandler)fn;
-	    return getClassDesc (a.fn ()).arrayType ();
-	}
-
-	if (fn.isPrimitive ())
-	    return ClassDesc.ofDescriptor (((FullNameHandler.PrimitiveType)fn).getSignature ());
-	return ClassDesc.of (fn.getFullDollarName ());
-    }
-
-    private ClassDesc getClassDesc (TokenNode tn) {
-	String descriptor = FullNameHelper.getPrimitive (tn).getSignature ();
-	return ClassDesc.ofDescriptor (descriptor);
-    }
-
-    private ClassDesc getClassDesc (ClassType ct) {
-	if (ct == null)
-	    return ConstantDescs.CD_Object; // common for super classes to be null
-	return ClassDesc.of (ct.getFullDollarName ());
-    }
-
-    private ClassDesc getClassDesc (ArrayType at) {
-	ParseTreeNode type = at.getType ();
-	ClassDesc base = getParseTreeClassDesc (type);
-	Dims dims = at.getDims ();
-	int rank = dims.rank ();
-	return base.arrayType (rank);
-    }
-
     /* We need to add all nested classes, not just the direct inner classes of tdt.
      * Here is how it may look for: class Inners { class Inner1 { class Inner1_Inner1 {} } class Inner2 }
      #21= #14 of #7;   // Inner2=class Inners$Inner2 of class Inners
      #22= #16 of #7;   // Inner1=class Inners$Inner1 of class Inners
      #23= #18 of #16;  // Inner1_Inner1=class Inners$Inner1$Inner1_Inner1 of class Inners$Inner1
     */
-    private void addInnerClassAttributes (ClassBuilder classBuilder, TypeDeclaration tdt) {
+    private void addInnerClassAttributes (ClassBuilder classBuilder) {
 	List<InnerClassInfo> innerClassInfos = new ArrayList<> ();
 	Deque<TypeDeclaration> queue = new ArrayDeque<> ();
-	queue.add (tdt);
+	queue.add (td);
 	while (!queue.isEmpty ()) {
 	    TypeDeclaration outer = queue.removeFirst ();
 	    for (TypeDeclaration inner : outer.getInnerClasses ()) {
@@ -679,8 +768,8 @@ public class BytecodeGenerator {
 	 #20= #18 of #15;   // Inner1=class Inners$Inner1 of class Inners
 	 #21= #7 of #18;    // Inner1_Inner1=class Inners$Inner1$Inner1_Inner1 of class Inners$Inner1
 	*/
-	TypeDeclaration outer = tdt.getOuterClass ();
-	TypeDeclaration inner = tdt;
+	TypeDeclaration outer = td.getOuterClass ();
+	TypeDeclaration inner = td;
 	while (outer != null) {
 	    innerClassInfos.add (getInnerClassInfo (outer, inner));
 	    inner = outer;

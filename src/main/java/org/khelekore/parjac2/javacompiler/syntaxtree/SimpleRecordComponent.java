@@ -39,6 +39,10 @@ public class SimpleRecordComponent extends SyntaxTreeNode implements VariableInf
 	return 0;
     }
 
+    @Override public VariableInfo.Type fieldType () {
+	return VariableInfo.Type.FIELD;
+    }
+
     @Override public String name () {
 	return id;
     }

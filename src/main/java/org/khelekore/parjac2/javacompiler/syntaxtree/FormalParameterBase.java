@@ -16,6 +16,10 @@ public abstract class FormalParameterBase extends SyntaxTreeNode implements Vari
 
     public abstract List<ParseTreeNode> getModifiers ();
 
+    @Override public VariableInfo.Type fieldType () {
+	return VariableInfo.Type.PARAMETER;
+    }
+
     @Override public int flags () {
 	return Flags.ACC_PUBLIC; // not sure, but treat as public for easier handling
     }

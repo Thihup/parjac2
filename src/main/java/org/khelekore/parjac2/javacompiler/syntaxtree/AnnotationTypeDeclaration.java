@@ -79,7 +79,7 @@ public class AnnotationTypeDeclaration extends TypeDeclaration {
 	return List.of ();
     }
 
-    @Override public List<StaticInitializer> getStaticInitializers () {
+    @Override public List<SyntaxTreeNode> getStaticInitializers () {
 	return List.of ();
     }
 }

@@ -233,6 +233,39 @@ public class TestFullCompilation {
 	assert r == x : "Expected to get the same value back, not: " + r;
     }
 
+    @Test
+    public void testPostIncrementParamenter () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static int r (int x) { x++; return x; }}",
+			      "r", Integer.TYPE);
+	int r = (Integer)m.invoke (null, 7);
+	assert r == 8 : "Increment returned wrong value: " + r;
+    }
+
+    @Test
+    public void testPostIncrementStaticField () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { static int x = 17; public static int r () { x++; return x; }}", "r");
+	int r = (Integer)m.invoke (null);
+	assert r == 18 : "Increment returned wrong value: " + r;
+    }
+
+    @Test
+    public void testPostIncrementField () throws ReflectiveOperationException {
+	Class<?> c = getFirstClass ("C", "public class C { int x = 17; public int r () { x++; return x; }}");
+	Constructor<?> ctr = c.getConstructor ();
+	Object o = ctr.newInstance ();
+	Method m = c.getMethod ("r");
+	int r = (Integer)m.invoke (o);
+	assert r == 18 : "Increment returned wrong value: " + r;
+    }
+
+    @Test
+    public void testSimpleForLoop () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static int r (int x) { int y = 0; for (int i = 0; i < x; i++) y += i; return y; }}",
+			      "r", Integer.TYPE);
+	int r = (Integer)m.invoke (null, 4);
+	assert r == 10 : "Unexpected return value: " + r;
+    }
+
     private Method getMethod (String className, String text, String methodName, Class<?> ... types) throws ReflectiveOperationException {
 	Class<?> c = getFirstClass (className, text);
 	Method m = c.getMethod (methodName, types);

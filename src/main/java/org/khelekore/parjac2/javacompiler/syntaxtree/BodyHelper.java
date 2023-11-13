@@ -85,7 +85,7 @@ public class BodyHelper {
 		} else {
 		    Dims dims = vd.getDims ();
 		    int rank = dims != null ? dims.rank () : 0;
-		    ret.put (name, new FieldInfo (name, fd.position (), fd.flags (), fd.getType (), rank));
+		    ret.put (name, new FieldInfo (FieldInfo.Type.FIELD, name, fd.position (), fd.flags (), fd.getType (), rank));
 		}
 	    }
 	}

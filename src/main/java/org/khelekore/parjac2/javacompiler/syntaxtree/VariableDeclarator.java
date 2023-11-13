@@ -9,6 +9,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 public class VariableDeclarator extends SyntaxTreeNode {
     private final VariableDeclaratorId id;
     private final ParseTreeNode initializer;
+    private int localSlot = -1;
 
     public VariableDeclarator (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
@@ -56,7 +57,17 @@ public class VariableDeclarator extends SyntaxTreeNode {
 	return initializer != null;
     }
 
-    public ParseTreeNode getInitializer () {
+    public ParseTreeNode initializer () {
 	return initializer;
+    }
+
+    public void localSlot (int localSlot) {
+	this.localSlot = localSlot;
+    }
+
+    public int slot () {
+	if (localSlot == -1)
+	    throw new IllegalStateException ("Local slot position not set!");
+	return localSlot;
     }
 }

@@ -410,6 +410,10 @@ public class ClassResourceHolder {
 
     private record ClassResourceField (String name, int flags,
 				       String typeclass, String signature) implements VariableInfo {
+	@Override public Type fieldType () {
+	    return VariableInfo.Type.FIELD;
+	}
+
 	@Override public ParseTreeNode type () {
 	    return null;
 	}

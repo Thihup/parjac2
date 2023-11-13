@@ -93,7 +93,7 @@ public class ImplicitMethodGenerator {
     private void addRecordFieldsAndMethods (RecordDeclaration r) {
 	List<RecordComponent> rcs = r.getRecordComponents ();
 	for (RecordComponent rc : rcs) {
-	    r.addField (new FieldInfo (rc.name (), rc.position (), RECORD_FIELD_FLAGS, rc.type (), 0));
+	    r.addField (new FieldInfo (VariableInfo.Type.FIELD, rc.name (), rc.position (), RECORD_FIELD_FLAGS, rc.type (), 0));
 	}
 	// Add: Constructor, toString(), hashCode(), equals(Object o)
 
@@ -114,7 +114,7 @@ public class ImplicitMethodGenerator {
 	// fields
 	for (EnumConstant ec : e.constants ()) {
 	    ClassType ct = new ClassType (cip.getFullName (e));
-	    e.addField (new FieldInfo (ec.getName (), ec.position (), ENUM_FIELD_FLAGS, ct, 0));
+	    e.addField (new FieldInfo (VariableInfo.Type.FIELD, ec.getName (), ec.position (), ENUM_FIELD_FLAGS, ct, 0));
 	}
 	// E[] values()
 	// E valueOf(String)

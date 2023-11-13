@@ -86,7 +86,7 @@ public class EnumBody extends SyntaxTreeNode {
 	return declarations.getInstanceInitializers ();
     }
 
-    public List<StaticInitializer> getStaticInitializers () {
+    public List<SyntaxTreeNode> getStaticInitializers () {
 	return declarations.getStaticInitializers ();
     }
 
