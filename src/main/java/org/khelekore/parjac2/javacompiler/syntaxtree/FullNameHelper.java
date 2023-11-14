@@ -84,6 +84,8 @@ public class FullNameHelper {
 	case FloatLiteral x ->  FLOAT;
 	case DoubleLiteral x ->  DOUBLE;
 	case TokenNode tn when tn.token ().getName ().equals ("null") -> NULL;
+	case TokenNode tn when tn.token ().getName ().equals ("true") -> BOOLEAN;
+	case TokenNode tn when tn.token ().getName ().equals ("false") -> BOOLEAN;
 	case TokenNode tn -> getPrimitive (tn);
 	case ArrayType at -> arrayOf (type (at.getType ()), at.rank ());
 	case ArrayAccess aa -> aa.type ();

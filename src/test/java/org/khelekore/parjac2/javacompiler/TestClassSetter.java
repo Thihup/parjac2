@@ -468,6 +468,26 @@ public class TestClassSetter {
     }
 
     @Test
+    public void testIfExpressionNonBoolean () {
+	getTypes ("class C { static void r () { if (3) return; }}", 1);
+    }
+
+    @Test
+    public void testBasicForExpressionMissing () {
+	getTypes ("class C { static void r () { for (;;) {}}}");
+    }
+
+    @Test
+    public void testBasicForExpressionBoolean () {
+	getTypes ("class C { static void r () { for (; true; ) {}}}");
+    }
+
+    @Test
+    public void testBasicForExpressionNonBoolean () {
+	getTypes ("class C { static void r () { for (; 34; ) {}}}", 1);
+    }
+
+    @Test
     public void testInterfaceInGenericType () {
 	getTypes ("interface I {} class B<T extends I> {} class C { B<I> bs; }");
     }

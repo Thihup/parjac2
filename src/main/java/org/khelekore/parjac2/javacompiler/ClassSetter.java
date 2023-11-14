@@ -21,6 +21,7 @@ import org.khelekore.parjac2.SourceDiagnostics;
 import org.khelekore.parjac2.javacompiler.syntaxtree.AmbiguousName;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Annotation;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayType;
+import org.khelekore.parjac2.javacompiler.syntaxtree.BasicForStatement;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Block;
 import org.khelekore.parjac2.javacompiler.syntaxtree.BlockStatements;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassOrInterfaceTypeToInstantiate;
@@ -36,6 +37,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.FormalParameterBase;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FormalParameterList;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHelper;
+import org.khelekore.parjac2.javacompiler.syntaxtree.IfThenStatement;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ImportDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.LocalVariableDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.MethodDeclarationBase;
@@ -319,6 +321,8 @@ public class ClassSetter {
 	    case Ternary t -> handlePartsAndHandler (et, t, e -> setTernaryType (e, t), partsToHandle);
 	    case TwoPartExpression t -> handlePartsAndHandler (et, t, e -> setTwoPartExpressionType (e, t), partsToHandle);
 	    case ReturnStatement r -> handlePartsAndHandler (et, r, e -> setReturnStatementType (e, r), partsToHandle);
+	    case IfThenStatement i -> handlePartsAndHandler (et, i, e -> checkIfExpressionType (e, i), partsToHandle);
+	    case BasicForStatement bfs -> handlePartsAndHandler (et, bfs, e -> checkBasicForExpression (e, bfs), partsToHandle);
 
 	    case ParseTreeNode ptn -> addParts (et, ptn, partsToHandle);
 
@@ -613,6 +617,27 @@ public class ClassSetter {
 	if (isSuperClass (fm, fr))
 	    return true;
 	return false;
+    }
+
+    private void checkIfExpressionType (EnclosingTypes et, IfThenStatement i) {
+	checkTest (i.test ()); // null not allowed
+    }
+
+    private void checkBasicForExpression (EnclosingTypes et, BasicForStatement bfs) {
+	ParseTreeNode p = bfs.expression ();
+	if (p != null)
+	    checkTest (p);
+    }
+
+    private void checkTest (ParseTreeNode test) {
+	String type = "<missing>";
+	if (test != null) {
+	    FullNameHandler fn = FullNameHelper.type (test);
+	    if (fn == FullNameHandler.BOOLEAN)
+		return;
+	    type = fn.getFullDotName ();
+	}
+	error (test, "Test needs to evaluate to boolean value, current type: %s", type);
     }
 
     private boolean isSuperClass (FullNameHandler supertype, FullNameHandler subtype) {
