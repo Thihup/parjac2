@@ -56,6 +56,13 @@ public class Grammar {
 	return tokenNameToToken.computeIfAbsent (tokenName, this::addToken);
     }
 
+    public Token getExistingToken (String name) {
+	Token t = tokenNameToToken.get (name);
+	if (t == null)
+	    throw new IllegalArgumentException ("Unknown token name: " + name);
+	return t;
+    }
+
     private Token addToken (String tokenName) {
 	Token t = new Token (tokenName, tokens.size ());
 	tokens.add (t);

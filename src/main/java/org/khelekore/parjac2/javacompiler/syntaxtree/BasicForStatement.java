@@ -26,6 +26,22 @@ public class BasicForStatement extends SyntaxTreeNode {
 	statement = children.get (i);
     }
 
+    public ParseTreeNode forInit () {
+	return forInit;
+    }
+
+    public ParseTreeNode expression () {
+	return expression;
+    }
+
+    public ParseTreeNode forUpdate () {
+	return forUpdate;
+    }
+
+    public ParseTreeNode statement () {
+	return statement;
+    }
+
     @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	sb.append ("for (");

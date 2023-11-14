@@ -14,6 +14,7 @@ import io.github.dmlloyd.classfile.ClassBuilder;
 import io.github.dmlloyd.classfile.ClassSignature;
 import io.github.dmlloyd.classfile.Classfile;
 import io.github.dmlloyd.classfile.CodeBuilder;
+import io.github.dmlloyd.classfile.Label;
 import io.github.dmlloyd.classfile.MethodSignature;
 import io.github.dmlloyd.classfile.Opcode;
 import io.github.dmlloyd.classfile.Signature;
@@ -24,6 +25,7 @@ import io.github.dmlloyd.classfile.attribute.SignatureAttribute;
 import io.github.dmlloyd.classfile.attribute.SourceFileAttribute;
 
 import org.khelekore.parjac2.javacompiler.syntaxtree.*;
+import org.khelekore.parjac2.parser.Grammar;
 import org.khelekore.parjac2.parser.Token;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.khelekore.parjac2.parsetree.TokenNode;
@@ -34,6 +36,7 @@ public class BytecodeGenerator {
     private final ClassInformationProvider cip;
     private final FullNameHandler name;
     private final JavaTokens javaTokens;
+    private final Grammar grammar;
 
     private static final ClassType enumClassType = new ClassType (FullNameHandler.JL_ENUM);
     private static final ClassType recordClassType = new ClassType (FullNameHandler.JL_RECORD);
@@ -59,12 +62,13 @@ public class BytecodeGenerator {
 	}
     }
 
-    public BytecodeGenerator (Path origin, TypeDeclaration td, ClassInformationProvider cip, JavaTokens javaTokens) {
+    public BytecodeGenerator (Path origin, TypeDeclaration td, ClassInformationProvider cip, JavaTokens javaTokens, Grammar grammar) {
 	this.origin = origin;
 	this.td = td;
 	this.cip = cip;
 	this.name = cip.getFullName (td);
 	this.javaTokens = javaTokens;
+	this.grammar = grammar;
 
 	genericTypeHelper = new GenericTypeHelper ();
 	VOID_RETURN = new TokenNode (javaTokens.VOID, null);
@@ -350,6 +354,7 @@ public class BytecodeGenerator {
 	case Assignment a -> handleAssignment (cb, partsToHandle, a);
 	case LocalVariableDeclaration lv -> handleLocalVariables (cb, partsToHandle, lv);
 	case PostIncrementExpression pie -> handlePostIncrement (cb, partsToHandle, pie);
+	case BasicForStatement bfs -> handleBasicFor (cb, partsToHandle, bfs);
 	case StringLiteral l -> cb.ldc (l.getValue ());
 	case IntLiteral i -> handleInt (cb, i);
 	case DoubleLiteral d -> handleDouble (cb, d);
@@ -464,12 +469,12 @@ public class BytecodeGenerator {
 		runParts (partsToHandle, two.part1 (), two.part2 (), intEqualHandler (Opcode.IF_ICMPEQ));
 	    }
 	} else if (t == javaTokens.PLUS) {
-	    FullNameHandler fnt = two.type ();
+	    FullNameHandler fnt = two.fullName ();
 	    ParseTreeNode p1 = two.part1 ();
 	    ParseTreeNode p2 = two.part2 ();
 	    Handler h1 = c -> widen (c, fnt, p1);
 	    Handler h2 = c -> widen (c, fnt, p2);
-	    runParts (partsToHandle, p1, h1, p2, h2, plusHandler (two.type ()));
+	    runParts (partsToHandle, p1, h1, p2, h2, plusHandler (two.fullName ()));
 	}
     }
 
@@ -482,16 +487,9 @@ public class BytecodeGenerator {
 	if (pfn == fn)
 	    return;
 
-	// TODO: handle more casts
-	if (pfn == FullNameHandler.INT) {
-	    if (fn == FullNameHandler.DOUBLE)
-		cb.i2d ();
-	}
-
-	if (pfn == FullNameHandler.LONG) {
-	    if (fn == FullNameHandler.FLOAT)
-		cb.l2f ();
-	}
+	TypeKind tkm = FullNameHelper.getTypeKind (fn);
+	TypeKind tkr = FullNameHelper.getTypeKind (FullNameHelper.type (p));
+	addPrimitiveCast (cb, tkr, tkm);
     }
 
     private Handler plusHandler (FullNameHandler fn) {
@@ -523,6 +521,7 @@ public class BytecodeGenerator {
 	ParseTreeNode p = a.lhs ();
 	if (p instanceof DottedName dn)
 	    p = dn.replaced ();
+	ParseTreeNode value = assignmentValue (a);
 	if (p instanceof FieldAccess fa) {
 	    // from, value, putField
 	    // TODO: need to handle from better.
@@ -530,27 +529,45 @@ public class BytecodeGenerator {
 	    VariableInfo vi = fa.variableInfo ();
 	    if (from != null) {
 		handleStatements (cb, from);
-		putField (cb, vi, a.rhs ());
+		putField (cb, vi, value);
 	    } else { // this or local or static field
 		TypeKind kind = FullNameHelper.getTypeKind (FullNameHelper.type (vi.type ()));
 		switch (vi.fieldType ()) {
 		case VariableInfo.Type.FIELD ->
-		    putField (cb, vi, a.rhs ());
+		    putField (cb, vi, value);
 		case VariableInfo.Type.PARAMETER ->
-		    putInLocalSlot (cb, kind, ((FormalParameterBase)vi).slot (), a.rhs ());
+		    putInLocalSlot (cb, kind, ((FormalParameterBase)vi).slot (), value);
 		case VariableInfo.Type.LOCAL ->
-		    putInLocalSlot (cb, kind, ((LocalVariable)vi).slot (), a.rhs ());
+		    putInLocalSlot (cb, kind, ((LocalVariable)vi).slot (), value);
 		}
 	    }
 	} else if (p instanceof ArrayAccess aa) {
 	    // field, slot, value, arraystore
 	    TypeKind kind = FullNameHelper.getTypeKind (FullNameHelper.type (p));
-	    handleStatements (cb, List.of (aa.from (), aa.slot (), a.rhs ()));
+	    handleStatements (cb, List.of (aa.from (), aa.slot (), value));
 	    cb.arrayStoreInstruction (kind);
 	} else {
 	    throw new IllegalStateException ("Unhandled assignment type: " + p + ", " + p.getClass ().getName () +
 					     ", " + p.position ().toShortString ());
 	}
+    }
+
+    private ParseTreeNode assignmentValue (Assignment a) {
+	Token op = a.operator ();
+	if (op == javaTokens.EQUAL)
+	    return a.rhs ();
+	String name = op.getName ();
+	// not sure about !=, <= >= but they are not assignments.
+	if (name.endsWith ("=")) {
+	    String newOp = name.substring (0, name.length () - 1);
+	    Token t = grammar.getExistingToken (newOp);
+	    // TODO: we might need to add cast to right type
+	    TwoPartExpression tp = new TwoPartExpression (a.lhs (), t, a.rhs ());
+	    tp.fullName (a.fullName ());
+	    return tp;
+	}
+
+	throw new IllegalStateException ("Unahandled operator: " + a);
     }
 
     private void putInLocalSlot (CodeBuilder cb, TypeKind kind, int slot, ParseTreeNode value) {
@@ -585,7 +602,7 @@ public class BytecodeGenerator {
 		switch (vi.fieldType ()) {
 		case VariableInfo.Type.PARAMETER -> incrementLocalVariable (cb, ((FormalParameterBase)vi).slot (), 1);
 		case VariableInfo.Type.LOCAL -> incrementLocalVariable (cb, ((LocalVariable)vi).slot (), 1);
-		default -> incrementField (cb, vi);
+		case VariableInfo.Type.FIELD -> incrementField (cb, vi);
 		}
 	    }
 	} else if (tn instanceof ArrayAccess aa) {
@@ -617,6 +634,58 @@ public class BytecodeGenerator {
 	    cb.putfield (owner, vi.name (), type);
 	else
 	    cb.putstatic (owner, vi.name (), type);
+    }
+
+    private void handleBasicFor (CodeBuilder cb, Deque<Object> partsToHandle, BasicForStatement bfs) {
+	ParseTreeNode forInit = bfs.forInit ();
+	ParseTreeNode expression = bfs.expression ();
+	ParseTreeNode forUpdate = bfs.forUpdate ();
+	ParseTreeNode statement = bfs.statement ();
+
+	if (forInit != null)
+	    handleStatements (cb, forInit);
+	Label lExp = cb.newBoundLabel ();
+	Label lEnd = cb.newLabel ();
+	if (expression != null) {
+	    handleForExpression (cb, expression, lEnd);
+	}
+	handleStatements (cb, statement);
+	handleStatements (cb, forUpdate);
+	cb.goto_ (lExp); // what about goto_w?
+	cb.labelBinding (lEnd);
+    }
+
+    private void handleForExpression (CodeBuilder cb, ParseTreeNode exp, Label endLabel) {
+	Opcode operator = Opcode.IFEQ;
+	if (exp instanceof UnaryExpression) {
+	    handleStatements (cb, exp);
+	    operator = Opcode.IFNE;
+	} else if (exp instanceof TwoPartExpression tp) {
+	    handleStatements (cb, tp.part1 ());
+	    handleStatements (cb, tp.part2 ());
+	    operator = getTwoPartJump (tp);
+	}
+	cb.branchInstruction (operator, endLabel);
+    }
+
+    private Opcode getTwoPartJump (TwoPartExpression t) {
+	FullNameHandler fn = t.fullName ();
+	Token token = t.token ();
+	if (fn.isPrimitive ()) {
+	    if (token == javaTokens.DOUBLE_EQUAL) return Opcode.IF_ICMPNE;
+	    if (token == javaTokens.NOT_EQUAL) return Opcode.IF_ICMPEQ;
+	    if (token == javaTokens.LT) return Opcode.IF_ICMPGE;
+	    if (token == javaTokens.GT) return Opcode.IF_ICMPLE;
+	    if (token == javaTokens.LE) return Opcode.IF_ICMPGT;
+	    if (token == javaTokens.GE) return Opcode.IF_ICMPLT;
+	    throw new IllegalStateException ("unhandled jump type: " + t);
+	}
+	if (token == javaTokens.DOUBLE_EQUAL)
+	    return Opcode.IF_ACMPNE;
+	else if (token == javaTokens.NOT_EQUAL)
+	    return Opcode.IF_ACMPEQ;
+	else
+	    throw new IllegalStateException ("unhandled jump type: " + token);
     }
 
     private void getField (CodeBuilder cb, VariableInfo vi) {

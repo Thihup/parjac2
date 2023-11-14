@@ -93,7 +93,7 @@ public class FullNameHelper {
 	case ThisPrimary tp -> tp.type ();
 	case FieldAccess fa -> fa.getFullName ();
 	case Ternary t -> t.type ();
-	case TwoPartExpression tp -> tp.type ();
+	case TwoPartExpression tp -> tp.fullName ();
 	case UnaryExpression ue when ue.operator ().getName ().equals ("-") -> type (ue.expression ());
 	default -> throw new IllegalArgumentException ("Unhandled type: " + p + ", " + p.getClass ().getName ());
 	};

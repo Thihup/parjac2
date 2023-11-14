@@ -44,6 +44,10 @@ public class Assignment extends SyntaxTreeNode {
 	return left;
     }
 
+    public Token operator () {
+	return operator;
+    }
+
     public ParseTreeNode rhs () {
 	return right;
     }

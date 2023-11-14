@@ -578,11 +578,11 @@ public class ClassSetter {
 	    return;
 	if (part1.isPrimitive () && part2.isPrimitive ()) {
 	    if (isComparisson (t.token ()))
-		t.type (FullNameHandler.BOOLEAN);
+		t.fullName (FullNameHandler.BOOLEAN);
 	    else
-		t.type (FullNameHelper.wider (part1, part2));
+		t.fullName (FullNameHelper.wider (part1, part2));
 	} else if (part1.equals (FullNameHandler.JL_STRING) || part2.equals (FullNameHandler.JL_STRING)) {
-	    t.type (FullNameHandler.JL_STRING);
+	    t.fullName (FullNameHandler.JL_STRING);
 	} else {
 	    error (t, "Unhandled type in two part expression: %t: (%s, %s)", t, part1.getFullDotName (), part2.getFullDotName ());
 	}

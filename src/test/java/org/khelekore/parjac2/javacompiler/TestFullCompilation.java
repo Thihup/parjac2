@@ -263,7 +263,7 @@ public class TestFullCompilation {
 	Method m = getMethod ("C", "public class C { public static int r (int x) { int y = 0; for (int i = 0; i < x; i++) y += i; return y; }}",
 			      "r", Integer.TYPE);
 	int r = (Integer)m.invoke (null, 4);
-	assert r == 10 : "Unexpected return value: " + r;
+	assert r == 6 : "Unexpected return value: " + r;
     }
 
     private Method getMethod (String className, String text, String methodName, Class<?> ... types) throws ReflectiveOperationException {
