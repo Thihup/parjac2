@@ -199,7 +199,7 @@ public class CompiledTypesHolder {
 	if (ct != null) {
 	    if (!ct.hasFullName ())
 		return Optional.of (Collections.<FullNameHandler>emptyList ());
-	    ret.add (ct.getFullNameHandler ());
+	    ret.add (ct.fullName ());
 	} else {
 	    ret.add (FullNameHandler.JL_OBJECT);
 	}
@@ -253,7 +253,7 @@ public class CompiledTypesHolder {
     }
 
     private FullNameHandler getFullNameHandler (ClassType ct) {
-	FullNameHandler fnh = ct.getFullNameHandler ();
+	FullNameHandler fnh = ct.fullName ();
 	if (fnh != null)
 	    return fnh;
 	return ct.getFullNameAsSimpleDottedName ();

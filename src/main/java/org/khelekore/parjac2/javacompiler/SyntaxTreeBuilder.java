@@ -102,7 +102,7 @@ public class SyntaxTreeBuilder {
 	register ("VariableDeclaratorId", VariableDeclaratorId::new);
 	register ("VariableInitializer", this::liftUp);
 	register ("UnannType", this::liftUp);
-	register ("UnannPrimitiveType", this::liftUp);
+	register ("UnannPrimitiveType", PrimitiveType::new);
 	register ("UnannReferenceType", this::liftUp);
 	register ("UnannClassType", this::unannClassType);
 	register ("UnannArrayType", UnannArrayType::new);

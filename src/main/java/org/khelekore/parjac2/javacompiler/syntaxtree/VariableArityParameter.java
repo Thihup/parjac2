@@ -7,6 +7,7 @@ import org.khelekore.parjac2.javacompiler.Identifier;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
+import org.khelekore.parjac2.parsetree.TokenNode;
 
 public class VariableArityParameter extends FormalParameterBase {
     private final List<ParseTreeNode> modifiers;
@@ -19,7 +20,15 @@ public class VariableArityParameter extends FormalParameterBase {
 	int i = 0;
 	modifiers = (children.get (i) instanceof Multiple) ?
 	    ((Multiple)children.get (i++)).get () : Collections.emptyList ();
-	type = array ((ClassType)children.get (i++));
+	ParseTreeNode p = children.get (i++);
+	if (p instanceof ClassType ct) {
+	    type = array (ct);
+	} else if (p instanceof PrimitiveType pt) {
+	    type = array (pt);
+	} else {
+	    System.err.println ("unhandled type: " + p);
+	    type = null;
+	}
 	annotations = (children.get (i) instanceof Multiple) ?
 	    ((Multiple)children.get (i++)).get () : Collections.emptyList ();
 	i++; // ...
@@ -28,6 +37,10 @@ public class VariableArityParameter extends FormalParameterBase {
 
     private ArrayType array (ClassType ct) {
 	return new ArrayType (ct, 1);
+    }
+
+    private ArrayType array (PrimitiveType pt) {
+	return new ArrayType (pt, 1);
     }
 
     @Override public Object getValue () {

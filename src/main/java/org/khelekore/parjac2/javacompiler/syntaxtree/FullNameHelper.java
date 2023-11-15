@@ -11,18 +11,19 @@ import org.khelekore.parjac2.javacompiler.FloatLiteral;
 import org.khelekore.parjac2.javacompiler.IntLiteral;
 import org.khelekore.parjac2.javacompiler.LongLiteral;
 import org.khelekore.parjac2.javacompiler.StringLiteral;
+import org.khelekore.parjac2.parser.Token;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.khelekore.parjac2.parsetree.TokenNode;
 
 import io.github.dmlloyd.classfile.TypeKind;
 
-import static org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler.PrimitiveType;
+import static org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler.Primitive;
 import static org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler.*;
 
 public class FullNameHelper {
 
-    private static final Map<String, PrimitiveType> SIGNATURE_LOOKUP = new HashMap<> ();
-    private static final Map<PrimitiveType, List<PrimitiveType>> ALLOWED_UPCASTS = new HashMap<> ();
+    private static final Map<String, Primitive> SIGNATURE_LOOKUP = new HashMap<> ();
+    private static final Map<Primitive, List<Primitive>> ALLOWED_UPCASTS = new HashMap<> ();
     private static final Map<FullNameHandler, TypeKind> toTypeKind = new HashMap<> ();
 
     static {
@@ -53,12 +54,12 @@ public class FullNameHelper {
 	toTypeKind.put (VOID, TypeKind.VoidType);
     };
 
-    public static PrimitiveType getPrimitiveType (String signature) {
+    public static Primitive getPrimitiveType (String signature) {
 	return SIGNATURE_LOOKUP.get (signature);
     }
 
-    public static PrimitiveType getPrimitive (TokenNode t) {
-	return switch (t.token ().getName ()) {
+    public static Primitive getPrimitive (Token t) {
+	return switch (t.getName ()) {
 	case "byte" -> BYTE;
 	case "short" -> SHORT;
 	case "char" -> CHAR;
@@ -74,9 +75,10 @@ public class FullNameHelper {
 
     public static FullNameHandler type (ParseTreeNode p) {
 	return switch (p) {
-	case ClassType ct -> ct.getFullNameHandler ();
+	case ClassType ct -> ct.fullName ();
+	case PrimitiveType pt -> pt.fullName ();
 	case MethodInvocation mi -> mi.result ();
-	case DottedName an -> an.getFullNameHandler ();
+	case DottedName an -> an.fullName ();
 	case StringLiteral s -> JL_STRING;
 	case CharLiteral x ->  CHAR;
 	case IntLiteral x ->  INT;
@@ -86,7 +88,7 @@ public class FullNameHelper {
 	case TokenNode tn when tn.token ().getName ().equals ("null") -> NULL;
 	case TokenNode tn when tn.token ().getName ().equals ("true") -> BOOLEAN;
 	case TokenNode tn when tn.token ().getName ().equals ("false") -> BOOLEAN;
-	case TokenNode tn -> getPrimitive (tn);
+	case TokenNode tn -> getPrimitive (tn.token ());
 	case ArrayType at -> arrayOf (type (at.getType ()), at.rank ());
 	case ArrayAccess aa -> aa.type ();
 	case CastExpression ce -> type (ce.baseType ());
@@ -114,7 +116,7 @@ public class FullNameHelper {
     }
 
     public static boolean mayAutoCastPrimitives (FullNameHandler from, FullNameHandler to) {
-	List<PrimitiveType> ls = ALLOWED_UPCASTS.get (from);
+	List<Primitive> ls = ALLOWED_UPCASTS.get (from);
 	return ls != null && ls.contains (to);
     }
 

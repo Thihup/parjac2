@@ -136,6 +136,25 @@ public class TestClassSetter {
     }
 
     @Test
+    public void testCallingInstanceMethodFromStaticInnerClass () {
+	getFirstType ("""
+		      class O {
+			  static class C extends ClassLoader {
+			      byte[] data;
+			      protected Class<?> findClass (String name) {
+				  return defineClass (name, data, 0, data.length);
+			      }
+			  }
+		      }
+		      """);
+    }
+
+    @Test
+    public void testForExpressionTestOnFieldAccess () {
+	getFirstType ("class C { void r (int... e) { for (int i = 0; i < e.length; i++) { }}}");
+    }
+
+    @Test
     public void testMethodReturnIsInnnerClassWhenClassHasGenericTypeWithSameName () {
 	TypeDeclaration t1 = getFirstType ("package foo; class C<T> { class T {} T foo () { return null; }}");
 	MethodDeclarationBase md = t1.getMethods ().get (0);
@@ -195,7 +214,7 @@ public class TestClassSetter {
 	MethodInvocation mi = (MethodInvocation)es.getStatement ();
 	ParseTreeNode on = mi.getOn ();
 	DottedName dn = (DottedName)on;
-	FullNameHandler fn = dn.getFullNameHandler ();
+	FullNameHandler fn = dn.fullName ();
 	assert fn != null : "Expected to find type";
 	assert fn.getFullDotName ().equals (expectedType) : "Expected to have correct type, but got: " + fn.getFullDotName ();
 	assert diagnostics.errorCount () == 0 : "Errors found";
@@ -325,6 +344,21 @@ public class TestClassSetter {
     @Test
     public void testAccessingFieldFromMethodCall () {
 	getTypes ("class C { int X = 2; C foo () { return new C (); } void bar () { int y = foo().X; }}");
+    }
+
+    @Test
+    public void testrReturnArrayLength () {
+	getTypes ("class C { int foo (int[] arr) { return arr.length; }}");
+    }
+
+    @Test
+    public void testrAccessingNonExistingArrayField () {
+	getTypes ("class C { int foo (int[] arr) { return arr.ewqrwe; }}", 1);
+    }
+
+    @Test
+    public void testArrayLengthAccess () {
+	getTypes ("class C { int foo (int[] arr) { return arr.length.qwer; }}", 1);
     }
 
     @Test
@@ -473,6 +507,11 @@ public class TestClassSetter {
     }
 
     @Test
+    public void testIfExpressionComplex () {
+	getTypes ("class C { static int r (String s) { if (s == null) return 1; return 2; }}");
+    }
+
+    @Test
     public void testBasicForExpressionMissing () {
 	getTypes ("class C { static void r () { for (;;) {}}}");
     }
@@ -552,7 +591,7 @@ public class TestClassSetter {
     }
 
     private void checkType (ClassType type, String expectedType, String expectedTypeParam) {
-	FullNameHandler fn = type.getFullNameHandler ();
+	FullNameHandler fn = type.fullName ();
 	assert fn != null : "Expected full name to be set";
 	String dollarName = fn.getFullDollarName ();
 	TypeParameter tp = type.getTypeParameter ();

@@ -22,6 +22,12 @@ public class ArrayType extends SyntaxTreeNode {
 	dims = new Dims (ct.position (), 1);
     }
 
+    public ArrayType (PrimitiveType pt, int rank) {
+	super (pt.position ());
+	type = pt;
+	dims = new Dims (pt.position (), 1);
+    }
+
     @Override public Object getValue () {
 	return type.toString () + dims;
     }

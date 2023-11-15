@@ -62,6 +62,8 @@ public class EnumBody extends SyntaxTreeNode {
     }
 
     public boolean isLocalClass (TypeDeclaration td) {
+	if (declarations == null)
+	    return false;
 	return declarations.isLocalClass (td);
     }
 
@@ -71,26 +73,38 @@ public class EnumBody extends SyntaxTreeNode {
     }
 
     public Map<String, FieldInfo> getFields () {
+	if (declarations == null)
+	    return Map.of ();
 	return declarations.getFields ();
     }
 
     public List<MethodDeclaration> getMethods () {
+	if (declarations == null)
+	    return List.of ();
 	return declarations.getMethods ();
     }
 
     public List<ConstructorDeclaration> getConsructors () {
+	if (declarations == null)
+	    return List.of ();
 	return declarations.getConsructors ();
     }
 
     public List<SyntaxTreeNode> getInstanceInitializers () {
+	if (declarations == null)
+	    return List.of ();
 	return declarations.getInstanceInitializers ();
     }
 
     public List<SyntaxTreeNode> getStaticInitializers () {
+	if (declarations == null)
+	    return List.of ();
 	return declarations.getStaticInitializers ();
     }
 
     public List<EnumConstant> constants () {
+	if (declarations == null)
+	    return List.of ();
 	return constants.constants ();
     }
 }

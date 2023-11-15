@@ -97,4 +97,8 @@ public class MethodHeader extends SyntaxTreeNode {
     public Throws getThrows () {
 	return t;
     }
+
+    public boolean isVarArgs () {
+	return methodDeclarator.isVarArgs ();
+    }
 }

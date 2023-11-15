@@ -15,8 +15,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
+import org.khelekore.parjac2.javacompiler.syntaxtree.Dims;
 import org.khelekore.parjac2.javacompiler.syntaxtree.DottedName;
 import org.khelekore.parjac2.javacompiler.syntaxtree.MethodDeclarator;
+import org.khelekore.parjac2.javacompiler.syntaxtree.PrimitiveType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SimpleRecordComponent;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.UntypedMethodInvocation;
@@ -152,6 +154,8 @@ public class TestParser {
 	    case SimpleRecordComponent dn -> n.getValue ();
 	    case UntypedMethodInvocation m -> m.getMethodName ();
 	    case TypeDeclaration td -> td.getName ();
+	    case PrimitiveType pt -> pt.type ().getName ();
+	    case Dims d -> "[]".repeat (d.rank ());
 	    case TokenNode s -> s.getValue ();
 	    default -> null;
 	    };

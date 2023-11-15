@@ -74,6 +74,6 @@ public class ClassOrInterfaceTypeToInstantiate extends SyntaxTreeNode {
     }
 
     public FullNameHandler fullName () {
-	return type.getFullNameHandler ();
+	return type.fullName ();
     }
 }

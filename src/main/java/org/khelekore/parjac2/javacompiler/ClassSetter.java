@@ -110,7 +110,7 @@ public class ClassSetter {
 	classSetters.parallelStream ().forEach (ClassSetter::registerMethods);
 
 	// now that we know what types, fields and methods we have we check the method contents
-	classSetters.parallelStream ().forEach (ClassSetter::checkMethodBodies);
+	classSetters.parallelStream ().sequential ().forEach (ClassSetter::checkMethodBodies); // qwerty
 
 	classSetters.parallelStream ().forEach (cs -> cs.checkUnusedImport ());
     }
@@ -303,6 +303,7 @@ public class ClassSetter {
 	    //System.err.println ("Looking at: " + pp + ", " + pp.getClass ().getSimpleName ());
 	    switch (pp) {
 	    case Block b -> runInBlock (et, b, partsToHandle);
+	    case PrimitiveType pt -> setType (et, pt);
 	    case ClassType ct -> setType (et, ct);
 	    case AmbiguousName an -> reclassifyAmbiguousName (et, an);
 	    case ExpressionName en -> reclassifyAmbiguousName (et, en);
@@ -366,6 +367,8 @@ public class ClassSetter {
 	    partsToHandle.addFirst (new StatementHandler (et, parts.get (i)));
     }
 
+    /* TODO: rewrite this code a bit: we should only call an.replace and an.fullName when we are done
+     */
     private void reclassifyAmbiguousName (EnclosingTypes et, DottedName an) {
 	String start = an.getNamePart (0);
 	VariableOrError voe = getVariable (et, start);
@@ -376,28 +379,44 @@ public class ClassSetter {
 	tryToSetFullNameOnSimpleName (et, an, start, voe.vi);
 
 	for (int i = 1; i < an.size (); i++) {
-	    FullNameHandler fn = an.getFullNameHandler ();
-
+	    FullNameHandler fn = an.fullName ();
+	    String id = an.getNamePart (i);
 	    if (fn == null) { // (part of) package name
 		// since name is fully specified we do not want to check outer enclosures
 		FullNameHandler currentName = an.dotName (i);
 		FullNameHandler fqn = getVisibleType (null, currentName);
 		if (fqn != null)
-		    an.setFullName (fqn);
+		    an.fullName (fqn);
+	    } else if (fn instanceof FullNameHandler.ArrayHandler ah) {
+		if (id.equals ("length")) {
+		    FullNameHandler inner = ah.inner ();
+		    an.fullName (inner);
+		    FieldAccess fa = new FieldAccess (an.position (), an.replaced (), id);
+		    an.replace (fa);
+		} else {
+		    error (an, "No field: %s for array type", id);
+		    an.fullName (null);
+		    return;
+		}
+	    } else if (fn instanceof FullNameHandler.Primitive pt) {
+		// TODO: implement auto-boxing
+		error (an, "No field: %s for primitive type", id);
+		an.fullName (null);
+		return;
 	    } else { // we have a type
-		String id = an.getNamePart (i);
 		VariableInfo fi = cip.getFieldInformation (fn, id);
 		if (fi != null) {
 		    if (an.replaced () instanceof ClassType) {
 			if (!Flags.isStatic (fi.flags ())) {
 			    error (an, nonStaticAccess (id));
+			    an.fullName (null);
 			    return;
 			}
 		    }
 		    // if we find a field we can not access we can not log an error since doing so will
 		    // result in us reporting multiple errors. We have to rely on the "unable to find symbol" from above.
 		    if (isAccessible (et, fn, fi)) {
-			an.setFullName (fi.typeName ());
+			an.fullName (fi.typeName ());
 			// TODO: probably need to handle ExpressionName as well
 			FieldAccess fa = new FieldAccess (an.position (), an.replaced (), id);
 			fa.variableInfo (fi);
@@ -407,11 +426,11 @@ public class ClassSetter {
 		    FullNameHandler innerClassCandidate = fn.getInnerClass (id);
 		    FullNameHandler foundInnerClass = getVisibleType (null, innerClassCandidate);
 		    if (foundInnerClass != null)
-			an.setFullName (foundInnerClass);
+			an.fullName (foundInnerClass);
 		}
 	    }
 	}
-	if (an.getFullNameHandler () == null)
+	if (an.fullName () == null)
 	    error (an, "Unable to find symbol: %s", an.getDotName ());
     }
 
@@ -422,13 +441,13 @@ public class ClassSetter {
 	    FieldAccess access = new FieldAccess (an.position (), null, name);
 	    an.replace (access);
 	    FullNameHandler fn = FullNameHelper.type (fi.type ());
-	    an.setFullName (fn);
+	    an.fullName (fn);
 	    access.variableInfo (fi);
 	} else {
 	    FullNameHandler fn = FullNameHandler.ofSimpleClassName (name);
 	    ResolvedClass fqn = resolve (et, fn, an.position ());
 	    if (fqn != null) {
-		an.setFullName (fqn.type);
+		an.fullName (fqn.type);
 		an.replace (new ClassType (fqn.type));
 	    }
 	}
@@ -494,7 +513,6 @@ public class ClassSetter {
 	// TODO: verify method arguments match
 	boolean insideStatic = false;
 	while (et != null) {
-	    insideStatic |= et.isStatic ();
 	    if (et.enclosure () instanceof EnclosingTypes.TypeEnclosure) {
 		if (on == null) {
 		    methodOn = currentClass (et);
@@ -506,10 +524,12 @@ public class ClassSetter {
 		    break;
 		}
 	    }
+	    insideStatic |= et.isStatic ();
 	    et = et.previous ();
 	}
-	if (mi.info () == null)
+	if (mi.info () == null) {
 	    error (mi, "No matching method named %s found in %s", name, methodOn.getFullDotName ());
+	}
     }
 
     private MethodInfo getMethod (MethodInvocation mi, FullNameHandler methodOn,
@@ -529,9 +549,10 @@ public class ClassSetter {
     }
 
     private MethodInfo getMatching (List<MethodInfo> options, ParseTreeNode on, List<ParseTreeNode> args, boolean insideStatic) {
-	for (MethodInfo info : options)
+	for (MethodInfo info : options) {
 	    if (match (on, args, info, insideStatic))
 		return info;
+	}
 	return null;
     }
 
@@ -545,11 +566,13 @@ public class ClassSetter {
 
 	if (requireInstance) {
 	    // Object.equals (foo)
-	    if (on instanceof ClassType)
+	    if (on instanceof ClassType) {
 		return false;
+	    }
 	    // we can not use implicit or explicit "this" inside static method
-	    if (insideStatic && (on == null || on instanceof ThisPrimary))
+	    if (insideStatic && (on == null || on instanceof ThisPrimary)) {
 		return false;
+	    }
 	}
 
 	// TODO: check types
@@ -587,6 +610,8 @@ public class ClassSetter {
 		t.fullName (FullNameHelper.wider (part1, part2));
 	} else if (part1.equals (FullNameHandler.JL_STRING) || part2.equals (FullNameHandler.JL_STRING)) {
 	    t.fullName (FullNameHandler.JL_STRING);
+	} else if ((part1.equals (FullNameHandler.NULL) || part2.equals (FullNameHandler.NULL)) && isNullComparisson (t.token ())) {
+	    t.fullName (FullNameHandler.BOOLEAN);
 	} else {
 	    error (t, "Unhandled type in two part expression: %t: (%s, %s)", t, part1.getFullDotName (), part2.getFullDotName ());
 	}
@@ -596,11 +621,17 @@ public class ClassSetter {
 	return javaTokens.isComparisson (t);
     }
 
+    private boolean isNullComparisson (Token t) {
+	return t == javaTokens.DOUBLE_EQUAL || t == javaTokens.NOT_EQUAL;
+    }
+
     private void setReturnStatementType (EnclosingTypes et, ReturnStatement r) {
 	ParseTreeNode methodReturn = currentMethodReturn (et);
 	FullNameHandler fm = FullNameHelper.type (methodReturn);
 	ParseTreeNode p = r.expression ();
 	FullNameHandler fr = p == null ? FullNameHandler.VOID : FullNameHelper.type (p);
+	if (fr == null)  // if we have failed to figure out the type we have already reported it.
+	    return;
 	if (!typesMatch (fm, fr)) {
 	    error (r, "Return statement (%s) incompatible with method return type (%s)", fr.getFullDotName (), fm.getFullDotName ());
 	}
@@ -620,16 +651,16 @@ public class ClassSetter {
     }
 
     private void checkIfExpressionType (EnclosingTypes et, IfThenStatement i) {
-	checkTest (i.test ()); // null not allowed
+	checkTest (et, i.test ()); // null not allowed
     }
 
     private void checkBasicForExpression (EnclosingTypes et, BasicForStatement bfs) {
 	ParseTreeNode p = bfs.expression ();
 	if (p != null)
-	    checkTest (p);
+	    checkTest (et, p);
     }
 
-    private void checkTest (ParseTreeNode test) {
+    private void checkTest (EnclosingTypes et, ParseTreeNode test) {
 	String type = "<missing>";
 	if (test != null) {
 	    FullNameHandler fn = FullNameHelper.type (test);
@@ -701,7 +732,7 @@ public class ClassSetter {
     private void setType (EnclosingTypes et, ParseTreeNode type) {
 	switch (type) {
 	case TokenNode t -> { /* empty */ }
-	case PrimitiveType p -> { /* empty */ }
+	case PrimitiveType p -> setType (et, p);
 	case ClassType ct -> setType (et, ct);
 	case DottedName dn -> setType (et, dn);
 	case ArrayType at -> setType (et, at.getType ());
@@ -717,6 +748,12 @@ public class ClassSetter {
     private void setTypes (EnclosingTypes et, List<ClassType> types) {
 	if (types != null)
 	    types.forEach (ct -> setType (et, ct));
+    }
+
+    private void setType (EnclosingTypes et, PrimitiveType pt) {
+	if (pt.hasFullName ()) // already set?
+	    return;
+	pt.fullName (FullNameHelper.getPrimitive (pt.type ()));
     }
 
     private void setType (EnclosingTypes et, ClassType ct) {
@@ -735,7 +772,7 @@ public class ClassSetter {
 							 "Failed to find class for type: %s", id));
 	    return;
 	}
-	ct.setFullName (fqn.type);
+	ct.fullName (fqn.type);
 	ct.setTypeParameter (fqn.tp);
 	for (SimpleClassType sct : ct.get ()) {
 	    TypeArguments tas = sct.getTypeArguments ();
@@ -758,7 +795,7 @@ public class ClassSetter {
 							 "Failed to find class for dotted name: %s", id));
 	    return;
 	}
-	tn.setFullName (fqn.type);
+	tn.fullName (fqn.type);
     }
 
     private void setType (EnclosingTypes et, ThisPrimary tp) {

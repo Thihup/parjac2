@@ -87,11 +87,11 @@ public class DottedName extends SyntaxTreeNode implements NamePartHandler {
 	return nameParts.get (i);
     }
 
-    public void setFullName (FullNameHandler fnh) {
+    public void fullName (FullNameHandler fnh) {
 	this.fnh = fnh;
     }
 
-    public FullNameHandler getFullNameHandler () {
+    public FullNameHandler fullName () {
 	return fnh;
     }
 

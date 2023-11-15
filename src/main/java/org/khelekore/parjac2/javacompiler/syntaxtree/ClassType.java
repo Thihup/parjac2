@@ -38,11 +38,11 @@ public class ClassType extends SyntaxTreeNode implements NamePartHandler {
 	return types;
     }
 
-    public void setFullName (FullNameHandler fnh) {
+    public void fullName (FullNameHandler fnh) {
 	this.fnh = fnh;
     }
 
-    public FullNameHandler getFullNameHandler () {
+    public FullNameHandler fullName () {
 	return fnh;
     }
 

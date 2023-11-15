@@ -59,11 +59,11 @@ public class ClassInformationProvider {
 	if (b == null)
 	    return Collections.singletonList (FullNameHandler.JL_OBJECT);
 	List<FullNameHandler> ret = new ArrayList<> (b.size ());
-	ret.add (b.getType ().getFullNameHandler ());
+	ret.add (b.getType ().fullName ());
 	List<ClassType> ls = b.getAdditionalBounds ();
 	if (ls != null) {
 	    for (ClassType ab : ls)
-		ret.add (ab.getFullNameHandler ());
+		ret.add (ab.fullName ());
 	}
 	return ret;
     }

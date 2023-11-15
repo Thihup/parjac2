@@ -161,7 +161,7 @@ public class BytecodeGenerator {
     }
 
     private boolean hasGenericType (ClassType ct) {
-	return ct != null && (ct.getFullNameHandler ().hasGenericType () || ct.getTypeParameter () != null);
+	return ct != null && (ct.fullName ().hasGenericType () || ct.getTypeParameter () != null);
     }
 
     private byte[] generateClass (ImplicitClassFlags icf, String signature, ClassType superType, List<ClassType> superInterfaces) {

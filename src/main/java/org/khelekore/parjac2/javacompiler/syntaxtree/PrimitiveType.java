@@ -10,8 +10,9 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.khelekore.parjac2.parsetree.TokenNode;
 
 public class PrimitiveType extends SyntaxTreeNode {
-    private List<Annotation> annotations;
-    private Token type;
+    private final List<Annotation> annotations;
+    private final Token type;
+    private FullNameHandler.Primitive fullName;
 
     public PrimitiveType (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
@@ -24,7 +25,23 @@ public class PrimitiveType extends SyntaxTreeNode {
 	}
     }
 
-    @Override public Object getValue() {
+    public Token type () {
+	return type;
+    }
+
+    public void fullName (FullNameHandler.Primitive fullName) {
+	this.fullName = fullName;
+    }
+
+    public FullNameHandler.Primitive fullName () {
+	return fullName;
+    }
+
+    public boolean hasFullName () {
+	return fullName != null;
+    }
+
+    @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	if (!annotations.isEmpty ())
 	    sb.append (annotations).append (" ");

@@ -13,16 +13,16 @@ public interface FullNameHandler {
     public static final FullNameHandler JL_RECORD = FullNameHandler.ofSimpleClassName ("java.lang.Record");
     public static final FullNameHandler JL_STRING = FullNameHandler.ofSimpleClassName ("java.lang.String");
 
-    public static final PrimitiveType BYTE = new PrimitiveType ("B", "byte");
-    public static final PrimitiveType SHORT = new PrimitiveType ("S", "short");
-    public static final PrimitiveType CHAR = new PrimitiveType ("C", "char");
-    public static final PrimitiveType INT = new PrimitiveType ("I", "int");
-    public static final PrimitiveType LONG = new PrimitiveType ("J", "long");
-    public static final PrimitiveType FLOAT = new PrimitiveType ("F", "float");
-    public static final PrimitiveType DOUBLE = new PrimitiveType ("D", "double");
-    public static final PrimitiveType BOOLEAN = new PrimitiveType ("Z", "boolean");
+    public static final Primitive BYTE = new Primitive ("B", "byte");
+    public static final Primitive SHORT = new Primitive ("S", "short");
+    public static final Primitive CHAR = new Primitive ("C", "char");
+    public static final Primitive INT = new Primitive ("I", "int");
+    public static final Primitive LONG = new Primitive ("J", "long");
+    public static final Primitive FLOAT = new Primitive ("F", "float");
+    public static final Primitive DOUBLE = new Primitive ("D", "double");
+    public static final Primitive BOOLEAN = new Primitive ("Z", "boolean");
 
-    public static final PrimitiveType VOID = new PrimitiveType ("V", "void");
+    public static final Primitive VOID = new Primitive ("V", "void");
 
     public static final FullNameHandler NULL = new NullType ();
 
@@ -136,7 +136,7 @@ public interface FullNameHandler {
 	}
     }
 
-    public record PrimitiveType (String signature, String name) implements FullNameHandler {
+    public record Primitive (String signature, String name) implements FullNameHandler {
 
 	@Override public Type getType () {
 	    return Type.PRIMITIVE;
@@ -203,6 +203,12 @@ public interface FullNameHandler {
 	@Override public String getSignature (GenericTypeHelper gth, ClassInformationProvider cip,
 					      boolean shortForm, TypeArguments ta) {
 	    return "[".repeat (rank) + fn.getSignature (gth, cip, shortForm, ta);
+	}
+
+	public FullNameHandler inner () {
+	    if (rank > 1)
+		return new ArrayHandler (fn, rank - 1);
+	    return fn;
 	}
     }
 }

@@ -82,4 +82,8 @@ public class MethodDeclarator extends SyntaxTreeNode {
     public Dims getDims () {
 	return dims;
     }
+
+    public boolean isVarArgs () {
+	return params != null && params.isVarArgs ();
+    }
 }

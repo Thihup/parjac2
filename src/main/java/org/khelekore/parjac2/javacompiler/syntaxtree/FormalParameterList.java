@@ -36,4 +36,8 @@ public class FormalParameterList extends SyntaxTreeNode {
     public int size () {
 	return params.size ();
     }
+
+    public boolean isVarArgs () {
+	return params != null && params.size () > 0 && params.get (params.size () - 1) instanceof VariableArityParameter;
+    }
 }

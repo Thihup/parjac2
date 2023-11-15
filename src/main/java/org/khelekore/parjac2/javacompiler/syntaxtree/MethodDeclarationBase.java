@@ -27,6 +27,8 @@ public class MethodDeclarationBase extends FlaggedBase implements MethodInfo {
 	header = (MethodHeader)children.get (i++);
 	body = children.get (i);
 	flags = flagCalculator.calculate (ctx, modifiers, position ());
+	if (header.isVarArgs ())
+	    flags |= Flags.ACC_VARARGS;
     }
 
     public MethodDeclarationBase (ParsePosition pos, int flags, String name, ParseTreeNode result, Block body) {

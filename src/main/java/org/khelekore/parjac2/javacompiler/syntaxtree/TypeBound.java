@@ -50,6 +50,6 @@ public class TypeBound extends SyntaxTreeNode {
     }
 
     public FullNameHandler fullName () {
-	return base.getFullNameHandler ();
+	return base.fullName ();
     }
 }

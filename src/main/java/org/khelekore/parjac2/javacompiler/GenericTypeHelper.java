@@ -6,6 +6,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Dims;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHelper;
+import org.khelekore.parjac2.javacompiler.syntaxtree.PrimitiveType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeArguments;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeBound;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeParameter;
@@ -22,9 +23,11 @@ public class GenericTypeHelper {
 	    TypeParameter tp = ct.getTypeParameter ();
 	    if (tp != null)
 		return "T" + tp.getId () + ";";
-	    return "L" + ct.getFullNameHandler ().getSignature (this, cip, shortForm, ct.getTypeArguments ()) + ";";
+	    return "L" + ct.fullName ().getSignature (this, cip, shortForm, ct.getTypeArguments ()) + ";";
+	} else if (tn instanceof PrimitiveType pt) {
+	    return pt.fullName ().getSignature ();
 	} else if (tn instanceof TokenNode tkn) {
-	    return FullNameHelper.getPrimitive (tkn).getSignature ();
+	    return FullNameHelper.getPrimitive (tkn.token ()).getSignature ();
 	} else if (tn instanceof ArrayType at) {
 	    ParseTreeNode type = at.getType ();
 	    Dims dims = at.getDims ();

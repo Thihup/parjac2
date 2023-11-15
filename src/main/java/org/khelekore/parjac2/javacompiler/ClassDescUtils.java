@@ -7,16 +7,17 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Dims;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
-import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHelper;
+import org.khelekore.parjac2.javacompiler.syntaxtree.PrimitiveType;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.khelekore.parjac2.parsetree.TokenNode;
 
 public class ClassDescUtils {
     public static ClassDesc getParseTreeClassDesc (ParseTreeNode type) {
 	ClassDesc desc = switch (type) {
-	case TokenNode tn -> getClassDesc (tn);
+	case PrimitiveType pt -> getClassDesc (pt);
 	case ClassType ct -> getClassDesc (ct);
 	case ArrayType at -> getClassDesc (at);
+	case TokenNode tn when tn.token ().getName ().equals ("void") -> ConstantDescs.CD_void;
 	default -> throw new IllegalStateException ("BytecodeGenerator: Unhandled field type: " + type.getClass ().getName () + ": " + type);
 	};
 	return desc;
@@ -29,12 +30,12 @@ public class ClassDescUtils {
 	}
 
 	if (fn.isPrimitive ())
-	    return ClassDesc.ofDescriptor (((FullNameHandler.PrimitiveType)fn).getSignature ());
+	    return ClassDesc.ofDescriptor (((FullNameHandler.Primitive)fn).getSignature ());
 	return ClassDesc.of (fn.getFullDollarName ());
     }
 
-    public static ClassDesc getClassDesc (TokenNode tn) {
-	String descriptor = FullNameHelper.getPrimitive (tn).getSignature ();
+    public static ClassDesc getClassDesc (PrimitiveType pt) {
+	String descriptor = pt.fullName ().getSignature ();
 	return ClassDesc.ofDescriptor (descriptor);
     }
 
