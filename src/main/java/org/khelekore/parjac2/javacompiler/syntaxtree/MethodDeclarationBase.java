@@ -1,5 +1,6 @@
 package org.khelekore.parjac2.javacompiler.syntaxtree;
 
+import java.lang.constant.MethodTypeDesc;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -92,6 +93,26 @@ public class MethodDeclarationBase extends FlaggedBase implements MethodInfo {
 
     public ParseTreeNode getResult () {
 	return header.getResult ();
+    }
+
+    @Override public MethodTypeDesc methodTypeDesc () {
+	StringBuilder sb = new StringBuilder ();
+	sb.append ("(");
+	FormalParameterList ls = getFormalParameterList ();
+	if (ls != null) {
+	    for (FormalParameterBase fp : ls.getParameters ())
+		sb.append (signatureType (FullNameHelper.type (fp)));
+	}
+	sb.append (")");
+	sb.append (signatureType (result ()));
+
+	return MethodTypeDesc.ofDescriptor (sb.toString ());
+    }
+
+    private String signatureType (FullNameHandler fn) {
+	if (fn.isPrimitive ())
+	    return fn.getSlashName ();
+	return "L" + fn.getSlashName () + ";";
     }
 
     @Override public FullNameHandler result () {

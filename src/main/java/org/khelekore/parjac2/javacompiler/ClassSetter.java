@@ -603,15 +603,20 @@ public class ClassSetter {
 	FullNameHandler part2 = FullNameHelper.type (t.part2 ());
 	if (part1 == null || part2 == null) // missing thingy, reported elsewhere
 	    return;
+	Token token = t.token ();
 	if (part1.isPrimitive () && part2.isPrimitive ()) {
 	    if (isComparisson (t.token ()))
 		t.fullName (FullNameHandler.BOOLEAN);
 	    else
 		t.fullName (FullNameHelper.wider (part1, part2));
-	} else if (part1.equals (FullNameHandler.JL_STRING) || part2.equals (FullNameHandler.JL_STRING)) {
+	    t.optype (TwoPartExpression.OpType.PRIMITIVE_OP);
+	} else if ((part1.equals (FullNameHandler.JL_STRING) || part2.equals (FullNameHandler.JL_STRING)) &&
+		   isStringConcat (token)) {
 	    t.fullName (FullNameHandler.JL_STRING);
-	} else if ((part1.equals (FullNameHandler.NULL) || part2.equals (FullNameHandler.NULL)) && isNullComparisson (t.token ())) {
+	    t.optype (TwoPartExpression.OpType.STRING_OP);
+	} else if (isObjectComparisson (token)) {
 	    t.fullName (FullNameHandler.BOOLEAN);
+	    t.optype (TwoPartExpression.OpType.OBJECT_OP);
 	} else {
 	    error (t, "Unhandled type in two part expression: %t: (%s, %s)", t, part1.getFullDotName (), part2.getFullDotName ());
 	}
@@ -621,7 +626,11 @@ public class ClassSetter {
 	return javaTokens.isComparisson (t);
     }
 
-    private boolean isNullComparisson (Token t) {
+    private boolean isStringConcat (Token t) {
+	return t == javaTokens.PLUS;
+    }
+
+    private boolean isObjectComparisson (Token t) {
 	return t == javaTokens.DOUBLE_EQUAL || t == javaTokens.NOT_EQUAL;
     }
 
@@ -664,6 +673,8 @@ public class ClassSetter {
 	String type = "<missing>";
 	if (test != null) {
 	    FullNameHandler fn = FullNameHelper.type (test);
+	    if (fn == null)
+		System.err.println ("test is: " + test + ", " + currentClass (et).getFullDotName ());
 	    if (fn == FullNameHandler.BOOLEAN)
 		return;
 	    type = fn.getFullDotName ();

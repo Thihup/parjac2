@@ -13,6 +13,9 @@ public class TwoPartExpression extends SyntaxTreeNode {
     private final Token operator;
     private final ParseTreeNode part2;
     private FullNameHandler type;
+    private OpType optype;
+
+    public enum OpType { PRIMITIVE_OP, STRING_OP, OBJECT_OP }
 
     public TwoPartExpression (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
@@ -43,6 +46,14 @@ public class TwoPartExpression extends SyntaxTreeNode {
 
     public FullNameHandler fullName () {
 	return type;
+    }
+
+    public void optype (OpType optype) {
+	this.optype = optype;
+    }
+
+    public OpType optype () {
+	return optype;
     }
 
     public ParseTreeNode part1 () {

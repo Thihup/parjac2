@@ -7,7 +7,6 @@ import org.khelekore.parjac2.javacompiler.Identifier;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
-import org.khelekore.parjac2.parsetree.TokenNode;
 
 public class VariableArityParameter extends FormalParameterBase {
     private final List<ParseTreeNode> modifiers;

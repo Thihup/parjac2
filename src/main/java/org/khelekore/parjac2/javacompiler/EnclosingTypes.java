@@ -8,7 +8,6 @@ import java.util.Map;
 
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.LocalVariableDeclaration;
-import org.khelekore.parjac2.javacompiler.syntaxtree.PrimitiveType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeParameter;
 import org.khelekore.parjac2.javacompiler.syntaxtree.VariableDeclarator;

@@ -3,7 +3,6 @@ package org.khelekore.parjac2.javacompiler;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -391,8 +390,6 @@ public class ClassResourceHolder {
 		String name = mm.methodName ().stringValue ();
 		int flags = mm.flags ().flagsMask ();
 		MethodTypeDesc md = mm.methodTypeSymbol ();
-		ClassDesc returnType = md.returnType ();
-		List<ClassDesc> argTypes = md.parameterList ();
 		Optional<SignatureAttribute> osa = mm.findAttribute (Attributes.SIGNATURE);
 		String signature = null;
 		if (osa.isPresent ()) {
@@ -402,7 +399,7 @@ public class ClassResourceHolder {
 		    // TODO:   <R:Ljava/lang/Object;>(Ljava/util/function/Function<-Ljava/lang/String;+TR;>;)TR;
 		}
 		List<MethodInfo> ls = methods.computeIfAbsent (name, n -> new ArrayList<> ());
-		ls.add (new ClassResourceMethod (r.fullName, name, flags, returnType, argTypes, signature));
+		ls.add (new ClassResourceMethod (r.fullName, name, flags, md, signature));
 	    }
 	    r.methods = methods;
 	}
@@ -424,16 +421,18 @@ public class ClassResourceHolder {
     }
 
     private record ClassResourceMethod (FullNameHandler owner, String name, int flags,
-					ClassDesc returnType,
-					List<ClassDesc> argTypes, String signature) implements MethodInfo {
-	// empty
+					MethodTypeDesc md, String signature) implements MethodInfo {
 	@Override public int numberOfArguments () {
-	    return argTypes.size ();
+	    return md.parameterList ().size ();
 	}
 
 	@Override public FullNameHandler result () {
-	    String desc = returnType.descriptorString ();
+	    String desc = md.returnType ().descriptorString ();
 	    return parseTypeName (desc);
+	}
+
+	@Override public MethodTypeDesc methodTypeDesc () {
+	    return md;
 	}
     }
 

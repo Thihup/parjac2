@@ -175,6 +175,7 @@ public class JavaTokens {
     private final BitSet separators = new BitSet ();
     private final BitSet operators = new BitSet ();
     private final BitSet comparisson = new BitSet ();
+    private final BitSet arithmeticLogical = new BitSet ();
 
     private final Map<String, Token> nameToKeyword = new HashMap<> ();
     private final Map<String, Token> nameToContextualKeyword = new HashMap<> ();
@@ -360,6 +361,8 @@ public class JavaTokens {
 	       BIT_AND_EQUAL, BIT_OR_EQUAL, BIT_XOR_EQUAL, REMAINDER_EQUAL, LEFT_SHIFT_EQUAL,
 	       RIGHT_SHIFT_EQUAL, RIGHT_SHIFT_UNSIGNED_EQUAL);
 	store (comparisson, GT, LT, DOUBLE_EQUAL, GE, LE, NOT_EQUAL, LOGICAL_AND, LOGICAL_OR);
+	store (arithmeticLogical, PLUS, MINUS, MULTIPLY, DIVIDE, REMAINDER, AND, OR, XOR,
+	       LEFT_SHIFT, RIGHT_SHIFT, RIGHT_SHIFT_UNSIGNED);
 
 	keywords.stream ().mapToObj (i -> grammar.getToken (i))
 	    .forEach (t -> nameToKeyword.put (t.getName (), t));
@@ -402,6 +405,10 @@ public class JavaTokens {
 
     public boolean isComparisson (Token t) {
 	return comparisson.get (t.getId ());
+    }
+
+    public boolean isArithmeticOrLogical (Token t) {
+	return arithmeticLogical.get (t.getId ());
     }
 
     /** Check if a String is an identifier or a keyword or the null, true or false litera. */

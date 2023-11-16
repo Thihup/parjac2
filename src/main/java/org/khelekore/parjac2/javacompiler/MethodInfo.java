@@ -17,9 +17,7 @@ public interface MethodInfo {
 	return ClassDesc.of (owner ().getFullDollarName ());
     }
 
-    default MethodTypeDesc methodTypeDesc () {
-	return MethodTypeDesc.ofDescriptor ("(Ljava/lang/String;)V"); // TODO: we need this
-    }
+    MethodTypeDesc methodTypeDesc ();
 
     int flags ();
 

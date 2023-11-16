@@ -266,6 +266,13 @@ public class TestFullCompilation {
 	assert r == 6 : "Unexpected return value: " + r;
     }
 
+    @Test
+    public void testInstanceCreation () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { static public Object r () { return new Object (); }}", "r");
+	Object r = m.invoke (null);
+	assert r != null : " expected to get an object back, but got null";
+    }
+
     private Method getMethod (String className, String text, String methodName, Class<?> ... types) throws ReflectiveOperationException {
 	Class<?> c = getFirstClass (className, text);
 	Method m = c.getMethod (methodName, types);
