@@ -2,6 +2,7 @@ package org.khelekore.parjac2.javacompiler;
 
 import java.lang.constant.ClassDesc;
 
+import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHelper;
@@ -18,21 +19,21 @@ public interface VariableInfo {
 
     String name ();
 
-    ParseTreeNode type ();
-
     default ClassDesc typeClassDesc () {
-	FullNameHandler fullName = FullNameHelper.type (type ());
-	return ClassDescUtils.getClassDesc (fullName);
+	return ClassDescUtils.getClassDesc (typeName ());
     }
 
-    default FullNameHandler typeName () {
-	ParseTreeNode p = type ();
+    FullNameHandler typeName ();
 
+    static FullNameHandler typeToFullName (ParseTreeNode p) {
 	if (p instanceof PrimitiveType pt) {
 	    return pt.fullName ();
 	}
 	if (p instanceof ClassType ct) {
 	    return ct.fullName ();
+	}
+	if (p instanceof ArrayType at) {
+	    return FullNameHelper.type (at);
 	}
 	throw new IllegalStateException ("Unhandled type: " + p.getClass ().getName () + ": " + p + ", position: " + p.position ());
     }

@@ -3,6 +3,7 @@ package org.khelekore.parjac2.javacompiler;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,7 +20,6 @@ import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.NoSourceDiagnostics;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHelper;
-import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 import io.github.dmlloyd.classfile.Attributes;
 import io.github.dmlloyd.classfile.ClassModel;
@@ -411,10 +411,6 @@ public class ClassResourceHolder {
 	    return VariableInfo.Type.FIELD;
 	}
 
-	@Override public ParseTreeNode type () {
-	    return null;
-	}
-
 	@Override public FullNameHandler typeName () {
 	    return parseTypeName (typeclass);
 	}
@@ -433,6 +429,12 @@ public class ClassResourceHolder {
 
 	@Override public MethodTypeDesc methodTypeDesc () {
 	    return md;
+	}
+
+	@Override public FullNameHandler parameter (int i) {
+	    // TODO: cache full name lookups
+	    ClassDesc cd = md.parameterType (i);
+	    return FullNameHelper.get (cd);
 	}
     }
 

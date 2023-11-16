@@ -47,7 +47,11 @@ public class SimpleRecordComponent extends SyntaxTreeNode implements VariableInf
 	return id;
     }
 
-    @Override public ParseTreeNode type () {
+    public ParseTreeNode type () {
 	return type;
+    }
+
+    @Override public FullNameHandler typeName () {
+	return FullNameHelper.type (type);
     }
 }

@@ -1,5 +1,6 @@
 package org.khelekore.parjac2.javacompiler.syntaxtree;
 
+import java.lang.constant.ClassDesc;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -95,10 +96,11 @@ public class FullNameHelper {
 	case ClassInstanceCreationExpression cice -> cice.type ();
 	case ClassLiteral cl -> JL_CLASS;
 	case ThisPrimary tp -> tp.type ();
-	case FieldAccess fa -> fa.getFullName ();
+	case FieldAccess fa -> fa.fullName ();
 	case Ternary t -> t.type ();
 	case TwoPartExpression tp -> tp.fullName ();
 	case UnaryExpression ue when ue.operator ().getName ().equals ("-") -> type (ue.expression ());
+	case FormalParameterBase fp -> fp.typeName ();
 	default -> throw new IllegalArgumentException ("Unhandled type: " + p + ", " + p.getClass ().getName ());
 	};
     }
@@ -127,5 +129,29 @@ public class FullNameHelper {
 	if (tk == null)
 	    throw new NullPointerException ("Unable to find TypeKind for: " + fn.getFullDotName ());
 	return tk;
+    }
+
+    public static FullNameHandler get (ClassDesc cd) {
+	return ofDescriptor (cd.descriptorString ());
+    }
+
+    public static FullNameHandler ofDescriptor (String desc) {
+	if (desc.length () == 1)
+	    return SIGNATURE_LOOKUP.get (desc);
+	if (desc.charAt (0) == 'L' && desc.charAt (desc.length () - 1) == ';') {
+	    String slashName = desc.substring (1, desc.length () - 1);
+	    String dollarName = slashName.replace ('/', '.');
+	    String dotName = dollarName.replace ('$', '.');
+	    return FullNameHandler.of (dotName, dollarName);
+	}
+	int i = 0;
+	for (; i < desc.length () && desc.charAt (i) == '['; i++) {
+	    // empty
+	}
+	if (i > 0) {
+	    FullNameHandler fn = ofDescriptor (desc.substring (i));
+	    return fn.array (i);
+	}
+	throw new IllegalArgumentException ("Unable to parse: " + desc);
     }
 }

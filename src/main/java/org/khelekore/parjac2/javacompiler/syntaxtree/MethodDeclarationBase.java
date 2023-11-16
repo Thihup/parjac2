@@ -119,6 +119,10 @@ public class MethodDeclarationBase extends FlaggedBase implements MethodInfo {
 	return FullNameHelper.type (getResult ());
     }
 
+    @Override public FullNameHandler parameter (int i) {
+	return FullNameHelper.type (getFormalParameterList ().getParameters ().get (i));
+    }
+
     @Override public String name () {
 	return header.getName ();
     }

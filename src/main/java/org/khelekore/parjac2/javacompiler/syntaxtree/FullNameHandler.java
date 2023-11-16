@@ -97,6 +97,11 @@ public interface FullNameHandler {
     }
 
     static FullNameHandler arrayOf (FullNameHandler fn, int rank) {
+	if (fn.isArray ()) {
+	    ArrayHandler ah = (ArrayHandler)fn;
+	    fn = ah.fn ();
+	    rank = ah.rank () + 1;
+	}
 	return new ArrayHandler (fn, rank);
     }
 
@@ -151,7 +156,7 @@ public interface FullNameHandler {
 	}
 
 	@Override public String getSlashName () {
-	    return name;
+	    return signature;
 	}
 
 	@Override public String getSignature (GenericTypeHelper gth, ClassInformationProvider cip,

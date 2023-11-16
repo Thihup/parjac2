@@ -24,9 +24,13 @@ public abstract class FormalParameterBase extends SyntaxTreeNode implements Vari
 	return Flags.ACC_PUBLIC; // not sure, but treat as public for easier handling
     }
 
+    @Override public FullNameHandler typeName () {
+	return VariableInfo.typeToFullName (type ());
+    }
+
     @Override public abstract String name ();
 
-    @Override public abstract ParseTreeNode type ();
+    public abstract ParseTreeNode type ();
 
     public void slot (int slot) {
 	this.slot = slot;

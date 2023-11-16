@@ -51,8 +51,8 @@ public class FieldAccess extends SyntaxTreeNode {
 	return vi;
     }
 
-    public FullNameHandler getFullName () {
-	return FullNameHelper.type (vi.type ());
+    public FullNameHandler fullName () {
+	return vi.typeName ();
     }
 
     @Override public Object getValue () {

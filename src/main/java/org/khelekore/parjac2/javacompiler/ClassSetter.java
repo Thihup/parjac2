@@ -389,7 +389,7 @@ public class ClassSetter {
 		    an.fullName (fqn);
 	    } else if (fn instanceof FullNameHandler.ArrayHandler ah) {
 		if (id.equals ("length")) {
-		    FullNameHandler inner = ah.inner ();
+		    FullNameHandler inner = FullNameHandler.INT;
 		    an.fullName (inner);
 		    FieldAccess fa = new FieldAccess (an.position (), an.replaced (), id);
 		    an.replace (fa);
@@ -440,7 +440,7 @@ public class ClassSetter {
 	if (fi != null) { // known variable
 	    FieldAccess access = new FieldAccess (an.position (), null, name);
 	    an.replace (access);
-	    FullNameHandler fn = FullNameHelper.type (fi.type ());
+	    FullNameHandler fn = fi.typeName ();
 	    an.fullName (fn);
 	    access.variableInfo (fi);
 	} else {
@@ -528,6 +528,8 @@ public class ClassSetter {
 	    et = et.previous ();
 	}
 	if (mi.info () == null) {
+	    // useful when debugging
+	    // System.err.println ("Failed to find method: " + name);
 	    error (mi, "No matching method named %s found in %s", name, methodOn.getFullDotName ());
 	}
     }
@@ -575,7 +577,26 @@ public class ClassSetter {
 	    }
 	}
 
-	// TODO: check types
+	FullNameHandler lastVarArg = null;
+	if (varArgs) {
+	    lastVarArg = info.parameter (info.numberOfArguments () - 1);
+	    FullNameHandler.ArrayHandler ah = (FullNameHandler.ArrayHandler)lastVarArg;
+	    lastVarArg = ah.inner ();
+	}
+	// TODO: make sure we cache the FullNameHandlers for the MethodTypeDesc
+	for (int i = 0; i < args.size (); i++) {
+	    ParseTreeNode pa = args.get (i);
+	    FullNameHandler afn = FullNameHelper.type (pa);
+	    FullNameHandler pfn;
+	    if (varArgs && i >= info.numberOfArguments () - 1) {
+		pfn = lastVarArg;
+	    } else {
+		pfn = info.parameter (i);
+	    }
+	    if (!typesMatch (pfn, afn))
+		return false;
+	}
+
 	return true;
     }
 
@@ -647,18 +668,6 @@ public class ClassSetter {
 	r.type (fm);
     }
 
-    private boolean typesMatch (FullNameHandler fm, FullNameHandler fr) {
-	if (fr.equals (fm))
-	    return true;
-	if (FullNameHelper.mayAutoCastPrimitives (fr, fm))
-	    return true;
-	if (fm.getType () == FullNameHandler.Type.OBJECT && fr == FullNameHandler.NULL)
-	    return true;
-	if (isSuperClass (fm, fr))
-	    return true;
-	return false;
-    }
-
     private void checkIfExpressionType (EnclosingTypes et, IfThenStatement i) {
 	checkTest (et, i.test ()); // null not allowed
     }
@@ -673,13 +682,31 @@ public class ClassSetter {
 	String type = "<missing>";
 	if (test != null) {
 	    FullNameHandler fn = FullNameHelper.type (test);
+	    // TODO: useful when debugging
+	    /*
 	    if (fn == null)
 		System.err.println ("test is: " + test + ", " + currentClass (et).getFullDotName ());
+	    */
 	    if (fn == FullNameHandler.BOOLEAN)
 		return;
 	    type = fn.getFullDotName ();
 	}
 	error (test, "Test needs to evaluate to boolean value, current type: %s", type);
+    }
+
+    private boolean typesMatch (FullNameHandler fm, FullNameHandler fr) {
+	if (fr.equals (fm))
+	    return true;
+	// they may be different records
+	if (fr.getFullDotName ().equals (fm.getFullDotName ()))
+	    return true;
+	if (FullNameHelper.mayAutoCastPrimitives (fr, fm))
+	    return true;
+	if (fm.getType () == FullNameHandler.Type.OBJECT && fr == FullNameHandler.NULL)
+	    return true;
+	if (isSuperClass (fm, fr))
+	    return true;
+	return false;
     }
 
     private boolean isSuperClass (FullNameHandler supertype, FullNameHandler subtype) {

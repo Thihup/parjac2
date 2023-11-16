@@ -32,11 +32,19 @@ public class RecordComponent extends SyntaxTreeNode {
 	v.accept ((SyntaxTreeNode)rec);
     }
 
-    public String name () {
-	return rec.name ();
+    public FullNameHandler typeName () {
+	return rec.typeName ();
     }
 
     public ParseTreeNode type () {
-	return rec.type ();
+	if (rec instanceof VariableArityParameter vap)
+	    return vap.type ();
+	else if (rec instanceof SimpleRecordComponent src)
+	    return src.type ();
+	else throw new IllegalStateException ("Unhandled type: " + rec + ", " + rec.getClass ().getName ());
+    }
+
+    public String name () {
+	return rec.name ();
     }
 }

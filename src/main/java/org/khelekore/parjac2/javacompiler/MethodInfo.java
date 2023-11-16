@@ -28,6 +28,7 @@ public interface MethodInfo {
     // return type
     FullNameHandler result ();
 
-    // TODO: argument list
+    FullNameHandler parameter (int i);
+
     // TODO: generic types?
 }

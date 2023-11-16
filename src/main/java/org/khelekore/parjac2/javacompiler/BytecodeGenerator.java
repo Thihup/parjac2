@@ -409,7 +409,7 @@ public class BytecodeGenerator {
 
     private void loadParameter (CodeBuilder cb, FormalParameterBase fpb) {
 	int slot = cb.parameterSlot (fpb.slot ());
-	FullNameHandler type = FullNameHelper.type (fpb.type ());
+	FullNameHandler type = fpb.typeName ();
 	if (type == FullNameHandler.INT || type == FullNameHandler.BOOLEAN)
 	    cb.iload (slot);
 	else if (type == FullNameHandler.LONG)
@@ -445,6 +445,7 @@ public class BytecodeGenerator {
     }
 
     private boolean isInterface (ParseTreeNode on) {
+	System.err.println ("on: " + on + ", on.class: " + on.getClass ().getName ());
 	FullNameHandler fn = FullNameHelper.type (on);
 	return cip.isInterface (fn.getFullDotName ());
     }
@@ -583,7 +584,7 @@ public class BytecodeGenerator {
 		handleStatements (cb, from);
 		putField (cb, vi, value);
 	    } else { // this or local or static field
-		TypeKind kind = FullNameHelper.getTypeKind (FullNameHelper.type (vi.type ()));
+		TypeKind kind = FullNameHelper.getTypeKind (vi.typeName ());
 		switch (vi.fieldType ()) {
 		case VariableInfo.Type.FIELD ->
 		    putField (cb, vi, value);

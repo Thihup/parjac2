@@ -1,5 +1,6 @@
 package org.khelekore.parjac2.javacompiler;
 
+import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.VariableDeclarator;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
@@ -19,5 +20,9 @@ public record LocalVariable (String name, VariableDeclarator vd, ParseTreeNode t
 
     public int slot () {
 	return vd.slot ();
+    }
+
+    @Override public FullNameHandler typeName () {
+	return VariableInfo.typeToFullName (type);
     }
 }
