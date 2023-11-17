@@ -77,7 +77,7 @@ public interface FullNameHandler {
 
     /** Get a full name handler from the dotted name of an outer class "foo.bar.Baz" */
     static FullNameHandler ofSimpleClassName (String dotName) {
-	return DotNameHandler.of (dotName);
+	return SimpleNameHandler.of (dotName, dotName);
     }
 
     /** Get a full name handler from the dollar name of an outer class "foo.bar.Baz$Quox" */
@@ -107,22 +107,6 @@ public interface FullNameHandler {
 
     default FullNameHandler array (int rank) {
 	return new ArrayHandler (this, rank);
-    }
-
-    public record DotNameHandler (String dotName)  implements FullNameHandler {
-	private final static ConcurrentHashMap<String, DotNameHandler> nameCache = new ConcurrentHashMap<> ();
-
-	public static DotNameHandler of (String dotName) {
-	    return nameCache.computeIfAbsent (dotName, DotNameHandler::new);
-	}
-
-	@Override public String getFullDotName () {
-	    return dotName;
-	}
-
-	@Override public String getFullDollarName () {
-	    return dotName;
-	}
     }
 
     public record SimpleNameHandler (String dotName, String dollarName)  implements FullNameHandler {
