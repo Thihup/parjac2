@@ -716,10 +716,9 @@ public class ClassSetter {
     }
 
     private boolean isAutoboxSuperClass (FullNameHandler supertype, FullNameHandler subtype) {
-	for (FullNameHandler ab : FullNameHelper.getAutoBoxOptions (subtype)) {
-	    if (isSuperClass (supertype, ab))
-		return true;
-	}
+	FullNameHandler ab = FullNameHelper.getAutoBoxOption (subtype);
+	if (ab != null && isSuperClass (supertype, ab))
+	    return true;
 	return false;
     }
 

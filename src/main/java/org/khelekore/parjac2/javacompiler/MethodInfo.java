@@ -21,6 +21,10 @@ public interface MethodInfo {
 
     int flags ();
 
+    default boolean isStatic () {
+	return Flags.isStatic (flags ());
+    }
+
     String name ();
 
     int numberOfArguments ();

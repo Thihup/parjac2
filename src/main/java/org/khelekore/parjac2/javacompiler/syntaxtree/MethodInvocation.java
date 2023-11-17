@@ -74,4 +74,8 @@ public class MethodInvocation extends SyntaxTreeNode {
     public List<ParseTreeNode> getArguments () {
 	return mi.getArguments ();
     }
+
+    public boolean isCallToStaticMethod () {
+	return info.isStatic ();
+    }
 }

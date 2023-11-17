@@ -15,4 +15,8 @@ public class LongLiteral extends TokenNode {
     @Override public Object getValue () {
 	return value;
     }
+
+    public long longValue () {
+	return value;
+    }
 }

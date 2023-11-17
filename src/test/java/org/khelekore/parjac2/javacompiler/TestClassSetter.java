@@ -566,6 +566,12 @@ public class TestClassSetter {
 	getTypes ("class C { static java.io.Serializable r () { return 12; }}");
     }
 
+    @Test
+    public void testAutoBoxWrongTypeGivesError () {
+	// "12" is an int javac gives "incompatible types: int cannot be converted to Long"
+	getTypes ("class C { static Long r () { return 12; }}", 1);
+    }
+
     /* TODO: implement full generic handling */
     /*
     @Test

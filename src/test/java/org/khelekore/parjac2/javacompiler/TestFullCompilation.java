@@ -273,6 +273,28 @@ public class TestFullCompilation {
 	assert r != null : " expected to get an object back, but got null";
     }
 
+    @Test
+    public void testAutoBoxReturnNumber () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { static public Number r () { return 4; }}", "r");
+	Object r = m.invoke (null);
+	assert r != null : " expected to get an object back, but got null";
+	assert r.equals (4) : " expected to get correct value back";
+    }
+
+    @Test
+    public void testAutoBoxReturnLong () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static Long r () { return 4L; }}", "r");
+	Object r = m.invoke (null);
+	assert r != null : " expected to get an object back, but got null";
+	assert r.equals (4L) : " expected to get correct value back";
+    }
+
+    @Test
+    public void testAutoBoxLongArgument () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { static void a (Long l) {} public static void b () { a(4L); }}", "b");
+	m.invoke (null);
+    }
+
     private Method getMethod (String className, String text, String methodName, Class<?> ... types) throws ReflectiveOperationException {
 	Class<?> c = getFirstClass (className, text);
 	Method m = c.getMethod (methodName, types);

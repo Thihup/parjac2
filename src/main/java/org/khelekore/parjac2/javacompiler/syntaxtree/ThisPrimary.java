@@ -10,6 +10,11 @@ public class ThisPrimary extends SyntaxTreeNode {
 	super (n.position ());
     }
 
+    public ThisPrimary (ParseTreeNode p, FullNameHandler type) {
+	super (p.position ());
+	this.type = type;
+    }
+
     public void type (FullNameHandler type) {
 	this.type = type;
     }

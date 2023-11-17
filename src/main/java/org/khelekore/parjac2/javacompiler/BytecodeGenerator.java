@@ -362,6 +362,7 @@ public class BytecodeGenerator {
 	case ClassInstanceCreationExpression cic -> handleNew (cb, cic);
 	case StringLiteral l -> cb.ldc (l.getValue ());
 	case IntLiteral i -> handleInt (cb, i);
+	case LongLiteral l -> handleLong (cb, l);
 	case DoubleLiteral d -> handleDouble (cb, d);
 	case ThisPrimary t -> cb.aload (cb.receiverSlot ());
 	case TokenNode t -> handleToken (cb, t);
@@ -424,28 +425,44 @@ public class BytecodeGenerator {
     }
 
     private void methodInvocation (CodeBuilder cb, MethodInvocation mi) {
+	cb.lineNumber (mi.position ().getLineNumber ());
+
 	ParseTreeNode on = mi.getOn ();
 	if (on instanceof AmbiguousName an)
 	    on = an.replaced ();
-	if (on == null)
-	    on = new ThisPrimary (mi);
-	cb.lineNumber (mi.position ().getLineNumber ());
-	handleStatements (cb, on);
-	handleStatements (cb, mi.getArguments ());
-
+	if (!mi.isCallToStaticMethod ()) {
+	    if (on == null )
+		on = new ThisPrimary (mi, name);
+	    handleStatements (cb, on);
+	}
+	List<ParseTreeNode> args = mi.getArguments ();
 	MethodInfo info = mi.info ();
+	for (int i = 0; i < args.size (); i++) {
+	    ParseTreeNode a = args.get (i);
+	    handleStatements (cb, a);
+
+	    FullNameHandler fa = FullNameHelper.type (a);
+	    int j = i < info.numberOfArguments () ? i : info.numberOfArguments ();
+	    FullNameHandler fp = info.parameter (j);
+	    TypeKind tkm = FullNameHelper.getTypeKind (fp);
+	    widenOrAutoBoxAsNeeded (cb, fa, fp, tkm);
+	}
+
 	ClassDesc owner = info.ownerDesc ();
 	String name = info.name ();
 	MethodTypeDesc type = info.methodTypeDesc ();
 
-	if (isInterface (on))
-	    cb.invokeinterface (owner, name, type);
-	else
-	    cb.invokevirtual (owner, name, type);
+	if (mi.isCallToStaticMethod ()) {
+	    cb.invokestatic (owner, name, type);
+	} else {
+	    if (isInterface (on))
+		cb.invokeinterface (owner, name, type);
+	    else
+		cb.invokevirtual (owner, name, type);
+	}
     }
 
     private boolean isInterface (ParseTreeNode on) {
-	System.err.println ("on: " + on + ", on.class: " + on.getClass ().getName ());
 	FullNameHandler fn = FullNameHelper.type (on);
 	return cip.isInterface (fn.getFullDotName ());
     }
@@ -459,11 +476,28 @@ public class BytecodeGenerator {
 	FullNameHandler fm = r.type ();
 	TypeKind tkm = FullNameHelper.getTypeKind (fm);
 	FullNameHandler fr = p == null ? FullNameHandler.VOID : FullNameHelper.type (p);
-	if (fr.getType () == FullNameHandler.Type.PRIMITIVE && !fm.equals (fr)) {
-	    TypeKind tkr = FullNameHelper.getTypeKind (fr);
-	    cb.convertInstruction (tkr, tkm);
-	}
+	widenOrAutoBoxAsNeeded (cb, fr, fm, tkm);
 	cb.returnInstruction (tkm);
+    }
+
+    private void widenOrAutoBoxAsNeeded (CodeBuilder cb, FullNameHandler from, FullNameHandler to, TypeKind tkTo) {
+	if (from.getType () == FullNameHandler.Type.PRIMITIVE) {
+	    if (to.getType () == FullNameHandler.Type.OBJECT) {
+		autoBox (cb, (FullNameHandler.Primitive)from);
+	    } else if (!to.equals (from)) {
+		TypeKind tkr = FullNameHelper.getTypeKind (from);
+		cb.convertInstruction (tkr, tkTo);
+	    }
+	}
+    }
+
+    private void autoBox (CodeBuilder cb, FullNameHandler.Primitive p) {
+	FullNameHandler ab = FullNameHelper.getAutoBoxOption (p);
+
+	ClassDesc owner = ClassDescUtils.getClassDesc (ab);
+	String name = "valueOf";
+	MethodTypeDesc type = MethodTypeDesc.ofDescriptor ("(" + p.getSignature () + ")L" + ab.getSlashName () + ";");
+	cb.invokestatic (owner, name, type);
     }
 
     private void addPrimitiveCast (CodeBuilder cb, TypeKind from, TypeKind to) {
@@ -828,6 +862,10 @@ public class BytecodeGenerator {
 	} else {
 	    cb.ldc (i);
 	}
+    }
+
+    private void handleLong (CodeBuilder cb, LongLiteral l) {
+	cb.ldc (l.longValue ());
     }
 
     private void handleDouble (CodeBuilder cb, DoubleLiteral dl) {

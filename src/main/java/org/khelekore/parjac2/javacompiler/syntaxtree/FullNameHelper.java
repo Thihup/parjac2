@@ -1,7 +1,6 @@
 package org.khelekore.parjac2.javacompiler.syntaxtree;
 
 import java.lang.constant.ClassDesc;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -27,7 +26,6 @@ public class FullNameHelper {
     private static final Map<String, Primitive> SIGNATURE_LOOKUP = new HashMap<> ();
     private static final Map<Primitive, List<Primitive>> ALLOWED_UPCASTS = new HashMap<> ();
     private static final Map<Primitive, FullNameHandler> AUTO_BOX = new HashMap<> ();
-    private static final Map<Primitive, List<FullNameHandler>> AUTO_BOX_OPTIONS = new HashMap<> ();
     private static final Map<FullNameHandler, TypeKind> toTypeKind = new HashMap<> ();
 
     static {
@@ -55,10 +53,6 @@ public class FullNameHelper {
 	AUTO_BOX.put (FLOAT, FullNameHandler.ofSimpleClassName ("java.lang.Float"));
 	AUTO_BOX.put (DOUBLE, FullNameHandler.ofSimpleClassName ("java.lang.Double"));
 
-	ALLOWED_UPCASTS.forEach ((k, v) -> AUTO_BOX_OPTIONS.put (k, autoBox (k, v)));
-	AUTO_BOX_OPTIONS.put (LONG, List.of (LONG));
-	AUTO_BOX_OPTIONS.put (DOUBLE, List.of (DOUBLE));
-
 	toTypeKind.put (BYTE, TypeKind.ByteType);
 	toTypeKind.put (SHORT, TypeKind.ShortType);
 	toTypeKind.put (CHAR, TypeKind.CharType);
@@ -69,13 +63,6 @@ public class FullNameHelper {
 	toTypeKind.put (BOOLEAN, TypeKind.BooleanType);
 	toTypeKind.put (VOID, TypeKind.VoidType);
     };
-
-    private static List<FullNameHandler> autoBox (Primitive k, List<Primitive> ls) {
-	List<FullNameHandler> ret = new ArrayList<> (ls.size () + 1);
-	ret.add (AUTO_BOX.get (k));
-	ls.forEach (p -> ret.add (AUTO_BOX.get (p)));
-	return ret;
-    }
 
     public static Primitive getPrimitiveType (String signature) {
 	return SIGNATURE_LOOKUP.get (signature);
@@ -147,13 +134,12 @@ public class FullNameHelper {
     public static boolean canAutoBoxTo (FullNameHandler from, FullNameHandler to) {
 	if (!from.isPrimitive ())
 	    return false;
-	List<FullNameHandler> autoBoxOptions = AUTO_BOX_OPTIONS.get (from);
-	return autoBoxOptions != null && autoBoxOptions.contains (to);
+	FullNameHandler fn = AUTO_BOX.get (from);
+	return fn != null && fn.equals (to);
     }
 
-    public static List<FullNameHandler> getAutoBoxOptions (FullNameHandler fn) {
-	List<FullNameHandler> ls = AUTO_BOX_OPTIONS.get (fn);
-	return ls == null ? List.of () : ls;
+    public static FullNameHandler getAutoBoxOption (FullNameHandler fn) {
+	return AUTO_BOX.get (fn);
     }
 
     public static TypeKind getTypeKind (FullNameHandler fn) {
