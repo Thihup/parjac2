@@ -295,6 +295,19 @@ public class TestFullCompilation {
 	m.invoke (null);
     }
 
+    @Test
+    public void testAutoWidenReturn () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static long r () { return 4; }}", "r");
+	long l = (Long)m.invoke (null);
+	assert l == 4L : "Got wrong number back: " + l;
+    }
+
+    @Test
+    public void testAutoWidenArgument () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { static void a (long l) {} public static void b () { a(4); }}", "b");
+	m.invoke (null);
+    }
+
     private Method getMethod (String className, String text, String methodName, Class<?> ... types) throws ReflectiveOperationException {
 	Class<?> c = getFirstClass (className, text);
 	Method m = c.getMethod (methodName, types);

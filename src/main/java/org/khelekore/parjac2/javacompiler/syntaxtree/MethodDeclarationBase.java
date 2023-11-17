@@ -66,10 +66,6 @@ public class MethodDeclarationBase extends FlaggedBase implements MethodInfo {
 	return modifiers;
     }
 
-    public boolean isStatic () {
-	return Flags.isStatic (flags);
-    }
-
     public boolean isAbstract () {
 	return Flags.isAbstract (flags);
     }

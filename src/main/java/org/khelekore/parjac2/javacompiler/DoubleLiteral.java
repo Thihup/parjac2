@@ -4,7 +4,7 @@ import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Token;
 import org.khelekore.parjac2.parsetree.TokenNode;
 
-public class DoubleLiteral extends TokenNode {
+public class DoubleLiteral extends TokenNode implements NumericLiteral {
     private final double value;
 
     public DoubleLiteral (Token token, double value, ParsePosition pos) {
@@ -16,7 +16,19 @@ public class DoubleLiteral extends TokenNode {
 	return value;
     }
 
-    public double doubleValue () {
+    @Override public double doubleValue () {
 	return value;
+    }
+
+    @Override public float floatValue () {
+	return (float)value;
+    }
+
+    @Override public int intValue () {
+	return (int)value;
+    }
+
+    @Override public long longValue () {
+	return (long)value;
     }
 }

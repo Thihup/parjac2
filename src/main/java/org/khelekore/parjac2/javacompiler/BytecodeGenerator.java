@@ -439,13 +439,11 @@ public class BytecodeGenerator {
 	MethodInfo info = mi.info ();
 	for (int i = 0; i < args.size (); i++) {
 	    ParseTreeNode a = args.get (i);
-	    handleStatements (cb, a);
-
 	    FullNameHandler fa = FullNameHelper.type (a);
 	    int j = i < info.numberOfArguments () ? i : info.numberOfArguments ();
 	    FullNameHandler fp = info.parameter (j);
 	    TypeKind tkm = FullNameHelper.getTypeKind (fp);
-	    widenOrAutoBoxAsNeeded (cb, fa, fp, tkm);
+	    loadValue (cb, a, fa, fp, tkm);
 	}
 
 	ClassDesc owner = info.ownerDesc ();
@@ -468,16 +466,31 @@ public class BytecodeGenerator {
     }
 
     private void handleReturn (CodeBuilder cb, ReturnStatement r) {
-	ParseTreeNode p = r.expression ();
-	if (p != null) {
-	    handleStatements (cb, p);
-	}
-
 	FullNameHandler fm = r.type ();
 	TypeKind tkm = FullNameHelper.getTypeKind (fm);
-	FullNameHandler fr = p == null ? FullNameHandler.VOID : FullNameHelper.type (p);
-	widenOrAutoBoxAsNeeded (cb, fr, fm, tkm);
+
+	ParseTreeNode p = r.expression ();
+	FullNameHandler fr = FullNameHandler.VOID;
+	if (p != null) {
+	    fr = FullNameHelper.type (p);
+	    loadValue (cb, p, fr, fm, tkm);
+	}
 	cb.returnInstruction (tkm);
+    }
+
+    private void loadValue (CodeBuilder cb, ParseTreeNode p, FullNameHandler fromType, FullNameHandler toType, TypeKind tkTo) {
+ 	if (fromType.isPrimitive () && toType.isPrimitive () && !fromType.equals (toType) && p instanceof NumericLiteral nl) {
+	    switch (tkTo) {
+	    case DoubleType -> cb.ldc (nl.doubleValue ());
+	    case FloatType -> cb.ldc (nl.floatValue ());
+	    case IntType -> cb.ldc (nl.intValue ());
+	    case LongType -> cb.ldc (nl.longValue ());
+	    default -> throw new IllegalStateException ("Unhandled type: " + tkTo);
+	    }
+	} else {
+	    handleStatements (cb, p);
+	    widenOrAutoBoxAsNeeded (cb, fromType, toType, tkTo);
+	}
     }
 
     private void widenOrAutoBoxAsNeeded (CodeBuilder cb, FullNameHandler from, FullNameHandler to, TypeKind tkTo) {
