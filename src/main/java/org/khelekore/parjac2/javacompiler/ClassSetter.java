@@ -21,6 +21,7 @@ import org.khelekore.parjac2.SourceDiagnostics;
 import org.khelekore.parjac2.javacompiler.syntaxtree.AmbiguousName;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Annotation;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayType;
+import org.khelekore.parjac2.javacompiler.syntaxtree.Assignment;
 import org.khelekore.parjac2.javacompiler.syntaxtree.BasicForStatement;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Block;
 import org.khelekore.parjac2.javacompiler.syntaxtree.BlockStatements;
@@ -316,6 +317,7 @@ public class ClassSetter {
 	    case ClassOrInterfaceTypeToInstantiate coitti -> setType (et, coitti.type ());
 
 	    case LocalVariableDeclaration lv -> handlePartsAndRegisterVariable (et, lv, partsToHandle);
+	    case Assignment a -> handlePartsAndHandler (et, a, e -> checkAssignment (e, a), partsToHandle);
 
 	    // Check method once we know all parts
 	    case MethodInvocation mi -> handlePartsAndHandler (et, mi, new MethodInvocationCheck (mi, this), partsToHandle);
@@ -351,8 +353,33 @@ public class ClassSetter {
 
     private void handlePartsAndRegisterVariable (EnclosingTypes et, LocalVariableDeclaration lv, Deque<StatementHandler> partsToHandle) {
 	// Since we add first we will evaluate variable addition after the parts, which is what we want.
+	CustomHandler h = e -> checkLocalVariableAssignments (e, lv);
+	partsToHandle.addFirst (new StatementHandler (et, h));
 	partsToHandle.addFirst (new StatementHandler (et, new AddVariable (lv)));
 	addParts (et, lv, partsToHandle);
+    }
+
+    private void checkLocalVariableAssignments (EnclosingTypes et, LocalVariableDeclaration lv) {
+	FullNameHandler varType = FullNameHelper.type (lv);
+	lv.getDeclarators ().forEach (vd -> checkInitializerType (varType, vd.initializer ()));
+    }
+
+    private void checkInitializerType (FullNameHandler varType, ParseTreeNode initializer) {
+	if (initializer != null) {
+	    FullNameHandler fi = FullNameHelper.type (initializer);
+	    // If fi == null we have already signaled errors and do not want another one here.
+	    if (fi != null && !typesMatch (varType, fi))
+		error (initializer, "Types not compatible: %s <-> %s", varType.getFullDotName (), fi.getFullDotName ());
+	}
+    }
+
+    private void checkAssignment (EnclosingTypes et, Assignment a) {
+	//System.err.println ("About to check assignment: " + a);
+	// TODO: implement this!
+	FullNameHandler toType = FullNameHelper.type (a.lhs ());
+	FullNameHandler fromType = FullNameHelper.type (a.rhs ());
+	if (toType != null && fromType != null && !typesMatch (toType, fromType))
+	    error (a, "Types not compatible: %s <-> %s", toType.getFullDotName (), fromType.getFullDotName ());
     }
 
     private void handlePartsAndHandler (EnclosingTypes et, ParseTreeNode p,
@@ -595,7 +622,7 @@ public class ClassSetter {
 		pfn = info.parameter (i);
 	    }
 	    // Useful when debugging
-	    //System.err.println ("i " + i + ", args(" + i + "): " + pa + " -> " + dotName (afn) + ", pfn: "+ dotName (pfn));
+	    //System.err.println ("    " +i + ", args(" + i + "): " + pa + " -> " + dotName (afn) + ", pfn: "+ dotName (pfn));
 	    if (!typesMatch (pfn, afn))
 		return false;
 	}
@@ -710,13 +737,16 @@ public class ClassSetter {
 	    FullNameHandler.ArrayHandler haveA = (FullNameHandler.ArrayHandler)have;
 	    if (isSuperClass (wantedA.inner (), haveA.inner ()))
 		return true;
-	}  else {
-	    if (have.isArray ())
-		return wanted == FullNameHandler.JL_OBJECT;
-	    if (FullNameHelper.mayAutoCastPrimitives (have, wanted))
+	} else if (wanted.isPrimitive ()) {
+	    if (FullNameHelper.mayAutoCastPrimitives (have, wanted)) // widening
 		return true;
+	    if (FullNameHelper.canAutoUnBoxTo (have, wanted))
+		return true;
+	} else {
 	    if (wanted.getType () == FullNameHandler.Type.OBJECT && have == FullNameHandler.NULL)
 		return true;
+	    if (have.isArray ())
+		return wanted == FullNameHandler.JL_OBJECT;
 	    if (FullNameHelper.canAutoBoxTo (have, wanted))
 		return true;
 	    if (isSuperClass (wanted, have))

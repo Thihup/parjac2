@@ -296,6 +296,18 @@ public class TestFullCompilation {
     }
 
     @Test
+    public void testAutoUnBoxReturnLong () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { public static long r () { Long l = 77L; return l; }}", "r");
+	m.invoke (null);
+    }
+
+    @Test
+    public void testAutoUnBoxLongArgument () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { static void a (long l) {} public static void r () { Long l = 77L; a(l); }}", "r");
+	m.invoke (null);
+    }
+
+    @Test
     public void testAutoWidenReturn () throws ReflectiveOperationException {
 	Method m = getMethod ("C", "public class C { public static long r () { return 4; }}", "r");
 	long l = (Long)m.invoke (null);

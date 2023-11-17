@@ -327,6 +327,16 @@ public class TestClassSetter {
     }
 
     @Test
+    public void testLocalVariableWrongTypeInInitializer () {
+	getTypes ("class C { void foo () { int x = 3L; }}", 1);
+    }
+
+    @Test
+    public void testFieldWrongTypeInInitializer () {
+	getTypes ("class C { int x = 3L; }", 1);
+    }
+
+    @Test
     public void testStaticMethodAccessingInstanceFieldsWithOuterClassHavingStaticFieldGivesError () {
 	getTypes ("class O { static int x; class C { int x; static void foo () { x++; }}}", 1);
     }
@@ -575,6 +585,16 @@ public class TestClassSetter {
     public void testAutoBoxWrongTypeGivesError () {
 	// "12" is an int javac gives "incompatible types: int cannot be converted to Long"
 	getTypes ("class C { static Long r () { return 12; }}", 1);
+    }
+
+    @Test
+    public void testAutoUnBoxReturn () {
+	getTypes ("class C { static long r () { Long l = 77L; return l; }}");
+    }
+
+    @Test
+    public void testAutoUnBoxArgument () {
+	getTypes ("class C { static void a (long l) {} static void r () { Long l = 77L; a(l); }}");
     }
 
     /* TODO: implement full generic handling */

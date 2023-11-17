@@ -23,7 +23,7 @@ public class VariableDeclarator extends SyntaxTreeNode {
 	initializer = null;
     }
 
-    @Override public Object getValue() {
+    @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	sb.append (id);
 	if (initializer != null)

@@ -501,16 +501,26 @@ public class BytecodeGenerator {
 		TypeKind tkr = FullNameHelper.getTypeKind (from);
 		cb.convertInstruction (tkr, tkTo);
 	    }
+	} else if (to.getType () == FullNameHandler.Type.PRIMITIVE) {
+	    autoUnBox (cb, from, (FullNameHandler.Primitive)to);
 	}
     }
 
+    // We only know we want some kind of object, we can not pass in to to get the owner
     private void autoBox (CodeBuilder cb, FullNameHandler.Primitive p) {
 	FullNameHandler ab = FullNameHelper.getAutoBoxOption (p);
-
 	ClassDesc owner = ClassDescUtils.getClassDesc (ab);
 	String name = "valueOf";
 	MethodTypeDesc type = MethodTypeDesc.ofDescriptor ("(" + p.getSignature () + ")L" + ab.getSlashName () + ";");
 	cb.invokestatic (owner, name, type);
+    }
+
+    // from will be java.lang.Long and to will be long, so here we can trust them
+    private void autoUnBox (CodeBuilder cb, FullNameHandler from, FullNameHandler.Primitive to) {
+	ClassDesc owner = ClassDescUtils.getClassDesc (from);
+	String name = to.getFullDotName () + "Value"; // intValue, longValue, ...
+	MethodTypeDesc type = MethodTypeDesc.ofDescriptor ("()"+ to.signature ());
+	cb.invokevirtual (owner, name, type);
     }
 
     private void addPrimitiveCast (CodeBuilder cb, TypeKind from, TypeKind to) {
@@ -684,6 +694,8 @@ public class BytecodeGenerator {
 	    lv.localSlot (slot);
 	    if (lv.hasInitializer ()) {
 		handleStatements (cb, lv.initializer ());
+		FullNameHandler fromType = FullNameHelper.type (lv.initializer ());
+		widenOrAutoBoxAsNeeded (cb, fromType, fn, kind);
 		cb.storeInstruction (kind, slot);
 	    }
 	}

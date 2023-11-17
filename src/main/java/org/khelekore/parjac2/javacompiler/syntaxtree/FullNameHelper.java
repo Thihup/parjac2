@@ -101,6 +101,8 @@ public class FullNameHelper {
 	case TokenNode tn -> getPrimitive (tn.token ());
 	case ArrayType at -> arrayOf (type (at.getType ()), at.rank ());
 	case ArrayAccess aa -> aa.type ();
+	case Assignment a -> type (a.lhs ());
+	case LocalVariableDeclaration lv -> type (lv.getType ());
 	case CastExpression ce -> type (ce.baseType ());
 	case ClassInstanceCreationExpression cice -> cice.type ();
 	case ClassLiteral cl -> JL_CLASS;
@@ -136,6 +138,13 @@ public class FullNameHelper {
 	    return false;
 	FullNameHandler fn = AUTO_BOX.get (from);
 	return fn != null && fn.equals (to);
+    }
+
+    public static boolean canAutoUnBoxTo (FullNameHandler from, FullNameHandler to) {
+	if (!to.isPrimitive ())
+	    return false;
+	FullNameHandler fn = AUTO_BOX.get (to);
+	return fn != null && fn.equals (from);
     }
 
     public static FullNameHandler getAutoBoxOption (FullNameHandler fn) {
