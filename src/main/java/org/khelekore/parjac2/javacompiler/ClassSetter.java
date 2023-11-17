@@ -702,16 +702,28 @@ public class ClassSetter {
 	    return false;
 	if (have.equals (wanted))
 	    return true;
-	if (FullNameHelper.mayAutoCastPrimitives (have, wanted))
-	    return true;
-	if (wanted.getType () == FullNameHandler.Type.OBJECT && have == FullNameHandler.NULL)
-	    return true;
-	if (FullNameHelper.canAutoBoxTo (have, wanted))
-	    return true;
-	if (isSuperClass (wanted, have))
-	    return true;
-	if (isAutoboxSuperClass (wanted, have))
-	    return true;
+	if (wanted.isArray ()) {
+	    if (!have.isArray ())
+		return false;
+	    // both arrays
+	    FullNameHandler.ArrayHandler wantedA = (FullNameHandler.ArrayHandler)wanted;
+	    FullNameHandler.ArrayHandler haveA = (FullNameHandler.ArrayHandler)have;
+	    if (isSuperClass (wantedA.inner (), haveA.inner ()))
+		return true;
+	}  else {
+	    if (have.isArray ())
+		return wanted == FullNameHandler.JL_OBJECT;
+	    if (FullNameHelper.mayAutoCastPrimitives (have, wanted))
+		return true;
+	    if (wanted.getType () == FullNameHandler.Type.OBJECT && have == FullNameHandler.NULL)
+		return true;
+	    if (FullNameHelper.canAutoBoxTo (have, wanted))
+		return true;
+	    if (isSuperClass (wanted, have))
+		return true;
+	    if (isAutoboxSuperClass (wanted, have))
+		return true;
+	}
 	return false;
     }
 

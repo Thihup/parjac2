@@ -367,6 +367,11 @@ public class TestClassSetter {
     }
 
     @Test
+    public void testVarArgAsArgument () {
+	getTypes ("class T {} class C { static void a (T... tokens) { String s = java.util.Arrays.toString (tokens); }}");
+    }
+
+    @Test
     public void testClassLiteral () {
 	getTypes ("class C { void foo () { C.class.getResource (\"a\"); }}");
     }
