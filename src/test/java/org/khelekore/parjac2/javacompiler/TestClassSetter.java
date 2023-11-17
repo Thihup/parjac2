@@ -536,6 +536,36 @@ public class TestClassSetter {
 	getTypes ("interface I {} class A implements I {} class B<T extends I> {} class C { B<A> bs; }");
     }
 
+    @Test
+    public void testAutoBoxIntMethodArgumentMatchin () {
+	getTypes ("class C { static void r () { String.format (\"A: %d\", 12); }}");
+    }
+
+    @Test
+    public void testAutoBoxToSyperType () {
+	getTypes ("class C { void a (Number n) {} f () { a (1); }}");
+    }
+
+    @Test
+    public void testAutoBoxToInterface () {
+	getTypes ("class C { void a (java.io.Serializable s) {} f () { a (1); }}");
+    }
+
+    @Test
+    public void testAutoBoxInReturn () {
+	getTypes ("class C { static Integer r () { return 12; }}");
+    }
+
+    @Test
+    public void testAutoBoxInReturnSuperType () {
+	getTypes ("class C { static Number r () { return 12; }}");
+    }
+
+    @Test
+    public void testAutoBoxInReturnInterface () {
+	getTypes ("class C { static java.io.Serializable r () { return 12; }}");
+    }
+
     /* TODO: implement full generic handling */
     /*
     @Test

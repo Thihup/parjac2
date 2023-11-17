@@ -510,7 +510,8 @@ public class ClassSetter {
 	    // TODO: set methodOn
 	}
 
-	// TODO: verify method arguments match
+	// useful when debugging
+	//System.err.println ("Trying to check method: " + mi + ", currently inside: " + currentClass (et).getFullDotName ());
 	boolean insideStatic = false;
 	while (et != null) {
 	    if (et.enclosure () instanceof EnclosingTypes.TypeEnclosure) {
@@ -529,7 +530,7 @@ public class ClassSetter {
 	}
 	if (mi.info () == null) {
 	    // useful when debugging
-	    // System.err.println ("Failed to find method: " + name);
+	    //System.err.println ("Failed to find method: " + name);
 	    error (mi, "No matching method named %s found in %s", name, methodOn.getFullDotName ());
 	}
     }
@@ -593,6 +594,8 @@ public class ClassSetter {
 	    } else {
 		pfn = info.parameter (i);
 	    }
+	    // Useful when debugging
+	    //System.err.println ("i " + i + ", args(" + i + "): " + pa + " -> " + dotName (afn) + ", pfn: "+ dotName (pfn));
 	    if (!typesMatch (pfn, afn))
 		return false;
 	}
@@ -694,18 +697,29 @@ public class ClassSetter {
 	error (test, "Test needs to evaluate to boolean value, current type: %s", type);
     }
 
-    private boolean typesMatch (FullNameHandler fm, FullNameHandler fr) {
-	if (fr.equals (fm))
+    private boolean typesMatch (FullNameHandler wanted, FullNameHandler have) {
+	if (wanted == null || have == null)
+	    return false;
+	if (have.equals (wanted))
 	    return true;
-	// they may be different records
-	if (fr.getFullDotName ().equals (fm.getFullDotName ()))
+	if (FullNameHelper.mayAutoCastPrimitives (have, wanted))
 	    return true;
-	if (FullNameHelper.mayAutoCastPrimitives (fr, fm))
+	if (wanted.getType () == FullNameHandler.Type.OBJECT && have == FullNameHandler.NULL)
 	    return true;
-	if (fm.getType () == FullNameHandler.Type.OBJECT && fr == FullNameHandler.NULL)
+	if (FullNameHelper.canAutoBoxTo (have, wanted))
 	    return true;
-	if (isSuperClass (fm, fr))
+	if (isSuperClass (wanted, have))
 	    return true;
+	if (isAutoboxSuperClass (wanted, have))
+	    return true;
+	return false;
+    }
+
+    private boolean isAutoboxSuperClass (FullNameHandler supertype, FullNameHandler subtype) {
+	for (FullNameHandler ab : FullNameHelper.getAutoBoxOptions (subtype)) {
+	    if (isSuperClass (supertype, ab))
+		return true;
+	}
 	return false;
     }
 
@@ -1270,5 +1284,11 @@ public class ClassSetter {
 
     private void error (ParseTreeNode where, String template, Object... args) {
 	diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), where.position (), template, args));
+    }
+
+    private String dotName (FullNameHandler fn) {
+	if (fn == null)
+	    return "-";
+	return fn.getFullDotName ();
     }
 }
