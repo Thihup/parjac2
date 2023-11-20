@@ -259,11 +259,19 @@ public class TestFullCompilation {
     }
 
     @Test
-    public void testSimpleForLoop () throws ReflectiveOperationException {
+    public void testSimpleForLoopIncrementing () throws ReflectiveOperationException {
 	Method m = getMethod ("C", "public class C { public static int r (int x) { int y = 0; for (int i = 0; i < x; i++) y += i; return y; }}",
 			      "r", Integer.TYPE);
 	int r = (Integer)m.invoke (null, 4);
 	assert r == 6 : "Unexpected return value: " + r;
+    }
+
+    @Test
+    public void testSimpleForLoopDecrementing () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static int r (int x) { int y = 0; for (int i = x; i >= 0; i--) y += i; return y; }}",
+			      "r", Integer.TYPE);
+	int r = (Integer)m.invoke (null, 4);
+	assert r == 10 : "Unexpected return value: " + r;
     }
 
     @Test
