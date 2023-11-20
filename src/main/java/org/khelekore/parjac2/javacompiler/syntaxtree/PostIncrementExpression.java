@@ -18,7 +18,7 @@ public class PostIncrementExpression extends SyntaxTreeNode {
 	return expression;
     }
 
-    @Override public Object getValue() {
+    @Override public Object getValue () {
 	return expression + "++";
     }
 

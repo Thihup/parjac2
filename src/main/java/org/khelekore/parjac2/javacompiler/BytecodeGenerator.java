@@ -358,6 +358,7 @@ public class BytecodeGenerator {
 	case Assignment a -> handleAssignment (cb, partsToHandle, a);
 	case LocalVariableDeclaration lv -> handleLocalVariables (cb, partsToHandle, lv);
 	case PostIncrementExpression pie -> handlePostIncrement (cb, partsToHandle, pie);
+	case PostDecrementExpression pde -> handlePostDecrement (cb, partsToHandle, pde);
 	case BasicForStatement bfs -> handleBasicFor (cb, partsToHandle, bfs);
 	case ClassInstanceCreationExpression cic -> handleNew (cb, cic);
 	case StringLiteral l -> cb.ldc (l.getValue ());
@@ -466,6 +467,7 @@ public class BytecodeGenerator {
     }
 
     private void handleReturn (CodeBuilder cb, ReturnStatement r) {
+	cb.lineNumber (r.position ().getLineNumber ());
 	FullNameHandler fm = r.type ();
 	TypeKind tkm = FullNameHelper.getTypeKind (fm);
 
@@ -702,7 +704,14 @@ public class BytecodeGenerator {
     }
 
     private void handlePostIncrement (CodeBuilder cb, Deque<Object> partsToHandle, PostIncrementExpression pie) {
-	ParseTreeNode tn = pie.expression ();
+	handlePostChange (cb, partsToHandle, pie.expression (), 1);
+    }
+
+    private void handlePostDecrement (CodeBuilder cb, Deque<Object> partsToHandle, PostDecrementExpression pde) {
+	handlePostChange (cb, partsToHandle, pde.expression (), -1);
+    }
+
+    private void handlePostChange (CodeBuilder cb, Deque<Object> partsToHandle, ParseTreeNode tn, int change) {
 	if (tn instanceof DottedName dn)
 	    tn = dn.replaced ();
 	if (tn instanceof FieldAccess fa) {
@@ -712,9 +721,9 @@ public class BytecodeGenerator {
 	    } else {
 		VariableInfo vi = fa.variableInfo ();
 		switch (vi.fieldType ()) {
-		case VariableInfo.Type.PARAMETER -> incrementLocalVariable (cb, ((FormalParameterBase)vi).slot (), 1);
-		case VariableInfo.Type.LOCAL -> incrementLocalVariable (cb, ((LocalVariable)vi).slot (), 1);
-		case VariableInfo.Type.FIELD -> incrementField (cb, vi);
+		case VariableInfo.Type.PARAMETER -> incrementLocalVariable (cb, ((FormalParameterBase)vi).slot (), change);
+		case VariableInfo.Type.LOCAL -> incrementLocalVariable (cb, ((LocalVariable)vi).slot (), change);
+		case VariableInfo.Type.FIELD -> incrementField (cb, vi, change);
 		}
 	    }
 	} else if (tn instanceof ArrayAccess aa) {
@@ -729,7 +738,7 @@ public class BytecodeGenerator {
 	cb.incrementInstruction (slot, value);
     }
 
-    private void incrementField (CodeBuilder cb, VariableInfo vi) {
+    private void incrementField (CodeBuilder cb, VariableInfo vi, int change) {
 	ClassDesc owner = ClassDescUtils.getClassDesc (cip.getFullName (td));
 	ClassDesc type = vi.typeClassDesc ();
 	if (isInstanceField (vi)) {
@@ -740,7 +749,7 @@ public class BytecodeGenerator {
 	    cb.getfield (owner, vi.name (), type);
 	else
 	    cb.getstatic (owner, vi.name (), type);
-	cb.iconst_1 ();
+	handleInt (cb, change);
 	cb.iadd ();
 	if (isInstanceField (vi))
 	    cb.putfield (owner, vi.name (), type);
@@ -773,6 +782,7 @@ public class BytecodeGenerator {
 	    handleStatements (cb, exp);
 	    operator = Opcode.IFNE;
 	} else if (exp instanceof TwoPartExpression tp) {
+	    // TODO: handle > 0 and similar special cases.
 	    handleStatements (cb, tp.part1 ());
 	    handleStatements (cb, tp.part2 ());
 	    operator = getReverseTwoPartJump (tp);

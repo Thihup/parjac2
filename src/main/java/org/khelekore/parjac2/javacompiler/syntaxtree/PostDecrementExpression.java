@@ -13,7 +13,11 @@ public class PostDecrementExpression extends SyntaxTreeNode {
 	expression = children.get (0);
     }
 
-    @Override public Object getValue() {
+    public ParseTreeNode expression () {
+	return expression;
+    }
+
+    @Override public Object getValue () {
 	return expression + "--";
     }
 
