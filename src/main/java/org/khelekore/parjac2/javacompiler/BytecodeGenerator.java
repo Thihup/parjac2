@@ -577,17 +577,21 @@ public class BytecodeGenerator {
 
 	// TODO: we need to handle nested concats
 	String recipe;
+	FullNameHandler type;
 	if (p1 instanceof StringLiteral sl) {
 	    String s = sl.getValue ();
 	    recipe = s + "\1";
+	    type = FullNameHelper.type (p2);
 	    handleStatements (cb, p2);
 	} else if (p2 instanceof StringLiteral sl) {
+	    type = FullNameHelper.type (p1);
 	    handleStatements (cb, p1);
 	    String s = sl.getValue ();
 	    recipe = "\1" + s;
 	} else {
 	    throw new IllegalStateException ("Unhandled string concat: " + two);
 	}
+
 	DirectMethodHandleDesc.Kind kind = DirectMethodHandleDesc.Kind.STATIC;
 	ClassDesc owner = ClassDesc.ofInternalName ("java/lang/invoke/StringConcatFactory");
 	String name = "makeConcatWithConstants";
@@ -602,7 +606,9 @@ public class BytecodeGenerator {
 					 "Ljava/lang/invoke/CallSite;");
 	DirectMethodHandleDesc bootstrapMethod =
 	    MethodHandleDesc.ofMethod (kind, owner, name, lookupMethodType);
-	MethodTypeDesc invocationType = MethodTypeDesc.ofDescriptor ("(I)Ljava/lang/String;");
+	ClassDesc ret = ClassDescUtils.getClassDesc (FullNameHandler.JL_STRING);
+	ClassDesc cdType = ClassDescUtils.getClassDesc (type);
+	MethodTypeDesc invocationType = MethodTypeDesc.of (ret, cdType);
 	ConstantDesc[] bootstrapArgs = {recipe};
 	DynamicCallSiteDesc ref = DynamicCallSiteDesc.of (bootstrapMethod, name, invocationType, bootstrapArgs);
 	cb.invokedynamic (ref);
