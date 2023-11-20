@@ -1,7 +1,11 @@
 package org.khelekore.parjac2.javacompiler;
 
 import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
+import java.lang.constant.DirectMethodHandleDesc;
+import java.lang.constant.DynamicCallSiteDesc;
+import java.lang.constant.MethodHandleDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
@@ -541,9 +545,10 @@ public class BytecodeGenerator {
     }
 
     private void handleTwoPartExpression (CodeBuilder cb, Deque<Object> partsToHandle, TwoPartExpression two) {
-	if (isArithmeticOrLogical (two)) {
+	if (two.fullName () == FullNameHandler.JL_STRING) {
+	    handleStringConcat (cb, two);
+	} else if (isArithmeticOrLogical (two)) {
 	    handleTwoPartSetup (cb, two);
-
 	    // TODO: implement correctly
 	    if (two.token () == javaTokens.PLUS)
 		handlePlus (cb, two.fullName ());
@@ -564,6 +569,43 @@ public class BytecodeGenerator {
 
 	    cb.ifThenElse (jumpInstruction, b -> b.iconst_1 (), b -> b.iconst_0 ());
 	}
+    }
+
+    private void handleStringConcat (CodeBuilder cb, TwoPartExpression two) {
+	ParseTreeNode p1 = two.part1 ();
+	ParseTreeNode p2 = two.part2 ();
+
+	// TODO: we need to handle nested concats
+	String recipe;
+	if (p1 instanceof StringLiteral sl) {
+	    String s = sl.getValue ();
+	    recipe = s + "\1";
+	    handleStatements (cb, p2);
+	} else if (p2 instanceof StringLiteral sl) {
+	    handleStatements (cb, p1);
+	    String s = sl.getValue ();
+	    recipe = "\1" + s;
+	} else {
+	    throw new IllegalStateException ("Unhandled string concat: " + two);
+	}
+	DirectMethodHandleDesc.Kind kind = DirectMethodHandleDesc.Kind.STATIC;
+	ClassDesc owner = ClassDesc.ofInternalName ("java/lang/invoke/StringConcatFactory");
+	String name = "makeConcatWithConstants";
+	MethodTypeDesc lookupMethodType =
+	    MethodTypeDesc.ofDescriptor ("(" +
+					 "Ljava/lang/invoke/MethodHandles$Lookup;" +
+					 "Ljava/lang/String;" +                        // name
+					 "Ljava/lang/invoke/MethodType;" +             // concat type
+					 "Ljava/lang/String;" +                        // recipe
+					 "[Ljava/lang/Object;" +                       // constants
+					 ")" +
+					 "Ljava/lang/invoke/CallSite;");
+	DirectMethodHandleDesc bootstrapMethod =
+	    MethodHandleDesc.ofMethod (kind, owner, name, lookupMethodType);
+	MethodTypeDesc invocationType = MethodTypeDesc.ofDescriptor ("(I)Ljava/lang/String;");
+	ConstantDesc[] bootstrapArgs = {recipe};
+	DynamicCallSiteDesc ref = DynamicCallSiteDesc.of (bootstrapMethod, name, invocationType, bootstrapArgs);
+	cb.invokedynamic (ref);
     }
 
     private boolean isArithmeticOrLogical (TwoPartExpression two) {
