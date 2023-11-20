@@ -782,12 +782,27 @@ public class BytecodeGenerator {
 	    handleStatements (cb, exp);
 	    operator = Opcode.IFNE;
 	} else if (exp instanceof TwoPartExpression tp) {
-	    // TODO: handle > 0 and similar special cases.
 	    handleStatements (cb, tp.part1 ());
-	    handleStatements (cb, tp.part2 ());
-	    operator = getReverseTwoPartJump (tp);
+
+	    ParseTreeNode p2 = tp.part2 ();
+	    if (p2 instanceof IntLiteral il && il.intValue () == 0) {
+		operator = getReverseZeroJump (tp.token ());
+	    } else {
+		handleStatements (cb, tp.part2 ());
+		operator = getReverseTwoPartJump (tp);
+	    }
 	}
 	cb.branchInstruction (operator, endLabel);
+    }
+
+    private Opcode getReverseZeroJump (Token t) {
+	if (t == javaTokens.DOUBLE_EQUAL) return Opcode.IFNE;
+	if (t == javaTokens.NOT_EQUAL) return Opcode.IFEQ;
+	if (t == javaTokens.LT) return Opcode.IFGE;
+	if (t == javaTokens.GT) return Opcode.IFLE;
+	if (t == javaTokens.LE) return Opcode.IFGT;
+	if (t == javaTokens.GE) return Opcode.IFLT;
+	throw new IllegalArgumentException ("Unknown zero comparisson: " + t);
     }
 
     private Opcode getTwoPartJump (TwoPartExpression t) {
