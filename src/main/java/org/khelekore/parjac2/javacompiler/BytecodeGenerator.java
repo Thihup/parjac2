@@ -141,7 +141,6 @@ public class BytecodeGenerator {
 			      ac.getSuperClass (), List.of ());
     }
 
-    // TODO: we only want to generate a signature if we have any generic thing to deal with.
     private String getClassSignature (TypeParameters tps, ClassType superClass, List<ClassType> superInterfaces) {
 	if (tps != null || hasGenericType (superClass) || hasGenericType (superInterfaces)) {
 	    StringBuilder sb = new StringBuilder ();
