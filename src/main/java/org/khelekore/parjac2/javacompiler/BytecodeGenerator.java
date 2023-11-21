@@ -551,6 +551,8 @@ public class BytecodeGenerator {
 	    // TODO: implement correctly
 	    if (two.token () == javaTokens.PLUS)
 		handlePlus (cb, two.fullName ());
+	    if (two.token () == javaTokens.MINUS)
+		handleMinus (cb, two.fullName ());
 	} else {
 	    // TODO: investigate if we need to evaluate to more than boolean
 	    FullNameHandler fnt = two.fullName ();
@@ -667,6 +669,17 @@ public class BytecodeGenerator {
 	    cb.dadd ();
 	else if (fn == FullNameHandler.FLOAT)
 	    cb.fadd ();
+	else
+	    throw new IllegalStateException ("Unhandled type: " + fn);
+    }
+
+    private void handleMinus (CodeBuilder cb, FullNameHandler fn) {
+	if (fn == FullNameHandler.INT)
+	    cb.isub ();
+	else if (fn == FullNameHandler.DOUBLE)
+	    cb.dsub ();
+	else if (fn == FullNameHandler.FLOAT)
+	    cb.fsub ();
 	else
 	    throw new IllegalStateException ("Unhandled type: " + fn);
     }
