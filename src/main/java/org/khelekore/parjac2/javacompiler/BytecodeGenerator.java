@@ -347,7 +347,7 @@ public class BytecodeGenerator {
     }
 
     private void handleStatement (CodeBuilder cb, TypeDeclaration td, Deque<Object> partsToHandle, Object p) {
-	System.err.println ("looking at: " + p + ", " + p.getClass ().getName ());
+	//System.err.println ("looking at: " + p + ", " + p.getClass ().getName ());
 	switch (p) {
 	case Handler h -> h.run (cb);
 	case ExpressionName e -> runParts (partsToHandle, e.replaced ());
@@ -544,7 +544,7 @@ public class BytecodeGenerator {
     }
 
     private void handleTwoPartExpression (CodeBuilder cb, Deque<Object> partsToHandle, TwoPartExpression two) {
-	if (two.fullName () == FullNameHandler.JL_STRING) {
+	if (isString (two)) {
 	    handleStringConcat (cb, two);
 	} else if (isArithmeticOrLogical (two)) {
 	    handleTwoPartSetup (cb, two);
@@ -571,25 +571,19 @@ public class BytecodeGenerator {
     }
 
     private void handleStringConcat (CodeBuilder cb, TwoPartExpression two) {
-	ParseTreeNode p1 = two.part1 ();
-	ParseTreeNode p2 = two.part2 ();
-
-	// TODO: we need to handle nested concats
-	String recipe;
-	FullNameHandler type;
-	if (p1 instanceof StringLiteral sl) {
-	    String s = sl.getValue ();
-	    recipe = s + "\1";
-	    type = FullNameHelper.type (p2);
-	    handleStatements (cb, p2);
-	} else if (p2 instanceof StringLiteral sl) {
-	    type = FullNameHelper.type (p1);
-	    handleStatements (cb, p1);
-	    String s = sl.getValue ();
-	    recipe = "\1" + s;
-	} else {
-	    throw new IllegalStateException ("Unhandled string concat: " + two);
+	List<ParseTreeNode> parts = getAllStringParts (two);
+	List<ClassDesc> types = new ArrayList<> ();
+	StringBuilder recipeBuilder = new StringBuilder ();
+	for (ParseTreeNode p : parts) {
+	    if (isLiteral (p)) {
+		recipeBuilder.append (p.getValue ());
+	    } else {
+		handleStatements (cb, p);
+		types.add (ClassDescUtils.getClassDesc (FullNameHelper.type (p)));
+		recipeBuilder.append ("\1");
+	    }
 	}
+	String recipe = recipeBuilder.toString ();
 
 	DirectMethodHandleDesc.Kind kind = DirectMethodHandleDesc.Kind.STATIC;
 	ClassDesc owner = ClassDesc.ofInternalName ("java/lang/invoke/StringConcatFactory");
@@ -606,11 +600,37 @@ public class BytecodeGenerator {
 	DirectMethodHandleDesc bootstrapMethod =
 	    MethodHandleDesc.ofMethod (kind, owner, name, lookupMethodType);
 	ClassDesc ret = ClassDescUtils.getClassDesc (FullNameHandler.JL_STRING);
-	ClassDesc cdType = ClassDescUtils.getClassDesc (type);
-	MethodTypeDesc invocationType = MethodTypeDesc.of (ret, cdType);
+	MethodTypeDesc invocationType = MethodTypeDesc.of (ret, types);
 	ConstantDesc[] bootstrapArgs = {recipe};
 	DynamicCallSiteDesc ref = DynamicCallSiteDesc.of (bootstrapMethod, name, invocationType, bootstrapArgs);
 	cb.invokedynamic (ref);
+    }
+
+    private List<ParseTreeNode> getAllStringParts (TwoPartExpression tp) {
+	List<ParseTreeNode> res = new ArrayList<> ();
+	Deque<ParseTreeNode> queue = new ArrayDeque<> ();
+	queue.addLast (tp.part1 ());
+	queue.addLast (tp.part2 ());
+	while (!queue.isEmpty ()) {
+	    ParseTreeNode p = queue.removeFirst ();
+	    if (p instanceof TwoPartExpression t && isString (t)) {
+		queue.addFirst (t.part2 ());
+		queue.addFirst (t.part1 ());
+	    } else {
+		res.add (p);
+	    }
+	}
+	return res;
+    }
+
+    private boolean isLiteral (ParseTreeNode p) {
+	// TODO: add a few more types?
+	return p instanceof NumericLiteral ||
+	    p instanceof StringLiteral;
+    }
+
+    private boolean isString (TwoPartExpression two) {
+	return two.fullName () == FullNameHandler.JL_STRING;
     }
 
     private boolean isArithmeticOrLogical (TwoPartExpression two) {

@@ -336,6 +336,27 @@ public class TestFullCompilation {
 	testSimpleStringConcat ("i + \"a\"", 37.5, "37.5a");
     }
 
+    @Test
+    public void testPlusAndStringConcat () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static String a (int i) {return i + 4 + \"!\"; }}", "a", Integer.TYPE);
+	Object r = m.invoke (null, 37);
+	assert "41!".equals (r) : "Got wrong result from int + int + String concat: " + r;
+    }
+
+    @Test
+    public void testStringConcatWithSeveralInts () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static String a (int i) {return \"!\" + i + 4; }}", "a", Integer.TYPE);
+	Object r = m.invoke (null, 37);
+	assert "!374".equals (r) : "Got wrong result from int + int + String concat: " + r;
+    }
+
+    @Test
+    public void testStringConcatWithSeveralIntsInParenthesis () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static String a (int i) {return \"!\" + (i + 4); }}", "a", Integer.TYPE);
+	Object r = m.invoke (null, 37);
+	assert "!41".equals (r) : "Got wrong result from int + int + String concat: " + r;
+    }
+
     private void testSimpleStringConcat (String code, int iValue, String expected) throws ReflectiveOperationException {
 	Method m = getMethod ("C", "public class C { public static String a (int i) {return " + code + "; }}", "a", Integer.TYPE);
 	String r = (String)m.invoke (null, iValue);
