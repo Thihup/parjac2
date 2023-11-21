@@ -21,6 +21,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.DottedName;
 import org.khelekore.parjac2.javacompiler.syntaxtree.MethodDeclarator;
 import org.khelekore.parjac2.javacompiler.syntaxtree.PrimitiveType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SimpleRecordComponent;
+import org.khelekore.parjac2.javacompiler.syntaxtree.TwoPartExpression;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.UntypedMethodInvocation;
 import org.khelekore.parjac2.javacompiler.syntaxtree.VariableDeclaratorId;
@@ -180,6 +181,7 @@ public class TestParser {
 	    case PrimitiveType pt -> pt.type ().getName ();
 	    case Dims d -> "[]".repeat (d.rank ());
 	    case TokenNode s -> s.getValue ();
+	    case TwoPartExpression t -> t.token ();
 	    default -> null;
 	    };
 	if (res != null)
