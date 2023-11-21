@@ -347,7 +347,7 @@ public class BytecodeGenerator {
     }
 
     private void handleStatement (CodeBuilder cb, TypeDeclaration td, Deque<Object> partsToHandle, Object p) {
-	//System.err.println ("looking at: " + p + ", " + p.getClass ().getName ());
+	System.err.println ("looking at: " + p + ", " + p.getClass ().getName ());
 	switch (p) {
 	case Handler h -> h.run (cb);
 	case ExpressionName e -> runParts (partsToHandle, e.replaced ());
