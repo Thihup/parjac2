@@ -14,20 +14,23 @@ public class EnhancedForStatement extends SyntaxTreeNode {
     public EnhancedForStatement (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
 	int i = 2;
-	if (children.get (2) instanceof LocalVariableDeclaration lv) {
-	    // modern version allows initializers and multiple ids.
-	    this.lv = lv;
-	} else {
-	    // java 11 and similar
-	    List<ParseTreeNode> modifiers = rule.size () > 8 ? ((Multiple)children.get (i++)).get () : List.of ();
-	    ParseTreeNode type = children.get (i++);
-	    VariableDeclaratorId id = (VariableDeclaratorId)children.get (i++);
-	    lv = new LocalVariableDeclaration (modifiers, type, new VariableDeclaratorList (new VariableDeclarator (id)));
-	}
+	lv = (LocalVariableDeclaration)children.get (i++);
 	i++; // :
 	expression = children.get (i++);
 	i++;
 	statement = children.get (i);
+    }
+
+    public LocalVariableDeclaration localVariable () {
+	return lv;
+    }
+
+    public ParseTreeNode expression () {
+	return expression;
+    }
+
+    public ParseTreeNode statement () {
+	return statement;
     }
 
     @Override public Object getValue () {

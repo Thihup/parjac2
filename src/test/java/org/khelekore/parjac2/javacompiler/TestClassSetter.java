@@ -598,8 +598,19 @@ public class TestClassSetter {
     }
 
     @Test
-    public void testIterableArray () {
+    public void testForEachOnArray () {
 	getTypes ("class C { void a () {int[] array = new int[7]; for (int a : array) { }}}");
+    }
+
+    @Test
+    public void testForEachOnCollection () {
+	// code would give NPE, but we do not care for this test case
+	getTypes ("class C { void a () {java.util.List<String> ls = null; for (int a : ls) { }}}");
+    }
+
+    @Test
+    public void testForEachOnNonIterable () {
+	getTypes ("class C { void a () {int x = 3; for (int a : x) { }}}", 1);
     }
 
     @Test

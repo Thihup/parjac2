@@ -29,6 +29,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.ClassOrInterfaceTypeToInsta
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ConstructorDeclarationBase;
 import org.khelekore.parjac2.javacompiler.syntaxtree.DottedName;
+import org.khelekore.parjac2.javacompiler.syntaxtree.EnhancedForStatement;
 import org.khelekore.parjac2.javacompiler.syntaxtree.EnumConstant;
 import org.khelekore.parjac2.javacompiler.syntaxtree.EnumDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ExceptionTypeList;
@@ -326,7 +327,7 @@ public class ClassSetter {
 	    case ReturnStatement r -> handlePartsAndHandler (et, r, e -> setReturnStatementType (e, r), partsToHandle);
 	    case IfThenStatement i -> handlePartsAndHandler (et, i, e -> checkIfExpressionType (e, i), partsToHandle);
 	    case BasicForStatement bfs -> handlePartsAndHandler (et, bfs, e -> checkBasicForExpression (e, bfs), partsToHandle);
-
+	    case EnhancedForStatement efs -> handlePartsAndHandler (et, efs, e -> checkEnhancedForExpression (e, efs), partsToHandle);
 	    case ParseTreeNode ptn -> addParts (et, ptn, partsToHandle);
 
 	    case CustomHandler ch -> ch.run (et);
@@ -367,8 +368,9 @@ public class ClassSetter {
     private void checkInitializerType (FullNameHandler varType, ParseTreeNode initializer) {
 	if (initializer != null) {
 	    FullNameHandler fi = FullNameHelper.type (initializer);
+	    // if varType == null, we have already signaled type not found or similar
 	    // If fi == null we have already signaled errors and do not want another one here.
-	    if (fi != null && !typesMatch (varType, fi))
+	    if (varType != null && fi != null && !typesMatch (varType, fi))
 		error (initializer, "Types not compatible: %s <-> %s", varType.getFullDotName (), fi.getFullDotName ());
 	}
     }
@@ -703,6 +705,18 @@ public class ClassSetter {
 	ParseTreeNode p = bfs.expression ();
 	if (p != null)
 	    checkTest (et, p);
+    }
+
+    private void checkEnhancedForExpression (EnclosingTypes et, EnhancedForStatement efs) {
+	ParseTreeNode exp = efs.expression ();
+	FullNameHandler fn = FullNameHelper.type (exp);
+	if (!(fn.isArray () || isIterable (fn)))
+	    error (exp, "Expression in for-each must be Iterable, current type: " + fn.getFullDotName ());
+    }
+
+    private boolean isIterable (FullNameHandler fn) {
+	Set<FullNameHandler> allSupers = getAllSuperTypes (fn);
+	return allSupers.contains (FullNameHandler.JL_ITERABLE);
     }
 
     private void checkTest (EnclosingTypes et, ParseTreeNode test) {

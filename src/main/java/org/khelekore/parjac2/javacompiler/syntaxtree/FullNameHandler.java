@@ -7,9 +7,10 @@ import org.khelekore.parjac2.javacompiler.GenericTypeHelper;
 
 public interface FullNameHandler {
 
-    public static final FullNameHandler JL_OBJECT = FullNameHandler.ofSimpleClassName ("java.lang.Object");
     public static final FullNameHandler JL_CLASS = FullNameHandler.ofSimpleClassName ("java.lang.Class");
     public static final FullNameHandler JL_ENUM = FullNameHandler.ofSimpleClassName ("java.lang.Enum");
+    public static final FullNameHandler JL_ITERABLE = FullNameHandler.ofSimpleClassName ("java.lang.Iterable");
+    public static final FullNameHandler JL_OBJECT = FullNameHandler.ofSimpleClassName ("java.lang.Object");
     public static final FullNameHandler JL_RECORD = FullNameHandler.ofSimpleClassName ("java.lang.Record");
     public static final FullNameHandler JL_STRING = FullNameHandler.ofSimpleClassName ("java.lang.String");
 
