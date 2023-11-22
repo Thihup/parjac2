@@ -3,7 +3,6 @@ package org.khelekore.parjac2.javacompiler;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -412,19 +411,50 @@ public class ClassResourceHolder {
 	}
 
 	@Override public FullNameHandler typeName () {
-	    return parseTypeName (typeclass);
+	    return FullNameHelper.ofDescriptor (typeclass);
 	}
     }
 
-    private record ClassResourceMethod (FullNameHandler owner, String name, int flags,
-					MethodTypeDesc md, String signature) implements MethodInfo {
+    private static class ClassResourceMethod implements MethodInfo {
+	private final FullNameHandler owner;
+	private final String name;
+	private final int flags;
+	private final MethodTypeDesc md;
+
+	@SuppressWarnings ("unused") // we will need this for generic handling
+	private final String signature;
+
+	private FullNameHandler returnType;
+	private List<FullNameHandler> params;
+
+	public ClassResourceMethod (FullNameHandler owner, String name, int flags,
+				    MethodTypeDesc md, String signature) {
+	    this.owner = owner;;
+	    this.name = name;
+	    this.flags = flags;
+	    this.md = md;
+	    this.signature = signature;
+	}
+
+	@Override public FullNameHandler owner () {
+	    return owner;
+	}
+
+	@Override public String name () {
+	    return name;
+	}
+
+	@Override public int flags () {
+	    return flags;
+	}
+
 	@Override public int numberOfArguments () {
-	    return md.parameterList ().size ();
+	    return md.parameterCount ();
 	}
 
 	@Override public FullNameHandler result () {
-	    String desc = md.returnType ().descriptorString ();
-	    return parseTypeName (desc);
+	    cacheFullNames ();
+	    return returnType;
 	}
 
 	@Override public MethodTypeDesc methodTypeDesc () {
@@ -432,31 +462,20 @@ public class ClassResourceHolder {
 	}
 
 	@Override public FullNameHandler parameter (int i) {
-	    // TODO: cache full name lookups
-	    ClassDesc cd = md.parameterType (i);
-	    return FullNameHelper.get (cd);
-	}
-    }
-
-    private static FullNameHandler parseTypeName (String typeName) {
-	// TODO: this needs more work!
-	if (typeName.startsWith ("L") && typeName.endsWith (";")) {
-	    String slashName = typeName.substring (1, typeName.length () - 1);
-	    String dollarName = slashName.replace ('/', '.');
-	    return FullNameHandler.ofDollarName (dollarName);
-	} else if (typeName.length () == 1) {
-	    FullNameHandler fh = FullNameHelper.getPrimitiveType (typeName);
-	    if (fh != null)
-		return fh;
-	}
-	int rank = 0;
-	while (typeName.charAt (rank) == '[')
-	    rank++;
-	if (rank > 0) {
-	    FullNameHandler fn = parseTypeName (typeName.substring (rank));
-	    return fn.array (rank);
+	    cacheFullNames ();
+	    return params.get (i);
 	}
 
-	throw new IllegalArgumentException ("Unhandled type: " + typeName);
+	private void cacheFullNames () {
+	    synchronized (this) {
+		if (params != null)
+		    return;
+		returnType = FullNameHelper.get (md.returnType ());
+		int s = numberOfArguments ();
+		    params = new ArrayList<> (s);
+		for (int i = 0; i < s; i++)
+		    params.add (FullNameHelper.get (md.parameterType (i)));
+	    }
+	}
     }
 }

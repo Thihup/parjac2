@@ -609,7 +609,6 @@ public class ClassSetter {
 	    FullNameHandler.ArrayHandler ah = (FullNameHandler.ArrayHandler)lastVarArg;
 	    lastVarArg = ah.inner ();
 	}
-	// TODO: make sure we cache the FullNameHandlers for the MethodTypeDesc
 	for (int i = 0; i < args.size (); i++) {
 	    ParseTreeNode pa = args.get (i);
 	    FullNameHandler afn = FullNameHelper.type (pa);
