@@ -374,8 +374,6 @@ public class ClassSetter {
     }
 
     private void checkAssignment (EnclosingTypes et, Assignment a) {
-	//System.err.println ("About to check assignment: " + a);
-	// TODO: implement this!
 	FullNameHandler toType = FullNameHelper.type (a.lhs ());
 	FullNameHandler fromType = FullNameHelper.type (a.rhs ());
 	if (toType != null && fromType != null && !typesMatch (toType, fromType))
@@ -426,7 +424,7 @@ public class ClassSetter {
 		    return;
 		}
 	    } else if (fn instanceof FullNameHandler.Primitive pt) {
-		// TODO: implement auto-boxing
+		// TODO: Most of auto boxing happens in code generation, but we may need to handle here as well
 		error (an, "No field: %s for primitive type", id);
 		an.fullName (null);
 		return;
