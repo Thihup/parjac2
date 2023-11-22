@@ -26,7 +26,7 @@ public class ClassDescUtils {
     public static ClassDesc getClassDesc (FullNameHandler fn) {
 	if (fn.isArray ()) {
 	    FullNameHandler.ArrayHandler a = (FullNameHandler.ArrayHandler)fn;
-	    return getClassDesc (a.fn ()).arrayType ();
+	    return getClassDesc (a.fn ()).arrayType (a.rank ());
 	}
 
 	if (fn.isPrimitive ())

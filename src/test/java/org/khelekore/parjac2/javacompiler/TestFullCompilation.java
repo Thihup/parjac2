@@ -390,6 +390,13 @@ public class TestFullCompilation {
 	assert arr.length == 37 : "Wrong size of array: " + arr.length;
     }
 
+    @Test
+    public void testNewMultiIntArray () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static int[][][] a (int s) {return new int[s][5][]; }}", "a", Integer.TYPE);
+	int[][][] arr = (int[][][])m.invoke (null, 37);
+	assert arr.length == 37 : "Wrong size of array: " + arr.length;
+    }
+
     private Method getMethod (String className, String text, String methodName, Class<?> ... types) throws ReflectiveOperationException {
 	Class<?> c = getFirstClass (className, text);
 	Method m = c.getMethod (methodName, types);

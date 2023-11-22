@@ -38,6 +38,10 @@ public class ArrayCreationExpression extends SyntaxTreeNode {
 	return r;
     }
 
+    public int dimExprs () {
+	return dimExprs != null ? dimExprs.rank () : 0;
+    }
+
     @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	sb.append ("new ");

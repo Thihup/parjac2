@@ -940,12 +940,17 @@ public class BytecodeGenerator {
     private void handleArrayCreation (CodeBuilder cb, ArrayCreationExpression ace) {
 	handleStatements (cb, ace.getChildren ());
 	FullNameHandler type = ace.innerFullName ();
-	if (type.isPrimitive ()) {
-	    TypeKind kind = FullNameHelper.getTypeKind (type);
-	    cb.newarray (kind);
+	if (ace.rank () == 1) {
+	    if (type.isPrimitive ()) {
+		TypeKind kind = FullNameHelper.getTypeKind (type);
+		cb.newarray (kind);
+	    } else {
+		ClassDesc desc = ClassDescUtils.getClassDesc (type);
+		cb.anewarray (desc);
+	    }
 	} else {
-	    ClassDesc desc = ClassDescUtils.getClassDesc (type);
-	    cb.anewarray (desc);
+	    ClassDesc desc = ClassDescUtils.getClassDesc (ace.fullName ());
+	    cb.multianewarray (desc, ace.dimExprs ());
 	}
     }
 
