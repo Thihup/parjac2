@@ -407,6 +407,14 @@ public class TestFullCompilation {
 	assert r == 3 : "Wrong element returned: " + r;
     }
 
+    @Test
+    public void testGetArrayArray () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static int[] a (int[][] s, int pos) {return s[pos]; }}", "a", int[][].class, Integer.TYPE);
+	int[][] data = new int[3][4];
+	int[] r = (int[])m.invoke (null, data, 0);
+	assert r != null : "Got null back";
+    }
+
     private Method getMethod (String className, String text, String methodName, Class<?> ... types) throws ReflectiveOperationException {
 	Class<?> c = getFirstClass (className, text);
 	Method m = c.getMethod (methodName, types);
