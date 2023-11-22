@@ -369,6 +369,27 @@ public class TestFullCompilation {
 	assert r.equals (expected) : "Got wrong value back: " + r;
     }
 
+    @Test
+    public void testNewIntArray () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static int[] a (int s) {return new int[s]; }}", "a", Integer.TYPE);
+	int[] arr = (int[])m.invoke (null, 37);
+	assert arr.length == 37 : "Wrong size of array: " + arr.length;
+    }
+
+    @Test
+    public void testNewDoubleArray () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static double[] a (int s) {return new double[s]; }}", "a", Integer.TYPE);
+	double[] arr = (double[])m.invoke (null, 37);
+	assert arr.length == 37 : "Wrong size of array: " + arr.length;
+    }
+
+    @Test
+    public void testNewStringArray () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static String[] a (int s) {return new String[s]; }}", "a", Integer.TYPE);
+	String[] arr = (String[])m.invoke (null, 37);
+	assert arr.length == 37 : "Wrong size of array: " + arr.length;
+    }
+
     private Method getMethod (String className, String text, String methodName, Class<?> ... types) throws ReflectiveOperationException {
 	Class<?> c = getFirstClass (className, text);
 	Method m = c.getMethod (methodName, types);

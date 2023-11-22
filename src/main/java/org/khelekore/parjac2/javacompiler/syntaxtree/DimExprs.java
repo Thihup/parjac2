@@ -29,4 +29,8 @@ public class DimExprs extends SyntaxTreeNode {
     @Override public void visitChildNodes (NodeVisitor v) {
 	dims.forEach (v::accept);
     }
+
+    public int rank () {
+	return dims.size ();
+    }
 }

@@ -21,6 +21,23 @@ public class ArrayCreationExpression extends SyntaxTreeNode {
 	initializer = (children.size () > i) ? (ArrayInitializer)children.get (i++) : null;
     }
 
+    public FullNameHandler fullName () {
+	return FullNameHelper.type (type).array (rank ());
+    }
+
+    public FullNameHandler innerFullName () {
+	return FullNameHelper.type (type);
+    }
+
+    public int rank () {
+	int r = 0;
+	if (dimExprs != null)
+	    r += dimExprs.rank ();
+	if (dims != null)
+	    r += dims.rank ();
+	return r;
+    }
+
     @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	sb.append ("new ");

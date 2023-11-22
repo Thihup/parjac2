@@ -87,6 +87,7 @@ public class FullNameHelper {
 	return switch (p) {
 	case ClassType ct -> ct.fullName ();
 	case PrimitiveType pt -> pt.fullName ();
+	case ArrayCreationExpression ac -> ac.fullName ();
 	case MethodInvocation mi -> mi.result ();
 	case DottedName an -> an.fullName ();
 	case StringLiteral s -> JL_STRING;

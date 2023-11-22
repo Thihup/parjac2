@@ -597,6 +597,12 @@ public class TestClassSetter {
 	getTypes ("class C { static void a (long l) {} static void r () { Long l = 77L; a(l); }}");
     }
 
+    @Test
+    public void testIterableArray () {
+	getTypes ("class C { void a () {int[] array = new int[7]; for (int a : array) { }}}");
+    }
+
+
     /* TODO: implement full generic handling */
     /*
     @Test

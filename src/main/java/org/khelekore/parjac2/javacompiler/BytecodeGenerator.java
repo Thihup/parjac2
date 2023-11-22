@@ -364,6 +364,7 @@ public class BytecodeGenerator {
 	case PostDecrementExpression pde -> handlePostDecrement (cb, partsToHandle, pde);
 	case BasicForStatement bfs -> handleBasicFor (cb, partsToHandle, bfs);
 	case ClassInstanceCreationExpression cic -> handleNew (cb, cic);
+	case ArrayCreationExpression ace -> handleArrayCreation (cb, ace);
 	case StringLiteral l -> cb.ldc (l.getValue ());
 	case IntLiteral i -> handleInt (cb, i);
 	case LongLiteral l -> handleLong (cb, l);
@@ -934,6 +935,18 @@ public class BytecodeGenerator {
 	cb.new_ (cd);
 	cb.dup ();
 	cb.invokespecial (cd, INSTANCE_INIT, INIT_SIGNATURE);
+    }
+
+    private void handleArrayCreation (CodeBuilder cb, ArrayCreationExpression ace) {
+	handleStatements (cb, ace.getChildren ());
+	FullNameHandler type = ace.innerFullName ();
+	if (type.isPrimitive ()) {
+	    TypeKind kind = FullNameHelper.getTypeKind (type);
+	    cb.newarray (kind);
+	} else {
+	    ClassDesc desc = ClassDescUtils.getClassDesc (type);
+	    cb.anewarray (desc);
+	}
     }
 
     private void getField (CodeBuilder cb, VariableInfo vi) {
