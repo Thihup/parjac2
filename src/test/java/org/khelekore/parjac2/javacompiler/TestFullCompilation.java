@@ -415,6 +415,15 @@ public class TestFullCompilation {
 	assert r != null : "Got null back";
     }
 
+    @Test
+    public void testGetMultiArrayElement () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static int a (int[][] s, int x, int y) {return s[x][y]; }}", "a",
+			      int[][].class, Integer.TYPE, Integer.TYPE);
+	int[][] data = {{1, 2, 3}, {7, 5, 3}};
+	int r = (Integer)m.invoke (null, data, 1, 1);
+	assert r == 5 : "Wrong element returned: " + r;
+    }
+
     private Method getMethod (String className, String text, String methodName, Class<?> ... types) throws ReflectiveOperationException {
 	Class<?> c = getFirstClass (className, text);
 	Method m = c.getMethod (methodName, types);
