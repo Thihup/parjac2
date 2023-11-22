@@ -397,6 +397,16 @@ public class TestFullCompilation {
 	assert arr.length == 37 : "Wrong size of array: " + arr.length;
     }
 
+    @Test
+    public void testGetArrayElement () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static int a (int[] s, int pos) {return s[pos]; }}", "a", int[].class, Integer.TYPE);
+	int[] data = {1, 2, 3, 4};
+	int r = (Integer)m.invoke (null, data, 0);
+	assert r == 1 : "Wrong element returned: " + r;
+	r = (Integer)m.invoke (null, data, 2);
+	assert r == 3 : "Wrong element returned: " + r;
+    }
+
     private Method getMethod (String className, String text, String methodName, Class<?> ... types) throws ReflectiveOperationException {
 	Class<?> c = getFirstClass (className, text);
 	Method m = c.getMethod (methodName, types);

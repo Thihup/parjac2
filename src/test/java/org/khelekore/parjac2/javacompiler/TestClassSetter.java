@@ -602,6 +602,10 @@ public class TestClassSetter {
 	getTypes ("class C { void a () {int[] array = new int[7]; for (int a : array) { }}}");
     }
 
+    @Test
+    public void testGetArrayElementWrongType () {
+	getTypes ("class C { void a () {int[] array = new int[7]; String s = array[2]; }}", 1);
+    }
 
     /* TODO: implement full generic handling */
     /*
