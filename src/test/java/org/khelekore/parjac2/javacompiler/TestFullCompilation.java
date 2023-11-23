@@ -294,6 +294,15 @@ public class TestFullCompilation {
     }
 
     @Test
+    public void testUnaryNegation () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { public static boolean r (boolean x) { return !x; }}", "r", Boolean.TYPE);
+	boolean r = (Boolean)m.invoke (null, true);
+	assert r == false : "Got wrong value back";
+	r = (Boolean)m.invoke (null, false);
+	assert r == true : "Got wrong value back";
+    }
+
+    @Test
     public void testConstructorTakingMultiple () throws ReflectiveOperationException {
 	Class<?> c = getFirstClass ("D", "public class D { public D (int x, int y, int z) { }}");
 	Constructor<?> ctr = c.getConstructor (Integer.TYPE, Integer.TYPE, Integer.TYPE);

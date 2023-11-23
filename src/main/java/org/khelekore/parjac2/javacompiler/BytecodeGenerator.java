@@ -554,6 +554,11 @@ public class BytecodeGenerator {
 	} else if (t == javaTokens.TILDE) {
 	    handleStatements (cb, u.expression ());
 	    mathOp (cb, FullNameHelper.type (u), t);
+	} else if (t == javaTokens.NOT) {
+	    handleStatements (cb, u.expression ());
+	    cb.ifThenElse (Opcode.IFEQ, b -> b.iconst_1 (), b -> b.iconst_0 ());
+	} else {
+	    throw new IllegalStateException ("Unhandled unary expression: " + u);
 	}
     }
 
