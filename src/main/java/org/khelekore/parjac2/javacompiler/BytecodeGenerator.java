@@ -972,6 +972,7 @@ public class BytecodeGenerator {
 	cb.aload (iteratorSlot);
 	type = MethodTypeDesc.of (ConstantDescs.CD_Object);
 	cb.invokeinterface (iteratorDesc, "next", type);
+	// TODO: add: cb.checkcast (genericType);
 
 	LocalVariableDeclaration lv = efs.localVariable ();
 	handleLocalVariables (cb, lv);

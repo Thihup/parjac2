@@ -214,7 +214,6 @@ public class TestFullCompilation {
 
     @Test
     public void testConstructorTakingMultiple () throws ReflectiveOperationException {
-;
 	Class<?> c = getFirstClass ("D", "public class D { public D (int x, int y, int z) { }}");
 	Constructor<?> ctr = c.getConstructor (Integer.TYPE, Integer.TYPE, Integer.TYPE);
 	int x = 3;
