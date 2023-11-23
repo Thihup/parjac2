@@ -275,6 +275,15 @@ public class TestFullCompilation {
     }
 
     @Test
+    public void testEnhancedForLoop () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static int a (int[] x) { int r = 0; for (int a : x) { r += a; } return r; }}",
+			      "a", int[].class);
+	int[] data = { 1, 2, 3, 4, 5};
+	int r = (Integer)m.invoke (null, data);
+	assert r == 15 : "Unexpected return value: " + r;
+    }
+
+    @Test
     public void testInstanceCreation () throws ReflectiveOperationException {
 	Method m = getMethod ("C", "public class C { static public Object r () { return new Object (); }}", "r");
 	Object r = m.invoke (null);

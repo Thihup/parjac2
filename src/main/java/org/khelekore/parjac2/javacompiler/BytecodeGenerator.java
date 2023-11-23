@@ -359,10 +359,11 @@ public class BytecodeGenerator {
 	case Ternary t -> handleTernary (cb, partsToHandle, t);
 	case IfThenStatement ifts -> handleIf (cb, partsToHandle, ifts);
 	case Assignment a -> handleAssignment (cb, partsToHandle, a);
-	case LocalVariableDeclaration lv -> handleLocalVariables (cb, partsToHandle, lv);
+	case LocalVariableDeclaration lv -> handleLocalVariables (cb, lv);
 	case PostIncrementExpression pie -> handlePostIncrement (cb, partsToHandle, pie);
 	case PostDecrementExpression pde -> handlePostDecrement (cb, partsToHandle, pde);
 	case BasicForStatement bfs -> handleBasicFor (cb, partsToHandle, bfs);
+	case EnhancedForStatement efs -> handleEnhancedFor (cb, partsToHandle, efs);
 	case ClassInstanceCreationExpression cic -> handleNew (cb, cic);
 	case ArrayCreationExpression ace -> handleArrayCreation (cb, ace);
 	case ArrayAccess aa -> handleArrayAccess (cb, aa);
@@ -769,10 +770,9 @@ public class BytecodeGenerator {
 	cb.storeInstruction (kind, slot);
     }
 
-    private void handleLocalVariables (CodeBuilder cb, Deque<Object> partsToHandle, LocalVariableDeclaration lvs) {
+    private void handleLocalVariables (CodeBuilder cb, LocalVariableDeclaration lvs) {
 	FullNameHandler fn = FullNameHelper.type (lvs.getType ());
 	for (VariableDeclarator lv : lvs.getDeclarators ()) {
-	    // TODO: what about arrays?
 	    TypeKind kind = FullNameHelper.getTypeKind (fn);
 	    int slot = cb.allocateLocal (kind);
 	    lv.localSlot (slot);
@@ -875,6 +875,81 @@ public class BytecodeGenerator {
 	    }
 	}
 	cb.branchInstruction (operator, endLabel);
+    }
+
+    private void handleEnhancedFor (CodeBuilder cb, Deque<Object> partsToHandle, EnhancedForStatement efs) {
+	ParseTreeNode exp = efs.expression ();
+	FullNameHandler fn = FullNameHelper.type (exp);
+	if (fn.isArray ()) {
+	    handleArrayLoop (cb, efs, fn);
+	} else {
+	    // TODO: handle Iterable
+	}
+    }
+
+    /*
+    static int a (int[] x) {          Transformed into this:
+	int r = 0;                    int r = 0;
+	                              int[] xc = x; int s = xc.length;
+	for (int a : x)               for (int i = 0; i < s; i++) {
+	    r += a;                        a = xc[i]; r += a;
+	}                             }
+	return r;                     return r;
+    }}
+    */
+    private void handleArrayLoop (CodeBuilder cb, EnhancedForStatement efs, FullNameHandler fn) {
+	LocalVariableDeclaration lv = efs.localVariable ();
+	List<VariableDeclarator> vds = lv.getDeclarators ();
+	if (vds.size () > 1)
+	    throw new IllegalStateException ("Unable to handle more than one variable in EnhancedForStatement.");
+	VariableDeclarator vd = vds.get (0);
+	FullNameHandler varName = FullNameHelper.type (lv);
+	TypeKind varKind = FullNameHelper.getTypeKind (varName);
+
+	TypeKind kind = FullNameHelper.getTypeKind (fn);
+	ArrayInfo ai = ArrayInfo.create (cb, kind);
+	arrayLoopSetup (cb, efs, ai);                    // copy array, store length
+
+	Label loopLabel = cb.newBoundLabel ();
+	Label endLabel = cb.newLabel ();
+	arrayLoopIndexCheck (cb, ai, endLabel);          // i < s
+	storeArrayLoopValue (cb, ai, lv, vd, varKind);   // a = xc[i]
+	handleStatements (cb, efs.statement ());
+	cb.iinc (ai.indexSlot (), 1);                    // i++
+	cb.goto_ (loopLabel); // what about goto_w?
+	cb.labelBinding (endLabel);
+    }
+
+    private void arrayLoopSetup (CodeBuilder cb, EnhancedForStatement efs, ArrayInfo ai) {
+	handleStatements (cb, efs.expression ());
+	cb.astore (ai.arrayCopySlot ());
+	cb.aload (ai.arrayCopySlot ());
+	cb.arraylength ();
+	cb.istore (ai.lengthSlot ());
+	cb.iconst_0 ();
+	cb.istore (ai.indexSlot ());
+    }
+
+    private void arrayLoopIndexCheck (CodeBuilder cb, ArrayInfo ai, Label endLabel) {
+	cb.iload (ai.indexSlot ());
+	cb.iload (ai.lengthSlot ());
+	cb.if_icmpeq (endLabel);
+    }
+
+    private void storeArrayLoopValue (CodeBuilder cb, ArrayInfo ai, LocalVariableDeclaration lv,
+				      VariableDeclarator vd, TypeKind varKind) {
+	cb.aload (ai.arrayCopySlot ());
+	cb.iload (ai.indexSlot ());
+	cb.iaload ();
+	handleLocalVariables (cb, lv);
+	int varSlot = vd.slot ();
+	cb.storeInstruction (varKind, varSlot);
+    }
+
+    private record ArrayInfo (int arrayCopySlot, int lengthSlot, int indexSlot) {
+	public static ArrayInfo create (CodeBuilder cb, TypeKind kind) {
+	    return new ArrayInfo (cb.allocateLocal (kind), cb.allocateLocal (TypeKind.IntType), cb.allocateLocal (TypeKind.IntType));
+	}
     }
 
     private Opcode getReverseZeroJump (Token t) {
