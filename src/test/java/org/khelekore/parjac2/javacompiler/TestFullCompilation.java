@@ -241,6 +241,15 @@ public class TestFullCompilation {
     }
 
     @Test
+    public void testUnaryIntOperations () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { public static int r (int x) { return ~x; }}", "r", Integer.TYPE);
+	int value = 0xff00ff00;
+	int expected = ~value;
+	int r = (Integer)m.invoke (null, value);
+	assert r == expected : "Got wrong value back, expected: " + expected + ", but got: " + r;
+    }
+
+    @Test
     public void testRelational () throws ReflectiveOperationException {
 	testRelational ("x < y", 3, 7, true);
 	testRelational ("x < y", 7, 3, false);

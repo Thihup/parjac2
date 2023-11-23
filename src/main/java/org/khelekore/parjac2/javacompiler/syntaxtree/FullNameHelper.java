@@ -113,6 +113,7 @@ public class FullNameHelper {
 	case TwoPartExpression tp -> tp.fullName ();
 	case UnaryExpression ue when ue.operator ().getName ().equals ("-") -> type (ue.expression ());
 	case FormalParameterBase fp -> fp.typeName ();
+	case UnaryExpression ue -> type (ue.expression ());
 	default -> throw new IllegalArgumentException ("Unhandled type: " + p + ", " + p.getClass ().getName ());
 	};
     }

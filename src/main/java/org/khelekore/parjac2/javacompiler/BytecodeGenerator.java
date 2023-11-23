@@ -551,6 +551,9 @@ public class BytecodeGenerator {
 		int value = il.getValue ();
 		handleInt (cb, -value);
 	    }
+	} else if (t == javaTokens.TILDE) {
+	    handleStatements (cb, u.expression ());
+	    mathOp (cb, FullNameHelper.type (u), t);
 	}
     }
 
@@ -1284,6 +1287,7 @@ public class BytecodeGenerator {
 	ret.put (javaTokens.AND, CodeBuilder::iand);
 	ret.put (javaTokens.OR, CodeBuilder::ior);
 	ret.put (javaTokens.XOR, CodeBuilder::ixor);
+	ret.put (javaTokens.TILDE, cb -> { cb.iconst_m1 (); cb.ixor (); });
 	return ret;
     }
 
@@ -1300,6 +1304,7 @@ public class BytecodeGenerator {
 	ret.put (javaTokens.AND, CodeBuilder::land);
 	ret.put (javaTokens.OR, CodeBuilder::lor);
 	ret.put (javaTokens.XOR, CodeBuilder::lxor);
+	ret.put (javaTokens.TILDE, cb -> { cb.ldc (-1L); cb.lxor (); });
 	return ret;
     }
 
