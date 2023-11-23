@@ -12,7 +12,9 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import io.github.dmlloyd.classfile.ClassBuilder;
 import io.github.dmlloyd.classfile.ClassSignature;
@@ -41,14 +43,13 @@ public class BytecodeGenerator {
     private final FullNameHandler name;
     private final JavaTokens javaTokens;
     private final Grammar grammar;
+    private final GenericTypeHelper genericTypeHelper;
+    private final TokenNode VOID_RETURN;
+    private final Map<FullNameHandler, Map<Token, Consumer<CodeBuilder>>> mathOps;
 
     private static final ClassType enumClassType = new ClassType (FullNameHandler.JL_ENUM);
     private static final ClassType recordClassType = new ClassType (FullNameHandler.JL_RECORD);
     private static final ClassType objectClassType = new ClassType (FullNameHandler.JL_OBJECT);
-
-    private final GenericTypeHelper genericTypeHelper;
-
-    private final TokenNode VOID_RETURN;
 
     private static final String STATIC_INIT = "<clinit>";
     private static final String INSTANCE_INIT = "<init>";
@@ -80,6 +81,38 @@ public class BytecodeGenerator {
 
 	genericTypeHelper = new GenericTypeHelper ();
 	VOID_RETURN = new TokenNode (javaTokens.VOID, null);
+
+	mathOps = Map.of (FullNameHandler.INT, Map.of (javaTokens.PLUS, CodeBuilder::iadd,
+						       javaTokens.MINUS, CodeBuilder::isub,
+						       javaTokens.MULTIPLY, CodeBuilder::imul,
+						       javaTokens.DIVIDE, CodeBuilder::idiv,
+						       javaTokens.REMAINDER, CodeBuilder::irem,
+						       javaTokens.LEFT_SHIFT, CodeBuilder::ishl,
+						       javaTokens.RIGHT_SHIFT, CodeBuilder::ishr,
+						       javaTokens.RIGHT_SHIFT_UNSIGNED, CodeBuilder::iushr
+						       ),
+			  FullNameHandler.LONG, Map.of (javaTokens.PLUS, CodeBuilder::ladd,
+							javaTokens.MINUS, CodeBuilder::lsub,
+							javaTokens.MULTIPLY, CodeBuilder::lmul,
+							javaTokens.DIVIDE, CodeBuilder::ldiv,
+							javaTokens.REMAINDER, CodeBuilder::lrem,
+							javaTokens.LEFT_SHIFT, CodeBuilder::lshl,
+							javaTokens.RIGHT_SHIFT, CodeBuilder::lshr,
+							javaTokens.RIGHT_SHIFT_UNSIGNED, CodeBuilder::lushr
+						       ),
+			  FullNameHandler.DOUBLE, Map.of (javaTokens.PLUS, CodeBuilder::dadd,
+							  javaTokens.MINUS, CodeBuilder::dsub,
+							  javaTokens.MULTIPLY, CodeBuilder::dmul,
+							  javaTokens.DIVIDE, CodeBuilder::ddiv,
+							  javaTokens.REMAINDER, CodeBuilder::drem
+						       ),
+			  FullNameHandler.FLOAT, Map.of (javaTokens.PLUS, CodeBuilder::fadd,
+							 javaTokens.MINUS, CodeBuilder::fsub,
+							 javaTokens.MULTIPLY, CodeBuilder::fmul,
+							 javaTokens.DIVIDE, CodeBuilder::fdiv,
+							 javaTokens.REMAINDER, CodeBuilder::frem
+							 )
+		     );
     }
 
     public byte[] generate () {
@@ -551,11 +584,7 @@ public class BytecodeGenerator {
 	    handleStringConcat (cb, two);
 	} else if (isArithmeticOrLogical (two)) {
 	    handleTwoPartSetup (cb, two);
-	    // TODO: implement correctly
-	    if (two.token () == javaTokens.PLUS)
-		handlePlus (cb, two.fullName ());
-	    if (two.token () == javaTokens.MINUS)
-		handleMinus (cb, two.fullName ());
+	    mathOp (cb, two.fullName (), two.token ());
 	} else {
 	    // TODO: investigate if we need to evaluate to more than boolean
 	    FullNameHandler fnt = two.fullName ();
@@ -665,26 +694,14 @@ public class BytecodeGenerator {
 	}
     }
 
-    private void handlePlus (CodeBuilder cb, FullNameHandler fn) {
-	if (fn == FullNameHandler.INT)
-	    cb.iadd ();
-	else if (fn == FullNameHandler.DOUBLE)
-	    cb.dadd ();
-	else if (fn == FullNameHandler.FLOAT)
-	    cb.fadd ();
-	else
-	    throw new IllegalStateException ("Unhandled type: " + fn);
-    }
-
-    private void handleMinus (CodeBuilder cb, FullNameHandler fn) {
-	if (fn == FullNameHandler.INT)
-	    cb.isub ();
-	else if (fn == FullNameHandler.DOUBLE)
-	    cb.dsub ();
-	else if (fn == FullNameHandler.FLOAT)
-	    cb.fsub ();
-	else
-	    throw new IllegalStateException ("Unhandled type: " + fn);
+    private void mathOp (CodeBuilder cb, FullNameHandler fullName, Token token) {
+	Map<Token, Consumer<CodeBuilder>> m = mathOps.get (fullName);
+	if (m == null)
+	    throw new IllegalArgumentException ("Unhandled type for math operations: " + fullName.getFullDotName ());
+	Consumer<CodeBuilder> c = m.get (token);
+	if (c == null)
+	    throw new IllegalArgumentException ("Unhandled type for math operations: " + fullName.getFullDotName () + ", token: " + token);
+	c.accept (cb);
     }
 
     private void handleTernary (CodeBuilder cb, Deque<Object> partsToHandle, Ternary t) {

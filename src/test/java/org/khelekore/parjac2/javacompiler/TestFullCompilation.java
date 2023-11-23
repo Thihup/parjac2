@@ -213,6 +213,27 @@ public class TestFullCompilation {
     }
 
     @Test
+    public void testIntMaths () throws ReflectiveOperationException {
+	testIntMath ("x * y", 2, 3, 6);
+	testIntMath ("x / y", 7, 3, 2);
+	testIntMath ("x % y", 7, 3, 1);
+    }
+
+    @Test
+    public void testShifs () throws ReflectiveOperationException {
+	testIntMath ("x << y", 0x8080, 1, 0x10100);
+	testIntMath ("x >> y", 0x8080, 1, 0x4040);
+	testIntMath ("x >>> y", 0xffffffff, 16, 0xffff);
+    }
+
+    private void testIntMath (String expression, int x, int y, int expected) throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { public static int r (int x, int y) { return " + expression + "; }}",
+			      "r", Integer.TYPE, Integer.TYPE);
+	int r = (Integer)m.invoke (null, x, y);
+	assert r == expected : "Got wrong value back, expected: " + expected + ", but got: " + r + ", expression: " + expression;
+    }
+
+    @Test
     public void testConstructorTakingMultiple () throws ReflectiveOperationException {
 	Class<?> c = getFirstClass ("D", "public class D { public D (int x, int y, int z) { }}");
 	Constructor<?> ctr = c.getConstructor (Integer.TYPE, Integer.TYPE, Integer.TYPE);
