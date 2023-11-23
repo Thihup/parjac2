@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -82,36 +83,10 @@ public class BytecodeGenerator {
 	genericTypeHelper = new GenericTypeHelper ();
 	VOID_RETURN = new TokenNode (javaTokens.VOID, null);
 
-	mathOps = Map.of (FullNameHandler.INT, Map.of (javaTokens.PLUS, CodeBuilder::iadd,
-						       javaTokens.MINUS, CodeBuilder::isub,
-						       javaTokens.MULTIPLY, CodeBuilder::imul,
-						       javaTokens.DIVIDE, CodeBuilder::idiv,
-						       javaTokens.REMAINDER, CodeBuilder::irem,
-						       javaTokens.LEFT_SHIFT, CodeBuilder::ishl,
-						       javaTokens.RIGHT_SHIFT, CodeBuilder::ishr,
-						       javaTokens.RIGHT_SHIFT_UNSIGNED, CodeBuilder::iushr
-						       ),
-			  FullNameHandler.LONG, Map.of (javaTokens.PLUS, CodeBuilder::ladd,
-							javaTokens.MINUS, CodeBuilder::lsub,
-							javaTokens.MULTIPLY, CodeBuilder::lmul,
-							javaTokens.DIVIDE, CodeBuilder::ldiv,
-							javaTokens.REMAINDER, CodeBuilder::lrem,
-							javaTokens.LEFT_SHIFT, CodeBuilder::lshl,
-							javaTokens.RIGHT_SHIFT, CodeBuilder::lshr,
-							javaTokens.RIGHT_SHIFT_UNSIGNED, CodeBuilder::lushr
-						       ),
-			  FullNameHandler.DOUBLE, Map.of (javaTokens.PLUS, CodeBuilder::dadd,
-							  javaTokens.MINUS, CodeBuilder::dsub,
-							  javaTokens.MULTIPLY, CodeBuilder::dmul,
-							  javaTokens.DIVIDE, CodeBuilder::ddiv,
-							  javaTokens.REMAINDER, CodeBuilder::drem
-						       ),
-			  FullNameHandler.FLOAT, Map.of (javaTokens.PLUS, CodeBuilder::fadd,
-							 javaTokens.MINUS, CodeBuilder::fsub,
-							 javaTokens.MULTIPLY, CodeBuilder::fmul,
-							 javaTokens.DIVIDE, CodeBuilder::fdiv,
-							 javaTokens.REMAINDER, CodeBuilder::frem
-							 )
+	mathOps = Map.of (FullNameHandler.INT, getIntMap (javaTokens),
+			  FullNameHandler.LONG, getLongMap (javaTokens),
+			  FullNameHandler.DOUBLE, getDoubleMap (javaTokens),
+			  FullNameHandler.FLOAT, getFloatMap (javaTokens)
 		     );
     }
 
@@ -388,7 +363,7 @@ public class BytecodeGenerator {
 	case MethodInvocation mi -> methodInvocation (cb, mi);
 	case ReturnStatement r -> handleReturn (cb, r);
 	case UnaryExpression u -> handleUnaryExpression (cb, u);
-	case TwoPartExpression tp -> handleTwoPartExpression (cb, partsToHandle, tp);
+	case TwoPartExpression tp -> handleTwoPartExpression (cb, tp);
 	case Ternary t -> handleTernary (cb, partsToHandle, t);
 	case IfThenStatement ifts -> handleIf (cb, partsToHandle, ifts);
 	case Assignment a -> handleAssignment (cb, partsToHandle, a);
@@ -579,12 +554,16 @@ public class BytecodeGenerator {
 	}
     }
 
-    private void handleTwoPartExpression (CodeBuilder cb, Deque<Object> partsToHandle, TwoPartExpression two) {
+    private void handleTwoPartExpression (CodeBuilder cb, TwoPartExpression two) {
 	if (isString (two)) {
 	    handleStringConcat (cb, two);
 	} else if (isArithmeticOrLogical (two)) {
 	    handleTwoPartSetup (cb, two);
 	    mathOp (cb, two.fullName (), two.token ());
+	} else if (two.token () == javaTokens.LOGICAL_AND) {
+	    handleLogicalAnd (cb, two);
+	} else if (two.token () == javaTokens.LOGICAL_OR) {
+	    handleLogicalOr (cb, two);
 	} else {
 	    // TODO: investigate if we need to evaluate to more than boolean
 	    FullNameHandler fnt = two.fullName ();
@@ -702,6 +681,38 @@ public class BytecodeGenerator {
 	if (c == null)
 	    throw new IllegalArgumentException ("Unhandled type for math operations: " + fullName.getFullDotName () + ", token: " + token);
 	c.accept (cb);
+    }
+
+    private void handleLogicalAnd (CodeBuilder cb, TwoPartExpression tp) {
+	Label falseLabel = cb.newLabel ();
+	Label returnLabel = cb.newLabel ();
+	handleStatements (cb, tp.part1 ());
+	cb.ifeq (falseLabel);
+	handleStatements (cb, tp.part2 ());
+	cb.ifeq (falseLabel);
+	cb.iconst_1 ();
+	cb.goto_ (returnLabel);
+	cb.labelBinding (falseLabel);
+	cb.iconst_0 ();
+	cb.labelBinding (returnLabel);
+	cb.ireturn ();
+    }
+
+    private void handleLogicalOr (CodeBuilder cb, TwoPartExpression tp) {
+	Label trueLabel = cb.newLabel ();
+	Label falseLabel = cb.newLabel ();
+	Label returnLabel = cb.newLabel ();
+	handleStatements (cb, tp.part1 ());
+	cb.ifne (trueLabel);
+	handleStatements (cb, tp.part2 ());
+	cb.ifeq (falseLabel);
+	cb.labelBinding (trueLabel);
+	cb.iconst_1 ();
+	cb.goto_ (returnLabel);
+	cb.labelBinding (falseLabel);
+	cb.iconst_0 ();
+	cb.labelBinding (returnLabel);
+	cb.ireturn ();
     }
 
     private void handleTernary (CodeBuilder cb, Deque<Object> partsToHandle, Ternary t) {
@@ -1258,5 +1269,57 @@ public class BytecodeGenerator {
 	Optional<String> innerName = Optional.of (inner.getName ());
 	int flags = inner.flags ();
 	return InnerClassInfo.of (innerClass, outerClass, innerName, flags);
+    }
+
+    private static Map<Token, Consumer<CodeBuilder>> getIntMap (JavaTokens javaTokens) {
+	Map<Token, Consumer<CodeBuilder>> ret = new HashMap<> ();
+	ret.put (javaTokens.PLUS, CodeBuilder::iadd);
+	ret.put (javaTokens.MINUS, CodeBuilder::isub);
+	ret.put (javaTokens.MULTIPLY, CodeBuilder::imul);
+	ret.put (javaTokens.DIVIDE, CodeBuilder::idiv);
+	ret.put (javaTokens.REMAINDER, CodeBuilder::irem);
+	ret.put (javaTokens.LEFT_SHIFT, CodeBuilder::ishl);
+	ret.put (javaTokens.RIGHT_SHIFT, CodeBuilder::ishr);
+	ret.put (javaTokens.RIGHT_SHIFT_UNSIGNED, CodeBuilder::iushr);
+	ret.put (javaTokens.AND, CodeBuilder::iand);
+	ret.put (javaTokens.OR, CodeBuilder::ior);
+	ret.put (javaTokens.XOR, CodeBuilder::ixor);
+	return ret;
+    }
+
+    private static Map<Token, Consumer<CodeBuilder>> getLongMap (JavaTokens javaTokens) {
+	Map<Token, Consumer<CodeBuilder>> ret = new HashMap<> ();
+	ret.put (javaTokens.PLUS, CodeBuilder::ladd);
+	ret.put (javaTokens.MINUS, CodeBuilder::lsub);
+	ret.put (javaTokens.MULTIPLY, CodeBuilder::lmul);
+	ret.put (javaTokens.DIVIDE, CodeBuilder::ldiv);
+	ret.put (javaTokens.REMAINDER, CodeBuilder::lrem);
+	ret.put (javaTokens.LEFT_SHIFT, CodeBuilder::lshl);
+	ret.put (javaTokens.RIGHT_SHIFT, CodeBuilder::lshr);
+	ret.put (javaTokens.RIGHT_SHIFT_UNSIGNED, CodeBuilder::lushr);
+	ret.put (javaTokens.AND, CodeBuilder::land);
+	ret.put (javaTokens.OR, CodeBuilder::lor);
+	ret.put (javaTokens.XOR, CodeBuilder::lxor);
+	return ret;
+    }
+
+    private static Map<Token, Consumer<CodeBuilder>> getDoubleMap (JavaTokens javaTokens) {
+	Map<Token, Consumer<CodeBuilder>> ret = new HashMap<> ();
+	ret.put (javaTokens.PLUS, CodeBuilder::dadd);
+	ret.put (javaTokens.MINUS, CodeBuilder::dsub);
+	ret.put (javaTokens.MULTIPLY, CodeBuilder::dmul);
+	ret.put (javaTokens.DIVIDE, CodeBuilder::ddiv);
+	ret.put (javaTokens.REMAINDER, CodeBuilder::drem);
+	return ret;
+    }
+
+    private static Map<Token, Consumer<CodeBuilder>> getFloatMap (JavaTokens javaTokens) {
+	Map<Token, Consumer<CodeBuilder>> ret = new HashMap<> ();
+	ret.put (javaTokens.PLUS, CodeBuilder::fadd);
+	ret.put (javaTokens.MINUS, CodeBuilder::fsub);
+	ret.put (javaTokens.MULTIPLY, CodeBuilder::fmul);
+	ret.put (javaTokens.DIVIDE, CodeBuilder::fdiv);
+	ret.put (javaTokens.REMAINDER, CodeBuilder::frem);
+	return ret;
     }
 }

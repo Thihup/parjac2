@@ -226,10 +226,61 @@ public class TestFullCompilation {
 	testIntMath ("x >>> y", 0xffffffff, 16, 0xffff);
     }
 
+    @Test
+    public void testBitOperations () throws ReflectiveOperationException {
+	testIntMath ("x & y", 0x70707, 0x404, 0x404);
+	testIntMath ("x | y", 0x70707, 0x78, 0x7077f);
+	testIntMath ("x ^ y", 0x70707, 0x72, 0x70775);
+    }
+
     private void testIntMath (String expression, int x, int y, int expected) throws ReflectiveOperationException {
 	Method m = getMethod ("C", "class C { public static int r (int x, int y) { return " + expression + "; }}",
 			      "r", Integer.TYPE, Integer.TYPE);
 	int r = (Integer)m.invoke (null, x, y);
+	assert r == expected : "Got wrong value back, expected: " + expected + ", but got: " + r + ", expression: " + expression;
+    }
+
+    @Test
+    public void testRelational () throws ReflectiveOperationException {
+	testRelational ("x < y", 3, 7, true);
+	testRelational ("x < y", 7, 3, false);
+
+	testRelational ("x > y", 3, 7, false);
+	testRelational ("x > y", 7, 3, true);
+
+	testRelational ("x <= y", 3, 7, true);
+	testRelational ("x <= y", 3, 3, true);
+	testRelational ("x <= y", 7, 3, false);
+
+	testRelational ("x > y", 3, 7, false);
+	testRelational ("x >= y", 3, 3, true);
+	testRelational ("x > y", 7, 3, true);
+    }
+
+    private void testRelational (String expression, int x, int y, boolean expected) throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { public static boolean r (int x, int y) { return " + expression + "; }}",
+			      "r", Integer.TYPE, Integer.TYPE);
+	boolean r = (Boolean)m.invoke (null, x, y);
+	assert r == expected : "Got wrong value back, expected: " + expected + ", but got: " + r + ", expression: " + expression;
+    }
+
+    @Test
+    public void testBooleanOperators () throws ReflectiveOperationException {
+	testLogical ("x && y", false, false, false);
+	testLogical ("x && y", true, false, false);
+	testLogical ("x && y", false, true, false);
+	testLogical ("x && y", true, true, true);
+
+	testLogical ("x || y", false, false, false);
+	testLogical ("x || y", true, false, true);
+	testLogical ("x || y", false, true, true);
+	testLogical ("x || y", true, true, true);
+    }
+
+    private void testLogical (String expression, boolean x, boolean y, boolean expected) throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { public static boolean r (boolean x, boolean y) { return " + expression + "; }}",
+			      "r", Boolean.TYPE, Boolean.TYPE);
+	boolean r = (Boolean)m.invoke (null, x, y);
 	assert r == expected : "Got wrong value back, expected: " + expected + ", but got: " + r + ", expression: " + expression;
     }
 
