@@ -883,7 +883,7 @@ public class BytecodeGenerator {
 	if (fn.isArray ()) {
 	    handleArrayLoop (cb, efs, fn);
 	} else {
-	    // TODO: handle Iterable
+	    handleIteratorLoop (cb, efs, fn);
 	}
     }
 
@@ -950,6 +950,38 @@ public class BytecodeGenerator {
 	public static ArrayInfo create (CodeBuilder cb, TypeKind kind) {
 	    return new ArrayInfo (cb.allocateLocal (kind), cb.allocateLocal (TypeKind.IntType), cb.allocateLocal (TypeKind.IntType));
 	}
+    }
+
+    private void handleIteratorLoop (CodeBuilder cb, EnhancedForStatement efs, FullNameHandler fn) {
+	int iteratorSlot = cb.allocateLocal (TypeKind.ReferenceType);
+	handleStatements (cb, efs.expression ());
+	ClassDesc owner = ClassDescUtils.getClassDesc (fn);
+	ClassDesc iteratorDesc = ClassDesc.of ("java.util.Iterator");
+	MethodTypeDesc type = MethodTypeDesc.of (iteratorDesc);
+	cb.invokeinterface (owner, "iterator", type);
+	cb.astore (iteratorSlot);
+
+	Label loopLabel = cb.newBoundLabel ();
+	Label endLabel = cb.newLabel ();
+
+	cb.aload (iteratorSlot);
+	type = MethodTypeDesc.ofDescriptor ("()Z");
+	cb.invokeinterface (iteratorDesc, "hasNext", type);
+	cb.ifeq (endLabel);
+
+	cb.aload (iteratorSlot);
+	type = MethodTypeDesc.of (ConstantDescs.CD_Object);
+	cb.invokeinterface (iteratorDesc, "next", type);
+
+	LocalVariableDeclaration lv = efs.localVariable ();
+	handleLocalVariables (cb, lv);
+	int varSlot = lv.getDeclarators ().get (0).slot ();
+	cb.storeInstruction (TypeKind.ReferenceType, varSlot);
+
+	handleStatements (cb, efs.statement ());
+
+	cb.goto_ (loopLabel); // what about goto_w?
+	cb.labelBinding (endLabel);
     }
 
     private Opcode getReverseZeroJump (Token t) {
