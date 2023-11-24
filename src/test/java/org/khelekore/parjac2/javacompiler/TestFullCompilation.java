@@ -2,6 +2,7 @@ package org.khelekore.parjac2.javacompiler;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.CharBuffer;
 import java.nio.file.Path;
@@ -529,6 +530,22 @@ public class TestFullCompilation {
 	int[][] data = {{1, 2, 3}, {7, 5, 3}};
 	int r = (Integer)m.invoke (null, data, 1, 1);
 	assert r == 5 : "Wrong element returned: " + r;
+    }
+
+    @Test
+    public void testLambdaCall () throws ReflectiveOperationException {
+	Class<?> c = getFirstClass("C", """
+				   public class C {
+				       public static boolean b = false;
+				       private static void a (Runnable r) { r.run (); }
+				       public static void b () { a(() -> b = true); }
+				   }
+				   """);
+        Method m = c.getMethod ("b");
+        Field f = c.getField ("b");
+        assert f.get (null) == Boolean.FALSE;
+	m.invoke (null);
+	assert f.get (null) == Boolean.TRUE;
     }
 
     private Method getMethod (String className, String text, String methodName, Class<?> ... types) throws ReflectiveOperationException {

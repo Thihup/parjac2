@@ -16,6 +16,7 @@ public class Flags {
     public static final int ACC_INTERFACE = Classfile.ACC_INTERFACE;
     public static final int ACC_ENUM = Classfile.ACC_ENUM;
     public static final int ACC_VARARGS = Classfile.ACC_VARARGS;
+    public static final int ACC_SYNTHETIC = Classfile.ACC_SYNTHETIC;
 
     // This one does not exist in Classfile.
     public static final int ACC_DEFAULT = 262144;

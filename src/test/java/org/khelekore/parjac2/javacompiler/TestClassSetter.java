@@ -634,6 +634,16 @@ public class TestClassSetter {
 	getTypes ("class C { void r (java.util.function.IntToDoubleFunction r) { } void a () { r ((int i) -> \"wrong\"); }}", 1);
     }
 
+    @Test
+    public void testVoidLambdaEvaluatesToInt () {
+	getTypes ("class C { int x; void a () {Runnable r = () -> x = 37; }}");
+    }
+
+    @Test
+    public void testIntLambdaEvaluatesToVoid () {
+	getTypes ("class C { int x; void a () {java.util.function.IntSupplier s = () -> System.out.println (); }}", 1);
+    }
+
     /* TODO: implement full generic handling */
     /*
     @Test

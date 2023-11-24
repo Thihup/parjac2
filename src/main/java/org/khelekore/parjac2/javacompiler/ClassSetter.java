@@ -435,6 +435,8 @@ public class ClassSetter {
 
     private void checkLambdaReturn (LambdaExpression le) {
 	FullNameHandler miR = le.result ();
+	if (miR == FullNameHandler.VOID && !(le.body () instanceof Block))
+	    return;
 	FullNameHandler leR = le.lambdaResult ();
 	if (!miR.equals (leR))
 	    error (le, "Wrong type returned from lambda: %s, need: %s", leR.getFullDotName (), miR.getFullDotName ());
