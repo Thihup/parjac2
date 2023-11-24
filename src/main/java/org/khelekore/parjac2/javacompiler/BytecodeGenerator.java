@@ -554,6 +554,7 @@ public class BytecodeGenerator {
 	    DynamicCallSiteDesc ref = DynamicCallSiteDesc.of (bootstrapMethod, "run", invocationType, bootstrapArgs);
 	    cb.invokedynamic (ref);
 
+	    // TODO: this adds the lambda before the method we are currently building, consider queueing this up
 	    addLambdaMethod (le, lambdaName, mtd);
 	}
 
