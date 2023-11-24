@@ -24,4 +24,16 @@ public class ListOfLambdaParameters extends LambdaParameters {
 	if (params != null)
 	    v.accept (params);
     }
+
+    @Override public int numberOfArguments () {
+	return params == null ? 0 : params.numberOfArguments ();
+    }
+
+    @Override public String parameterName (int i) {
+	return params.parameterName (i);
+    }
+
+    @Override public FullNameHandler parameter (int i) {
+	return params.parameter (i);
+    }
 }

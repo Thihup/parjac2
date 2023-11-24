@@ -18,4 +18,12 @@ public class VarArgLambdaParameter extends LambdaParameter {
     @Override public void visitChildNodes (NodeVisitor v) {
 	v.accept (vap);
     }
+
+    @Override public FullNameHandler type () {
+	return FullNameHelper.type (vap.type ());
+    }
+
+    @Override public String name () {
+	return vap.name ();
+    }
 }

@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
-import org.khelekore.parjac2.javacompiler.syntaxtree.LocalVariableDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeParameter;
 import org.khelekore.parjac2.javacompiler.syntaxtree.VariableDeclarator;
@@ -104,14 +103,14 @@ public record EnclosingTypes (EnclosingTypes previous, Enclosure<?> enclosure)
 	    return isStatic;
 	}
 
-	public void add (LocalVariableDeclaration lv) {
+	public void add (VariableDeclarator vd) {
+	    add (new LocalVariable (vd.getName (), vd, vd.type ()));
+	}
+
+	public void add (VariableInfo vi) {
 	    if (locals.isEmpty ())
 		locals = new HashMap<> ();
-	    for (VariableDeclarator vd : lv.getDeclarators ()) {
-		String name = vd.getName ();
-		VariableInfo vi = new LocalVariable (name, vd, lv.getType ());
-		locals.put (name, vi);
-	    }
+	    locals.put (vi.name (), vi);
 	}
 
 	@Override public Map<String, VariableInfo> getFields () {

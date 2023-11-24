@@ -18,7 +18,7 @@ public class VariableDeclaratorId extends SyntaxTreeNode {
 	    dims = (Dims)children.get (1);
     }
 
-    @Override public Object getValue() {
+    @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	sb.append (id);
 	if (dims != null)
@@ -31,7 +31,7 @@ public class VariableDeclaratorId extends SyntaxTreeNode {
 	    v.accept (dims);
     }
 
-    public String getName () {
+    public String name () {
 	return id;
     }
 
@@ -39,7 +39,7 @@ public class VariableDeclaratorId extends SyntaxTreeNode {
 	return dims != null;
     }
 
-    public Dims getDims () {
+    public Dims dims () {
 	return dims;
     }
 

@@ -17,4 +17,16 @@ public class IdentifierLambdaParameters extends LambdaParameters {
     @Override public void visitChildNodes (NodeVisitor v) {
 	// nothing
     }
+
+    @Override public int numberOfArguments () {
+	return 1;
+    }
+
+    @Override public String parameterName (int i) {
+	return id;
+    }
+
+    @Override public FullNameHandler parameter (int i) {
+	return null; // unknown
+    }
 }

@@ -41,7 +41,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHelper;
 import org.khelekore.parjac2.javacompiler.syntaxtree.IfThenStatement;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ImportDeclaration;
-import org.khelekore.parjac2.javacompiler.syntaxtree.LocalVariableDeclaration;
+import org.khelekore.parjac2.javacompiler.syntaxtree.LambdaExpression;
 import org.khelekore.parjac2.javacompiler.syntaxtree.MethodDeclarationBase;
 import org.khelekore.parjac2.javacompiler.syntaxtree.MethodInvocation;
 import org.khelekore.parjac2.javacompiler.syntaxtree.MethodReference;
@@ -69,6 +69,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.TypeName;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeParameter;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeParameters;
 import org.khelekore.parjac2.javacompiler.syntaxtree.UnqualifiedClassInstanceCreationExpression;
+import org.khelekore.parjac2.javacompiler.syntaxtree.VariableDeclarator;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Wildcard;
 import org.khelekore.parjac2.javacompiler.syntaxtree.WildcardBounds;
 import org.khelekore.parjac2.parser.ParsePosition;
@@ -305,6 +306,7 @@ public class ClassSetter {
 	    //System.err.println ("Looking at: " + pp + ", " + pp.getClass ().getSimpleName ());
 	    switch (pp) {
 	    case Block b -> runInBlock (et, b, partsToHandle);
+	    case LambdaExpression le -> runInLambda (et, le, partsToHandle);
 	    case PrimitiveType pt -> setType (et, pt);
 	    case ClassType ct -> setType (et, ct);
 	    case AmbiguousName an -> reclassifyAmbiguousName (et, an);
@@ -317,17 +319,18 @@ public class ClassSetter {
 	    case FieldAccess fa -> handlePartsAndField (et, fa, partsToHandle);
 	    case ClassOrInterfaceTypeToInstantiate coitti -> setType (et, coitti.type ());
 
-	    case LocalVariableDeclaration lv -> handlePartsAndRegisterVariable (et, lv, partsToHandle);
+	    case VariableDeclarator vd -> handlePartsAndVariableDeclarator (et, vd, partsToHandle);
 	    case Assignment a -> handlePartsAndHandler (et, a, e -> checkAssignment (e, a), partsToHandle);
 
 	    // Check method once we know all parts
-	    case MethodInvocation mi -> handlePartsAndHandler (et, mi, new MethodInvocationCheck (mi, this), partsToHandle);
+	    case MethodInvocation mi -> handlePartsAndHandler (et, mi, e -> checkMethodCall (e, mi), partsToHandle);
 	    case Ternary t -> handlePartsAndHandler (et, t, e -> setTernaryType (e, t), partsToHandle);
 	    case TwoPartExpression t -> handlePartsAndHandler (et, t, e -> setTwoPartExpressionType (e, t), partsToHandle);
 	    case ReturnStatement r -> handlePartsAndHandler (et, r, e -> setReturnStatementType (e, r), partsToHandle);
 	    case IfThenStatement i -> handlePartsAndHandler (et, i, e -> checkIfExpressionType (e, i), partsToHandle);
 	    case BasicForStatement bfs -> handlePartsAndHandler (et, bfs, e -> checkBasicForExpression (e, bfs), partsToHandle);
 	    case EnhancedForStatement efs -> handlePartsAndHandler (et, efs, e -> checkEnhancedForExpression (e, efs), partsToHandle);
+
 	    case ParseTreeNode ptn -> addParts (et, ptn, partsToHandle);
 
 	    case CustomHandler ch -> ch.run (et);
@@ -346,32 +349,66 @@ public class ClassSetter {
 	addParts (bt, b, partsToHandle);
     }
 
+    private void runInLambda (EnclosingTypes et, LambdaExpression le, Deque<StatementHandler> partsToHandle) {
+	EnclosingTypes bt = et.enclosingBlock (false);
+	EnclosingTypes.BlockEnclosure bc = (EnclosingTypes.BlockEnclosure)et.enclosure ();
+	for (int i = 0, s = le.numberOfArguments (); i < s; i++)
+	    bc.add (new LambdaVarInfo (le, i));
+
+	partsToHandle.addFirst (new StatementHandler (bt, le.body ()));
+	partsToHandle.addFirst (new StatementHandler (et, le.params ()));
+    }
+
+    private record LambdaVarInfo (LambdaExpression le, int paramPos) implements VariableInfo {
+	@Override public Type fieldType () {
+	    return VariableInfo.Type.LOCAL;
+	}
+
+	@Override public int flags () {
+	    return Flags.ACC_PUBLIC;
+	}
+
+	@Override public String name () {
+	    return le.parameterName (paramPos);
+	}
+
+	@Override public FullNameHandler typeName () {
+	    return le.parameter (paramPos);
+	}
+    }
+
     private void handlePartsAndField (EnclosingTypes et, FieldAccess fa, Deque<StatementHandler> partsToHandle) {
 	CustomHandler h = e -> setType (e, fa);
 	partsToHandle.addFirst (new StatementHandler (et, h));
 	addParts (et, fa, partsToHandle);
     }
 
-    private void handlePartsAndRegisterVariable (EnclosingTypes et, LocalVariableDeclaration lv, Deque<StatementHandler> partsToHandle) {
-	// Since we add first we will evaluate variable addition after the parts, which is what we want.
-	CustomHandler h = e -> checkLocalVariableAssignments (e, lv);
-	partsToHandle.addFirst (new StatementHandler (et, h));
-	partsToHandle.addFirst (new StatementHandler (et, new AddVariable (lv)));
-	addParts (et, lv, partsToHandle);
-    }
-
-    private void checkLocalVariableAssignments (EnclosingTypes et, LocalVariableDeclaration lv) {
-	FullNameHandler varType = FullNameHelper.type (lv);
-	lv.getDeclarators ().forEach (vd -> checkInitializerType (varType, vd.initializer ()));
+    private void handlePartsAndVariableDeclarator (EnclosingTypes et, VariableDeclarator vd, Deque<StatementHandler> partsToHandle) {
+	partsToHandle.addFirst (new StatementHandler (et, new AddVariable (vd)));
+	FullNameHandler varType = FullNameHelper.type (vd.type ());
+	ParseTreeNode init = vd.initializer ();
+	if (init instanceof LambdaExpression le) {
+	    setTypeOnLambda (varType, le);
+	    addLambdaReturnCheck (et, le, partsToHandle);
+	    partsToHandle.addFirst (new StatementHandler (et, le));
+	} else if (init != null) {
+	    CustomHandler h = e -> checkInitializerType (varType, vd.initializer ());
+	    partsToHandle.addFirst (new StatementHandler (et, h));
+	    partsToHandle.addFirst (new StatementHandler (et, init));
+	}
     }
 
     private void checkInitializerType (FullNameHandler varType, ParseTreeNode initializer) {
 	if (initializer != null) {
-	    FullNameHandler fi = FullNameHelper.type (initializer);
-	    // if varType == null, we have already signaled type not found or similar
-	    // If fi == null we have already signaled errors and do not want another one here.
-	    if (varType != null && fi != null && !typesMatch (varType, fi))
-		error (initializer, "Types not compatible: %s <-> %s", varType.getFullDotName (), fi.getFullDotName ());
+	    if (initializer instanceof LambdaExpression le) {
+		// already handled
+	    } else {
+		FullNameHandler fi = FullNameHelper.type (initializer);
+		// if varType == null, we have already signaled type not found or similar
+		// If fi == null we have already signaled errors and do not want another one here.
+		if (varType != null && fi != null && !typesMatch (varType, fi))
+		    error (initializer, "Types not compatible: %s <-> %s", varType.getFullDotName (), fi.getFullDotName ());
+	    }
 	}
     }
 
@@ -380,6 +417,27 @@ public class ClassSetter {
 	FullNameHandler fromType = FullNameHelper.type (a.rhs ());
 	if (toType != null && fromType != null && !typesMatch (toType, fromType))
 	    error (a, "Types not compatible: %s <-> %s", toType.getFullDotName (), fromType.getFullDotName ());
+    }
+
+    private void setTypeOnLambda (FullNameHandler varType, LambdaExpression le) {
+	MethodInfo mi = lambdaMatch (varType, le);
+	if (mi != null) {
+	    le.type (varType, mi);
+	} else {
+	    error (le, "Lambda expression not assignable to %s", varType.getFullDotName ());
+	}
+    }
+
+    private void addLambdaReturnCheck (EnclosingTypes et, LambdaExpression le, Deque<StatementHandler> partsToHandle) {
+	CustomHandler h = e -> checkLambdaReturn (le);
+	partsToHandle.addFirst (new StatementHandler (et, h));
+    }
+
+    private void checkLambdaReturn (LambdaExpression le) {
+	FullNameHandler miR = le.result ();
+	FullNameHandler leR = le.lambdaResult ();
+	if (!miR.equals (leR))
+	    error (le, "Wrong type returned from lambda: %s, need: %s", leR.getFullDotName (), miR.getFullDotName ());
     }
 
     private void handlePartsAndHandler (EnclosingTypes et, ParseTreeNode p,
@@ -507,15 +565,9 @@ public class ClassSetter {
 	// empty
     }
 
-    private static record AddVariable (LocalVariableDeclaration lv) implements CustomHandler {
+    private static record AddVariable (VariableDeclarator vd) implements CustomHandler {
 	@Override public void run (EnclosingTypes et) {
-	    ((EnclosingTypes.BlockEnclosure)et.enclosure ()).add (lv);
-	}
-    }
-
-    private record MethodInvocationCheck (MethodInvocation mi, ClassSetter cs) implements CustomHandler {
-	@Override public void run (EnclosingTypes et) {
-	    cs.checkMethodCall (et, mi);
+	    ((EnclosingTypes.BlockEnclosure)et.enclosure ()).add (vd);
 	}
     }
 
@@ -611,14 +663,27 @@ public class ClassSetter {
 	    FullNameHandler.ArrayHandler ah = (FullNameHandler.ArrayHandler)lastVarArg;
 	    lastVarArg = ah.inner ();
 	}
+	Map<LambdaExpression, Runnable> lambdaTypes = new HashMap<> ();
 	for (int i = 0; i < args.size (); i++) {
-	    ParseTreeNode pa = args.get (i);
-	    FullNameHandler afn = FullNameHelper.type (pa);
 	    FullNameHandler pfn;
 	    if (varArgs && i >= info.numberOfArguments () - 1) {
 		pfn = lastVarArg;
 	    } else {
 		pfn = info.parameter (i);
+	    }
+
+	    ParseTreeNode pa = args.get (i);
+	    FullNameHandler afn;
+	    if (pa instanceof LambdaExpression le) {
+		MethodInfo mi = lambdaMatch (pfn, le);
+		if (mi != null) {
+		    afn = pfn;
+		    lambdaTypes.put (le, () -> le.type (pfn, mi));
+		} else {
+		    return false;
+		}
+	    } else {
+		afn = FullNameHelper.type (pa);
 	    }
 	    // Useful when debugging
 	    //System.err.println ("    " +i + ", args(" + i + "): " + pa + " -> " + dotName (afn) + ", pfn: "+ dotName (pfn));
@@ -626,6 +691,9 @@ public class ClassSetter {
 		return false;
 	}
 
+	// we only set the types if we actually found a match.
+	lambdaTypes.values ().forEach (r -> r.run ());
+	lambdaTypes.keySet ().forEach (le -> checkLambdaReturn (le));
 	return true;
     }
 
@@ -733,6 +801,70 @@ public class ClassSetter {
 	    type = fn.getFullDotName ();
 	}
 	error (test, "Test needs to evaluate to boolean value, current type: %s", type);
+    }
+
+    private MethodInfo lambdaMatch (FullNameHandler type, LambdaExpression le) {
+	MethodInfo mi = getFunctionalInterfaceMethod (type);
+	if (mi == null)
+	    return null;
+
+	int s = mi.numberOfArguments ();
+	int t = le.numberOfArguments ();
+	if (s != t)
+	    return null;
+	for (int i = 0; i < s; i++) {
+	    FullNameHandler ff = mi.parameter (i);
+	    FullNameHandler fl = le.lambdaParameter (i);
+	    if (fl != null && !fl.equals (ff))
+		return null;
+	}
+	return mi;
+    }
+
+    private MethodInfo getFunctionalInterfaceMethod (FullNameHandler type) {
+	String fqn  = type.getFullDotName ();
+	if (!cip.isInterface (fqn))
+	    return null;
+	Map<String, List<MethodInfo>> methods = cip.getMethods (type);
+	Set<MethodInfo> abstracts = new HashSet<> ();
+	for (List<MethodInfo> ls : methods.values ())
+	    for (MethodInfo mi : ls)
+		if (Flags.isAbstract (mi.flags ()))
+		    abstracts.add (mi);
+	if (abstracts.size () > 1)
+	    return null;
+	MethodInfo mi = abstracts.iterator ().next ();
+	Map<String, List<MethodInfo>> objectMethods = cip.getMethods (FullNameHandler.JL_OBJECT);
+	if (!hasMatching (objectMethods, mi))
+	    return mi;
+	return null;
+    }
+
+    private boolean hasMatching (Map<String, List<MethodInfo>> mis, MethodInfo mi) {
+	for (List<MethodInfo> ls : mis.values ()) {
+	    for (MethodInfo mii : ls) {
+		if (matching (mii, mi))
+		    return true;
+	    }
+	}
+	return false;
+    }
+
+    private boolean matching (MethodInfo m1, MethodInfo m2) {
+	int s = m1.numberOfArguments ();
+	if (s != m2.numberOfArguments ())
+	    return false;
+	if (!m1.name ().equals (m2.name ()))
+	    return false;
+	for (int i = 0; i < s; i++) {
+	    FullNameHandler f1 = m1.parameter (i);
+	    FullNameHandler f2 = m1.parameter (i);
+	    if (!f1.equals (f2))
+		return false;
+	}
+	FullNameHandler r1 = m1.result ();
+	FullNameHandler r2 = m2.result ();
+	return r1.equals (r2);
     }
 
     private boolean typesMatch (FullNameHandler wanted, FullNameHandler have) {

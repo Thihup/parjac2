@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.NoSourceDiagnostics;
@@ -117,21 +118,21 @@ public class ClassInformationProvider {
     }
 
     public VariableInfo getFieldInformation (FullNameHandler fqn, String field) {
-	String dotName = fqn.getFullDotName ();
-	TypeDeclaration td = cth.getType (dotName);
-	if (td != null)
-	    return td.getFields ().get (field);
-	return crh.getFieldInformation (dotName, field);
+	return tryActions (fqn,
+			   td -> td.getFields ().get (field),
+			   dn -> crh.getFieldInformation (dn, field));
     }
 
     public List<MethodInfo> getMethods (FullNameHandler fqn, String methodName) {
-	if (fqn == null)
-	    throw new NullPointerException ("null not a valid class name, methodName: " + methodName);
-	String dotName = fqn.getFullDotName ();
-	TypeDeclaration td = cth.getType (dotName);
-	if (td != null)
-	    return td.getMethodInformation (fqn, methodName);
-	return crh.getMethodInformation (dotName, methodName);
+	return tryActions (fqn,
+			   td -> td.getMethodInformation (fqn, methodName),
+			   dn -> crh.getMethodInformation (dn, methodName));
+    }
+
+    public Map<String, List<MethodInfo>> getMethods (FullNameHandler fqn) {
+	return tryActions (fqn,
+			   td -> td.getMethodInformation (fqn),
+			   dn -> crh.getMethodInformation (dn));
     }
 
     public boolean isInterface (String fqn) {
@@ -139,5 +140,15 @@ public class ClassInformationProvider {
 	if (td instanceof NormalInterfaceDeclaration)
 	    return true;
 	return crh.isInterface (fqn);
+    }
+
+    private <R> R tryActions (FullNameHandler fqn, Function<TypeDeclaration, R> tdFunc, Function<String, R> crhFunc) {
+	if (fqn == null)
+	    throw new NullPointerException ("null is not a valid class name");
+	String dotName = fqn.getFullDotName ();
+	TypeDeclaration td = cth.getType (dotName);
+	if (td != null)
+	    return tdFunc.apply (td);
+	return crhFunc.apply (dotName);
     }
 }

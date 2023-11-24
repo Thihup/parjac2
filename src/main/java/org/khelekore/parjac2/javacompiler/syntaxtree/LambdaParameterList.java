@@ -44,6 +44,14 @@ public abstract class LambdaParameterList<T> extends SyntaxTreeNode {
 	return params;
     }
 
+    public int numberOfArguments () {
+	return params.size ();
+    }
+
+    public abstract String parameterName (int i);
+
+    public abstract FullNameHandler parameter (int i);
+
     public static class StringLambdaParameterList extends LambdaParameterList<String> {
 	public StringLambdaParameterList (Rule rule, ParseTreeNode n, List<ParseTreeNode> children,
 					  Function<ParseTreeNode, String> nodeConverter) {
@@ -52,6 +60,14 @@ public abstract class LambdaParameterList<T> extends SyntaxTreeNode {
 
 	@Override public void visitChildNodes (NodeVisitor v) {
 	    // nothing
+	}
+
+	@Override public String parameterName (int i) {
+	    return getParams ().get (i);
+	}
+
+	@Override public FullNameHandler parameter (int i) {
+	    return null;
 	}
     }
 
@@ -63,6 +79,14 @@ public abstract class LambdaParameterList<T> extends SyntaxTreeNode {
 
 	@Override public void visitChildNodes (NodeVisitor v) {
 	    getParams ().forEach (v::accept);
+	}
+
+	@Override public String parameterName (int i) {
+	    return getParams ().get (i).name ();
+	}
+
+	@Override public FullNameHandler parameter (int i) {
+	    return getParams ().get (i).type ();
 	}
     }
 }

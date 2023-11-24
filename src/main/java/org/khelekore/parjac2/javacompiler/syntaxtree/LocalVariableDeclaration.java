@@ -21,13 +21,7 @@ public class LocalVariableDeclaration extends SyntaxTreeNode {
 	}
 	type = children.get (i++);
 	list = (VariableDeclaratorList)children.get (i);
-    }
-
-    public LocalVariableDeclaration (List<ParseTreeNode> modifiers, ParseTreeNode type, VariableDeclaratorList list) {
-	super (!modifiers.isEmpty () ? modifiers.get (0).position () : type.position ());
-	this.modifiers = modifiers;
-	this.type = type;
-	this.list = list;
+	list.getDeclarators ().forEach (vd -> vd.type (type));
     }
 
     @Override public Object getValue () {

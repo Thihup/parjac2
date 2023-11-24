@@ -618,6 +618,22 @@ public class TestClassSetter {
 	getTypes ("class C { void a () {int[] array = new int[7]; String s = array[2]; }}", 1);
     }
 
+    @Test
+    public void testLambdaAssignment () {
+	getTypes ("class C { void a () {Runnable r = () -> System.out.println (); }}");
+	getTypes ("class C { void a () {java.util.function.IntConsumer ic = i -> System.out.println (i); }}");
+	getTypes ("class C { void a () {java.util.function.IntToDoubleFunction i2d = i -> 3.2 * i; }}");
+	getTypes ("class C { void a () {java.util.function.IntToDoubleFunction i2d = i -> \"wrong!\"; }}", 1);
+    }
+
+    @Test
+    public void testLambdaMethodArgument () {
+	getTypes ("class C { void r (Runnable r) { r.run (); } void a () { r (() -> System.out.println ()); }}");
+	getTypes ("class C { void r (java.util.function.IntConsumer r) { } void a () { r (i -> System.out.println ()); }}");
+	getTypes ("class C { void r (java.util.function.IntConsumer r) { } void a () { r ((int i) -> System.out.println ()); }}");
+	getTypes ("class C { void r (java.util.function.IntToDoubleFunction r) { } void a () { r ((int i) -> \"wrong\"); }}", 1);
+    }
+
     /* TODO: implement full generic handling */
     /*
     @Test

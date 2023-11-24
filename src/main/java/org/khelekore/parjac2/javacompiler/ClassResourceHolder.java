@@ -168,6 +168,14 @@ public class ClassResourceHolder {
 	return ret == null ? List.of () : ret;
     }
 
+    public Map<String, List<MethodInfo>> getMethodInformation (String fqn) {
+	ClasspathClassInformation r = foundClasses.get (fqn);
+	if (r == null)
+	    return null;
+	loadNoCheckedException (r);
+	return r.methods;
+    }
+
     public boolean isInterface (String fqn) {
 	ClasspathClassInformation r = foundClasses.get (fqn);
 	if (r == null)
@@ -420,9 +428,7 @@ public class ClassResourceHolder {
 	private final String name;
 	private final int flags;
 	private final MethodTypeDesc md;
-
-	@SuppressWarnings ("unused") // we will need this for generic handling
-	private final String signature;
+	private final String signature; // we will need this for generic handling
 
 	private FullNameHandler returnType;
 	private List<FullNameHandler> params;
@@ -434,6 +440,11 @@ public class ClassResourceHolder {
 	    this.flags = flags;
 	    this.md = md;
 	    this.signature = signature;
+	}
+
+	@Override public String toString () {
+	    return getClass ().getSimpleName () + "{owner: " + owner.getFullDotName () + ", name: " + name +
+		", flags: " + flags + ", md: " + md + ", signature: " + signature + "}";
 	}
 
 	@Override public FullNameHandler owner () {

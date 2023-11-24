@@ -64,6 +64,17 @@ public abstract class TypeDeclaration extends FlaggedBase {
     public abstract List<? extends MethodDeclarationBase> getMethods ();
 
     public List<MethodInfo> getMethodInformation (FullNameHandler fqn, String methodName) {
+	ensureMethodInfosSet (fqn);
+	List<MethodInfo> ret = methodInfos.get (methodName);
+	return ret == null ? List.of () : ret;
+    }
+
+    public Map<String, List<MethodInfo>> getMethodInformation (FullNameHandler fqn) {
+	ensureMethodInfosSet (fqn);
+	return methodInfos;
+    }
+
+    private void ensureMethodInfosSet (FullNameHandler fqn) {
 	synchronized (this) {
 	    if (methodInfos == null) {
 		methodInfos = new HashMap<> ();
@@ -75,8 +86,6 @@ public abstract class TypeDeclaration extends FlaggedBase {
 		}
 	    }
 	}
-	List<MethodInfo> ret = methodInfos.get (methodName);
-	return ret == null ? List.of () : ret;
     }
 
     public abstract List<? extends ConstructorDeclarationBase> getConstructors ();

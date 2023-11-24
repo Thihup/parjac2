@@ -40,7 +40,7 @@ public class FormalParameter extends FormalParameterBase {
     }
 
     @Override public String name () {
-	return var.getName ();
+	return var.name ();
     }
 
     @Override public ParseTreeNode type () {

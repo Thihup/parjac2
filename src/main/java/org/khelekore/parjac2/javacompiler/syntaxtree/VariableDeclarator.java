@@ -9,6 +9,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 public class VariableDeclarator extends SyntaxTreeNode {
     private final VariableDeclaratorId id;
     private final ParseTreeNode initializer;
+    private ParseTreeNode type;
     private int localSlot = -1;
 
     public VariableDeclarator (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
@@ -21,6 +22,14 @@ public class VariableDeclarator extends SyntaxTreeNode {
 	super (id.position ());
 	this.id = id;
 	initializer = null;
+    }
+
+    public void type (ParseTreeNode type) {
+	this.type = type;
+    }
+
+    public ParseTreeNode type () {
+	return type;
     }
 
     @Override public Object getValue () {
@@ -38,7 +47,7 @@ public class VariableDeclarator extends SyntaxTreeNode {
     }
 
     public String getName () {
-	return id.getName ();
+	return id.name ();
     }
 
     public boolean isArray () {
@@ -46,7 +55,7 @@ public class VariableDeclarator extends SyntaxTreeNode {
     }
 
     public Dims getDims () {
-	return id.getDims ();
+	return id.dims ();
     }
 
     public int rank () {

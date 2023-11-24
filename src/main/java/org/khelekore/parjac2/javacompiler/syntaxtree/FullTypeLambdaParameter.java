@@ -32,4 +32,12 @@ public class FullTypeLambdaParameter extends LambdaParameter {
 	v.accept (type);
 	v.accept (vid);
     }
+
+    @Override public FullNameHandler type () {
+	return FullNameHelper.type (type);
+    }
+
+    @Override public String name () {
+	return vid.name ();
+    }
 }
