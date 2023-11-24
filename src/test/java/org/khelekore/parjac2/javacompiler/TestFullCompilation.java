@@ -446,68 +446,78 @@ public class TestFullCompilation {
 
     @Test
     public void testPlusAndStringConcat () throws ReflectiveOperationException {
-	Method m = getMethod ("C", "public class C { public static String a (int i) {return i + 4 + \"!\"; }}", "a", Integer.TYPE);
+	Method m = getMethod ("C", "public class C { public static String a (int i) {return i + 4 + \"!\"; }}",
+			      "a", Integer.TYPE);
 	Object r = m.invoke (null, 37);
 	assert "41!".equals (r) : "Got wrong result from int + int + String concat: " + r;
     }
 
     @Test
     public void testStringConcatWithSeveralInts () throws ReflectiveOperationException {
-	Method m = getMethod ("C", "public class C { public static String a (int i) {return \"!\" + i + 4; }}", "a", Integer.TYPE);
+	Method m = getMethod ("C", "public class C { public static String a (int i) {return \"!\" + i + 4; }}",
+			      "a", Integer.TYPE);
 	Object r = m.invoke (null, 37);
 	assert "!374".equals (r) : "Got wrong result from int + int + String concat: " + r;
     }
 
     @Test
     public void testStringConcatWithSeveralIntsInParenthesis () throws ReflectiveOperationException {
-	Method m = getMethod ("C", "public class C { public static String a (int i) {return \"!\" + (i + 4); }}", "a", Integer.TYPE);
+	Method m = getMethod ("C", "public class C { public static String a (int i) {return \"!\" + (i + 4); }}",
+			      "a", Integer.TYPE);
 	Object r = m.invoke (null, 37);
 	assert "!41".equals (r) : "Got wrong result from int + int + String concat: " + r;
     }
 
     private void testSimpleStringConcat (String code, int iValue, String expected) throws ReflectiveOperationException {
-	Method m = getMethod ("C", "public class C { public static String a (int i) {return " + code + "; }}", "a", Integer.TYPE);
+	Method m = getMethod ("C", "public class C { public static String a (int i) {return " + code + "; }}",
+			      "a", Integer.TYPE);
 	String r = (String)m.invoke (null, iValue);
 	assert r.equals (expected) : "Got wrong value back: " + r;
     }
 
     private void testSimpleStringConcat (String code, double iValue, String expected) throws ReflectiveOperationException {
-	Method m = getMethod ("C", "public class C { public static String a (double i) {return " + code + "; }}", "a", Double.TYPE);
+	Method m = getMethod ("C", "public class C { public static String a (double i) {return " + code + "; }}",
+			      "a", Double.TYPE);
 	String r = (String)m.invoke (null, iValue);
 	assert r.equals (expected) : "Got wrong value back: " + r;
     }
 
     @Test
     public void testNewIntArray () throws ReflectiveOperationException {
-	Method m = getMethod ("C", "public class C { public static int[] a (int s) {return new int[s]; }}", "a", Integer.TYPE);
+	Method m = getMethod ("C", "public class C { public static int[] a (int s) {return new int[s]; }}",
+			      "a", Integer.TYPE);
 	int[] arr = (int[])m.invoke (null, 37);
 	assert arr.length == 37 : "Wrong size of array: " + arr.length;
     }
 
     @Test
     public void testNewDoubleArray () throws ReflectiveOperationException {
-	Method m = getMethod ("C", "public class C { public static double[] a (int s) {return new double[s]; }}", "a", Integer.TYPE);
+	Method m = getMethod ("C", "public class C { public static double[] a (int s) {return new double[s]; }}",
+			      "a", Integer.TYPE);
 	double[] arr = (double[])m.invoke (null, 37);
 	assert arr.length == 37 : "Wrong size of array: " + arr.length;
     }
 
     @Test
     public void testNewStringArray () throws ReflectiveOperationException {
-	Method m = getMethod ("C", "public class C { public static String[] a (int s) {return new String[s]; }}", "a", Integer.TYPE);
+	Method m = getMethod ("C", "public class C { public static String[] a (int s) {return new String[s]; }}",
+			      "a", Integer.TYPE);
 	String[] arr = (String[])m.invoke (null, 37);
 	assert arr.length == 37 : "Wrong size of array: " + arr.length;
     }
 
     @Test
     public void testNewMultiIntArray () throws ReflectiveOperationException {
-	Method m = getMethod ("C", "public class C { public static int[][][] a (int s) {return new int[s][5][]; }}", "a", Integer.TYPE);
+	Method m = getMethod ("C", "public class C { public static int[][][] a (int s) {return new int[s][5][]; }}",
+			      "a", Integer.TYPE);
 	int[][][] arr = (int[][][])m.invoke (null, 37);
 	assert arr.length == 37 : "Wrong size of array: " + arr.length;
     }
 
     @Test
     public void testGetArrayElement () throws ReflectiveOperationException {
-	Method m = getMethod ("C", "public class C { public static int a (int[] s, int pos) {return s[pos]; }}", "a", int[].class, Integer.TYPE);
+	Method m = getMethod ("C", "public class C { public static int a (int[] s, int pos) {return s[pos]; }}",
+			      "a", int[].class, Integer.TYPE);
 	int[] data = {1, 2, 3, 4};
 	int r = (Integer)m.invoke (null, data, 0);
 	assert r == 1 : "Wrong element returned: " + r;
@@ -517,7 +527,8 @@ public class TestFullCompilation {
 
     @Test
     public void testGetArrayArray () throws ReflectiveOperationException {
-	Method m = getMethod ("C", "public class C { public static int[] a (int[][] s, int pos) {return s[pos]; }}", "a", int[][].class, Integer.TYPE);
+	Method m = getMethod ("C", "public class C { public static int[] a (int[][] s, int pos) {return s[pos]; }}",
+			      "a", int[][].class, Integer.TYPE);
 	int[][] data = new int[3][4];
 	int[] r = (int[])m.invoke (null, data, 0);
 	assert r != null : "Got null back";
@@ -525,8 +536,8 @@ public class TestFullCompilation {
 
     @Test
     public void testGetMultiArrayElement () throws ReflectiveOperationException {
-	Method m = getMethod ("C", "public class C { public static int a (int[][] s, int x, int y) {return s[x][y]; }}", "a",
-			      int[][].class, Integer.TYPE, Integer.TYPE);
+	Method m = getMethod ("C", "public class C { public static int a (int[][] s, int x, int y) {return s[x][y]; }}",
+			      "a", int[][].class, Integer.TYPE, Integer.TYPE);
 	int[][] data = {{1, 2, 3}, {7, 5, 3}};
 	int r = (Integer)m.invoke (null, data, 1, 1);
 	assert r == 5 : "Wrong element returned: " + r;
@@ -559,7 +570,8 @@ public class TestFullCompilation {
 	sourceProvider.input (className + ".java", input);
 	Compiler c = new Compiler (diagnostics, grammar, javaTokens, goalRule, settings);
 	c.compile ();
-	assert diagnostics.errorCount () == 0 : String.format ("Expected no compilation errors: %s", TestParserHelper.getParseOutput (diagnostics));
+	assert diagnostics.errorCount () == 0 :
+	    String.format ("Expected no compilation errors: %s", TestParserHelper.getParseOutput (diagnostics));
 	byte[] classData = bytecodeWriter.classes.values ().iterator ().next ();
 	ClassLoader cl = new InMemoryClassLoader (classData);
 	return cl.loadClass (className);
