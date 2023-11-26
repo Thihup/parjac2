@@ -16,6 +16,14 @@ public class SynchronizedStatement extends SyntaxTreeNode {
 	block = (Block)children.get (4);
     }
 
+    public ParseTreeNode expression () {
+	return expression;
+    }
+
+    public Block block () {
+	return block;
+    }
+
     @Override public Object getValue () {
 	return "synchronized (" + expression + ")" + block;
     }

@@ -386,6 +386,7 @@ public class BytecodeGenerator {
 	    case PostDecrementExpression pde -> handlePostDecrement (cb, partsToHandle, pde);
 	    case BasicForStatement bfs -> handleBasicFor (cb, partsToHandle, bfs);
 	    case EnhancedForStatement efs -> handleEnhancedFor (cb, partsToHandle, efs);
+	    case SynchronizedStatement ss -> handleSynchronized (cb, ss);
 	    case ClassInstanceCreationExpression cic -> handleNew (cb, cic);
 	    case ArrayCreationExpression ace -> handleArrayCreation (cb, ace);
 	    case ArrayAccess aa -> handleArrayAccess (cb, aa);
@@ -1140,6 +1141,36 @@ public class BytecodeGenerator {
 		return Opcode.IF_ACMPEQ;
 	    else
 		throw new IllegalStateException ("unhandled jump type: " + token);
+	}
+
+	private void handleSynchronized (CodeBuilder cb, SynchronizedStatement ss) {
+	    handleStatements (cb, ss.expression ());
+	    cb.dup ();
+	    int expressionSlot = cb.allocateLocal (TypeKind.ReferenceType);
+	    cb.astore (expressionSlot);
+	    cb.monitorenter ();
+
+	    Label endLabel = cb.newLabel ();
+	    Label monitorStart = cb.newBoundLabel ();
+	    handleStatements (cb, ss.block ());
+
+	    cb.aload (expressionSlot);
+	    cb.monitorexit ();
+	    Label monitorEnd = cb.newBoundLabel ();
+	    cb.goto_ (endLabel);
+
+	    Label handlerStart = cb.newBoundLabel ();
+	    cb.exceptionCatch (monitorStart, monitorEnd, handlerStart, Optional.empty ());
+	    int exceptionSlot = cb.allocateLocal (TypeKind.ReferenceType);
+	    cb.astore (exceptionSlot);
+	    cb.aload (expressionSlot);
+	    cb.monitorexit ();
+	    Label handlerEnd = cb.newBoundLabel ();
+	    cb.aload (exceptionSlot);
+	    cb.athrow ();
+	    cb.exceptionCatch (handlerStart, handlerEnd, handlerStart, Optional.empty ());
+
+	    cb.labelBinding (endLabel);
 	}
 
 	private void handleNew (CodeBuilder cb, ClassInstanceCreationExpression cic) {
