@@ -1170,6 +1170,7 @@ public class BytecodeGenerator {
 	    Label monitorEnd = cb.newBoundLabel ();
 	    cb.goto_ (endLabel);
 
+	    // TODO: can we alwyas specify all exceptions here?
 	    Label handlerStart = cb.newBoundLabel ();
 	    cb.exceptionCatch (monitorStart, monitorEnd, handlerStart, Optional.empty ());
 	    int exceptionSlot = cb.allocateLocal (TypeKind.ReferenceType);
