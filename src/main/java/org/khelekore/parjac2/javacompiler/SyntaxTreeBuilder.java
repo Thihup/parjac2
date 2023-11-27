@@ -285,7 +285,7 @@ public class SyntaxTreeBuilder {
 	register ("AndExpression", this::oneOrTwoParter);
 	register ("EqualityExpression", this::oneOrTwoParter);
 	register ("RelationalExpression", this::oneOrTwoParter);
-	register ("InstanceOfExpression", this::oneOrTwoParter);
+	register ("InstanceofExpression", this::oneOrTwoParter);
 	register ("ShiftExpression", this::oneOrTwoParter);
 	register ("ShiftOp", this::shiftOp);
 	register ("AdditiveExpression", this::oneOrTwoParter);

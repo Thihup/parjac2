@@ -794,7 +794,7 @@ public class ClassSetter {
 	    t.fullName (FullNameHandler.BOOLEAN);
 	    t.optype (TwoPartExpression.OpType.OBJECT_OP);
 	} else {
-	    error (t, "Unhandled type in two part expression: %t: (%s, %s)", t, part1.getFullDotName (), part2.getFullDotName ());
+	    error (t, "Unhandled type in two part expression: %s: (%s, %s)", t, part1.getFullDotName (), part2.getFullDotName ());
 	}
     }
 
@@ -807,7 +807,7 @@ public class ClassSetter {
     }
 
     private boolean isObjectComparisson (Token t) {
-	return t == javaTokens.DOUBLE_EQUAL || t == javaTokens.NOT_EQUAL;
+	return t == javaTokens.DOUBLE_EQUAL || t == javaTokens.NOT_EQUAL || t == javaTokens.INSTANCEOF;
     }
 
     private void setReturnStatementType (EnclosingTypes et, ReturnStatement r) {

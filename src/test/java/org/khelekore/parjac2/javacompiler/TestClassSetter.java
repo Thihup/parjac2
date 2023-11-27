@@ -658,6 +658,11 @@ public class TestClassSetter {
 	getTypes ("class C { int x; void a () {java.util.function.IntSupplier s = () -> System.out.println (); }}", 1);
     }
 
+    @Test
+    public void testInstanceofInReturn () {
+	getTypes ("class C { boolean a (Object o) { return o instanceof String s; }}");
+    }
+
     /* TODO: implement full generic handling */
     /*
     @Test
