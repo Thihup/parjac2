@@ -640,6 +640,10 @@ public class BytecodeGenerator {
 		handleLogicalAnd (cb, two);
 	    } else if (two.token () == javaTokens.LOGICAL_OR) {
 		handleLogicalOr (cb, two);
+	    } else if (two.token () == javaTokens.INSTANCEOF) {
+		handleStatements (cb, two.part1 ());
+		FullNameHandler check = FullNameHelper.type (two.part2 ());
+		cb.instanceof_ (ClassDescUtils.getClassDesc (check));
 	    } else {
 		// TODO: investigate if we need to evaluate to more than boolean
 		FullNameHandler fnt = two.fullName ();

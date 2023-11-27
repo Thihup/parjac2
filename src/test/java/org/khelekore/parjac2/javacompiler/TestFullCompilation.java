@@ -559,6 +559,18 @@ public class TestFullCompilation {
 	assert f.get (null) == Boolean.TRUE;
     }
 
+    @Test
+    public void testInstanceof () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static boolean a (Object o) {return o instanceof String; }}",
+			      "a", Object.class);
+	boolean b = (Boolean)m.invoke (null, (Object)null);
+	assert !b;
+	b = (Boolean)m.invoke (null, new Object ());
+	assert !b;
+	b = (Boolean)m.invoke (null, "wow");
+	assert b;
+    }
+
     private Method getMethod (String className, String text, String methodName, Class<?> ... types) throws ReflectiveOperationException {
 	Class<?> c = getFirstClass (className, text);
 	Method m = c.getMethod (methodName, types);
