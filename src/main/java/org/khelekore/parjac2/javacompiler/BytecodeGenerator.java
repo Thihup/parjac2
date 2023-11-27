@@ -804,8 +804,15 @@ public class BytecodeGenerator {
 	    ParseTreeNode p = i.test ();
 	    Opcode jumpInstruction = null;
 	    if (p instanceof TwoPartExpression tp) {
-		handleTwoPartSetup (cb, tp);
-		jumpInstruction = getTwoPartJump (tp);
+		if (tp.token () == javaTokens.INSTANCEOF) {
+		    handleStatements (cb, tp.part1 ());
+		    FullNameHandler check = FullNameHelper.type (tp.part2 ());
+		    cb.instanceof_ (ClassDescUtils.getClassDesc (check));
+		    jumpInstruction = Opcode.IFNE; // jump inverts, so we will use IFEQ
+		} else {
+		    handleTwoPartSetup (cb, tp);
+		    jumpInstruction = getTwoPartJump (tp);
+		}
 	    } else {
 		handleStatements (cb, p);
 		jumpInstruction = Opcode.IFNE;

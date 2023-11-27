@@ -571,6 +571,16 @@ public class TestFullCompilation {
 	assert b;
     }
 
+    @Test
+    public void testInstanceofInIf () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static int a (Object o) {if (o instanceof String) return 3; return 4; }}",
+			      "a", Object.class);
+	int r = (Integer)m.invoke (null, new Object ());
+	assert r == 4;
+	r = (Integer)m.invoke (null, "wow");
+	assert r == 3;
+    }
+
     private Method getMethod (String className, String text, String methodName, Class<?> ... types) throws ReflectiveOperationException {
 	Class<?> c = getFirstClass (className, text);
 	Method m = c.getMethod (methodName, types);
