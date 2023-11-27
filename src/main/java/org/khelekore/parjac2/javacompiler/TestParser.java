@@ -118,30 +118,32 @@ public class TestParser {
 
     private void parse (Path filePath, CompilerDiagnosticCollector diagnostics) throws IOException {
 	try {
-	CharBuffer input = pathToCharBuffer (filePath, charset);
-	CharBufferLexer lexer = new CharBufferLexer (grammar, javaTokens, input, filePath, diagnostics);
-	Parser p = new Parser (grammar, filePath, predictCache, lexer, diagnostics);
-	ParseTreeNode parseTree = p.parse (goalRule);
-	if (printParseTree && parseTree != null)
-	    printTree (parseTree);
-	if (diagnostics.hasError ())
-	    return;
+	    CharBuffer input = pathToCharBuffer (filePath, charset);
+	    CharBufferLexer lexer = new CharBufferLexer (grammar, javaTokens, input, filePath, diagnostics);
+	    Parser p = new Parser (grammar, filePath, predictCache, lexer, diagnostics);
+	    ParseTreeNode parseTree = p.parse (goalRule);
+	    if (printParseTree && parseTree != null)
+		printTree (parseTree);
+	    if (diagnostics.hasError ())
+		return;
 
-	DirAndPath dirAndPath = new DirAndPath (filePath.getParent (), filePath);
-	ParseTreeNode syntaxTree = stb.build (dirAndPath, parseTree);
+	    DirAndPath dirAndPath = new DirAndPath (filePath.getParent (), filePath);
+	    ParseTreeNode syntaxTree = stb.build (dirAndPath, parseTree);
 
-	if (fillInClasses) {
-	    CompilationArguments settings = new CompilationArguments ();
-	    ClassInformationProvider cip = new ClassInformationProvider (diagnostics, settings);
-	    cip.scanClassPath ();
-	    cip.addTypes (syntaxTree, filePath);
-	    ClassSetter.fillInClasses (javaTokens, cip, List.of (new ParsedEntry (dirAndPath, syntaxTree)), diagnostics);
+	    if (fillInClasses) {
+		CompilationArguments settings = new CompilationArguments ();
+		ClassInformationProvider cip = new ClassInformationProvider (diagnostics, settings);
+		cip.scanClassPath ();
+		cip.addTypes (syntaxTree, filePath);
+		ClassSetter.fillInClasses (javaTokens, cip, List.of (new ParsedEntry (dirAndPath, syntaxTree)), diagnostics);
+	    }
+
+	    if (printSyntaxTree) {
+		printTree (syntaxTree);
+	    }
+	} catch (Throwable t) {
+	    t.printStackTrace ();
 	}
-
-	if (printSyntaxTree) {
-	    printTree (syntaxTree);
-	}
-	} catch (Throwable t) { t.printStackTrace (); }
 	return;
     }
 
@@ -163,7 +165,7 @@ public class TestParser {
 	System.out.print (indent);
 	ParsePosition pos = n.position ();
 	String shortPos = pos != null ? pos.toShortString () : "-";
-	System.out.print (n.getId () + " " + shortPos);
+	System.out.print (n.getId () + " " + shortPos + ", class: " + n.getClass ().getName ());
 	printValue (n);
 	System.out.println ();
 	n.visitChildNodes (c -> printTree (c, indent + " "));
