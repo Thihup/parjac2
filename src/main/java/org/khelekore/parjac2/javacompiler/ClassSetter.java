@@ -356,6 +356,9 @@ public class ClassSetter {
     }
 
     private void runInLambda (EnclosingTypes et, LambdaExpression le, Deque<StatementHandler> partsToHandle) {
+	if (le.methodInfo () == null) { // lambda not set, we do not know types so we can not check
+	    return;
+	}
 	EnclosingTypes bt = et.enclosingBlock (false);
 	EnclosingTypes.BlockEnclosure bc = (EnclosingTypes.BlockEnclosure)et.enclosure ();
 	for (int i = 0, s = le.numberOfArguments (); i < s; i++)
@@ -482,6 +485,8 @@ public class ClassSetter {
 	if (miR == FullNameHandler.VOID && !(le.body () instanceof Block))
 	    return;
 	FullNameHandler leR = le.lambdaResult ();
+	if (leR == null) // we already signaled an error
+	    return;
 	if (!miR.equals (leR))
 	    error (le, "Wrong type returned from lambda: %s, need: %s", leR.getFullDotName (), miR.getFullDotName ());
     }
@@ -662,10 +667,11 @@ public class ClassSetter {
 	    // useful when debugging
 	    //System.err.println ("Failed to find method: " + name);
 	    error (mi, "No matching method named %s found in %s", name, methodOn.getFullDotName ());
+	} else {
+	    // now that we know the type of the lambdas we can check them.
+	    les.forEach (le -> addLambdaReturnCheck (currentBlock, le, partsToHandle));
+	    addParts (currentBlock, les, partsToHandle);
 	}
-
-	// now that we know the type of the lambdas we can check them.
-	addParts (currentBlock, les, partsToHandle);
     }
 
     private MethodInfo getMethod (MethodInvocation mi, FullNameHandler methodOn,
@@ -746,7 +752,6 @@ public class ClassSetter {
 
 	// we only set the types if we actually found a match.
 	lambdaTypes.values ().forEach (r -> r.run ());
-	lambdaTypes.keySet ().forEach (le -> checkLambdaReturn (le));
 	return true;
     }
 
