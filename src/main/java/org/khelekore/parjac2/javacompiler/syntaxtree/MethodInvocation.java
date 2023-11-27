@@ -63,6 +63,10 @@ public class MethodInvocation extends SyntaxTreeNode {
 	return on;
     }
 
+    public TypeArguments types () {
+	return types;
+    }
+
     public boolean isSuper () {
 	return isSuper;
     }

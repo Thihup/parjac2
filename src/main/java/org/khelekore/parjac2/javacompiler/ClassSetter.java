@@ -303,7 +303,7 @@ public class ClassSetter {
 	    Object pp = s.handler;
 	    EnclosingTypes et = s.et;
 	    // quite useful when debugging
-	    //System.err.println ("Looking at: " + pp + ", " + pp.getClass ().getSimpleName ());
+	    //System.err.println ("Looking at: " + pp + ", " + pp.getClass ().getSimpleName () + ", " + et.enclosure ().getClass ().getSimpleName ());
 	    switch (pp) {
 	    case Block b -> runInBlock (et, b, partsToHandle);
 	    case LambdaExpression le -> runInLambda (et, le, partsToHandle);
@@ -323,7 +323,7 @@ public class ClassSetter {
 	    case Assignment a -> handlePartsAndHandler (et, a, e -> checkAssignment (e, a), partsToHandle);
 
 	    // Check method once we know all parts
-	    case MethodInvocation mi -> handlePartsAndHandler (et, mi, e -> checkMethodCall (e, mi), partsToHandle);
+	    case MethodInvocation mi -> handleMethodInvocation (et, mi, partsToHandle);
 	    case Ternary t -> handlePartsAndHandler (et, t, e -> setTernaryType (e, t), partsToHandle);
 	    case TwoPartExpression t -> handlePartsAndHandler (et, t, e -> setTwoPartExpressionType (e, t), partsToHandle);
 	    case ReturnStatement r -> handlePartsAndHandler (et, r, e -> setReturnStatementType (e, r), partsToHandle);
@@ -419,6 +419,31 @@ public class ClassSetter {
 	    error (a, "Types not compatible: %s <-> %s", toType.getFullDotName (), fromType.getFullDotName ());
     }
 
+    private void handleMethodInvocation (EnclosingTypes et, MethodInvocation mi, Deque<StatementHandler> partsToHandle) {
+	// We can not check lambda contents before we know the parameter types of the lambda.
+	// We only know the types after we have found a method match
+	// So this is the reason we delay the lambda checks to run at the end of checkMethodCall
+	List<LambdaExpression> lambdas = new ArrayList<> ();
+	List<ParseTreeNode> toCheck = new ArrayList<> ();
+	addNonNull (mi.getOn (), toCheck);
+	addNonNull (mi.types (), toCheck);
+	for (ParseTreeNode a : mi.getArguments ()) {
+	    if (a instanceof LambdaExpression le)
+		lambdas.add (le);
+	    else
+		toCheck.add (a);
+	}
+
+	CustomHandler h = e -> checkMethodCall (e, mi, lambdas, partsToHandle);
+	partsToHandle.addFirst (new StatementHandler (et, h));
+	addParts (et, toCheck, partsToHandle);
+    }
+
+    private void addNonNull (ParseTreeNode p, List<ParseTreeNode> ls) {
+	if (p != null)
+	    ls.add (p);
+    }
+
     private void setTypeOnLambda (FullNameHandler varType, LambdaExpression le) {
 	MethodInfo mi = lambdaMatch (varType, le);
 	if (mi != null) {
@@ -449,9 +474,13 @@ public class ClassSetter {
     }
 
     private void addParts (EnclosingTypes et, ParseTreeNode pp, Deque<StatementHandler> partsToHandle) {
-	List<ParseTreeNode> parts = pp.getChildren ();
-	for (int i = parts.size () - 1; i >= 0; i--)
+	addParts (et, pp.getChildren (), partsToHandle);
+    }
+
+    private <T extends ParseTreeNode> void addParts (EnclosingTypes et, List<T> parts, Deque<StatementHandler> partsToHandle) {
+	for (int i = parts.size () - 1; i >= 0; i--) {
 	    partsToHandle.addFirst (new StatementHandler (et, parts.get (i)));
+	}
     }
 
     /* TODO: rewrite this code a bit: we should only call an.replace and an.fullName when we are done
@@ -573,7 +602,8 @@ public class ClassSetter {
 	}
     }
 
-    private void checkMethodCall (EnclosingTypes et, MethodInvocation mi) {
+    private void checkMethodCall (EnclosingTypes et, MethodInvocation mi, List<LambdaExpression> les, Deque<StatementHandler> partsToHandle) {
+	EnclosingTypes currentBlock = et;
 	ParseTreeNode on = mi.getOn ();
 	boolean isSuper = mi.isSuper ();
 	String name = mi.getMethodName ();
@@ -614,6 +644,9 @@ public class ClassSetter {
 	    //System.err.println ("Failed to find method: " + name);
 	    error (mi, "No matching method named %s found in %s", name, methodOn.getFullDotName ());
 	}
+
+	// now that we know the type of the lambdas we can check them.
+	addParts (currentBlock, les, partsToHandle);
     }
 
     private MethodInfo getMethod (MethodInvocation mi, FullNameHandler methodOn,

@@ -627,11 +627,16 @@ public class TestClassSetter {
     }
 
     @Test
-    public void testLambdaMethodArgument () {
+    public void testLambdaMethodArgument1 () {
 	getTypes ("class C { void r (Runnable r) { r.run (); } void a () { r (() -> System.out.println ()); }}");
 	getTypes ("class C { void r (java.util.function.IntConsumer r) { } void a () { r (i -> System.out.println ()); }}");
 	getTypes ("class C { void r (java.util.function.IntConsumer r) { } void a () { r ((int i) -> System.out.println ()); }}");
 	getTypes ("class C { void r (java.util.function.IntToDoubleFunction r) { } void a () { r ((int i) -> \"wrong\"); }}", 1);
+    }
+
+    @Test
+    public void testLambdaMethodArgument2 () {
+	getTypes ("class C { void a () { java.util.List<String> ls; x (t -> ls.add (t)); } <T> void x (java.util.function.Consumer<T> c) { }}");
     }
 
     @Test
