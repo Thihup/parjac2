@@ -62,6 +62,10 @@ public interface FullNameHandler {
 	return rank () > 0;
     }
 
+    default FullNameHandler inner () {
+	throw new IllegalStateException ("Not an array type: " + this);
+    }
+
     default boolean isPrimitive () {
 	return false;
     }
@@ -195,7 +199,7 @@ public interface FullNameHandler {
 	    return "[".repeat (rank) + fn.getSignature (gth, cip, shortForm, ta);
 	}
 
-	public FullNameHandler inner () {
+	@Override public FullNameHandler inner () {
 	    if (rank > 1)
 		return new ArrayHandler (fn, rank - 1);
 	    return fn;

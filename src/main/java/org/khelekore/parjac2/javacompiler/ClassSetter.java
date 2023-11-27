@@ -20,6 +20,7 @@ import org.khelekore.parjac2.NoSourceDiagnostics;
 import org.khelekore.parjac2.SourceDiagnostics;
 import org.khelekore.parjac2.javacompiler.syntaxtree.AmbiguousName;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Annotation;
+import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayInitializer;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Assignment;
 import org.khelekore.parjac2.javacompiler.syntaxtree.BasicForStatement;
@@ -262,10 +263,15 @@ public class ClassSetter {
 
     private void checkMethodBodies (TypeDeclaration td, EnclosingTypes et) {
 	EnclosingTypes ett = enclosureCache.get (td);
-	td.getMethods ().forEach (m -> checkMethodBodies (m));
-	td.getConstructors ().forEach (c -> checkConstructorBodies (c));
-	td.getInstanceInitializers ().forEach (c -> checkInstanceInitializerBodies (ett, c));
-	td.getStaticInitializers ().forEach (c -> checkStaticInitializerBodies (ett, c));
+	try {
+	    td.getMethods ().forEach (m -> checkMethodBodies (m));
+	    td.getConstructors ().forEach (c -> checkConstructorBodies (c));
+	    td.getInstanceInitializers ().forEach (c -> checkInstanceInitializerBodies (ett, c));
+	    td.getStaticInitializers ().forEach (c -> checkStaticInitializerBodies (ett, c));
+	} catch (Exception e) {
+	    System.err.println ("Exception during handling of " + tree.getOrigin ());
+	    throw e;
+	}
     }
 
     private void checkMethodBodies (MethodDeclarationBase md) {
@@ -399,24 +405,37 @@ public class ClassSetter {
     }
 
     private void checkInitializerType (FullNameHandler varType, ParseTreeNode initializer) {
+	if (varType == null) {
+	    // if varType == null, we have already signaled type not found or similar
+	    return;
+	}
 	if (initializer != null) {
 	    if (initializer instanceof LambdaExpression le) {
 		// already handled
 	    } else {
-		FullNameHandler fi = FullNameHelper.type (initializer);
-		// if varType == null, we have already signaled type not found or similar
-		// If fi == null we have already signaled errors and do not want another one here.
-		if (varType != null && fi != null && !typesMatch (varType, fi))
-		    error (initializer, "Types not compatible: %s <-> %s", varType.getFullDotName (), fi.getFullDotName ());
+		checkAssignment (varType, initializer);
 	    }
 	}
     }
 
     private void checkAssignment (EnclosingTypes et, Assignment a) {
 	FullNameHandler toType = FullNameHelper.type (a.lhs ());
-	FullNameHandler fromType = FullNameHelper.type (a.rhs ());
-	if (toType != null && fromType != null && !typesMatch (toType, fromType))
-	    error (a, "Types not compatible: %s <-> %s", toType.getFullDotName (), fromType.getFullDotName ());
+	checkAssignment (toType, a.rhs ());
+    }
+
+    private void checkAssignment (FullNameHandler toType, ParseTreeNode rhs) {
+	if (toType.isArray () && rhs instanceof ArrayInitializer ai) {
+	    FullNameHandler inner = toType.inner ();
+	    List<ParseTreeNode> ls = ai.variableInitializers ();
+	    for (ParseTreeNode i : ls) {
+		checkAssignment (inner, i);
+	    }
+	} else {
+	    FullNameHandler fi = FullNameHelper.type (rhs);
+	    // If fi == null we have already signaled errors and do not want another one here.
+	    if (fi != null && !typesMatch (toType, fi))
+		error (rhs, "Types not compatible: %s <-> %s", toType.getFullDotName (), fi.getFullDotName ());
+	}
     }
 
     private void handleMethodInvocation (EnclosingTypes et, MethodInvocation mi, Deque<StatementHandler> partsToHandle) {
@@ -695,8 +714,7 @@ public class ClassSetter {
 	FullNameHandler lastVarArg = null;
 	if (varArgs) {
 	    lastVarArg = info.parameter (info.numberOfArguments () - 1);
-	    FullNameHandler.ArrayHandler ah = (FullNameHandler.ArrayHandler)lastVarArg;
-	    lastVarArg = ah.inner ();
+	    lastVarArg = lastVarArg.inner ();
 	}
 	Map<LambdaExpression, Runnable> lambdaTypes = new HashMap<> ();
 	for (int i = 0; i < args.size (); i++) {
@@ -911,9 +929,7 @@ public class ClassSetter {
 	    if (!have.isArray ())
 		return false;
 	    // both arrays
-	    FullNameHandler.ArrayHandler wantedA = (FullNameHandler.ArrayHandler)wanted;
-	    FullNameHandler.ArrayHandler haveA = (FullNameHandler.ArrayHandler)have;
-	    if (isSuperClass (wantedA.inner (), haveA.inner ()))
+	    if (isSuperClass (wanted.inner (), have.inner ()))
 		return true;
 	} else if (wanted.isPrimitive ()) {
 	    if (FullNameHelper.mayAutoCastPrimitives (have, wanted)) // widening

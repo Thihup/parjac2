@@ -8,7 +8,8 @@ import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class ArrayInitializer extends SyntaxTreeNode {
-    private final  VariableInitializerList variableList;
+    private final VariableInitializerList variableList;
+
     public ArrayInitializer (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
 	if (rule.get (1) == ctx.getGrammar ().getRuleGroupId ("VariableInitializerList"))
@@ -16,7 +17,12 @@ public class ArrayInitializer extends SyntaxTreeNode {
 	else
 	    variableList = null;
     }
-    @Override public Object getValue() {
+
+    public List<ParseTreeNode> variableInitializers () {
+	return variableList != null ? variableList.variableInitializers () : List.of ();
+    }
+
+    @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	sb.append ("{");
 	if (variableList != null)

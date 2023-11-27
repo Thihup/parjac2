@@ -603,6 +603,15 @@ public class TestClassSetter {
     }
 
     @Test
+    public void testArrayInitializer () {
+	getTypes ("class C { int[] f = {}; }");
+	getTypes ("class C { int[] f = {1}; }");
+	getTypes ("class C { void a (int i) { int[] arr = {i}; }; }");
+	getTypes ("class C { String[] s = {\"one\", \"two\"};}");
+	getTypes ("class C { int[] f = {1.5}; }", 1);
+    }
+
+    @Test
     public void testForEachOnCollection () {
 	// code would give NPE, but we do not care for this test case
 	getTypes ("class C { void a () {java.util.List<String> ls = null; for (int a : ls) { }}}");

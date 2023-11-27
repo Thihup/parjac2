@@ -8,7 +8,8 @@ import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class VariableInitializerList extends SyntaxTreeNode {
-    private List<ParseTreeNode> variableInitializers;
+    private final List<ParseTreeNode> variableInitializers;
+
     public VariableInitializerList (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
 	variableInitializers = new ArrayList<> ();
@@ -20,7 +21,11 @@ public class VariableInitializerList extends SyntaxTreeNode {
 	}
     }
 
-    @Override public Object getValue() {
+    public List<ParseTreeNode> variableInitializers () {
+	return variableInitializers;
+    }
+
+    @Override public Object getValue () {
 	return variableInitializers;
     }
 
