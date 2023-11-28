@@ -145,10 +145,50 @@ public class TestFullCompilation {
     }
 
     @Test
+    public void testReturnComplexTernary () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { public static int r (boolean b1, boolean b2) { return b1 && b2 ? 3 : 4; }}",
+			      "r", Boolean.TYPE, Boolean.TYPE);
+	int r = (Integer)m.invoke (null, true, false);
+	assert r == 4;
+	r = (Integer)m.invoke (null, true, true);
+	assert r == 3;
+    }
+
+    @Test
     public void testIfWithReturn () throws ReflectiveOperationException {
 	Method m = getMethod ("C", "class C { public static int r (boolean b, int x, int y) { if (b) return x; else return y; }}",
 			      "r", Boolean.TYPE, Integer.TYPE, Integer.TYPE);
 	testSimpleTrueFalse (m, 72, 98);
+    }
+
+    @Test
+    public void testIfWithMultiPartExpression () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { public static int r (boolean b1, boolean b2) { if (b1 && b2) return 3; return 4; }}",
+			      "r", Boolean.TYPE, Boolean.TYPE);
+	int r = (Integer)m.invoke (null, true, false);
+	assert r == 4 : "Wrong value, got: " + r + ", expected: " + 4;
+	r = (Integer)m.invoke (null, true, true);
+	assert r == 3 : "Wrong value, got: " + r + ", expected: " + 3;
+    }
+
+    @Test
+    public void testIfWithTrippleExpression () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { public static int r (boolean b1, boolean b2, boolean b3) { if (b1 && b2 && b3) return 3; return 4; }}",
+			      "r", Boolean.TYPE, Boolean.TYPE, Boolean.TYPE);
+	int r = (Integer)m.invoke (null, true, false, true);
+	assert r == 4 : "Wrong value, got: " + r + ", expected: " + 4;
+	r = (Integer)m.invoke (null, true, true, true);
+	assert r == 3 : "Wrong value, got: " + r + ", expected: " + 3;
+    }
+
+    @Test
+    public void testIfElseWithMultiPartExpression () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { public static int r (boolean b1, boolean b2) { if (b1 || b2) return 3; else return 4; }}",
+			      "r", Boolean.TYPE, Boolean.TYPE);
+	int r = (Integer)m.invoke (null, false, false);
+	assert r == 4;
+	r = (Integer)m.invoke (null, true, false);
+	assert r == 3;
     }
 
     private void testSimpleTrueFalse (Method m, int trueVal, int falseVal) throws ReflectiveOperationException {
@@ -574,6 +614,26 @@ public class TestFullCompilation {
     @Test
     public void testInstanceofInIf () throws ReflectiveOperationException {
 	Method m = getMethod ("C", "public class C { public static int a (Object o) {if (o instanceof String) return 3; return 4; }}",
+			      "a", Object.class);
+	int r = (Integer)m.invoke (null, new Object ());
+	assert r == 4;
+	r = (Integer)m.invoke (null, "wow");
+	assert r == 3;
+    }
+
+    @Test
+    public void testComplexInstanceofInIf () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static int a (Object o, boolean b) {if (o instanceof String s && b) return 3; return 4; }}",
+			      "a", Object.class, Boolean.TYPE);
+	int r = (Integer)m.invoke (null, new Object (), Boolean.TRUE);
+	assert r == 4;
+	r = (Integer)m.invoke (null, "wow", Boolean.TRUE);
+	assert r == 3;
+    }
+
+    @Test
+    public void testInstanceofVariable () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static int a (Object o) {if (o instanceof String s && s != \"a\") return 3; return 4; }}",
 			      "a", Object.class);
 	int r = (Integer)m.invoke (null, new Object ());
 	assert r == 4;

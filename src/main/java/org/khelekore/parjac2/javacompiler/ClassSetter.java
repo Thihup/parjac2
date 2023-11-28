@@ -854,6 +854,8 @@ public class ClassSetter {
 	    if (fn == null)
 		System.err.println ("test is: " + test + ", " + currentClass (et).getFullDotName ());
 	    */
+	    if (fn == null)
+		return; // already marked as error.
 	    if (fn == FullNameHandler.BOOLEAN)
 		return;
 	    type = fn.getFullDotName ();

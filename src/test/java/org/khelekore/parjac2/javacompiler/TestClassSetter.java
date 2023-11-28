@@ -663,6 +663,11 @@ public class TestClassSetter {
 	getTypes ("class C { boolean a (Object o) { return o instanceof String s; }}");
     }
 
+    @Test
+    public void testInstanceofVariableAccess () {
+	getTypes ("class C { boolean a (Object o) { int len = 0; if (o instanceof String s) len = s.length (); }}");
+    }
+
     /* TODO: implement full generic handling */
     /*
     @Test

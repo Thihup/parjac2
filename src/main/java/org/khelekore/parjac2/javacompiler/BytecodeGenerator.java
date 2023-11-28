@@ -378,8 +378,8 @@ public class BytecodeGenerator {
 	    case ReturnStatement r -> handleReturn (cb, r);
 	    case UnaryExpression u -> handleUnaryExpression (cb, u);
 	    case TwoPartExpression tp -> handleTwoPartExpression (cb, tp);
-	    case Ternary t -> handleTernary (cb, partsToHandle, t);
-	    case IfThenStatement ifts -> handleIf (cb, partsToHandle, ifts);
+	    case Ternary t -> handleTernary (cb, t);
+	    case IfThenStatement ifts -> handleIf (cb, ifts);
 	    case Assignment a -> handleAssignment (cb, partsToHandle, a);
 	    case LocalVariableDeclaration lv -> handleLocalVariables (cb, lv);
 	    case PostIncrementExpression pie -> handlePostIncrement (cb, partsToHandle, pie);
@@ -630,6 +630,7 @@ public class BytecodeGenerator {
 	    }
 	}
 
+	// for statements outside of if-tests and similar
 	private void handleTwoPartExpression (CodeBuilder cb, TwoPartExpression two) {
 	    if (isString (two)) {
 		handleStringConcat (cb, two);
@@ -641,24 +642,11 @@ public class BytecodeGenerator {
 	    } else if (two.token () == javaTokens.LOGICAL_OR) {
 		handleLogicalOr (cb, two);
 	    } else if (two.token () == javaTokens.INSTANCEOF) {
-		handleStatements (cb, two.part1 ());
-		FullNameHandler check = FullNameHelper.type (two.part2 ());
-		cb.instanceof_ (ClassDescUtils.getClassDesc (check));
+		Label elseLabel = cb.newLabel ();
+		handleInstanceOf (cb, two, elseLabel);
+		cb.labelBinding (elseLabel);
 	    } else {
-		// TODO: investigate if we need to evaluate to more than boolean
-		FullNameHandler fnt = two.fullName ();
-		ParseTreeNode p1 = two.part1 ();
-		handleStatements (cb, p1);
-		widen (cb, fnt, p1);
-
-		ParseTreeNode p2 = two.part2 ();
-		Opcode jumpInstruction = Opcode.IFEQ;
-		if (!(fnt == FullNameHandler.BOOLEAN && p2 instanceof IntLiteral il && il.intValue () == 0)) {
-		    handleStatements (cb, p2);
-		    widen (cb, fnt, p2);
-		    jumpInstruction = getTwoPartJump (two);
-		}
-
+		Opcode jumpInstruction = handleOtherTwoPart (cb, two);
 		cb.ifThenElse (jumpInstruction, b -> b.iconst_1 (), b -> b.iconst_0 ());
 	    }
 	}
@@ -744,6 +732,8 @@ public class BytecodeGenerator {
 	    if (targetType == FullNameHandler.BOOLEAN)
 		targetType = FullNameHandler.INT;
 	    FullNameHandler pfn = FullNameHelper.type (p);
+	    if (pfn == FullNameHandler.BOOLEAN)
+		pfn = FullNameHandler.INT;
 	    if (pfn == targetType)
 		return;
 	    if (pfn.isPrimitive ()) {
@@ -761,6 +751,36 @@ public class BytecodeGenerator {
 	    if (c == null)
 		throw new IllegalArgumentException ("Unhandled type for math operations: " + fullName.getFullDotName () + ", token: " + token);
 	    c.accept (cb);
+	}
+
+	private void handleInstanceOf (CodeBuilder cb, TwoPartExpression tp, Label elseLabel) {
+	    handleStatements (cb, tp.part1 ());
+	    ParseTreeNode p2 = tp.part2 ();
+	    FullNameHandler check = FullNameHelper.type (p2);
+	    cb.instanceof_ (ClassDescUtils.getClassDesc (check));
+	    if (p2 instanceof LocalVariableDeclaration lvd) {
+		cb.ifeq (elseLabel);
+		handleLocalVariables (cb, lvd);                    // get slot for variable
+		handleStatements (cb, tp.part1 ());
+		cb.checkcast (ClassDescUtils.getClassDesc (check));
+		cb.astore (lvd.getDeclarators ().get (0).slot ()); // only one!
+	    }
+	}
+
+	private Opcode handleOtherTwoPart (CodeBuilder cb, TwoPartExpression two) {
+	    FullNameHandler fnt = two.fullName ();
+	    ParseTreeNode p1 = two.part1 ();
+	    handleStatements (cb, p1);
+	    widen (cb, fnt, p1);
+
+	    ParseTreeNode p2 = two.part2 ();
+	    Opcode jumpInstruction = Opcode.IFEQ;
+	    if (!(fnt == FullNameHandler.BOOLEAN && p2 instanceof IntLiteral il && il.intValue () == 0)) {
+		handleStatements (cb, p2);
+		widen (cb, fnt, p2);
+		jumpInstruction = getTwoPartJump (two);
+	    }
+	    return jumpInstruction;
 	}
 
 	private void handleLogicalAnd (CodeBuilder cb, TwoPartExpression tp) {
@@ -795,16 +815,24 @@ public class BytecodeGenerator {
 	    cb.ireturn ();
 	}
 
-	private void handleTernary (CodeBuilder cb, Deque<Object> partsToHandle, Ternary t) {
-	    Handler h = c -> c.ifThenElse (x -> handleStatements (x, t.thenPart ()), x -> handleStatements (x, t.elsePart ()));
-	    runParts (partsToHandle, t.test (), h);
+	private void handleTernary (CodeBuilder cb, Ternary t) {
+	    handleGenericIfElse (cb, t.test (), t.thenPart (), t.elsePart ());
 	}
 
-	private void handleIf (CodeBuilder cb, Deque<Object> partsToHandle, IfThenStatement i) {
-	    ParseTreeNode p = i.test ();
+	private void handleIf (CodeBuilder cb, IfThenStatement i) {
+	    handleGenericIfElse (cb, i.test (), i.thenPart (), i.elsePart ());
+	}
+
+	private void handleGenericIfElse (CodeBuilder cb, ParseTreeNode test, ParseTreeNode thenPart, ParseTreeNode elsePart) {
 	    Opcode jumpInstruction = null;
-	    if (p instanceof TwoPartExpression tp) {
-		if (tp.token () == javaTokens.INSTANCEOF) {
+	    if (test instanceof TwoPartExpression tp) {
+		Token token = tp.token ();
+		if (isShortCircut (token)) {
+		    handleLogicalIf (cb, thenPart, elsePart, tp);
+		    return;
+		}
+
+		if (token == javaTokens.INSTANCEOF) {
 		    handleStatements (cb, tp.part1 ());
 		    FullNameHandler check = FullNameHelper.type (tp.part2 ());
 		    cb.instanceof_ (ClassDescUtils.getClassDesc (check));
@@ -814,17 +842,123 @@ public class BytecodeGenerator {
 		    jumpInstruction = getTwoPartJump (tp);
 		}
 	    } else {
-		handleStatements (cb, p);
+		handleStatements (cb, test);
 		jumpInstruction = Opcode.IFNE;
 	    }
-	    if (i.hasElse ()) {
+	    if (elsePart != null) {
 		cb.ifThenElse (jumpInstruction,
-			       x -> handleStatements (x, i.thenPart ()),
-			       x -> handleStatements (x, i.elsePart ()));
+			       x -> handleStatements (x, thenPart),
+			       x -> handleStatements (x, elsePart));
 	    } else {
 		cb.ifThen (jumpInstruction,
-			   x -> handleStatements (x, i.thenPart ()));
+			   x -> handleStatements (x, thenPart));
 	    }
+	}
+
+	private void handleLogicalIf (CodeBuilder cb, ParseTreeNode thenPart, ParseTreeNode elsePart, TwoPartExpression tp) {
+	    Label thenLabel = cb.newLabel ();
+	    Label elseLabel = cb.newLabel ();
+	    handleLogicalChain (cb, tp, thenLabel, elseLabel, false);
+	    handleIfThenParts (cb, thenPart, elsePart, thenLabel, elseLabel);
+	}
+
+
+	/*
+	  On their own:
+	  && first test: false -> jump to elseLabel
+	  && second test: false -> jump to elseLabel
+	  || first test: true -> jump to thenLabel
+	  || second test: false -> jump to elseLabel
+
+	  Howerver
+	  && inside || need change:
+	  && first test: false -> jump to elseLabel
+	  && second test: true -> jump to thenLabel
+	*/
+	private void handleLogicalChain (CodeBuilder cb, TwoPartExpression tp, Label thenLabel, Label elseLabel, boolean insideOr) {
+	    ParseTreeNode p1 = tp.part1 ();
+	    ParseTreeNode p2 = tp.part2 ();
+	    boolean isOr = tp.token () == javaTokens.LOGICAL_OR;
+
+	    Label nextOption = null;
+	    if (isOr)
+		nextOption = cb.newLabel ();
+	    TwoPartExpression tp2 = null;
+	    if (p1 instanceof TwoPartExpression two)
+		tp2 = two;
+	    if (tp2 != null && isShortCircut (tp2.token ())) {
+		if (isOr)
+		    handleLogicalChain (cb, tp2, thenLabel, nextOption, true);
+		else
+		    handleLogicalChain (cb, tp2, thenLabel, elseLabel, false);
+	    } else if (tp2 != null && tp2.token () == javaTokens.INSTANCEOF) {
+		handleInstanceOf (cb, tp2, elseLabel);
+	    } else if (tp2 != null) {
+		handleOtherTwoPart (cb, tp2);
+		cb.branchInstruction (getReverseTwoPartJump (tp2), elseLabel);
+	    } else {
+		handleStatements (cb, p1);
+		firstTest (cb, isOr, thenLabel, elseLabel);
+	    }
+	    if (isOr)
+		cb.labelBinding (nextOption);
+
+	    tp2 = p2 instanceof TwoPartExpression two ? two : null;
+	    if (tp2 != null && isShortCircut (tp2.token ())) {
+		handleLogicalChain (cb, tp2, thenLabel, elseLabel, false);
+	    } else if (tp2 != null && tp2.token () == javaTokens.INSTANCEOF) {
+		handleInstanceOf (cb, tp2, elseLabel);
+	    } else if (tp2 != null) {
+		handleOtherTwoPart (cb, tp2);
+		cb.branchInstruction (getReverseTwoPartJump (tp2), elseLabel);
+	    } else {
+		handleStatements (cb, p2);
+		secondTest (cb, isOr, thenLabel, elseLabel, insideOr);
+	    }
+	}
+
+	private void firstTest (CodeBuilder cb, boolean isOr, Label thenLabel, Label elseLabel) {
+	    if (isOr)
+		cb.ifne (thenLabel);
+	    else
+		cb.ifeq (elseLabel);
+	}
+
+	private void secondTest (CodeBuilder cb, boolean isOr, Label thenLabel, Label elseLabel, boolean insideOr) {
+	    if (isOr)
+		cb.ifeq (elseLabel);
+	    else if (insideOr)
+		cb.ifne (thenLabel);
+	    else
+		cb.ifeq (elseLabel);
+	}
+
+	private void handleIfThenParts (CodeBuilder cb, ParseTreeNode thenPart, ParseTreeNode elsePart, Label thenLabel, Label elseLabel) {
+	    cb.labelBinding (thenLabel);
+	    handleStatements (cb, thenPart);
+	    Label endLabel = cb.newLabel ();
+	    if (!endsWithReturn (thenPart))
+		cb.goto_ (endLabel);
+	    cb.labelBinding (elseLabel);
+	    if (elsePart != null)
+		handleStatements (cb, elsePart);
+	    cb.labelBinding (endLabel);
+	}
+
+	private boolean endsWithReturn (ParseTreeNode p) {
+	    // TOOD: we might need more cases
+	    if (p instanceof ReturnStatement)
+		return true;
+	    if (p instanceof Block b) {
+		List<ParseTreeNode> ls = b.get ();
+		if (!ls.isEmpty () && ls.getLast () instanceof ReturnStatement)
+		    return true;
+	    }
+	    return false;
+	}
+
+	private boolean isShortCircut (Token token) {
+	    return token == javaTokens.LOGICAL_AND || token == javaTokens.LOGICAL_OR;
 	}
 
 	private void handleAssignment (CodeBuilder cb, Deque<Object> partsToHandle, Assignment a) {
