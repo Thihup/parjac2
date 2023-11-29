@@ -2,11 +2,15 @@ package org.khelekore.parjac2.javacompiler;
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
+import java.lang.constant.MethodTypeDesc;
 
 import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Dims;
+import org.khelekore.parjac2.javacompiler.syntaxtree.FormalParameterBase;
+import org.khelekore.parjac2.javacompiler.syntaxtree.FormalParameterList;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
+import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHelper;
 import org.khelekore.parjac2.javacompiler.syntaxtree.PrimitiveType;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.khelekore.parjac2.parsetree.TokenNode;
@@ -51,5 +55,24 @@ public class ClassDescUtils {
 	Dims dims = at.getDims ();
 	int rank = dims.rank ();
 	return base.arrayType (rank);
+    }
+
+    public static MethodTypeDesc methodTypeDesc (FormalParameterList ls, FullNameHandler result) {
+	StringBuilder sb = new StringBuilder ();
+	sb.append ("(");
+	if (ls != null) {
+	    for (FormalParameterBase fp : ls.getParameters ())
+		sb.append (signatureType (FullNameHelper.type (fp)));
+	}
+	sb.append (")");
+	sb.append (signatureType (result));
+
+	return MethodTypeDesc.ofDescriptor (sb.toString ());
+    }
+
+    private static String signatureType (FullNameHandler fn) {
+	if (fn.isPrimitive ())
+	    return fn.getSlashName ();
+	return "L" + fn.getSlashName () + ";";
     }
 }

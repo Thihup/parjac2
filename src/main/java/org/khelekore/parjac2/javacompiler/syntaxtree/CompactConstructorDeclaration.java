@@ -9,7 +9,7 @@ import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
-public class CompactConstructorDeclaration extends SyntaxTreeNode implements ConstructorDeclarationBase {
+public class CompactConstructorDeclaration extends ConstructorBase {
     private final List<ParseTreeNode> modifiers;
     private final String name;
     private final ConstructorBody body;
@@ -21,6 +21,7 @@ public class CompactConstructorDeclaration extends SyntaxTreeNode implements Con
 	modifiers = (rule.size () > 2) ? ((Multiple)children.get (i++)).get () : Collections.emptyList ();
 	name = ((Identifier)children.get (i++)).getValue ();
 	body = (ConstructorBody)children.get (i++);
+	flags = Flags.ACC_PUBLIC;
     }
 
     @Override public Object getValue () {
@@ -41,10 +42,6 @@ public class CompactConstructorDeclaration extends SyntaxTreeNode implements Con
 
     @Override public TypeParameters getTypeParameters () {
 	return null;
-    }
-
-    @Override public int flags () {
-	return Flags.ACC_PUBLIC;
     }
 
     @Override public String getName () {

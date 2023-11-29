@@ -4,6 +4,7 @@ import java.lang.constant.MethodTypeDesc;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.khelekore.parjac2.javacompiler.ClassDescUtils;
 import org.khelekore.parjac2.javacompiler.Context;
 import org.khelekore.parjac2.javacompiler.Flags;
 import org.khelekore.parjac2.javacompiler.MethodInfo;
@@ -92,23 +93,7 @@ public class MethodDeclarationBase extends FlaggedBase implements MethodInfo {
     }
 
     @Override public MethodTypeDesc methodTypeDesc () {
-	StringBuilder sb = new StringBuilder ();
-	sb.append ("(");
-	FormalParameterList ls = getFormalParameterList ();
-	if (ls != null) {
-	    for (FormalParameterBase fp : ls.getParameters ())
-		sb.append (signatureType (FullNameHelper.type (fp)));
-	}
-	sb.append (")");
-	sb.append (signatureType (result ()));
-
-	return MethodTypeDesc.ofDescriptor (sb.toString ());
-    }
-
-    private String signatureType (FullNameHandler fn) {
-	if (fn.isPrimitive ())
-	    return fn.getSlashName ();
-	return "L" + fn.getSlashName () + ";";
+	return ClassDescUtils.methodTypeDesc (getFormalParameterList (), result ());
     }
 
     @Override public FullNameHandler result () {

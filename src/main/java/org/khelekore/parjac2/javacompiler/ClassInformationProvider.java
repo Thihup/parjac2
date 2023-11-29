@@ -125,8 +125,12 @@ public class ClassInformationProvider {
 
     public List<MethodInfo> getMethods (FullNameHandler fqn, String methodName) {
 	return tryActions (fqn,
-			   td -> td.getMethodInformation (fqn, methodName),
+			   td -> getTypeMethod (fqn, td, methodName),
 			   dn -> crh.getMethodInformation (dn, methodName));
+    }
+
+    private List<MethodInfo> getTypeMethod (FullNameHandler fqn, TypeDeclaration td, String methodName) {
+	return td.getMethodInformation (fqn, methodName);
     }
 
     public Map<String, List<MethodInfo>> getMethods (FullNameHandler fqn) {

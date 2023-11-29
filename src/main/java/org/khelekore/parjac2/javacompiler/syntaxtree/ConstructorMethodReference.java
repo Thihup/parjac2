@@ -6,7 +6,7 @@ import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
-public class ConstructorMethodReference extends SyntaxTreeNode implements MethodReference {
+public class ConstructorMethodReference extends MethodReference {
     private final ParseTreeNode type;
     private final TypeArguments types;
 
@@ -16,7 +16,7 @@ public class ConstructorMethodReference extends SyntaxTreeNode implements Method
 	types = r.size () > 3 ? (TypeArguments)children.get (2) : null;
     }
 
-    @Override public Object getValue() {
+    @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	sb.append (type).append ("::");
 	if (types != null)
@@ -29,5 +29,9 @@ public class ConstructorMethodReference extends SyntaxTreeNode implements Method
 	v.accept (type);
 	if (types != null)
 	    v.accept (types);
+    }
+
+    @Override public String name () {
+	return "<init>";
     }
 }

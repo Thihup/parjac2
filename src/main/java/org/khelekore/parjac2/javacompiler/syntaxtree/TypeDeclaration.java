@@ -80,15 +80,24 @@ public abstract class TypeDeclaration extends FlaggedBase {
 		methodInfos = new HashMap<> ();
 		for (MethodDeclarationBase md : getMethods ()) {
 		    md.owner (fqn);
-		    String name = md.name ();
-		    List<MethodInfo> ls = methodInfos.computeIfAbsent (name, n -> new ArrayList<> ());
-		    ls.add (md);
+		    addMethodInfo (methodInfos, md);
+		}
+
+		for (ConstructorDeclarationInfo cdb : getConstructors ()) {
+		    cdb.owner (fqn);
+		    addMethodInfo (methodInfos, cdb);
 		}
 	    }
 	}
     }
 
-    public abstract List<? extends ConstructorDeclarationBase> getConstructors ();
+    private void addMethodInfo (Map<String, List<MethodInfo>> methodInfos, MethodInfo mi) {
+	String name = mi.name ();
+	List<MethodInfo> ls = methodInfos.computeIfAbsent (name, n -> new ArrayList<> ());
+	ls.add (mi);
+    }
+
+    public abstract List<? extends ConstructorDeclarationInfo> getConstructors ();
 
     public abstract List<SyntaxTreeNode> getInstanceInitializers ();
 

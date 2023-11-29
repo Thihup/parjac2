@@ -115,14 +115,14 @@ public class RecordDeclaration extends TypeDeclaration {
 	getMethods ().add (m);
     }
 
-    @Override public List<? extends ConstructorDeclarationBase> getConstructors () {
+    @Override public List<? extends ConstructorDeclarationInfo> getConstructors () {
 	List<CompactConstructorDeclaration> lsc = body.getCompactConstructors ();
 	List<ConstructorDeclaration> lsn = body.getConsructors ();
 	if (lsc.isEmpty ())
 	    return lsn;
 	if (lsn.isEmpty ())
 	    return lsc;
-	List<ConstructorDeclarationBase> ret = new ArrayList<ConstructorDeclarationBase> (lsc.size () + lsn.size ());
+	List<ConstructorDeclarationInfo> ret = new ArrayList<ConstructorDeclarationInfo> (lsc.size () + lsn.size ());
 	ret.addAll (lsn);
 	ret.addAll (lsc);
 	return ret;

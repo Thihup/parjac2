@@ -28,7 +28,8 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.Block;
 import org.khelekore.parjac2.javacompiler.syntaxtree.BlockStatements;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassOrInterfaceTypeToInstantiate;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
-import org.khelekore.parjac2.javacompiler.syntaxtree.ConstructorDeclarationBase;
+import org.khelekore.parjac2.javacompiler.syntaxtree.ConstructorDeclarationInfo;
+import org.khelekore.parjac2.javacompiler.syntaxtree.ConstructorMethodReference;
 import org.khelekore.parjac2.javacompiler.syntaxtree.DottedName;
 import org.khelekore.parjac2.javacompiler.syntaxtree.EnhancedForStatement;
 import org.khelekore.parjac2.javacompiler.syntaxtree.EnumConstant;
@@ -49,6 +50,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.MethodReference;
 import org.khelekore.parjac2.javacompiler.syntaxtree.NamePartHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.NormalClassDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.NormalInterfaceDeclaration;
+import org.khelekore.parjac2.javacompiler.syntaxtree.NormalMethodReference;
 import org.khelekore.parjac2.javacompiler.syntaxtree.OrdinaryCompilationUnit;
 import org.khelekore.parjac2.javacompiler.syntaxtree.PrimitiveType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ReceiverParameter;
@@ -58,6 +60,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.SimpleClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SingleStaticImportDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SingleTypeImportDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.StaticImportOnDemandDeclaration;
+import org.khelekore.parjac2.javacompiler.syntaxtree.SuperMethodReference;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Ternary;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ThisPrimary;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Throws;
@@ -225,7 +228,7 @@ public class ClassSetter {
 	enclosureCache.put (md, et);
     }
 
-    private void setConstructorTypes (EnclosingTypes et, ConstructorDeclarationBase cdb) {
+    private void setConstructorTypes (EnclosingTypes et, ConstructorDeclarationInfo cdb) {
 	checkAnnotations (et, cdb.getAnnotations ());
 	et = registerTypeParameters (et, cdb.getTypeParameters ());
 	et = setFormalParameterListTypes (et, null, cdb.getFormalParameterList (), false);
@@ -285,7 +288,7 @@ public class ClassSetter {
 	}
     }
 
-    private void checkConstructorBodies (ConstructorDeclarationBase cdb) {
+    private void checkConstructorBodies (ConstructorDeclarationInfo cdb) {
 	EnclosingTypes et = enclosureCache.get (cdb);
 	et = et.enclosingBlock (false);
 	setTypesForMethodStatement (et, cdb.statements ());
@@ -318,9 +321,6 @@ public class ClassSetter {
 	    case AmbiguousName an -> reclassifyAmbiguousName (et, an);
 	    case ExpressionName en -> reclassifyAmbiguousName (et, en);
 	    case DottedName dt -> setType (et, dt);
-	    case MethodReference mr -> {
-		// skip for now
-	    }
 	    case ThisPrimary tp -> setType (et, tp);
 	    case FieldAccess fa -> handlePartsAndField (et, fa, partsToHandle);
 	    case ClassOrInterfaceTypeToInstantiate coitti -> setType (et, coitti.type ());
@@ -400,6 +400,10 @@ public class ClassSetter {
 	    setTypeOnLambda (varType, le);
 	    addLambdaReturnCheck (et, le, partsToHandle);
 	    partsToHandle.addFirst (new StatementHandler (et, le));
+	} else if (init instanceof MethodReference mr) {
+	    CustomHandler h = e -> setTypeOnMethodReference (e, varType, mr);
+	    partsToHandle.addFirst (new StatementHandler (et, h));
+	    partsToHandle.addFirst (new StatementHandler (et, init));
 	} else if (init != null) {
 	    CustomHandler h = e -> checkInitializerType (varType, vd.initializer ());
 	    partsToHandle.addFirst (new StatementHandler (et, h));
@@ -475,6 +479,15 @@ public class ClassSetter {
 	}
     }
 
+    private void setTypeOnMethodReference (EnclosingTypes et, FullNameHandler varType, MethodReference mr) {
+	ValueOrError<MethodInfo> voe = methodReferenceMatch (et, varType, mr);
+	if (voe.value != null) {
+	    mr.type (varType, voe.value);
+	} else {
+	    error (mr, voe.error);
+	}
+    }
+
     private void addLambdaReturnCheck (EnclosingTypes et, LambdaExpression le, Deque<StatementHandler> partsToHandle) {
 	CustomHandler h = e -> checkLambdaReturn (le);
 	partsToHandle.addFirst (new StatementHandler (et, h));
@@ -511,12 +524,12 @@ public class ClassSetter {
      */
     private void reclassifyAmbiguousName (EnclosingTypes et, DottedName an) {
 	String start = an.getNamePart (0);
-	VariableOrError voe = getVariable (et, start);
+	ValueOrError<VariableInfo> voe = getVariable (et, start);
 	if (voe.error != null) {
 	    error (an, voe.error);
 	    return;
 	}
-	tryToSetFullNameOnSimpleName (et, an, start, voe.vi);
+	tryToSetFullNameOnSimpleName (et, an, start, voe.value);
 
 	for (int i = 1; i < an.size (); i++) {
 	    FullNameHandler fn = an.fullName ();
@@ -593,19 +606,19 @@ public class ClassSetter {
 	}
     }
 
-    private VariableOrError getVariable (EnclosingTypes et, String name) {
+    private ValueOrError<VariableInfo> getVariable (EnclosingTypes et, String name) {
 	boolean onlyStatic = false;
 	while (et != null) {
 	    VariableInfo fi = findField (et, name);
 	    if (fi != null) {
 		if (!onlyStatic || Flags.isStatic (fi.flags ()))
-		    return new VariableOrError (fi, null);
-		return new VariableOrError (null, nonStaticAccess (name));
+		    return ValueOrError.value (fi);
+		return ValueOrError.error (nonStaticAccess (name));
 	    }
 	    onlyStatic |= et.isStatic ();
 	    et = et.previous ();
 	}
-	return new VariableOrError (null, null); // not found, but also not an error
+	return new ValueOrError<VariableInfo> (null, null); // not found, but also not an error
     }
 
     private VariableInfo findField (EnclosingTypes et, String name) {
@@ -614,10 +627,6 @@ public class ClassSetter {
 
     private String nonStaticAccess (String name) {
 	return String.format ("non-static variable %s cannot be referenced from a static context", name);
-    }
-
-    private record VariableOrError (VariableInfo vi, String error) {
-	// empty
     }
 
     private static record AddVariable (VariableDeclarator vd) implements CustomHandler {
@@ -881,6 +890,55 @@ public class ClassSetter {
 	return mi;
     }
 
+    private ValueOrError<MethodInfo> methodReferenceMatch (EnclosingTypes et, FullNameHandler type, MethodReference mr) {
+	MethodInfo mi = getFunctionalInterfaceMethod (type);
+	if (mi == null)
+	    return null;
+	FullNameHandler currentClass = currentClass (et);
+	ValueOrError<List<MethodInfo>> voe = switch (mr) {
+	case NormalMethodReference nmr -> ValueOrError.value (cip.getMethods (currentClass, mr.name ()));
+	case ConstructorMethodReference cmr -> ValueOrError.value (cip.getMethods (currentClass, "<init>"));
+	case SuperMethodReference smr -> getSuperMethods (et, currentClass, smr);
+	default -> throw new IllegalArgumentException ("Method refernce type: " + mr.getClass ().getName () + " not yet handled: " + mr);
+	};
+
+	if (voe.error != null)
+	    return ValueOrError.error (voe.error);
+	if (voe.value.isEmpty ())
+	    return ValueOrError.error ("No methods found with name: " + mr.name ());
+	for (MethodInfo candidate : voe.value ()) {
+	    if (methodTypesMatch (candidate, mi)) {
+		return ValueOrError.value (mi);
+	    }
+	}
+	return ValueOrError.error (String.format ("Method reference not assignable to %s", type.getFullDotName ()));
+    }
+
+    private ValueOrError<List<MethodInfo>> getSuperMethods (EnclosingTypes et, FullNameHandler currentClass, SuperMethodReference smr) {
+	ParseTreeNode type = smr.onType ();
+	if (type != null) {
+	    currentClass = FullNameHelper.type (type);
+	}
+	TypeDeclaration td = getEnclosingType (et, currentClass);
+	if (td == null) {
+	    return ValueOrError.error (currentClass.getFullDotName () + " is not an enclosing type");
+	}
+
+	ClassType superType = td.getSuperClass ();
+	FullNameHandler sfn = superType == null ? FullNameHandler.JL_OBJECT : FullNameHelper.type (superType);
+	return ValueOrError.value (cip.getMethods (sfn, smr.name ()));
+    }
+
+    private TypeDeclaration getEnclosingType (EnclosingTypes et, FullNameHandler type) {
+	while (et != null) {
+	    TypeDeclaration td = et.td ();
+	    if (td != null && cip.getFullName (td).equals (type))
+		return td;
+	    et = et.previous ();
+	}
+	return null;
+    }
+
     private MethodInfo getFunctionalInterfaceMethod (FullNameHandler type) {
 	String fqn  = type.getFullDotName ();
 	if (!cip.isInterface (fqn))
@@ -910,21 +968,25 @@ public class ClassSetter {
 	return false;
     }
 
-    private boolean matching (MethodInfo m1, MethodInfo m2) {
-	int s = m1.numberOfArguments ();
-	if (s != m2.numberOfArguments ())
+    private boolean matching (MethodInfo candidate, MethodInfo actual) {
+	if (!candidate.name ().equals (actual.name ()))
 	    return false;
-	if (!m1.name ().equals (m2.name ()))
+	return methodTypesMatch (candidate, actual);
+    }
+
+    private boolean methodTypesMatch (MethodInfo candidate, MethodInfo actual) {
+	int s = candidate.numberOfArguments ();
+	if (s != actual.numberOfArguments ())
 	    return false;
 	for (int i = 0; i < s; i++) {
-	    FullNameHandler f1 = m1.parameter (i);
-	    FullNameHandler f2 = m1.parameter (i);
+	    FullNameHandler f1 = candidate.parameter (i);
+	    FullNameHandler f2 = candidate.parameter (i);
 	    if (!f1.equals (f2))
 		return false;
 	}
-	FullNameHandler r1 = m1.result ();
-	FullNameHandler r2 = m2.result ();
-	return r1.equals (r2);
+	FullNameHandler r1 = candidate.result ();
+	FullNameHandler r2 = actual.result ();
+	return r2 == FullNameHandler.VOID || r1.equals (r2);
     }
 
     private boolean typesMatch (FullNameHandler wanted, FullNameHandler have) {
@@ -1526,6 +1588,16 @@ public class ClassSetter {
 
     private void error (ParseTreeNode where, String template, Object... args) {
 	diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), where.position (), template, args));
+    }
+
+    private record ValueOrError<T> (T value, String error) {
+	public static <T> ValueOrError<T> error (String error) {
+	    return new ValueOrError<T> (null, error);
+	}
+
+	public static <T> ValueOrError<T> value (T value) {
+	    return new ValueOrError<T> (value, null);
+	}
     }
 
     private String dotName (FullNameHandler fn) {

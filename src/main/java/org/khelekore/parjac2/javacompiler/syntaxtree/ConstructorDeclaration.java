@@ -10,7 +10,7 @@ import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
-public class ConstructorDeclaration extends FlaggedBase implements ConstructorDeclarationBase {
+public class ConstructorDeclaration extends ConstructorBase {
     private final List<ParseTreeNode> modifiers;
     private final ConstructorDeclarator declarator;
     private final Throws t;

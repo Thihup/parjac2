@@ -7,10 +7,11 @@ import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
-public class NormalMethodReference extends SyntaxTreeNode implements MethodReference {
+public class NormalMethodReference extends MethodReference {
     private final ParseTreeNode type;
     private final TypeArguments types;
     private final String id;
+
     public NormalMethodReference (Rule r, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
 	type = children.get (0);
@@ -18,7 +19,11 @@ public class NormalMethodReference extends SyntaxTreeNode implements MethodRefer
 	id = ((Identifier)children.get (children.size () - 1)).getValue ();
     }
 
-    @Override public Object getValue() {
+    @Override public String name () {
+	return id;
+    }
+
+    @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	sb.append (type).append ("::");
 	if (types != null)

@@ -475,7 +475,8 @@ public class SyntaxTreeBuilder {
 
     private ParseTreeNode methodReference (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	if (rule.get (rule.size () - 1) == javaTokens.IDENTIFIER.getId ()) {
-	    if (rule.size () > 4)
+	    if (rule.get (0) == javaTokens.SUPER.getId () ||
+		rule.get (2) == javaTokens.SUPER.getId ())
 		return new SuperMethodReference (rule, n, children);
 	    return new NormalMethodReference (rule, n, children);
 	}

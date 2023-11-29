@@ -668,6 +668,30 @@ public class TestClassSetter {
 	getTypes ("class C { boolean a (Object o) { int len = 0; if (o instanceof String s) len = s.length (); }}");
     }
 
+    @Test
+    public void testSimpleMethodReference () {
+	getTypes ("class C { void a () { Runnable r = this::b; r.run (); } void b () {}}");
+	getTypes ("class C { void a () { java.util.function.IntConsumer ic = this::b; } void b (int i) {}}");
+	getTypes ("class C { void a () { java.util.function.IntConsumer ic = this::b; } void b (int i, int j) {}}", 1);
+    }
+
+    @Test
+    public void testConstructorRefernce () {
+	getTypes ("class C { C() {} void a () { Runnable r = C::new; r.run (); }}");
+	getTypes ("class C { C(int i) {} void a () { Runnable r = C::new; r.run (); }}", 1);
+    }
+
+    @Test
+    public void testSuperMethodReference () {
+	getTypes ("class A { void foo () {}} class C extends A { void foo () {} void c () { Runnable r = super::foo; }}");
+	getTypes ("class A { void foo () {}} class C extends A { void foo () {} void c () { Runnable r = C.super::foo; }}");
+	getTypes ("class A { public String toString () { return \"A\"; } class C { void c () { Runnable r = A.super::toString; }}}");
+
+	// A is not an enclosing type of C
+	getTypes ("class A { void foo () {}} class C extends A { void foo () {} void c () { Runnable r = A.super::foo; }}", 1);
+    }
+
+
     /* TODO: implement full generic handling */
     /*
     @Test

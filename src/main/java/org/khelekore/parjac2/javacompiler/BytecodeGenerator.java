@@ -262,7 +262,7 @@ public class BytecodeGenerator {
 	    });
     }
 
-    private MethodSignatureHolder getMethodSignature (ConstructorDeclarationBase c) {
+    private MethodSignatureHolder getMethodSignature (ConstructorDeclarationInfo c) {
 	return getMethodSignature (c.getTypeParameters (), c.getFormalParameterList (), VOID_RETURN);
     }
 
@@ -309,7 +309,7 @@ public class BytecodeGenerator {
 	    this.methodName = methodName;
 	}
 
-	private void createConstructorContents (CodeBuilder cb, ConstructorDeclarationBase cdb, MethodSignatureHolder msh) {
+	private void createConstructorContents (CodeBuilder cb, ConstructorDeclarationInfo cdb, MethodSignatureHolder msh) {
 	    ConstructorBody body = cdb.body ();
 	    List<ParseTreeNode> statements = body.statements ();
 	    boolean explicitInvocation = false;
@@ -336,7 +336,7 @@ public class BytecodeGenerator {
 	    return p instanceof ExplicitConstructorInvocation;
 	}
 
-	private void addImplicitSuper (CodeBuilder cb, ConstructorDeclarationBase cdb) {
+	private void addImplicitSuper (CodeBuilder cb, ConstructorDeclarationInfo cdb) {
 	    cb.lineNumber (cdb.position ().getLineNumber ()); // about what we want
 	    cb.aload (0);
 	    ClassDesc owner = ClassDescUtils.getClassDesc (td.getSuperClass ());
