@@ -253,7 +253,7 @@ public class BytecodeGenerator {
 		MethodSignatureHolder msh = getMethodSignature (c);
 		classBuilder.withMethod (ConstantDescs.INIT_NAME, msh.desc, flags, mb -> {
 			mb.withCode (cb -> {
-				MethodContentBuilder mcb = new MethodContentBuilder (classBuilder, INSTANCE_INIT);
+				MethodContentBuilder mcb = new MethodContentBuilder (classBuilder, INSTANCE_INIT, flags);
 				mcb.createConstructorContents (cb, c, msh);
 			    });
 			if (msh.signature != null)
@@ -275,7 +275,7 @@ public class BytecodeGenerator {
 		classBuilder.withMethod (m.name (), msh.desc, flags, mb -> {
 			if (!m.isAbstract ()) {
 			    mb.withCode (cb -> {
-				    MethodContentBuilder mcb = new MethodContentBuilder (classBuilder, m.name ());
+				    MethodContentBuilder mcb = new MethodContentBuilder (classBuilder, m.name (), flags);
 				    mcb.addMethodContent (cb, (Block)body, returnType);
 				});
 			}
@@ -290,10 +290,11 @@ public class BytecodeGenerator {
 	if (ls.isEmpty ())
 	    return;
 
-	classBuilder.withMethod (STATIC_INIT, INIT_SIGNATURE, Flags.ACC_STATIC, mb -> {
+	int flags = Flags.ACC_STATIC;
+	classBuilder.withMethod (STATIC_INIT, INIT_SIGNATURE, flags, mb -> {
 		for (SyntaxTreeNode si : ls)
 		    mb.withCode (cb -> {
-			    MethodContentBuilder mcb = new MethodContentBuilder (classBuilder, STATIC_INIT);
+			    MethodContentBuilder mcb = new MethodContentBuilder (classBuilder, STATIC_INIT, flags);
 			    mcb.handleStatements (cb, si);
 			    cb.return_ ();
 			});
@@ -303,10 +304,12 @@ public class BytecodeGenerator {
     private class MethodContentBuilder {
 	private final ClassBuilder classBuilder;
 	private final String methodName;
+	private final int flags;
 
-	public MethodContentBuilder (ClassBuilder classBuilder, String methodName) {
+	public MethodContentBuilder (ClassBuilder classBuilder, String methodName, int flags) {
 	    this.classBuilder = classBuilder;
 	    this.methodName = methodName;
+	    this.flags = flags;
 	}
 
 	private void createConstructorContents (CodeBuilder cb, ConstructorDeclarationInfo cdb, MethodSignatureHolder msh) {
@@ -390,6 +393,11 @@ public class BytecodeGenerator {
 	    case ClassInstanceCreationExpression cic -> handleNew (cb, cic);
 	    case ArrayCreationExpression ace -> handleArrayCreation (cb, ace);
 	    case ArrayAccess aa -> handleArrayAccess (cb, aa);
+
+	    // We get LambdaExpression and MethodReference in Assignment, so we just want to store the handle to it
+	    case LambdaExpression le -> callLambda (cb, le);
+	    case MethodReference mr -> callMethodReference (cb, mr);
+
 	    case StringLiteral l -> cb.ldc (l.getValue ());
 	    case IntLiteral i -> handleInt (cb, i);
 	    case LongLiteral l -> handleLong (cb, l);
@@ -529,6 +537,21 @@ public class BytecodeGenerator {
 	}
 
 	private void callLambda (CodeBuilder cb, LambdaExpression le) {
+	    String lambdaName = getLambdaName ("lambda$" + methodName + "$");
+	    MethodTypeDesc mtd = le.methodInfo ().methodTypeDesc ();
+	    callDynamic (cb, lambdaName, mtd, le.type (), false);
+	    // TODO: this adds the lambda before the method we are currently building, consider queueing this up
+	    addLambdaMethod (le, lambdaName, mtd);
+	}
+
+	private void callMethodReference (CodeBuilder cb, MethodReference mr) {
+	    MethodInfo info = mr.methodInfo ();
+	    boolean forceStatic = Flags.isStatic (mr.actualMethod ().flags ());
+	    MethodTypeDesc mtd = info.methodTypeDesc ();
+	    callDynamic (cb, mr.name (), mtd, mr.type (), forceStatic);
+	}
+
+	private void callDynamic (CodeBuilder cb, String dynamicMethod, MethodTypeDesc mtd, FullNameHandler dynamicType, boolean forceStatic) {
 	    DirectMethodHandleDesc.Kind kind = DirectMethodHandleDesc.Kind.STATIC;
 	    ClassDesc owner = ClassDesc.ofInternalName ("java/lang/invoke/LambdaMetafactory");
 	    String name = "metafactory";
@@ -544,19 +567,21 @@ public class BytecodeGenerator {
 					     "Ljava/lang/invoke/CallSite;");
 	    DirectMethodHandleDesc bootstrapMethod =
 		MethodHandleDesc.ofMethod (kind, owner, name, lookupMethodType);
-	    ClassDesc ret = ClassDescUtils.getClassDesc (le.type ());
-	    List<ClassDesc> types = List.of ();
-	    MethodTypeDesc invocationType = MethodTypeDesc.of (ret, types);
-	    MethodTypeDesc mtd = le.methodInfo ().methodTypeDesc ();
 	    ClassDesc lambdaOwner = ClassDesc.of (BytecodeGenerator.this.name.getFullDollarName ());
-	    String lambdaName = getLambdaName ("lambda$" + methodName + "$");
-	    MethodHandleDesc mhd = MethodHandleDesc.of (DirectMethodHandleDesc.Kind.STATIC, lambdaOwner, lambdaName, mtd.descriptorString ());
+
+	    DirectMethodHandleDesc.Kind dmk = DirectMethodHandleDesc.Kind.STATIC;
+	    List<ClassDesc> types = List.of ();
+	    if (!forceStatic && !Flags.isStatic (flags)) {
+		dmk = DirectMethodHandleDesc.Kind.VIRTUAL;
+		cb.aload (0);
+		types = List.of (ClassDescUtils.getClassDesc (BytecodeGenerator.this.name));
+	    }
+	    ClassDesc ret = ClassDescUtils.getClassDesc (dynamicType);
+	    MethodTypeDesc invocationType = MethodTypeDesc.of (ret, types);
+	    MethodHandleDesc mhd = MethodHandleDesc.of (dmk, lambdaOwner, dynamicMethod, mtd.descriptorString ());
 	    ConstantDesc[] bootstrapArgs = {mtd, mhd, mtd}; // TODO: second mtd may require changes
 	    DynamicCallSiteDesc ref = DynamicCallSiteDesc.of (bootstrapMethod, "run", invocationType, bootstrapArgs);
 	    cb.invokedynamic (ref);
-
-	    // TODO: this adds the lambda before the method we are currently building, consider queueing this up
-	    addLambdaMethod (le, lambdaName, mtd);
 	}
 
 	private String getLambdaName (String prefix) {
@@ -566,10 +591,13 @@ public class BytecodeGenerator {
 	}
 
 	private void addLambdaMethod (LambdaExpression le, String name, MethodTypeDesc descriptor) {
-	    int flags = Flags.ACC_PRIVATE | Flags.ACC_STATIC | Flags.ACC_SYNTHETIC;
-	    classBuilder.withMethod (name, descriptor, flags, mb -> {
+	    int lf = Flags.ACC_PRIVATE | Flags.ACC_SYNTHETIC;
+	    if (Flags.isStatic (flags))
+		lf |= Flags.ACC_STATIC;
+	    int lambdaFlags = lf;
+	    classBuilder.withMethod (name, descriptor, lambdaFlags, mb -> {
 		    mb.withCode (cb -> {
-			    MethodContentBuilder mcb = new MethodContentBuilder (classBuilder, name);
+			    MethodContentBuilder mcb = new MethodContentBuilder (classBuilder, name, lambdaFlags);
 			    mcb.handleStatements (cb, le.body ());
 			    TypeKind returnType = FullNameHelper.getTypeKind (le.result ());
 			    cb.returnInstruction (returnType);

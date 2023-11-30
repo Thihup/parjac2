@@ -845,7 +845,7 @@ ArgumentList:
 MethodReference:
 	Primary '::' [TypeArguments] 'Identifier'
 	# We can't differ between ExpressionName and ReferenceType
-	ReferenceType '::' [TypeArguments] 'Identifier'
+	AmbiguousName '::' [TypeArguments] 'Identifier'
 	'super' '::' [TypeArguments] 'Identifier'
 	TypeName '.' 'super' '::' [TypeArguments] 'Identifier'
 	ClassType '::' [TypeArguments] 'new'

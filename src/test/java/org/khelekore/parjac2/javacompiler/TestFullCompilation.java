@@ -585,18 +585,53 @@ public class TestFullCompilation {
 
     @Test
     public void testLambdaCall () throws ReflectiveOperationException {
-	Class<?> c = getFirstClass("C", """
-				   public class C {
-				       public static boolean b = false;
-				       private static void a (Runnable r) { r.run (); }
-				       public static void b () { a(() -> b = true); }
-				   }
-				   """);
-        Method m = c.getMethod ("b");
-        Field f = c.getField ("b");
-        assert f.get (null) == Boolean.FALSE;
-	m.invoke (null);
-	assert f.get (null) == Boolean.TRUE;
+	Class<?> c = getFirstClass("C", "public class C { " +
+				   "public boolean b = false; " +
+				   "private void a (Runnable r) { r.run (); } " +
+				   "public void b () { a(() -> b = true); }}");
+        checkDynamicMethod (c, "b", "b");
+    }
+
+    @Test
+    public void testStaticLambdaCall () throws ReflectiveOperationException {
+	Class<?> c = getFirstClass("C", "public class C { " +
+				   "public static boolean b = false; " +
+				   "private static void a (Runnable r) { r.run (); } " +
+				   "public static void b () { a(() -> b = true); }}");
+        checkDynamicMethod (c, "b", "b", null);
+    }
+
+    @Test
+    public void testLambdaAssignment () throws ReflectiveOperationException {
+	Class<?> c = getFirstClass("C", "public class C {public boolean b; public void c () { Runnable r = () -> b = true; r.run ();}}");
+	checkDynamicMethod (c, "c", "b");
+    }
+
+    @Test
+    public void testMethodReferenceAssignment () throws ReflectiveOperationException {
+	Class<?> c = getFirstClass("C", "public class C {public boolean b; void a () {b = true;} public void c () { Runnable r = this::a; r.run ();}}");
+	checkDynamicMethod (c, "c", "b");
+    }
+
+    @Test
+    public void testCallingStaticMethodReferenceFromInstance () throws ReflectiveOperationException {
+	Class<?> c = getFirstClass("C",
+				   "public class C {public static boolean b; static void a () {b = true;}" +
+				   "    public void c () { Runnable r = C::a; r.run ();}}");
+	checkDynamicMethod (c, "c", "b");
+    }
+
+    private void checkDynamicMethod (Class<?> c, String methodName, String fieldName) throws ReflectiveOperationException {
+	Object o = c.getConstructor ().newInstance ();
+	checkDynamicMethod (c, methodName, fieldName, o);
+    }
+
+    private void checkDynamicMethod (Class<?> c, String methodName, String fieldName, Object runOn) throws ReflectiveOperationException {
+        Method m = c.getMethod (methodName);
+        Field f = c.getField (fieldName);
+        assert f.get (runOn) == Boolean.FALSE;
+	m.invoke (runOn);
+	assert f.get (runOn) == Boolean.TRUE;
     }
 
     @Test

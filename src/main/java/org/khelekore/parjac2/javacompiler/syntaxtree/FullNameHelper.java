@@ -115,6 +115,9 @@ public class FullNameHelper {
 	case FormalParameterBase fp -> fp.typeName ();
 	case UnaryExpression ue -> type (ue.expression ());
 	case LambdaExpression le -> le.type ();
+	case MethodReference mr -> mr.type ();
+	case PostIncrementExpression pie -> type (pie.expression ());
+	case PreIncrementExpression pie -> type (pie.expression ());
 	default -> throw new IllegalArgumentException ("Unhandled type: " + p + ", " + p.getClass ().getName ());
 	};
     }

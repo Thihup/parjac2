@@ -678,6 +678,7 @@ public class TestClassSetter {
     @Test
     public void testConstructorRefernce () {
 	getTypes ("class C { C() {} void a () { Runnable r = C::new; r.run (); }}");
+	getTypes ("class C { C() {} static void a () { Runnable r = C::new; r.run (); }}");
 	getTypes ("class C { C(int i) {} void a () { Runnable r = C::new; r.run (); }}", 1);
     }
 
@@ -691,6 +692,24 @@ public class TestClassSetter {
 	getTypes ("class A { void foo () {}} class C extends A { void foo () {} void c () { Runnable r = A.super::foo; }}", 1);
     }
 
+    @Test
+    public void testCallingStaticMethodReferenceUsingThis () {
+	getTypes ("class C { void a () { Runnable r = C::b; r.run (); } static void b () {}}");
+
+	// javac say: "unexpected static method b() found in bound lookup"
+	getTypes ("class C { void a () { Runnable r = this::b; r.run (); } static void b () {}}", 1);
+    }
+
+    @Test
+    public void testCallingInstanceMethodReferenceUsingInStatic () {
+	// javac say: "unexpected instance method b() found in unbound lookup"
+	getTypes ("class C { static void a () { Runnable r = C::b; r.run (); } void b () {}}", 1);
+    }
+
+    @Test
+    public void testCallingInstanceMethodReferenceOnObjectInsideStatic () {
+	getTypes ("class C { static void a (C c) { Runnable r = c::b; r.run (); } void b () {}}");
+    }
 
     /* TODO: implement full generic handling */
     /*

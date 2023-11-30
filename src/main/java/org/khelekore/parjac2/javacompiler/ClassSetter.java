@@ -480,9 +480,9 @@ public class ClassSetter {
     }
 
     private void setTypeOnMethodReference (EnclosingTypes et, FullNameHandler varType, MethodReference mr) {
-	ValueOrError<MethodInfo> voe = methodReferenceMatch (et, varType, mr);
+	ValueOrError<MethodMatch> voe = methodReferenceMatch (et, varType, mr);
 	if (voe.value != null) {
-	    mr.type (varType, voe.value);
+	    mr.type (varType, voe.value.calling, voe.value.actual);
 	} else {
 	    error (mr, voe.error);
 	}
@@ -495,7 +495,7 @@ public class ClassSetter {
 
     private void checkLambdaReturn (LambdaExpression le) {
 	FullNameHandler miR = le.result ();
-	if (miR == FullNameHandler.VOID && !(le.body () instanceof Block))
+	if (miR == FullNameHandler.VOID)
 	    return;
 	FullNameHandler leR = le.lambdaResult ();
 	if (leR == null) // we already signaled an error
@@ -890,7 +890,7 @@ public class ClassSetter {
 	return mi;
     }
 
-    private ValueOrError<MethodInfo> methodReferenceMatch (EnclosingTypes et, FullNameHandler type, MethodReference mr) {
+    private ValueOrError<MethodMatch> methodReferenceMatch (EnclosingTypes et, FullNameHandler type, MethodReference mr) {
 	MethodInfo mi = getFunctionalInterfaceMethod (type);
 	if (mi == null)
 	    return null;
@@ -908,14 +908,46 @@ public class ClassSetter {
 	    return ValueOrError.error ("No methods found with name: " + mr.name ());
 	for (MethodInfo candidate : voe.value ()) {
 	    if (methodTypesMatch (candidate, mi)) {
-		return ValueOrError.value (mi);
+		boolean insideStatic = insideStatic (et);
+		boolean candidateIsStatic = Flags.isStatic (candidate.flags ());
+		if (candidateIsStatic && usingThis (mr))
+		    return ValueOrError.error (String.format ("Can not call static method %s using this::", mi.name ()));
+		if ((usingThis (mr) && insideStatic) ||
+		    (!candidateIsStatic && usingClassType (mr)))
+		    return ValueOrError.error (String.format ("Can not call instance method %s inside static context", candidate.name ()));
+		return ValueOrError.value (new MethodMatch (mi, candidate));
 	    }
 	}
 	return ValueOrError.error (String.format ("Method reference not assignable to %s", type.getFullDotName ()));
     }
 
+    private record MethodMatch (MethodInfo calling, MethodInfo actual) {
+	// empty
+    }
+
+    private boolean usingThis (MethodReference mr) {
+	ParseTreeNode p = mr.on ();
+	// super::foo -> null, this::foo -> ThisPrimary
+	return p == null || p instanceof ThisPrimary;
+    }
+
+    private boolean usingClassType (MethodReference mr) {
+	if (mr instanceof NormalMethodReference nmr)
+	    return nmr.on () instanceof ClassType;
+	return false;
+    }
+
+    private boolean insideStatic (EnclosingTypes et) {
+	while (et != null) {
+	    if (et.enclosure () instanceof EnclosingTypes.MethodEnclosure me)
+		return me.isStatic ();
+	    et = et.previous ();
+	}
+	return false;
+    }
+
     private ValueOrError<List<MethodInfo>> getSuperMethods (EnclosingTypes et, FullNameHandler currentClass, SuperMethodReference smr) {
-	ParseTreeNode type = smr.onType ();
+	ParseTreeNode type = smr.on ();
 	if (type != null) {
 	    currentClass = FullNameHelper.type (type);
 	}

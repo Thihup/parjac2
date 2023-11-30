@@ -7,7 +7,7 @@ import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class PostIncrementExpression extends SyntaxTreeNode {
-    private ParseTreeNode expression;
+    private final ParseTreeNode expression;
 
     public PostIncrementExpression (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());

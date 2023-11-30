@@ -7,13 +7,18 @@ import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class PreIncrementExpression extends SyntaxTreeNode {
-    private ParseTreeNode expression;
+    private final ParseTreeNode expression;
+
     public PreIncrementExpression (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
 	expression = children.get (1);
     }
 
-    @Override public Object getValue() {
+    public ParseTreeNode expression () {
+	return expression;
+    }
+
+    @Override public Object getValue () {
 	return expression + "++";
     }
 

@@ -8,15 +8,24 @@ import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class NormalMethodReference extends MethodReference {
-    private final ParseTreeNode type;
+    private final ParseTreeNode on;
     private final TypeArguments types;
     private final String id;
 
     public NormalMethodReference (Rule r, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
-	type = children.get (0);
+	on = children.get (0);
 	types = r.size () > 3 ? (TypeArguments)children.get (2) : null;
 	id = ((Identifier)children.get (children.size () - 1)).getValue ();
+    }
+
+    @Override public ParseTreeNode on () {
+	if (on instanceof AmbiguousName an) {
+	    ParseTreeNode p = an.replaced ();
+	    if (p != null)
+		return p;
+	}
+	return on;
     }
 
     @Override public String name () {
@@ -25,7 +34,7 @@ public class NormalMethodReference extends MethodReference {
 
     @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
-	sb.append (type).append ("::");
+	sb.append (on).append ("::");
 	if (types != null)
 	    sb.append (types);
 	sb.append (id);
@@ -33,7 +42,7 @@ public class NormalMethodReference extends MethodReference {
     }
 
     @Override public void visitChildNodes (NodeVisitor v) {
-	v.accept (type);
+	v.accept (on);
 	if (types != null)
 	    v.accept (types);
     }

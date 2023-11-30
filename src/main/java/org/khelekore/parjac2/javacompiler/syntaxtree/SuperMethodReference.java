@@ -8,7 +8,7 @@ import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class SuperMethodReference extends MethodReference {
-    private final ParseTreeNode type;
+    private final ParseTreeNode on;
     private final TypeArguments types;
     private final String id;
 
@@ -21,17 +21,17 @@ public class SuperMethodReference extends MethodReference {
 	if TypeName is given it is supposed to be an enclosing type
 	*/
 	if (r.size () > 4) {
-	    type = children.get (0);
+	    on = children.get (0);
 	    types = r.size () > 5 ? (TypeArguments)children.get (4) : null;
 	} else {
-	    type = null;
+	    on = null;
 	    types = r.size () > 3 ? (TypeArguments)children.get (2) : null;
 	}
 	id = ((Identifier)children.get (children.size () - 1)).getValue ();
     }
 
-    public ParseTreeNode onType () {
-	return type;
+    @Override public ParseTreeNode on () {
+	return on;
     }
 
     @Override public String name () {
@@ -40,8 +40,8 @@ public class SuperMethodReference extends MethodReference {
 
     @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
-	if (type != null)
-	    sb.append (type).append (".");
+	if (on != null)
+	    sb.append (on).append (".");
 	sb.append ("super::");
 	if (types != null)
 	    sb.append (types);
@@ -50,8 +50,8 @@ public class SuperMethodReference extends MethodReference {
     }
 
     @Override public void visitChildNodes (NodeVisitor v) {
-	if (type != null)
-	    v.accept (type);
+	if (on != null)
+	    v.accept (on);
 	if (types != null)
 	    v.accept (types);
     }

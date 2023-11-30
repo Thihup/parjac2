@@ -34,4 +34,8 @@ public class ConstructorMethodReference extends MethodReference {
     @Override public String name () {
 	return "<init>";
     }
+
+    @Override public ParseTreeNode on () {
+	return type;
+    }
 }
