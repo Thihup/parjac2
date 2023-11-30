@@ -57,6 +57,10 @@ public class CaseLabel extends SwitchLabel {
 	}
     }
 
+    public List<ParseTreeNode> expressions () {
+	return expressions;
+    }
+
     @Override public Object getValue () {
 	String labels = expressions.stream ().map (e -> e.getValue ().toString ()).collect (Collectors.joining (", "));
 	return "case " + labels;

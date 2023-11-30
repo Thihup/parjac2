@@ -641,6 +641,7 @@ SwitchLabelColon:
 
 SwitchLabel:
 # since CaseConstant can be Primary it can be 'null' so allowing *'case' 'null' [',' 'default']* causes dups
+# we have code that checks for duplicate nulls and defaults instead
 	'case' CaseConstant {',' CaseConstant}
 	'case' CasePattern [Guard]
 	'default'

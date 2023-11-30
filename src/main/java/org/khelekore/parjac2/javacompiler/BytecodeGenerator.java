@@ -12,6 +12,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -31,6 +32,7 @@ import io.github.dmlloyd.classfile.attribute.InnerClassInfo;
 import io.github.dmlloyd.classfile.attribute.InnerClassesAttribute;
 import io.github.dmlloyd.classfile.attribute.SignatureAttribute;
 import io.github.dmlloyd.classfile.attribute.SourceFileAttribute;
+import io.github.dmlloyd.classfile.instruction.SwitchCase;
 
 import org.khelekore.parjac2.javacompiler.syntaxtree.*;
 import org.khelekore.parjac2.parser.Grammar;
@@ -385,14 +387,15 @@ public class BytecodeGenerator {
 	    case IfThenStatement ifts -> handleIf (cb, ifts);
 	    case Assignment a -> handleAssignment (cb, partsToHandle, a);
 	    case LocalVariableDeclaration lv -> handleLocalVariables (cb, lv);
-	    case PostIncrementExpression pie -> handlePostIncrement (cb, partsToHandle, pie);
-	    case PostDecrementExpression pde -> handlePostDecrement (cb, partsToHandle, pde);
-	    case BasicForStatement bfs -> handleBasicFor (cb, partsToHandle, bfs);
-	    case EnhancedForStatement efs -> handleEnhancedFor (cb, partsToHandle, efs);
+	    case PostIncrementExpression pie -> handlePostIncrement (cb, pie);
+	    case PostDecrementExpression pde -> handlePostDecrement (cb, pde);
+	    case BasicForStatement bfs -> handleBasicFor (cb, bfs);
+	    case EnhancedForStatement efs -> handleEnhancedFor (cb, efs);
 	    case SynchronizedStatement ss -> handleSynchronized (cb, ss);
 	    case ClassInstanceCreationExpression cic -> handleNew (cb, cic);
 	    case ArrayCreationExpression ace -> handleArrayCreation (cb, ace);
 	    case ArrayAccess aa -> handleArrayAccess (cb, aa);
+	    case SwitchExpression se -> handleSwitchExpression (cb, se);
 
 	    // We get LambdaExpression and MethodReference in Assignment, so we just want to store the handle to it
 	    case LambdaExpression le -> callLambda (cb, le);
@@ -1062,15 +1065,15 @@ public class BytecodeGenerator {
 	    }
 	}
 
-	private void handlePostIncrement (CodeBuilder cb, Deque<Object> partsToHandle, PostIncrementExpression pie) {
-	    handlePostChange (cb, partsToHandle, pie.expression (), 1);
+	private void handlePostIncrement (CodeBuilder cb, PostIncrementExpression pie) {
+	    handlePostChange (cb, pie.expression (), 1);
 	}
 
-	private void handlePostDecrement (CodeBuilder cb, Deque<Object> partsToHandle, PostDecrementExpression pde) {
-	    handlePostChange (cb, partsToHandle, pde.expression (), -1);
+	private void handlePostDecrement (CodeBuilder cb, PostDecrementExpression pde) {
+	    handlePostChange (cb, pde.expression (), -1);
 	}
 
-	private void handlePostChange (CodeBuilder cb, Deque<Object> partsToHandle, ParseTreeNode tn, int change) {
+	private void handlePostChange (CodeBuilder cb, ParseTreeNode tn, int change) {
 	    if (tn instanceof DottedName dn)
 		tn = dn.replaced ();
 	    if (tn instanceof FieldAccess fa) {
@@ -1116,7 +1119,7 @@ public class BytecodeGenerator {
 		cb.putstatic (owner, vi.name (), type);
 	}
 
-	private void handleBasicFor (CodeBuilder cb, Deque<Object> partsToHandle, BasicForStatement bfs) {
+	private void handleBasicFor (CodeBuilder cb, BasicForStatement bfs) {
 	    ParseTreeNode forInit = bfs.forInit ();
 	    ParseTreeNode expression = bfs.expression ();
 	    ParseTreeNode forUpdate = bfs.forUpdate ();
@@ -1154,7 +1157,7 @@ public class BytecodeGenerator {
 	    cb.branchInstruction (operator, endLabel);
 	}
 
-	private void handleEnhancedFor (CodeBuilder cb, Deque<Object> partsToHandle, EnhancedForStatement efs) {
+	private void handleEnhancedFor (CodeBuilder cb, EnhancedForStatement efs) {
 	    ParseTreeNode exp = efs.expression ();
 	    FullNameHandler fn = FullNameHelper.type (exp);
 	    if (fn.isArray ()) {
@@ -1377,6 +1380,115 @@ public class BytecodeGenerator {
 	    TypeKind tk = FullNameHelper.getTypeKind (FullNameHelper.type (aa));
 	    cb.arrayLoadInstruction (tk);
 	}
+
+	private void handleSwitchExpression (CodeBuilder cb, SwitchExpression se) {
+	    ParseTreeNode exp = se.expression ();
+	    TypeKind kind = FullNameHelper.getTypeKind (FullNameHelper.type (exp));
+	    int expressionSlot = cb.allocateLocal (kind);
+	    handleStatements (cb, exp);
+	    cb.astore (expressionSlot);
+
+	    int lookupSlot = cb.allocateLocal (TypeKind.IntType);
+	    cb.iconst_m1 ();
+	    cb.istore (lookupSlot);
+	    cb.aload (expressionSlot);
+
+	    // String handling:
+	    ClassDesc owner = ConstantDescs.CD_String;
+	    String name = "hashCode";
+	    MethodTypeDesc type = MethodTypeDesc.ofDescriptor ("()I");
+	    cb.invokevirtual (owner, name, type);
+	    SwitchBlockInfo blockInfo = new SwitchBlockInfo (cb, se);
+	    Label nextLookup = cb.newLabel ();
+	    cb.lookupswitch (nextLookup, blockInfo.primarySwitchCases);
+
+	    MethodTypeDesc stringEqualsMtd = MethodTypeDesc.ofDescriptor ("(Ljava/lang/Object;)Z");
+	    Map.Entry<Integer, List<SwitchRuleLabel>> last = blockInfo.hashedOptions.lastEntry ();
+	    for (Map.Entry<Integer, List<SwitchRuleLabel>> me : blockInfo.hashedOptions.entrySet ()) {
+		List<SwitchRuleLabel> ls = me.getValue ();
+		cb.labelBinding (blockInfo.hash2sc.get (me.getKey ()).target ());
+
+		SwitchRuleLabel lastSRL = ls.getLast ();
+		for (SwitchRuleLabel srl : ls) {
+		    cb.aload (expressionSlot);
+		    cb.ldc ((ConstantDesc)srl.constant);
+		    cb.invokevirtual (owner, "equals", stringEqualsMtd);
+		    cb.ifeq (nextLookup);
+		    handleInt (cb, srl.secondaryValue);
+		    cb.istore (lookupSlot);
+		    if (!me.equals (last) || lastSRL != srl)
+			cb.goto_ (nextLookup);
+		}
+	    }
+
+	    cb.labelBinding (nextLookup);
+	    cb.iload (lookupSlot);
+
+	    FullNameHandler toType = FullNameHelper.type (se);
+	    TypeKind tkTo = FullNameHelper.getTypeKind (toType);
+	    Label secondaryDefaultLabel = cb.newLabel ();
+	    Label end = cb.newLabel ();
+	    cb.lookupswitch (secondaryDefaultLabel, blockInfo.secondarySwitchCases);
+	    blockInfo.secondaryOptions.forEach ((sc, srl) -> {
+		    cb.labelBinding (sc.target ());
+		    ParseTreeNode handler = srl.sr.handler ();
+		    handleStatements (cb, handler);
+		    FullNameHandler fn = FullNameHelper.type (handler);
+		    widenOrAutoBoxAsNeeded (cb, fn, toType, tkTo);
+		    cb.goto_ (end);
+		});
+	    cb.labelBinding (secondaryDefaultLabel);
+	    if (blockInfo.secondaryDefault != null) {
+		ParseTreeNode handler = blockInfo.secondaryDefault.handler ();
+		handleStatements (cb, handler);
+		FullNameHandler fn = FullNameHelper.type (handler);
+		widenOrAutoBoxAsNeeded (cb, fn, toType, tkTo);
+	    }
+	    cb.labelBinding (end);
+	}
+
+	private class SwitchBlockInfo {
+	    private List<SwitchCase> primarySwitchCases = new ArrayList<> ();
+	    private LinkedHashMap<Integer, List<SwitchRuleLabel>> hashedOptions = new LinkedHashMap<> ();
+	    private Map<Integer, SwitchCase> hash2sc = new HashMap<> ();
+
+	    private List<SwitchCase> secondarySwitchCases = new ArrayList<> ();
+	    private LinkedHashMap<SwitchCase, SwitchRuleLabel> secondaryOptions = new LinkedHashMap<> ();
+	    private SwitchRule secondaryDefault;
+
+	    public SwitchBlockInfo (CodeBuilder cb, SwitchExpression se) {
+		SwitchBlock block = se.block ();
+		SwitchBlock.SwitchBlockRule sbr = (SwitchBlock.SwitchBlockRule)block;
+		List<SwitchRule> rules = sbr.rules ();
+		int secondaryValue = 0;
+		for (SwitchRule r : rules) {
+		    SwitchLabel label = r.label ();
+		    if (label instanceof CaseLabel cl) {
+			for (ParseTreeNode exp : cl.expressions ()) {
+			    SwitchRuleLabel srl = new SwitchRuleLabel (r, exp.getValue (), secondaryValue++);
+			    int hash = srl.constant.hashCode ();
+			    List<SwitchRuleLabel> ls = hashedOptions.computeIfAbsent (hash, ArrayList::new);
+			    if (ls.isEmpty ()) {
+				SwitchCase sc = SwitchCase.of (hash, cb.newLabel ());
+				primarySwitchCases.add (sc);
+				hash2sc.put (hash, sc);
+			    }
+			    ls.add (srl);
+
+			    SwitchCase sc = SwitchCase.of (srl.secondaryValue, cb.newLabel ());
+			    secondarySwitchCases.add (sc);
+			    secondaryOptions.put (sc, srl);
+			}
+		    } else if (label instanceof DefaultLabel dl) {
+			secondaryDefault = r;
+		    } else if (label instanceof CasePatternLabel cpl) {
+			throw new IllegalStateException ("Case pattern labels not yet handled");
+		    }
+		}
+	    }
+	}
+
+	private record SwitchRuleLabel (SwitchRule sr, Object constant, int secondaryValue) { /* empty */ }
 
 	private void getField (CodeBuilder cb, VariableInfo vi) {
 	    ClassDesc owner = ClassDescUtils.getClassDesc (cip.getFullName (td));

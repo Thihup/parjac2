@@ -628,11 +628,19 @@ public class TestClassSetter {
     }
 
     @Test
-    public void testLambdaAssignment () {
+    public void testLambdaLocalVariable () {
 	getTypes ("class C { void a () {Runnable r = () -> System.out.println (); }}");
 	getTypes ("class C { void a () {java.util.function.IntConsumer ic = i -> System.out.println (i); }}");
 	getTypes ("class C { void a () {java.util.function.IntToDoubleFunction i2d = i -> 3.2 * i; }}");
 	getTypes ("class C { void a () {java.util.function.IntToDoubleFunction i2d = i -> \"wrong!\"; }}", 1);
+    }
+
+    @Test
+    public void testLambdaAssignment () {
+	getTypes ("class C { void a () {Runnable r; r = () -> System.out.println (); }}");
+	getTypes ("class C { void a () {java.util.function.IntConsumer ic; ic = i -> System.out.println (i); }}");
+	getTypes ("class C { void a () {java.util.function.IntToDoubleFunction i2d; i2d = i -> 3.2 * i; }}");
+	getTypes ("class C { void a () {java.util.function.IntToDoubleFunction i2d; i2d = i -> \"wrong!\"; }}", 1);
     }
 
     @Test
@@ -671,7 +679,9 @@ public class TestClassSetter {
     @Test
     public void testSimpleMethodReference () {
 	getTypes ("class C { void a () { Runnable r = this::b; r.run (); } void b () {}}");
+	getTypes ("class C { void a () { Runnable r; r = this::b; r.run (); } void b () {}}");
 	getTypes ("class C { void a () { java.util.function.IntConsumer ic = this::b; } void b (int i) {}}");
+	getTypes ("class C { void a () { java.util.function.IntConsumer ic; ic = this::b; } void b (int i) {}}");
 	getTypes ("class C { void a () { java.util.function.IntConsumer ic = this::b; } void b (int i, int j) {}}", 1);
     }
 
@@ -709,6 +719,11 @@ public class TestClassSetter {
     @Test
     public void testCallingInstanceMethodReferenceOnObjectInsideStatic () {
 	getTypes ("class C { static void a (C c) { Runnable r = c::b; r.run (); } void b () {}}");
+    }
+
+    @Test
+    public void testSwitchExpression () {
+	getTypes ("class C { static void a (String s) {Object o = switch (s) { case \"foo\" -> 1; case \"bar\" -> \"what\"; default -> null; }; }}");
     }
 
     /* TODO: implement full generic handling */

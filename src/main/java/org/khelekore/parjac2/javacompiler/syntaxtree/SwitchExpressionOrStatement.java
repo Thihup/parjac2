@@ -16,6 +16,14 @@ public class SwitchExpressionOrStatement extends SyntaxTreeNode {
 	block = (SwitchBlock)children.get (4);
     }
 
+    public ParseTreeNode expression () {
+	return expression;
+    }
+
+    public SwitchBlock block () {
+	return block;
+    }
+
     @Override public Object getValue () {
 	return "switch (" + expression + ")" + block;
     }

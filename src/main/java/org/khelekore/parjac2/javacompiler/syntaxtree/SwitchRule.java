@@ -9,15 +9,33 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 public class SwitchRule extends SyntaxTreeNode {
     private final SwitchLabel label;
     private final ParseTreeNode handler;
+    private FullNameHandler wantedType;
 
     public SwitchRule (Rule r, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
 	label = (SwitchLabel)children.get (0);
 	handler = children.get (2);
     }
+
+    public SwitchLabel label () {
+	return label;
+    }
+
+    public ParseTreeNode handler () {
+	return handler;
+    }
+
+    public void wantedType (FullNameHandler wantedType) {
+	this.wantedType = wantedType;
+    }
+
+    public FullNameHandler wantedType () {
+	return wantedType;
+    }
+
     @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
-	sb.append (label.getValue ()).append (" -> ").append (handler.getValue ());
+	sb.append (label.getValue ()).append (" -> ").append (handler.getValue ()).append ("; ");
 	return sb.toString ();
     }
 

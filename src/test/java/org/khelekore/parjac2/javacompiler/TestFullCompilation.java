@@ -676,6 +676,19 @@ public class TestFullCompilation {
 	assert r == 3;
     }
 
+    @Test
+    public void testSwitchExpression () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { public static Object a (String s) {Object o = switch (s) { " +
+			      "    case \"foo\" -> 1; case \"bar\" -> \"what\"; default -> null; }; return o; }}",
+			      "a", String.class);
+	Object o = m.invoke (null, "foo");
+	assert Integer.valueOf (1).equals (o);
+	o = m.invoke (null, "bar");
+	assert "what".equals (o);
+	o = m.invoke (null, "whatever");
+	assert o == null;
+    }
+
     private Method getMethod (String className, String text, String methodName, Class<?> ... types) throws ReflectiveOperationException {
 	Class<?> c = getFirstClass (className, text);
 	Method m = c.getMethod (methodName, types);

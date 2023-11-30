@@ -61,6 +61,9 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.SingleStaticImportDeclarati
 import org.khelekore.parjac2.javacompiler.syntaxtree.SingleTypeImportDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.StaticImportOnDemandDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SuperMethodReference;
+import org.khelekore.parjac2.javacompiler.syntaxtree.SwitchBlock;
+import org.khelekore.parjac2.javacompiler.syntaxtree.SwitchExpression;
+import org.khelekore.parjac2.javacompiler.syntaxtree.SwitchRule;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Ternary;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ThisPrimary;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Throws;
@@ -326,7 +329,7 @@ public class ClassSetter {
 	    case ClassOrInterfaceTypeToInstantiate coitti -> setType (et, coitti.type ());
 
 	    case VariableDeclarator vd -> handlePartsAndVariableDeclarator (et, vd, partsToHandle);
-	    case Assignment a -> handlePartsAndHandler (et, a, e -> checkAssignment (e, a), partsToHandle);
+	    case Assignment a -> handlePartsAndHandler (et, a, e -> handleAssignment (e, a, partsToHandle), partsToHandle);
 
 	    // Check method once we know all parts
 	    case MethodInvocation mi -> handleMethodInvocation (et, mi, partsToHandle);
@@ -396,22 +399,48 @@ public class ClassSetter {
 	partsToHandle.addFirst (new StatementHandler (et, new AddVariable (vd)));
 	FullNameHandler varType = FullNameHelper.type (vd.type ());
 	ParseTreeNode init = vd.initializer ();
+
+	checkAssignment (et, varType, init, partsToHandle);
+    }
+
+    private void handleAssignment (EnclosingTypes et, Assignment a, Deque<StatementHandler> partsToHandle) {
+	FullNameHandler toType = FullNameHelper.type (a.lhs ());
+	checkAssignment (et, toType, a.rhs (), partsToHandle);
+    }
+
+    private void checkAssignment (EnclosingTypes et, FullNameHandler lhs, ParseTreeNode init, Deque<StatementHandler> partsToHandle) {
 	if (init instanceof LambdaExpression le) {
-	    setTypeOnLambda (varType, le);
+	    setTypeOnLambda (lhs, le);
 	    addLambdaReturnCheck (et, le, partsToHandle);
 	    partsToHandle.addFirst (new StatementHandler (et, le));
-	} else if (init instanceof MethodReference mr) {
-	    CustomHandler h = e -> setTypeOnMethodReference (e, varType, mr);
-	    partsToHandle.addFirst (new StatementHandler (et, h));
-	    partsToHandle.addFirst (new StatementHandler (et, init));
-	} else if (init != null) {
-	    CustomHandler h = e -> checkInitializerType (varType, vd.initializer ());
-	    partsToHandle.addFirst (new StatementHandler (et, h));
-	    partsToHandle.addFirst (new StatementHandler (et, init));
+	} else {
+	    if (init instanceof MethodReference mr) {
+		CustomHandler h = e -> setTypeOnMethodReference (e, lhs, mr);
+		partsToHandle.addFirst (new StatementHandler (et, h));
+	    } else if (init instanceof SwitchExpression se) {
+		CustomHandler h = e -> setTypeOnSwitchExpression (se, lhs);
+		partsToHandle.addFirst (new StatementHandler (et, h));
+	    } else if (init != null) {
+		CustomHandler h = e -> checkAssignmentType (lhs, init);
+		partsToHandle.addFirst (new StatementHandler (et, h));
+	    }
+	    if (init != null)
+		partsToHandle.addFirst (new StatementHandler (et, init));
 	}
     }
 
-    private void checkInitializerType (FullNameHandler varType, ParseTreeNode initializer) {
+    private void setTypeOnSwitchExpression (SwitchExpression se, FullNameHandler wantedType) {
+	SwitchBlock block = se.block ();
+	if (block instanceof SwitchBlock.SwitchBlockRule sbr) {
+	    List<SwitchRule> rules = sbr.rules ();
+	    for (SwitchRule r : rules) {
+		r.wantedType (wantedType);
+	    }
+	}
+	se.type (wantedType);
+    }
+
+    private void checkAssignmentType (FullNameHandler varType, ParseTreeNode initializer) {
 	if (varType == null) {
 	    // if varType == null, we have already signaled type not found or similar
 	    return;
@@ -423,11 +452,6 @@ public class ClassSetter {
 		checkAssignment (varType, initializer);
 	    }
 	}
-    }
-
-    private void checkAssignment (EnclosingTypes et, Assignment a) {
-	FullNameHandler toType = FullNameHelper.type (a.lhs ());
-	checkAssignment (toType, a.rhs ());
     }
 
     private void checkAssignment (FullNameHandler toType, ParseTreeNode rhs) {

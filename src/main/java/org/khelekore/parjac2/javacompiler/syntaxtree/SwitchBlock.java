@@ -76,6 +76,10 @@ public abstract class SwitchBlock extends SyntaxTreeNode {
 		rules.addAll (((Multiple)children.get (2)).get ());
 	}
 
+	public List<SwitchRule> rules () {
+	    return rules;
+	}
+
 	@Override public Object getValue () {
 	    StringBuilder sb = new StringBuilder ();
 	    sb.append ("{");
