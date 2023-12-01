@@ -7,6 +7,7 @@ import org.khelekore.parjac2.javacompiler.ClassInformationProvider;
 import org.khelekore.parjac2.javacompiler.Flags;
 import org.khelekore.parjac2.javacompiler.MethodContentGenerator;
 import org.khelekore.parjac2.javacompiler.VariableInfo;
+import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
@@ -25,9 +26,9 @@ public class FieldGenerator {
 	}
     }
 
-    public static void putField (MethodContentGenerator mcg, ClassInformationProvider cip, TypeDeclaration td,
+    public static void putField (MethodContentGenerator mcg, FullNameHandler fieldOwner,
 				 CodeBuilder cb, VariableInfo vi, ParseTreeNode value) {
-	ClassDesc owner = ClassDescUtils.getClassDesc (cip.getFullName (td));
+	ClassDesc owner = ClassDescUtils.getClassDesc (fieldOwner);
 	ClassDesc type = vi.typeClassDesc ();
 	if (Flags.isInstanceField (vi))
 	    cb.aload (cb.receiverSlot ());

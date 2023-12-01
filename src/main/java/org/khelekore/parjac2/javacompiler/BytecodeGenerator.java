@@ -615,12 +615,13 @@ public class BytecodeGenerator {
 		VariableInfo vi = fa.variableInfo ();
 		if (from != null) {
 		    handleStatements (cb, from);
-		    FieldGenerator.putField (this, cip, td, cb, vi, value);
+		    FullNameHandler owner = FullNameHelper.type (from);
+		    FieldGenerator.putField (this, owner, cb, vi, value);
 		} else { // this or local or static field
 		    TypeKind kind = FullNameHelper.getTypeKind (vi.typeName ());
 		    switch (vi.fieldType ()) {
 		    case VariableInfo.Type.FIELD ->
-			FieldGenerator.putField (this, cip, td, cb, vi, value);
+			FieldGenerator.putField (this, cip.getFullName (td), cb, vi, value);
 		    case VariableInfo.Type.PARAMETER ->
 			putInLocalSlot (cb, kind, ((FormalParameterBase)vi).slot (), value);
 		    case VariableInfo.Type.LOCAL ->
