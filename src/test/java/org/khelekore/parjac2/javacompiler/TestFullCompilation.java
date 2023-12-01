@@ -117,7 +117,7 @@ public class TestFullCompilation {
     }
 
     public Object getReturnFromStaticMethod (String className, String classText) throws ReflectiveOperationException {
-	Class<?> c = getFirstClass (className, classText);
+	Class<?> c = compileAndGetClass (className, classText);
 	Method m = c.getMethod ("r");
 	m.setAccessible (true);
 	return m.invoke (null);
@@ -345,7 +345,7 @@ public class TestFullCompilation {
 
     @Test
     public void testConstructorTakingMultiple () throws ReflectiveOperationException {
-	Class<?> c = getFirstClass ("D", "public class D { public D (int x, int y, int z) { }}");
+	Class<?> c = compileAndGetClass ("D", "public class D { public D (int x, int y, int z) { }}");
 	Constructor<?> ctr = c.getConstructor (Integer.TYPE, Integer.TYPE, Integer.TYPE);
 	int x = 3;
 	Object o = ctr.newInstance (x, x, x);
@@ -354,7 +354,7 @@ public class TestFullCompilation {
 
     @Test
     public void testConstructorAndGetter () throws ReflectiveOperationException {
-	Class<?> c = getFirstClass ("C", "public class C { private int x; public C (int x) { this.x = x; } public int x () { return x; }}");
+	Class<?> c = compileAndGetClass ("C", "public class C { private int x; public C (int x) { this.x = x; } public int x () { return x; }}");
 	Constructor<?> ctr = c.getConstructor (Integer.TYPE);
 	int x = 3;
 	Object o = ctr.newInstance (x);
@@ -380,12 +380,30 @@ public class TestFullCompilation {
 
     @Test
     public void testPostIncrementField () throws ReflectiveOperationException {
-	Class<?> c = getFirstClass ("C", "public class C { int x = 17; public int r () { x++; return x; }}");
+	Class<?> c = compileAndGetClass ("C", "public class C { int x = 17; public int r () { x++; return x; }}");
 	Constructor<?> ctr = c.getConstructor ();
 	Object o = ctr.newInstance ();
 	Method m = c.getMethod ("r");
 	int r = (Integer)m.invoke (o);
 	assert r == 18 : "Increment returned wrong value: " + r;
+    }
+
+    @Test
+    public void testPutFieldInOtherClass () throws ReflectiveOperationException {
+	String code = "class A { public static int z = 1; } class B { public static void a () { A.z *= 3; }}";
+	Map<String, Class<?>> classes = compileAndGetClasses (code);
+	Class<?> aClass = classes.get ("A");
+        Field aField = aClass.getField ("z");
+	aField.setAccessible (true);
+        int r = (Integer)aField.get (null);
+	assert r == 1;
+
+	Class<?> bClass = classes.get ("B");
+        Method m = bClass.getMethod ("a");
+	m.setAccessible (true);
+	m.invoke (null);
+        r = (Integer)aField.get (null);
+	assert r == 3;
     }
 
     @Test
@@ -585,39 +603,39 @@ public class TestFullCompilation {
 
     @Test
     public void testLambdaCall () throws ReflectiveOperationException {
-	Class<?> c = getFirstClass("C", "public class C { " +
-				   "public boolean b = false; " +
-				   "private void a (Runnable r) { r.run (); } " +
-				   "public void b () { a(() -> b = true); }}");
+	Class<?> c = compileAndGetClass ("C", "public class C { " +
+					 "public boolean b = false; " +
+					 "private void a (Runnable r) { r.run (); } " +
+					 "public void b () { a(() -> b = true); }}");
         checkDynamicMethod (c, "b", "b");
     }
 
     @Test
     public void testStaticLambdaCall () throws ReflectiveOperationException {
-	Class<?> c = getFirstClass("C", "public class C { " +
-				   "public static boolean b = false; " +
-				   "private static void a (Runnable r) { r.run (); } " +
-				   "public static void b () { a(() -> b = true); }}");
+	Class<?> c = compileAndGetClass ("C", "public class C { " +
+					 "public static boolean b = false; " +
+					 "private static void a (Runnable r) { r.run (); } " +
+					 "public static void b () { a(() -> b = true); }}");
         checkDynamicMethod (c, "b", "b", null);
     }
 
     @Test
     public void testLambdaAssignment () throws ReflectiveOperationException {
-	Class<?> c = getFirstClass("C", "public class C {public boolean b; public void c () { Runnable r = () -> b = true; r.run ();}}");
+	Class<?> c = compileAndGetClass ("C", "public class C {public boolean b; public void c () { Runnable r = () -> b = true; r.run ();}}");
 	checkDynamicMethod (c, "c", "b");
     }
 
     @Test
     public void testMethodReferenceAssignment () throws ReflectiveOperationException {
-	Class<?> c = getFirstClass("C", "public class C {public boolean b; void a () {b = true;} public void c () { Runnable r = this::a; r.run ();}}");
+	Class<?> c = compileAndGetClass ("C", "public class C {public boolean b; void a () {b = true;} public void c () { Runnable r = this::a; r.run ();}}");
 	checkDynamicMethod (c, "c", "b");
     }
 
     @Test
     public void testCallingStaticMethodReferenceFromInstance () throws ReflectiveOperationException {
-	Class<?> c = getFirstClass("C",
-				   "public class C {public static boolean b; static void a () {b = true;}" +
-				   "    public void c () { Runnable r = C::a; r.run ();}}");
+	Class<?> c = compileAndGetClass ("C",
+					 "public class C {public static boolean b; static void a () {b = true;}" +
+					 "    public void c () { Runnable r = C::a; r.run ();}}");
 	checkDynamicMethod (c, "c", "b");
     }
 
@@ -690,21 +708,29 @@ public class TestFullCompilation {
     }
 
     private Method getMethod (String className, String text, String methodName, Class<?> ... types) throws ReflectiveOperationException {
-	Class<?> c = getFirstClass (className, text);
+	Class<?> c = compileAndGetClass (className, text);
 	Method m = c.getMethod (methodName, types);
 	m.setAccessible (true);
 	return m;
     }
 
-    private Class<?> getFirstClass (String className, String input) throws ClassNotFoundException {
-	sourceProvider.input (className + ".java", input);
+    private Class<?> compileAndGetClass (String className, String input) throws ClassNotFoundException {
+	Map<String, Class<?>> classes = compileAndGetClasses (className + ".java", input);
+	return classes.get (className);
+    }
+
+    private Map<String, Class<?>> compileAndGetClasses (String text) throws ClassNotFoundException {
+	return compileAndGetClasses ("dynamic.java", text);
+    }
+
+    private Map<String, Class<?>> compileAndGetClasses (String filename, String text) throws ClassNotFoundException {
+	sourceProvider.input (filename, text);
 	Compiler c = new Compiler (diagnostics, grammar, javaTokens, goalRule, settings);
 	c.compile ();
 	assert diagnostics.errorCount () == 0 :
-	    String.format ("Expected no compilation errors: %s", TestParserHelper.getParseOutput (diagnostics));
-	byte[] classData = bytecodeWriter.classes.values ().iterator ().next ();
-	ClassLoader cl = new InMemoryClassLoader (classData);
-	return cl.loadClass (className);
+	String.format ("Expected no compilation errors: %s", TestParserHelper.getParseOutput (diagnostics));
+	InMemoryClassLoader cl = new InMemoryClassLoader (bytecodeWriter.classes);
+	return cl.loadAllClasses ();
     }
 
     private static class InMemorySourceProvider implements SourceProvider {
@@ -735,14 +761,14 @@ public class TestFullCompilation {
     }
 
     private static class InMemoryBytecodeWriter implements BytecodeWriter {
-	private Map<Path, byte[]> classes = new HashMap<> ();
+	private Map<String, byte[]> classes = new HashMap<> ();
 
 	@Override public void createDirectory (Path path) {
 	    // ignore, everything in memory
 	}
 
-	@Override public void write (Path path, byte[] data) {
-	    classes.put (path, data);
+	@Override public void write (String className, Path path, byte[] data) {
+	    classes.put (className, data);
 	}
 
 	public void clean () {
@@ -751,14 +777,24 @@ public class TestFullCompilation {
     }
 
     private static class InMemoryClassLoader extends ClassLoader {
-	private byte[] data;
+	private final Map<String, byte[]> classes;
 
-	public InMemoryClassLoader (byte[] data) {
-	    this.data = data;
+	public InMemoryClassLoader (Map<String, byte[]> classes) {
+	    this.classes = classes;
 	}
 
 	@Override protected Class<?> findClass (String name) throws ClassNotFoundException {
+	    byte[] data = classes.get (name);
+	    if (data == null)
+		throw new ClassNotFoundException (name + " not found");
 	    return defineClass (name, data, 0, data.length);
+	}
+
+	public Map<String, Class<?>> loadAllClasses () throws ClassNotFoundException {
+	    Map<String, Class<?>> ret = new HashMap<> ();
+	    for (String name : classes.keySet ())
+		ret.put (name, loadClass (name));
+	    return ret;
 	}
     }
 }

@@ -11,5 +11,5 @@ public interface BytecodeWriter {
      * @param path the relative path
      * @param data the actual bytecode
      */
-    void write (Path path, byte[] data) throws IOException;
+    void write (String className, Path path, byte[] data) throws IOException;
 }

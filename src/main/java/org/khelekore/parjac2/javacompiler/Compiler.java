@@ -209,7 +209,7 @@ public class Compiler {
 
 	byte[] data = generateClass (cip.getOriginFile (td), td);
 	// TODO: this is not full class data :-)
-	write (classWriter, result, data);
+	write (classWriter, cip.getFullName (td).getFullDotName (), result, data);
     }
 
     private byte[] generateClass (Path origin, TypeDeclaration td) {
@@ -223,7 +223,7 @@ public class Compiler {
 	Path result = p.resolve (filename);
 	// TODO: this is not correct module data :-)
 	byte[] data = {(byte)0xca, (byte)0xfe, (byte)0xba, (byte)0xbe};
-	write (classWriter, result, data);
+	write (classWriter, "module-info", result, data);
     }
 
     private Path getPath (TypeDeclaration t) {
@@ -237,9 +237,9 @@ public class Compiler {
 	return p == null ? p = Paths.get (".") : p;
     }
 
-    private void write (BytecodeWriter classWriter, Path path, byte[] data) {
+    private void write (BytecodeWriter classWriter, String className, Path path, byte[] data) {
 	try {
-	    classWriter.write (path, data);
+	    classWriter.write (className, path, data);
 	} catch (IOException e) {
 	    diagnostics.report (new NoSourceDiagnostics ("Failed to create output file: %s: %s", path, e));
 	    return;

@@ -3,23 +3,35 @@ package org.khelekore.parjac2.javacompiler.code;
 import java.lang.constant.ClassDesc;
 
 import org.khelekore.parjac2.javacompiler.ClassDescUtils;
-import org.khelekore.parjac2.javacompiler.ClassInformationProvider;
 import org.khelekore.parjac2.javacompiler.Flags;
 import org.khelekore.parjac2.javacompiler.MethodContentGenerator;
 import org.khelekore.parjac2.javacompiler.VariableInfo;
+import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
-import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
+import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHelper;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 import io.github.dmlloyd.classfile.CodeBuilder;
 
 public class FieldGenerator {
 
-    public static void getField (ClassInformationProvider cip, TypeDeclaration td, CodeBuilder cb, VariableInfo vi) {
-	ClassDesc owner = ClassDescUtils.getClassDesc (cip.getFullName (td));
+    public static void getField (MethodContentGenerator mcg, CodeBuilder cb,
+				 ParseTreeNode from, FullNameHandler currentClass, VariableInfo vi) {
+	ClassDesc owner;
+	boolean instanceField = Flags.isInstanceField (vi);
+	if (from instanceof ClassType ct) {
+	    owner = ClassDescUtils.getClassDesc (ct);
+	    instanceField = false;
+	} else if (from != null) {
+	    mcg.handleStatements (cb, from);
+	    owner = ClassDescUtils.getClassDesc (FullNameHelper.type (from));
+	} else {
+	    if (instanceField)
+		cb.aload (cb.receiverSlot ());
+	    owner = ClassDescUtils.getClassDesc (currentClass);
+	}
 	ClassDesc type = vi.typeClassDesc ();
-	if (Flags.isInstanceField (vi)) {
-	    cb.aload (cb.receiverSlot ());
+	if (instanceField) {
 	    cb.getfield (owner, vi.name (), type);
 	} else {
 	    cb.getstatic (owner, vi.name (), type);

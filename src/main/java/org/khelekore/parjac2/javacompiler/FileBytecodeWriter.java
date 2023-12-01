@@ -16,7 +16,7 @@ public class FileBytecodeWriter implements BytecodeWriter {
 	Files.createDirectories (getRealPath (path));
     }
 
-    @Override public void write (Path path, byte[] data) throws IOException {
+    @Override public void write (String className, Path path, byte[] data) throws IOException {
 	Files.write (getRealPath (path), data);
     }
 

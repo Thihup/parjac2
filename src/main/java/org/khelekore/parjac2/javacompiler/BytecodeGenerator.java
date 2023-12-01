@@ -378,32 +378,16 @@ public class BytecodeGenerator {
 	    cb.lineNumber (fa.position ().getLineNumber ()); // should be good enough
 	    ParseTreeNode from = fa.from ();
 	    VariableInfo vi = fa.variableInfo ();
-	    if (from != null) {
-		handleFrom (cb, from, vi);
-	    } else {
-		if (vi.fieldType () == VariableInfo.Type.PARAMETER) {
-		    CodeUtil.loadParameter (cb, (FormalParameterBase)vi);
-		} else if (vi.fieldType () == VariableInfo.Type.LOCAL) {
-		    LocalVariable lv = (LocalVariable)vi;
-		    int slot = lv.vd ().slot ();
-		    FullNameHandler fn = FullNameHelper.type (lv.type ());
-		    TypeKind kind = FullNameHelper.getTypeKind (fn);
-		    cb.loadInstruction (kind, slot);
-		} else { // field
-		    FieldGenerator.getField (cip, td, cb, vi);
-		}
-	    }
-	}
-
-	private void handleFrom (CodeBuilder cb, ParseTreeNode from, VariableInfo vi) {
-	    ClassDesc owner = ClassDesc.of (FullNameHelper.type (from).getFullDollarName ());
-	    String name = vi.name ();
-	    ClassDesc type = ClassDesc.of (vi.typeName ().getFullDollarName ());
-	    if (from instanceof ClassType ct) {
-		cb.getstatic (owner, name, type);
-	    } else {
-		handleStatements (cb, from);
-		cb.getfield (owner, name, type);
+	    if (vi.fieldType () == VariableInfo.Type.PARAMETER) {
+		CodeUtil.loadParameter (cb, (FormalParameterBase)vi);
+	    } else if (vi.fieldType () == VariableInfo.Type.LOCAL) {
+		LocalVariable lv = (LocalVariable)vi;
+		int slot = lv.vd ().slot ();
+		FullNameHandler fn = FullNameHelper.type (lv.type ());
+		TypeKind kind = FullNameHelper.getTypeKind (fn);
+		cb.loadInstruction (kind, slot);
+	    } else { // field
+		FieldGenerator.getField (this, cb, from, cip.getFullName (td), vi);
 	    }
 	}
 
