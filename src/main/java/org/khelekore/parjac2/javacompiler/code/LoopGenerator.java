@@ -23,7 +23,7 @@ import io.github.dmlloyd.classfile.Label;
 import io.github.dmlloyd.classfile.Opcode;
 import io.github.dmlloyd.classfile.TypeKind;
 
-public class LoopHandler {
+public class LoopGenerator {
 
     public static void handleBasicFor (MethodContentGenerator mcg, CodeBuilder cb, BasicForStatement bfs) {
 	ParseTreeNode forInit = bfs.forInit ();
