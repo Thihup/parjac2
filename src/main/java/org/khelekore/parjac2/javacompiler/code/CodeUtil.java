@@ -43,13 +43,27 @@ public class CodeUtil {
 	}
     }
 
+    public static void widen (CodeBuilder cb, FullNameHandler targetType, ParseTreeNode p) {
+	FullNameHandler pfn = FullNameHelper.type (p);
+	if (!pfn.isPrimitive ())
+	    return;
+	TypeKind tkTo = FullNameHelper.getTypeKind (targetType);
+	widenOrAutoBoxAsNeeded (cb, pfn, targetType, tkTo);
+    }
+
     public static void widenOrAutoBoxAsNeeded (CodeBuilder cb, FullNameHandler from, FullNameHandler to, TypeKind tkTo) {
 	if (from.getType () == FullNameHandler.Type.PRIMITIVE) {
 	    if (to.getType () == FullNameHandler.Type.OBJECT) {
 		autoBox (cb, (FullNameHandler.Primitive)from);
-	    } else if (!to.equals (from)) {
-		TypeKind tkr = FullNameHelper.getTypeKind (from);
-		cb.convertInstruction (tkr, tkTo);
+	    } else {
+		if (from == FullNameHandler.BOOLEAN)
+		    from = FullNameHandler.INT;
+		if (to == FullNameHandler.BOOLEAN)
+		    to = FullNameHandler.INT;
+		if (!to.equals (from)) {
+		    TypeKind tkFrom = FullNameHelper.getTypeKind (from);
+		    cb.convertInstruction (tkFrom, tkTo);
+		}
 	    }
 	} else if (to.getType () == FullNameHandler.Type.PRIMITIVE) {
 	    autoUnBox (cb, from, (FullNameHandler.Primitive)to);
@@ -71,25 +85,6 @@ public class CodeUtil {
 	String name = to.getFullDotName () + "Value"; // intValue, longValue, ...
 	MethodTypeDesc type = MethodTypeDesc.ofDescriptor ("()"+ to.signature ());
 	cb.invokevirtual (owner, name, type);
-    }
-
-    public static void widen (CodeBuilder cb, FullNameHandler targetType, ParseTreeNode p) {
-	if (targetType == FullNameHandler.BOOLEAN)
-	    targetType = FullNameHandler.INT;
-	FullNameHandler pfn = FullNameHelper.type (p);
-	if (pfn == FullNameHandler.BOOLEAN)
-	    pfn = FullNameHandler.INT;
-	if (pfn == targetType)
-	    return;
-	if (pfn.isPrimitive ()) {
-	    TypeKind tkm = FullNameHelper.getTypeKind (targetType);
-	    TypeKind tkr = FullNameHelper.getTypeKind (FullNameHelper.type (p));
-	    addPrimitiveCast (cb, tkr, tkm);
-	}
-    }
-
-    private static void addPrimitiveCast (CodeBuilder cb, TypeKind from, TypeKind to) {
-	cb.convertInstruction (from, to);
     }
 
     public static void handleThis (CodeBuilder cb) {
