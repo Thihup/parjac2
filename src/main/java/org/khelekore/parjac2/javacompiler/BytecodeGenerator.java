@@ -112,7 +112,8 @@ public class BytecodeGenerator {
     }
 
     private byte[] generateClass (NormalClassDeclaration c) {
-	String signature = getClassSignature (c.getTypeParameters (), c.getSuperClass (), c.getSuperInterfaces ());
+	String signature = SignatureHelper.getClassSignature (cip, genericTypeHelper, c.getTypeParameters (),
+							      c.getSuperClass (), c.getSuperInterfaces ());
 	return generateClass (ImplicitClassFlags.CLASS_FLAGS, signature,
 			      c.getSuperClass (), c.getSuperInterfaces ());
     }
@@ -124,13 +125,15 @@ public class BytecodeGenerator {
     }
 
     private byte[] generateClass (RecordDeclaration r) {
-	String signature = getClassSignature (r.getTypeParameters (), r.getSuperClass (), r.getSuperInterfaces ());
+	String signature = SignatureHelper.getClassSignature (cip, genericTypeHelper, r.getTypeParameters (),
+							      r.getSuperClass (), r.getSuperInterfaces ());
 	return generateClass (ImplicitClassFlags.RECORD_FLAGS, signature,
 			      recordClassType, List.of ());
     }
 
     private byte[] generateInterface (NormalInterfaceDeclaration i) {
-	String signature = getClassSignature (i.getTypeParameters (), null, i.getExtendsInterfaces ());
+	String signature = SignatureHelper.getClassSignature (cip, genericTypeHelper, i.getTypeParameters (),
+							      null, i.getExtendsInterfaces ());
 	return generateClass (ImplicitClassFlags.INTERFACE_FLAGS, signature,
 			      objectClassType, i.getExtendsInterfaces ());
     }
@@ -152,24 +155,6 @@ public class BytecodeGenerator {
     private byte[] generateAnonymousClass (UnqualifiedClassInstanceCreationExpression ac) {
 	return generateClass (ImplicitClassFlags.ANONYMOUS_CLASS_FLAGS, null,
 			      ac.getSuperClass (), List.of ());
-    }
-
-    private String getClassSignature (TypeParameters tps, ClassType superClass, List<ClassType> superInterfaces) {
-	if (tps != null || SignatureHelper.hasGenericType (superClass) || SignatureHelper.hasGenericType (superInterfaces)) {
-	    StringBuilder sb = new StringBuilder ();
-	    genericTypeHelper.appendTypeParametersSignature (sb, tps, cip, false);
-	    if (superClass != null) {
-		sb.append (genericTypeHelper.getGenericType (superClass, cip, false));
-	    } else {
-		sb.append ("Ljava/lang/Object;");
-	    }
-	    if (superInterfaces != null) {
-		for (ClassType ct : superInterfaces)
-		    sb.append (genericTypeHelper.getGenericType (ct, cip, false));
-	    }
-	    return sb.toString ();
-	}
-	return null;
     }
 
     private byte[] generateClass (ImplicitClassFlags icf, String signature, ClassType superType, List<ClassType> superInterfaces) {

@@ -12,6 +12,26 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.TypeParameters;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class SignatureHelper {
+
+    public static String getClassSignature (ClassInformationProvider cip, GenericTypeHelper genericTypeHelper,
+					    TypeParameters tps, ClassType superClass, List<ClassType> superInterfaces) {
+	if (tps != null || SignatureHelper.hasGenericType (superClass) || SignatureHelper.hasGenericType (superInterfaces)) {
+	    StringBuilder sb = new StringBuilder ();
+	    genericTypeHelper.appendTypeParametersSignature (sb, tps, cip, false);
+	    if (superClass != null) {
+		sb.append (genericTypeHelper.getGenericType (superClass, cip, false));
+	    } else {
+		sb.append ("Ljava/lang/Object;");
+	    }
+	    if (superInterfaces != null) {
+		for (ClassType ct : superInterfaces)
+		    sb.append (genericTypeHelper.getGenericType (ct, cip, false));
+	    }
+	    return sb.toString ();
+	}
+	return null;
+    }
+
     public static MethodSignatureHolder getMethodSignature (ClassInformationProvider cip, GenericTypeHelper genericTypeHelper,
 							    TypeParameters tps, FormalParameterList params, ParseTreeNode result) {
 	StringBuilder sb = new StringBuilder ();
