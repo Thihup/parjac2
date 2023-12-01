@@ -28,12 +28,11 @@ import io.github.dmlloyd.classfile.MethodSignature;
 import io.github.dmlloyd.classfile.Opcode;
 import io.github.dmlloyd.classfile.Signature;
 import io.github.dmlloyd.classfile.TypeKind;
-import io.github.dmlloyd.classfile.attribute.InnerClassInfo;
-import io.github.dmlloyd.classfile.attribute.InnerClassesAttribute;
 import io.github.dmlloyd.classfile.attribute.SignatureAttribute;
 import io.github.dmlloyd.classfile.attribute.SourceFileAttribute;
 import io.github.dmlloyd.classfile.instruction.SwitchCase;
 
+import org.khelekore.parjac2.javacompiler.code.AttributeHelper;
 import org.khelekore.parjac2.javacompiler.code.CodeUtil;
 import org.khelekore.parjac2.javacompiler.syntaxtree.*;
 import org.khelekore.parjac2.parser.Grammar;
@@ -58,8 +57,9 @@ public class BytecodeGenerator {
     private static final ClassType objectClassType = new ClassType (FullNameHandler.JL_OBJECT);
 
     private static final String STATIC_INIT = "<clinit>";
-    private static final String INSTANCE_INIT = "<init>";
-    private static final MethodTypeDesc INIT_SIGNATURE = MethodTypeDesc.ofDescriptor ("()V");
+
+    public static final String INSTANCE_INIT = "<init>";
+    public static final MethodTypeDesc INIT_SIGNATURE = MethodTypeDesc.ofDescriptor ("()V");
 
     private enum ImplicitClassFlags {
 	CLASS_FLAGS (Classfile.ACC_SUPER),
@@ -208,7 +208,7 @@ public class BytecodeGenerator {
 		    classBuilder.with (SourceFileAttribute.of (origin.getFileName ().toString ()));
 		}
 
-		addInnerClassAttributes (classBuilder);
+		AttributeHelper.addInnerClassAttributes (classBuilder, cip, td);
 	    });
 	return b;
     }
@@ -386,7 +386,7 @@ public class BytecodeGenerator {
 	    case BasicForStatement bfs -> handleBasicFor (cb, bfs);
 	    case EnhancedForStatement efs -> handleEnhancedFor (cb, efs);
 	    case SynchronizedStatement ss -> handleSynchronized (cb, ss);
-	    case ClassInstanceCreationExpression cic -> handleNew (cb, cic);
+	    case ClassInstanceCreationExpression cic -> CodeUtil.callNew (cb, cic);
 	    case ArrayCreationExpression ace -> handleArrayCreation (cb, ace);
 	    case ArrayAccess aa -> handleArrayAccess (cb, aa);
 	    case SwitchExpression se -> handleSwitchExpression (cb, se);
@@ -607,7 +607,7 @@ public class BytecodeGenerator {
 
 	// for statements outside of if-tests and similar
 	private void handleTwoPartExpression (CodeBuilder cb, TwoPartExpression two) {
-	    if (isString (two)) {
+	    if (CodeUtil.isString (two)) {
 		handleStringConcat (cb, two);
 	    } else if (isArithmeticOrLogical (two)) {
 		handleTwoPartSetup (cb, two);
@@ -631,7 +631,7 @@ public class BytecodeGenerator {
 	    List<ClassDesc> types = new ArrayList<> ();
 	    StringBuilder recipeBuilder = new StringBuilder ();
 	    for (ParseTreeNode p : parts) {
-		if (isLiteral (p)) {
+		if (CodeUtil.isLiteral (p)) {
 		    recipeBuilder.append (p.getValue ());
 		} else {
 		    handleStatements (cb, p);
@@ -669,7 +669,7 @@ public class BytecodeGenerator {
 	    queue.addLast (tp.part2 ());
 	    while (!queue.isEmpty ()) {
 		ParseTreeNode p = queue.removeFirst ();
-		if (p instanceof TwoPartExpression t && isString (t)) {
+		if (p instanceof TwoPartExpression t && CodeUtil.isString (t)) {
 		    queue.addFirst (t.part2 ());
 		    queue.addFirst (t.part1 ());
 		} else {
@@ -677,16 +677,6 @@ public class BytecodeGenerator {
 		}
 	    }
 	    return res;
-	}
-
-	private boolean isLiteral (ParseTreeNode p) {
-	    // TODO: add a few more types?
-	    return p instanceof NumericLiteral ||
-		p instanceof StringLiteral;
-	}
-
-	private boolean isString (TwoPartExpression two) {
-	    return two.fullName () == FullNameHandler.JL_STRING;
 	}
 
 	private boolean isArithmeticOrLogical (TwoPartExpression two) {
@@ -1279,13 +1269,6 @@ public class BytecodeGenerator {
 	    cb.labelBinding (endLabel);
 	}
 
-	private void handleNew (CodeBuilder cb, ClassInstanceCreationExpression cic) {
-	    ClassDesc cd = ClassDescUtils.getClassDesc (cic.type ());
-	    cb.new_ (cd);
-	    cb.dup ();
-	    cb.invokespecial (cd, INSTANCE_INIT, INIT_SIGNATURE);
-	}
-
 	private void handleArrayCreation (CodeBuilder cb, ArrayCreationExpression ace) {
 	    handleStatements (cb, ace.getChildren ());
 	    FullNameHandler type = ace.innerFullName ();
@@ -1513,47 +1496,5 @@ public class BytecodeGenerator {
 
     private record MethodSignatureHolder (MethodTypeDesc desc, String signature) {
 	// empty
-    }
-
-    /* We need to add all nested classes, not just the direct inner classes of tdt.
-     * Here is how it may look for: class Inners { class Inner1 { class Inner1_Inner1 {} } class Inner2 }
-     #21= #14 of #7;   // Inner2=class Inners$Inner2 of class Inners
-     #22= #16 of #7;   // Inner1=class Inners$Inner1 of class Inners
-     #23= #18 of #16;  // Inner1_Inner1=class Inners$Inner1$Inner1_Inner1 of class Inners$Inner1
-    */
-    private void addInnerClassAttributes (ClassBuilder classBuilder) {
-	List<InnerClassInfo> innerClassInfos = new ArrayList<> ();
-	Deque<TypeDeclaration> queue = new ArrayDeque<> ();
-	queue.add (td);
-	while (!queue.isEmpty ()) {
-	    TypeDeclaration outer = queue.removeFirst ();
-	    for (TypeDeclaration inner : outer.getInnerClasses ()) {
-		innerClassInfos.add (getInnerClassInfo (outer, inner));
-		queue.add (inner);
-	    }
-	}
-	/* We need to add outer classes as well.
-	 * For the Inner1_Inner1 above javac produces:
-	 #20= #18 of #15;   // Inner1=class Inners$Inner1 of class Inners
-	 #21= #7 of #18;    // Inner1_Inner1=class Inners$Inner1$Inner1_Inner1 of class Inners$Inner1
-	*/
-	TypeDeclaration outer = td.getOuterClass ();
-	TypeDeclaration inner = td;
-	while (outer != null) {
-	    innerClassInfos.add (getInnerClassInfo (outer, inner));
-	    inner = outer;
-	    outer = outer.getOuterClass ();
-	}
-
-	if (!innerClassInfos.isEmpty ())
-	    classBuilder.with (InnerClassesAttribute.of (innerClassInfos));
-    }
-
-    private InnerClassInfo getInnerClassInfo (TypeDeclaration outer, TypeDeclaration inner) {
-	ClassDesc innerClass = ClassDesc.of (cip.getFullName (inner).getFullDollarName ());
-	Optional<ClassDesc> outerClass = Optional.of (ClassDesc.of (cip.getFullName (outer).getFullDollarName ()));
-	Optional<String> innerName = Optional.of (inner.getName ());
-	int flags = inner.flags ();
-	return InnerClassInfo.of (innerClass, outerClass, innerName, flags);
     }
 }

@@ -4,14 +4,19 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 
+import org.khelekore.parjac2.javacompiler.BytecodeGenerator;
 import org.khelekore.parjac2.javacompiler.ClassDescUtils;
 import org.khelekore.parjac2.javacompiler.DoubleLiteral;
 import org.khelekore.parjac2.javacompiler.IntLiteral;
 import org.khelekore.parjac2.javacompiler.LongLiteral;
+import org.khelekore.parjac2.javacompiler.NumericLiteral;
+import org.khelekore.parjac2.javacompiler.StringLiteral;
+import org.khelekore.parjac2.javacompiler.syntaxtree.ClassInstanceCreationExpression;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ConstructorDeclarationInfo;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FormalParameterBase;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHelper;
+import org.khelekore.parjac2.javacompiler.syntaxtree.TwoPartExpression;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
@@ -25,6 +30,13 @@ public class CodeUtil {
 	cb.aload (0);
 	ClassDesc owner = ClassDescUtils.getClassDesc (td.getSuperClass ());
 	cb.invokespecial (owner, ConstantDescs.INIT_NAME, MethodTypeDesc.ofDescriptor ("()V"));
+    }
+
+    public static void callNew (CodeBuilder cb, ClassInstanceCreationExpression cic) {
+	ClassDesc cd = ClassDescUtils.getClassDesc (cic.type ());
+	cb.new_ (cd);
+	cb.dup ();
+	cb.invokespecial (cd, BytecodeGenerator.INSTANCE_INIT, BytecodeGenerator.INIT_SIGNATURE);
     }
 
     public static void loadParameter (CodeBuilder cb, FormalParameterBase fpb) {
@@ -129,5 +141,15 @@ public class CodeUtil {
 	} else {
 	    cb.ldc (d);
 	}
+    }
+
+    public static boolean isLiteral (ParseTreeNode p) {
+	// TODO: add a few more types?
+	return p instanceof NumericLiteral ||
+	    p instanceof StringLiteral;
+    }
+
+    public static boolean isString (TwoPartExpression two) {
+	return two.fullName () == FullNameHandler.JL_STRING;
     }
 }
