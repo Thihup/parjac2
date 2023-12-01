@@ -2,9 +2,12 @@ package org.khelekore.parjac2.javacompiler;
 
 import java.util.List;
 
+import org.khelekore.parjac2.javacompiler.syntaxtree.TwoPartExpression;
+import org.khelekore.parjac2.parser.Token;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 import io.github.dmlloyd.classfile.CodeBuilder;
+import io.github.dmlloyd.classfile.Opcode;
 
 public interface MethodContentGenerator {
 
@@ -13,4 +16,8 @@ public interface MethodContentGenerator {
     }
 
     void handleStatements (CodeBuilder cb, List<? extends ParseTreeNode> statements);
+
+    Opcode getReverseZeroJump (Token t);
+    Opcode getTwoPartJump (TwoPartExpression t);
+    Opcode getReverseTwoPartJump (TwoPartExpression t);
 }

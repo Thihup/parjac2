@@ -32,6 +32,8 @@ import io.github.dmlloyd.classfile.attribute.SourceFileAttribute;
 import org.khelekore.parjac2.javacompiler.code.ArrayGenerator;
 import org.khelekore.parjac2.javacompiler.code.AttributeHelper;
 import org.khelekore.parjac2.javacompiler.code.CodeUtil;
+import org.khelekore.parjac2.javacompiler.code.LocalVariableHandler;
+import org.khelekore.parjac2.javacompiler.code.LoopHandler;
 import org.khelekore.parjac2.javacompiler.code.SwitchGenerator;
 import org.khelekore.parjac2.javacompiler.code.SynchronizationGenerator;
 import org.khelekore.parjac2.javacompiler.syntaxtree.*;
@@ -345,11 +347,11 @@ public class BytecodeGenerator {
 	    case Ternary t -> handleTernary (cb, t);
 	    case IfThenStatement ifts -> handleIf (cb, ifts);
 	    case Assignment a -> handleAssignment (cb, partsToHandle, a);
-	    case LocalVariableDeclaration lv -> handleLocalVariables (cb, lv);
+	    case LocalVariableDeclaration lv -> LocalVariableHandler.handleLocalVariables (this, cb, lv);
 	    case PostIncrementExpression pie -> handlePostIncrement (cb, pie);
 	    case PostDecrementExpression pde -> handlePostDecrement (cb, pde);
-	    case BasicForStatement bfs -> handleBasicFor (cb, bfs);
-	    case EnhancedForStatement efs -> handleEnhancedFor (cb, efs);
+	    case BasicForStatement bfs -> LoopHandler.handleBasicFor (this, cb, bfs);
+	    case EnhancedForStatement efs -> LoopHandler.handleEnhancedFor (this, cb, efs);
 	    case SynchronizedStatement ss -> SynchronizationGenerator.handleSynchronized (this, cb, ss);
 	    case ClassInstanceCreationExpression cic -> CodeUtil.callNew (cb, cic);
 	    case ArrayCreationExpression ace -> ArrayGenerator.handleArrayCreation (this, cb, ace);
@@ -675,7 +677,7 @@ public class BytecodeGenerator {
 	    cb.instanceof_ (ClassDescUtils.getClassDesc (check));
 	    if (p2 instanceof LocalVariableDeclaration lvd) {
 		cb.ifeq (elseLabel);
-		handleLocalVariables (cb, lvd);                    // get slot for variable
+		LocalVariableHandler.handleLocalVariables (this, cb, lvd); // get slot for variable
 		handleStatements (cb, tp.part1 ());
 		cb.checkcast (ClassDescUtils.getClassDesc (check));
 		cb.astore (lvd.getDeclarators ().get (0).slot ()); // only one!
@@ -934,21 +936,6 @@ public class BytecodeGenerator {
 	    cb.storeInstruction (kind, slot);
 	}
 
-	private void handleLocalVariables (CodeBuilder cb, LocalVariableDeclaration lvs) {
-	    FullNameHandler fn = FullNameHelper.type (lvs.getType ());
-	    for (VariableDeclarator lv : lvs.getDeclarators ()) {
-		TypeKind kind = FullNameHelper.getTypeKind (fn);
-		int slot = cb.allocateLocal (kind);
-		lv.localSlot (slot);
-		if (lv.hasInitializer ()) {
-		    handleStatements (cb, lv.initializer ());
-		    FullNameHandler fromType = FullNameHelper.type (lv.initializer ());
-		    CodeUtil.widenOrAutoBoxAsNeeded (cb, fromType, fn, kind);
-		    cb.storeInstruction (kind, slot);
-		}
-	    }
-	}
-
 	private void handlePostIncrement (CodeBuilder cb, PostIncrementExpression pie) {
 	    handlePostChange (cb, pie.expression (), 1);
 	}
@@ -1003,153 +990,7 @@ public class BytecodeGenerator {
 		cb.putstatic (owner, vi.name (), type);
 	}
 
-	private void handleBasicFor (CodeBuilder cb, BasicForStatement bfs) {
-	    ParseTreeNode forInit = bfs.forInit ();
-	    ParseTreeNode expression = bfs.expression ();
-	    ParseTreeNode forUpdate = bfs.forUpdate ();
-	    ParseTreeNode statement = bfs.statement ();
-
-	    if (forInit != null)
-		handleStatements (cb, forInit);
-	    Label lExp = cb.newBoundLabel ();
-	    Label lEnd = cb.newLabel ();
-	    if (expression != null) {
-		handleForExpression (cb, expression, lEnd);
-	    }
-	    handleStatements (cb, statement);
-	    handleStatements (cb, forUpdate);
-	    cb.goto_ (lExp); // what about goto_w?
-	    cb.labelBinding (lEnd);
-	}
-
-	private void handleForExpression (CodeBuilder cb, ParseTreeNode exp, Label endLabel) {
-	    Opcode operator = Opcode.IFEQ;
-	    if (exp instanceof UnaryExpression) {
-		handleStatements (cb, exp);
-		operator = Opcode.IFNE;
-	    } else if (exp instanceof TwoPartExpression tp) {
-		handleStatements (cb, tp.part1 ());
-
-		ParseTreeNode p2 = tp.part2 ();
-		if (p2 instanceof IntLiteral il && il.intValue () == 0) {
-		    operator = getReverseZeroJump (tp.token ());
-		} else {
-		    handleStatements (cb, tp.part2 ());
-		    operator = getReverseTwoPartJump (tp);
-		}
-	    }
-	    cb.branchInstruction (operator, endLabel);
-	}
-
-	private void handleEnhancedFor (CodeBuilder cb, EnhancedForStatement efs) {
-	    ParseTreeNode exp = efs.expression ();
-	    FullNameHandler fn = FullNameHelper.type (exp);
-	    if (fn.isArray ()) {
-		handleArrayLoop (cb, efs, fn);
-	    } else {
-		handleIteratorLoop (cb, efs, fn);
-	    }
-	}
-
-	/*
-	  static int a (int[] x) {          Transformed into this:
-	  int r = 0;                    int r = 0;
-	  int[] xc = x; int s = xc.length;
-	  for (int a : x)               for (int i = 0; i < s; i++) {
-	  r += a;                        a = xc[i]; r += a;
-	  }                             }
-	  return r;                     return r;
-	  }}
-	*/
-	private void handleArrayLoop (CodeBuilder cb, EnhancedForStatement efs, FullNameHandler fn) {
-	    LocalVariableDeclaration lv = efs.localVariable ();
-	    List<VariableDeclarator> vds = lv.getDeclarators ();
-	    if (vds.size () > 1)
-		throw new IllegalStateException ("Unable to handle more than one variable in EnhancedForStatement.");
-	    VariableDeclarator vd = vds.get (0);
-	    FullNameHandler varName = FullNameHelper.type (lv);
-	    TypeKind varKind = FullNameHelper.getTypeKind (varName);
-
-	    TypeKind kind = FullNameHelper.getTypeKind (fn);
-	    ArrayInfo ai = ArrayInfo.create (cb, kind);
-	    arrayLoopSetup (cb, efs, ai);                    // copy array, store length
-
-	    Label loopLabel = cb.newBoundLabel ();
-	    Label endLabel = cb.newLabel ();
-	    arrayLoopIndexCheck (cb, ai, endLabel);          // i < s
-	    storeArrayLoopValue (cb, ai, lv, vd, varKind);   // a = xc[i]
-	    handleStatements (cb, efs.statement ());
-	    cb.iinc (ai.indexSlot (), 1);                    // i++
-	    cb.goto_ (loopLabel); // what about goto_w?
-	    cb.labelBinding (endLabel);
-	}
-
-	private void arrayLoopSetup (CodeBuilder cb, EnhancedForStatement efs, ArrayInfo ai) {
-	    handleStatements (cb, efs.expression ());
-	    cb.astore (ai.arrayCopySlot ());
-	    cb.aload (ai.arrayCopySlot ());
-	    cb.arraylength ();
-	    cb.istore (ai.lengthSlot ());
-	    cb.iconst_0 ();
-	    cb.istore (ai.indexSlot ());
-	}
-
-	private void arrayLoopIndexCheck (CodeBuilder cb, ArrayInfo ai, Label endLabel) {
-	    cb.iload (ai.indexSlot ());
-	    cb.iload (ai.lengthSlot ());
-	    cb.if_icmpeq (endLabel);
-	}
-
-	private void storeArrayLoopValue (CodeBuilder cb, ArrayInfo ai, LocalVariableDeclaration lv,
-					  VariableDeclarator vd, TypeKind varKind) {
-	    cb.aload (ai.arrayCopySlot ());
-	    cb.iload (ai.indexSlot ());
-	    cb.iaload ();
-	    handleLocalVariables (cb, lv);
-	    int varSlot = vd.slot ();
-	    cb.storeInstruction (varKind, varSlot);
-	}
-
-	private record ArrayInfo (int arrayCopySlot, int lengthSlot, int indexSlot) {
-	    public static ArrayInfo create (CodeBuilder cb, TypeKind kind) {
-		return new ArrayInfo (cb.allocateLocal (kind), cb.allocateLocal (TypeKind.IntType), cb.allocateLocal (TypeKind.IntType));
-	    }
-	}
-
-	private void handleIteratorLoop (CodeBuilder cb, EnhancedForStatement efs, FullNameHandler fn) {
-	    int iteratorSlot = cb.allocateLocal (TypeKind.ReferenceType);
-	    handleStatements (cb, efs.expression ());
-	    ClassDesc owner = ClassDescUtils.getClassDesc (fn);
-	    ClassDesc iteratorDesc = ClassDesc.of ("java.util.Iterator");
-	    MethodTypeDesc type = MethodTypeDesc.of (iteratorDesc);
-	    cb.invokeinterface (owner, "iterator", type);
-	    cb.astore (iteratorSlot);
-
-	    Label loopLabel = cb.newBoundLabel ();
-	    Label endLabel = cb.newLabel ();
-
-	    cb.aload (iteratorSlot);
-	    type = MethodTypeDesc.ofDescriptor ("()Z");
-	    cb.invokeinterface (iteratorDesc, "hasNext", type);
-	    cb.ifeq (endLabel);
-
-	    cb.aload (iteratorSlot);
-	    type = MethodTypeDesc.of (ConstantDescs.CD_Object);
-	    cb.invokeinterface (iteratorDesc, "next", type);
-	    // TODO: add: cb.checkcast (genericType);
-
-	    LocalVariableDeclaration lv = efs.localVariable ();
-	    handleLocalVariables (cb, lv);
-	    int varSlot = lv.getDeclarators ().get (0).slot ();
-	    cb.storeInstruction (TypeKind.ReferenceType, varSlot);
-
-	    handleStatements (cb, efs.statement ());
-
-	    cb.goto_ (loopLabel); // what about goto_w?
-	    cb.labelBinding (endLabel);
-	}
-
-	private Opcode getReverseZeroJump (Token t) {
+	@Override public Opcode getReverseZeroJump (Token t) {
 	    if (t == javaTokens.DOUBLE_EQUAL) return Opcode.IFNE;
 	    if (t == javaTokens.NOT_EQUAL) return Opcode.IFEQ;
 	    if (t == javaTokens.LT) return Opcode.IFGE;
@@ -1159,11 +1000,11 @@ public class BytecodeGenerator {
 	    throw new IllegalArgumentException ("Unknown zero comparisson: " + t);
 	}
 
-	private Opcode getTwoPartJump (TwoPartExpression t) {
+	@Override public Opcode getTwoPartJump (TwoPartExpression t) {
 	    return getForwardJump (t.token (), t.optype () == TwoPartExpression.OpType.PRIMITIVE_OP);
 	}
 
-	private Opcode getReverseTwoPartJump (TwoPartExpression t) {
+	@Override public Opcode getReverseTwoPartJump (TwoPartExpression t) {
 	    return getReversedJump (t.token (), t.optype () == TwoPartExpression.OpType.PRIMITIVE_OP);
 	}
 
