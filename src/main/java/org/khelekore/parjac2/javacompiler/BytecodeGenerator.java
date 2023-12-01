@@ -34,6 +34,7 @@ import io.github.dmlloyd.classfile.attribute.SignatureAttribute;
 import io.github.dmlloyd.classfile.attribute.SourceFileAttribute;
 import io.github.dmlloyd.classfile.instruction.SwitchCase;
 
+import org.khelekore.parjac2.javacompiler.code.CodeUtil;
 import org.khelekore.parjac2.javacompiler.syntaxtree.*;
 import org.khelekore.parjac2.parser.Grammar;
 import org.khelekore.parjac2.parser.Token;
@@ -327,7 +328,7 @@ public class BytecodeGenerator {
 		}
 	    }
 	    if (!explicitInvocation)
-		addImplicitSuper (cb, cdb);
+		CodeUtil.callSuperInit (cb, td, cdb);
 
 	    List<SyntaxTreeNode> initializers = td.getInstanceInitializers ();
 	    if (initializers != null) {
@@ -339,13 +340,6 @@ public class BytecodeGenerator {
 
 	private boolean isSuperOrThis (ParseTreeNode p) {
 	    return p instanceof ExplicitConstructorInvocation;
-	}
-
-	private void addImplicitSuper (CodeBuilder cb, ConstructorDeclarationInfo cdb) {
-	    cb.lineNumber (cdb.position ().getLineNumber ()); // about what we want
-	    cb.aload (0);
-	    ClassDesc owner = ClassDescUtils.getClassDesc (td.getSuperClass ());
-	    cb.invokespecial (owner, ConstantDescs.INIT_NAME, MethodTypeDesc.ofDescriptor ("()V"));
 	}
 
 	private void addMethodContent (CodeBuilder cb, Block body, TypeKind returnType) {
@@ -402,10 +396,10 @@ public class BytecodeGenerator {
 	    case MethodReference mr -> callMethodReference (cb, mr);
 
 	    case StringLiteral l -> cb.ldc (l.getValue ());
-	    case IntLiteral i -> handleInt (cb, i);
-	    case LongLiteral l -> handleLong (cb, l);
-	    case DoubleLiteral d -> handleDouble (cb, d);
-	    case ThisPrimary t -> cb.aload (cb.receiverSlot ());
+	    case IntLiteral i -> CodeUtil.handleInt (cb, i);
+	    case LongLiteral l -> CodeUtil.handleLong (cb, l);
+	    case DoubleLiteral d -> CodeUtil.handleDouble (cb, d);
+	    case ThisPrimary t -> CodeUtil.handleThis (cb);
 	    case TokenNode t -> handleToken (cb, t);
 	    case ParseTreeNode n -> addChildren (partsToHandle, n);
 	    default -> throw new IllegalArgumentException ("Unknown type: " + p + ", " + p.getClass ().getName ());
@@ -424,7 +418,7 @@ public class BytecodeGenerator {
 		handleFrom (cb, from, vi);
 	    } else {
 		if (vi.fieldType () == VariableInfo.Type.PARAMETER) {
-		    loadParameter (cb, (FormalParameterBase)vi);
+		    CodeUtil.loadParameter (cb, (FormalParameterBase)vi);
 		} else if (vi.fieldType () == VariableInfo.Type.LOCAL) {
 		    LocalVariable lv = (LocalVariable)vi;
 		    int slot = lv.vd ().slot ();
@@ -446,22 +440,6 @@ public class BytecodeGenerator {
 	    } else {
 		handleStatements (cb, from);
 		cb.getfield (owner, name, type);
-	    }
-	}
-
-	private void loadParameter (CodeBuilder cb, FormalParameterBase fpb) {
-	    int slot = cb.parameterSlot (fpb.slot ());
-	    FullNameHandler type = fpb.typeName ();
-	    if (type == FullNameHandler.INT || type == FullNameHandler.BOOLEAN)
-		cb.iload (slot);
-	    else if (type == FullNameHandler.LONG)
-		cb.lload (slot);
-	    else if (type == FullNameHandler.DOUBLE)
-		cb.dload (slot);
-	    else if (type == FullNameHandler.FLOAT)
-		cb.fload (slot);
-	    else {  // TODO: more types
-		cb.aload (slot);
 	    }
 	}
 
@@ -535,7 +513,7 @@ public class BytecodeGenerator {
 		} else {
 		    handleStatements (cb, p);
 		}
-		widenOrAutoBoxAsNeeded (cb, fromType, toType, tkTo);
+		CodeUtil.widenOrAutoBoxAsNeeded (cb, fromType, toType, tkTo);
 	    }
 	}
 
@@ -608,47 +586,13 @@ public class BytecodeGenerator {
 		});
 	}
 
-	private void widenOrAutoBoxAsNeeded (CodeBuilder cb, FullNameHandler from, FullNameHandler to, TypeKind tkTo) {
-	    if (from.getType () == FullNameHandler.Type.PRIMITIVE) {
-		if (to.getType () == FullNameHandler.Type.OBJECT) {
-		    autoBox (cb, (FullNameHandler.Primitive)from);
-		} else if (!to.equals (from)) {
-		    TypeKind tkr = FullNameHelper.getTypeKind (from);
-		    cb.convertInstruction (tkr, tkTo);
-		}
-	    } else if (to.getType () == FullNameHandler.Type.PRIMITIVE) {
-		autoUnBox (cb, from, (FullNameHandler.Primitive)to);
-	    }
-	}
-
-	// We only know we want some kind of object, we can not pass in to to get the owner
-	private void autoBox (CodeBuilder cb, FullNameHandler.Primitive p) {
-	    FullNameHandler ab = FullNameHelper.getAutoBoxOption (p);
-	    ClassDesc owner = ClassDescUtils.getClassDesc (ab);
-	    String name = "valueOf";
-	    MethodTypeDesc type = MethodTypeDesc.ofDescriptor ("(" + p.getSignature () + ")L" + ab.getSlashName () + ";");
-	    cb.invokestatic (owner, name, type);
-	}
-
-	// from will be java.lang.Long and to will be long, so here we can trust them
-	private void autoUnBox (CodeBuilder cb, FullNameHandler from, FullNameHandler.Primitive to) {
-	    ClassDesc owner = ClassDescUtils.getClassDesc (from);
-	    String name = to.getFullDotName () + "Value"; // intValue, longValue, ...
-	    MethodTypeDesc type = MethodTypeDesc.ofDescriptor ("()"+ to.signature ());
-	    cb.invokevirtual (owner, name, type);
-	}
-
-	private void addPrimitiveCast (CodeBuilder cb, TypeKind from, TypeKind to) {
-	    cb.convertInstruction (from, to);
-	}
-
 	private void handleUnaryExpression (CodeBuilder cb, UnaryExpression u) {
 	    Token t = u.operator ();
 	    if (t == javaTokens.MINUS) {
 		ParseTreeNode exp = u.expression ();
 		if (exp instanceof IntLiteral il) {
 		    int value = il.getValue ();
-		    handleInt (cb, -value);
+		    CodeUtil.handleInt (cb, -value);
 		}
 	    } else if (t == javaTokens.TILDE) {
 		handleStatements (cb, u.expression ());
@@ -753,25 +697,10 @@ public class BytecodeGenerator {
 	    FullNameHandler fnt = two.fullName ();
 	    ParseTreeNode p1 = two.part1 ();
 	    handleStatements (cb, p1);
-	    widen (cb, fnt, p1);
+	    CodeUtil.widen (cb, fnt, p1);
 	    ParseTreeNode p2 = two.part2 ();
 	    handleStatements (cb, p2);
-	    widen (cb, fnt, p2);
-	}
-
-	private void widen (CodeBuilder cb, FullNameHandler targetType, ParseTreeNode p) {
-	    if (targetType == FullNameHandler.BOOLEAN)
-		targetType = FullNameHandler.INT;
-	    FullNameHandler pfn = FullNameHelper.type (p);
-	    if (pfn == FullNameHandler.BOOLEAN)
-		pfn = FullNameHandler.INT;
-	    if (pfn == targetType)
-		return;
-	    if (pfn.isPrimitive ()) {
-		TypeKind tkm = FullNameHelper.getTypeKind (targetType);
-		TypeKind tkr = FullNameHelper.getTypeKind (FullNameHelper.type (p));
-		addPrimitiveCast (cb, tkr, tkm);
-	    }
+	    CodeUtil.widen (cb, fnt, p2);
 	}
 
 	private void mathOp (CodeBuilder cb, FullNameHandler fullName, Token token) {
@@ -802,13 +731,13 @@ public class BytecodeGenerator {
 	    FullNameHandler fnt = two.fullName ();
 	    ParseTreeNode p1 = two.part1 ();
 	    handleStatements (cb, p1);
-	    widen (cb, fnt, p1);
+	    CodeUtil.widen (cb, fnt, p1);
 
 	    ParseTreeNode p2 = two.part2 ();
 	    Opcode jumpInstruction = Opcode.IFEQ;
 	    if (!(fnt == FullNameHandler.BOOLEAN && p2 instanceof IntLiteral il && il.intValue () == 0)) {
 		handleStatements (cb, p2);
-		widen (cb, fnt, p2);
+		CodeUtil.widen (cb, fnt, p2);
 		jumpInstruction = getTwoPartJump (two);
 	    }
 	    return jumpInstruction;
@@ -1059,7 +988,7 @@ public class BytecodeGenerator {
 		if (lv.hasInitializer ()) {
 		    handleStatements (cb, lv.initializer ());
 		    FullNameHandler fromType = FullNameHelper.type (lv.initializer ());
-		    widenOrAutoBoxAsNeeded (cb, fromType, fn, kind);
+		    CodeUtil.widenOrAutoBoxAsNeeded (cb, fromType, fn, kind);
 		    cb.storeInstruction (kind, slot);
 		}
 	    }
@@ -1111,7 +1040,7 @@ public class BytecodeGenerator {
 		cb.getfield (owner, vi.name (), type);
 	    else
 		cb.getstatic (owner, vi.name (), type);
-	    handleInt (cb, change);
+	    CodeUtil.handleInt (cb, change);
 	    cb.iadd ();
 	    if (isInstanceField (vi))
 		cb.putfield (owner, vi.name (), type);
@@ -1414,7 +1343,7 @@ public class BytecodeGenerator {
 		    cb.ldc ((ConstantDesc)srl.constant);
 		    cb.invokevirtual (owner, "equals", stringEqualsMtd);
 		    cb.ifeq (nextLookup);
-		    handleInt (cb, srl.secondaryValue);
+		    CodeUtil.handleInt (cb, srl.secondaryValue);
 		    cb.istore (lookupSlot);
 		    if (!me.equals (last) || lastSRL != srl)
 			cb.goto_ (nextLookup);
@@ -1434,7 +1363,7 @@ public class BytecodeGenerator {
 		    ParseTreeNode handler = srl.sr.handler ();
 		    handleStatements (cb, handler);
 		    FullNameHandler fn = FullNameHelper.type (handler);
-		    widenOrAutoBoxAsNeeded (cb, fn, toType, tkTo);
+		    CodeUtil.widenOrAutoBoxAsNeeded (cb, fn, toType, tkTo);
 		    cb.goto_ (end);
 		});
 	    cb.labelBinding (secondaryDefaultLabel);
@@ -1442,7 +1371,7 @@ public class BytecodeGenerator {
 		ParseTreeNode handler = blockInfo.secondaryDefault.handler ();
 		handleStatements (cb, handler);
 		FullNameHandler fn = FullNameHelper.type (handler);
-		widenOrAutoBoxAsNeeded (cb, fn, toType, tkTo);
+		CodeUtil.widenOrAutoBoxAsNeeded (cb, fn, toType, tkTo);
 	    }
 	    cb.labelBinding (end);
 	}
@@ -1521,46 +1450,6 @@ public class BytecodeGenerator {
 
 	private boolean isInstanceField (VariableInfo vi) {
 	    return !Flags.isStatic (vi.flags ());
-	}
-
-	private void handleInt (CodeBuilder cb, IntLiteral il) {
-	    int i = il.intValue ();
-	    handleInt (cb, i);
-	}
-
-	private void handleInt (CodeBuilder cb, int i) {
-	    if (i >= -1 && i <= 5) {
-		switch (i) {
-		case -1 -> cb.iconst_m1 ();
-		case 0 -> cb.iconst_0 ();
-		case 1 -> cb.iconst_1 ();
-		case 2 -> cb.iconst_2 ();
-		case 3 -> cb.iconst_3 ();
-		case 4 -> cb.iconst_4 ();
-		case 5 -> cb.iconst_5 ();
-		}
-	    } else if (i >= -128 && i <= 127) {
-		cb.bipush (i);
-	    } else if (i >= -32768 && i <= 32767) {
-		cb.sipush (i);
-	    } else {
-		cb.ldc (i);
-	    }
-	}
-
-	private void handleLong (CodeBuilder cb, LongLiteral l) {
-	    cb.ldc (l.longValue ());
-	}
-
-	private void handleDouble (CodeBuilder cb, DoubleLiteral dl) {
-	    double d = dl.doubleValue ();
-	    if (d == 0) {
-		cb.dconst_0 ();
-	    } else if (d == 1) {
-		cb.dconst_1 ();
-	    } else {
-		cb.ldc (d);
-	    }
 	}
 
 	private void handleToken (CodeBuilder cb, TokenNode tn) {
