@@ -348,8 +348,8 @@ public class BytecodeGenerator {
 	    case IfThenStatement ifts -> IfGenerator.handleIf (this, cb, ifts);
 	    case Assignment a -> handleAssignment (cb, partsToHandle, a);
 	    case LocalVariableDeclaration lv -> LocalVariableHandler.handleLocalVariables (this, cb, lv);
-	    case PostIncrementExpression pie -> IncrementGenerator.handlePostIncrement (cip, td, cb, pie);
-	    case PostDecrementExpression pde -> IncrementGenerator.handlePostDecrement (cip, td, cb, pde);
+	    case PostIncrementExpression pie -> IncrementGenerator.handlePostIncrement (this, cb, cip.getFullName (td), pie);
+	    case PostDecrementExpression pde -> IncrementGenerator.handlePostDecrement (this, cb, cip.getFullName (td), pde);
 	    case BasicForStatement bfs -> LoopGenerator.handleBasicFor (this, cb, bfs);
 	    case EnhancedForStatement efs -> LoopGenerator.handleEnhancedFor (this, cb, efs);
 	    case SynchronizedStatement ss -> SynchronizationGenerator.handleSynchronized (this, cb, ss);

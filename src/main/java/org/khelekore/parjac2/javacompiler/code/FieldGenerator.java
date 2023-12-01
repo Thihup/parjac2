@@ -17,6 +17,32 @@ public class FieldGenerator {
 
     public static void getField (MethodContentGenerator mcg, CodeBuilder cb,
 				 ParseTreeNode from, FullNameHandler currentClass, VariableInfo vi) {
+	FromResult fr = handleFrom (mcg, cb, from, currentClass, vi);
+	ClassDesc type = vi.typeClassDesc ();
+	if (fr.instanceField ()) {
+	    cb.getfield (fr.owner (), vi.name (), type);
+	} else {
+	    cb.getstatic (fr.owner (), vi.name (), type);
+	}
+    }
+
+    public static void putField (MethodContentGenerator mcg, FullNameHandler fieldOwner,
+				 CodeBuilder cb, VariableInfo vi, ParseTreeNode value) {
+	// TODO: handle "from" better
+	ClassDesc owner = ClassDescUtils.getClassDesc (fieldOwner);
+	ClassDesc type = vi.typeClassDesc ();
+	if (Flags.isInstanceField (vi))
+	    cb.aload (cb.receiverSlot ());
+	mcg.handleStatements (cb, value);
+	if (Flags.isInstanceField (vi)) {
+	    cb.putfield (owner, vi.name (), type);
+	} else {
+	    cb.putstatic (owner, vi.name (), type);
+	}
+    }
+
+    public static FromResult handleFrom (MethodContentGenerator mcg, CodeBuilder cb,
+					ParseTreeNode from, FullNameHandler currentClass, VariableInfo vi) {
 	ClassDesc owner;
 	boolean instanceField = Flags.isInstanceField (vi);
 	if (from instanceof ClassType ct) {
@@ -30,25 +56,8 @@ public class FieldGenerator {
 		cb.aload (cb.receiverSlot ());
 	    owner = ClassDescUtils.getClassDesc (currentClass);
 	}
-	ClassDesc type = vi.typeClassDesc ();
-	if (instanceField) {
-	    cb.getfield (owner, vi.name (), type);
-	} else {
-	    cb.getstatic (owner, vi.name (), type);
-	}
+	return new FromResult (owner, instanceField);
     }
 
-    public static void putField (MethodContentGenerator mcg, FullNameHandler fieldOwner,
-				 CodeBuilder cb, VariableInfo vi, ParseTreeNode value) {
-	ClassDesc owner = ClassDescUtils.getClassDesc (fieldOwner);
-	ClassDesc type = vi.typeClassDesc ();
-	if (Flags.isInstanceField (vi))
-	    cb.aload (cb.receiverSlot ());
-	mcg.handleStatements (cb, value);
-	if (Flags.isInstanceField (vi)) {
-	    cb.putfield (owner, vi.name (), type);
-	} else {
-	    cb.putstatic (owner, vi.name (), type);
-	}
-    }
+    public record FromResult (ClassDesc owner, boolean instanceField) { /* empty */ }
 }
