@@ -624,9 +624,10 @@ public class BytecodeGenerator {
 	    String name = op.getName ();
 	    // not sure about !=, <= >= but they are not assignments.
 	    if (name.endsWith ("=")) {
+		// TODO: implement better handling here, we currently generate
+		// TODO: code that access the field twice, we could use a single dup instead.
 		String newOp = name.substring (0, name.length () - 1);
 		Token t = grammar.getExistingToken (newOp);
-		// TODO: we might need to add cast to right type
 		TwoPartExpression tp = new TwoPartExpression (a.lhs (), t, a.rhs ());
 		tp.fullName (a.fullName ());
 		return tp;
