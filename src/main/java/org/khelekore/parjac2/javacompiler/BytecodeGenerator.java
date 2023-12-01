@@ -1,11 +1,7 @@
 package org.khelekore.parjac2.javacompiler;
 
 import java.lang.constant.ClassDesc;
-import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
-import java.lang.constant.DirectMethodHandleDesc;
-import java.lang.constant.DynamicCallSiteDesc;
-import java.lang.constant.MethodHandleDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
@@ -32,6 +28,7 @@ import io.github.dmlloyd.classfile.attribute.SourceFileAttribute;
 import org.khelekore.parjac2.javacompiler.code.ArrayGenerator;
 import org.khelekore.parjac2.javacompiler.code.AttributeHelper;
 import org.khelekore.parjac2.javacompiler.code.CodeUtil;
+import org.khelekore.parjac2.javacompiler.code.DynamicGenerator;
 import org.khelekore.parjac2.javacompiler.code.IfGenerator;
 import org.khelekore.parjac2.javacompiler.code.IncrementGenerator;
 import org.khelekore.parjac2.javacompiler.code.LocalVariableHandler;
@@ -490,7 +487,7 @@ public class BytecodeGenerator {
 	private void callLambda (CodeBuilder cb, LambdaExpression le) {
 	    String lambdaName = getLambdaName ("lambda$" + methodName + "$");
 	    MethodTypeDesc mtd = le.methodInfo ().methodTypeDesc ();
-	    callDynamic (cb, lambdaName, mtd, le.type (), false);
+	    DynamicGenerator.callDynamic (cb, name, flags, lambdaName, mtd, le.type (), false);
 	    // TODO: this adds the lambda before the method we are currently building, consider queueing this up
 	    addLambdaMethod (le, lambdaName, mtd);
 	}
@@ -499,40 +496,7 @@ public class BytecodeGenerator {
 	    MethodInfo info = mr.methodInfo ();
 	    boolean forceStatic = Flags.isStatic (mr.actualMethod ().flags ());
 	    MethodTypeDesc mtd = info.methodTypeDesc ();
-	    callDynamic (cb, mr.name (), mtd, mr.type (), forceStatic);
-	}
-
-	private void callDynamic (CodeBuilder cb, String dynamicMethod, MethodTypeDesc mtd, FullNameHandler dynamicType, boolean forceStatic) {
-	    DirectMethodHandleDesc.Kind kind = DirectMethodHandleDesc.Kind.STATIC;
-	    ClassDesc owner = ClassDesc.ofInternalName ("java/lang/invoke/LambdaMetafactory");
-	    String name = "metafactory";
-	    MethodTypeDesc lookupMethodType =
-		MethodTypeDesc.ofDescriptor ("(" +
-					     "Ljava/lang/invoke/MethodHandles$Lookup;" +  // caller
-					     "Ljava/lang/String;" +                       // interface method name
-					     "Ljava/lang/invoke/MethodType;" +            // factoryType
-					     "Ljava/lang/invoke/MethodType;" +            // interfaceMethodType
-					     "Ljava/lang/invoke/MethodHandle;" +          // implementation
-					     "Ljava/lang/invoke/MethodType;" +            // dynamicMethodType
-					     ")" +
-					     "Ljava/lang/invoke/CallSite;");
-	    DirectMethodHandleDesc bootstrapMethod =
-		MethodHandleDesc.ofMethod (kind, owner, name, lookupMethodType);
-	    ClassDesc lambdaOwner = ClassDesc.of (BytecodeGenerator.this.name.getFullDollarName ());
-
-	    DirectMethodHandleDesc.Kind dmk = DirectMethodHandleDesc.Kind.STATIC;
-	    List<ClassDesc> types = List.of ();
-	    if (!forceStatic && !Flags.isStatic (flags)) {
-		dmk = DirectMethodHandleDesc.Kind.VIRTUAL;
-		cb.aload (0);
-		types = List.of (ClassDescUtils.getClassDesc (BytecodeGenerator.this.name));
-	    }
-	    ClassDesc ret = ClassDescUtils.getClassDesc (dynamicType);
-	    MethodTypeDesc invocationType = MethodTypeDesc.of (ret, types);
-	    MethodHandleDesc mhd = MethodHandleDesc.of (dmk, lambdaOwner, dynamicMethod, mtd.descriptorString ());
-	    ConstantDesc[] bootstrapArgs = {mtd, mhd, mtd}; // TODO: second mtd may require changes
-	    DynamicCallSiteDesc ref = DynamicCallSiteDesc.of (bootstrapMethod, "run", invocationType, bootstrapArgs);
-	    cb.invokedynamic (ref);
+	    DynamicGenerator.callDynamic (cb, name, flags, mr.name (), mtd, mr.type (), forceStatic);
 	}
 
 	private String getLambdaName (String prefix) {
