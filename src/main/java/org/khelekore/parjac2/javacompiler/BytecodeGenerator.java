@@ -33,6 +33,7 @@ import org.khelekore.parjac2.javacompiler.code.ArrayGenerator;
 import org.khelekore.parjac2.javacompiler.code.AttributeHelper;
 import org.khelekore.parjac2.javacompiler.code.CodeUtil;
 import org.khelekore.parjac2.javacompiler.code.IfGenerator;
+import org.khelekore.parjac2.javacompiler.code.IncrementGenerator;
 import org.khelekore.parjac2.javacompiler.code.LocalVariableHandler;
 import org.khelekore.parjac2.javacompiler.code.LoopGenerator;
 import org.khelekore.parjac2.javacompiler.code.StringGenerator;
@@ -350,8 +351,8 @@ public class BytecodeGenerator {
 	    case IfThenStatement ifts -> IfGenerator.handleIf (this, cb, ifts);
 	    case Assignment a -> handleAssignment (cb, partsToHandle, a);
 	    case LocalVariableDeclaration lv -> LocalVariableHandler.handleLocalVariables (this, cb, lv);
-	    case PostIncrementExpression pie -> handlePostIncrement (cb, pie);
-	    case PostDecrementExpression pde -> handlePostDecrement (cb, pde);
+	    case PostIncrementExpression pie -> IncrementGenerator.handlePostIncrement (cip, td, cb, pie);
+	    case PostDecrementExpression pde -> IncrementGenerator.handlePostDecrement (cip, td, cb, pde);
 	    case BasicForStatement bfs -> LoopGenerator.handleBasicFor (this, cb, bfs);
 	    case EnhancedForStatement efs -> LoopGenerator.handleEnhancedFor (this, cb, efs);
 	    case SynchronizedStatement ss -> SynchronizationGenerator.handleSynchronized (this, cb, ss);
@@ -699,60 +700,6 @@ public class BytecodeGenerator {
 	    cb.storeInstruction (kind, slot);
 	}
 
-	private void handlePostIncrement (CodeBuilder cb, PostIncrementExpression pie) {
-	    handlePostChange (cb, pie.expression (), 1);
-	}
-
-	private void handlePostDecrement (CodeBuilder cb, PostDecrementExpression pde) {
-	    handlePostChange (cb, pde.expression (), -1);
-	}
-
-	private void handlePostChange (CodeBuilder cb, ParseTreeNode tn, int change) {
-	    if (tn instanceof DottedName dn)
-		tn = dn.replaced ();
-	    if (tn instanceof FieldAccess fa) {
-		ParseTreeNode from = fa.from ();
-		if (from != null) {
-		    // TODO: implement
-		} else {
-		    VariableInfo vi = fa.variableInfo ();
-		    switch (vi.fieldType ()) {
-		    case VariableInfo.Type.PARAMETER -> incrementLocalVariable (cb, ((FormalParameterBase)vi).slot (), change);
-		    case VariableInfo.Type.LOCAL -> incrementLocalVariable (cb, ((LocalVariable)vi).slot (), change);
-		    case VariableInfo.Type.FIELD -> incrementField (cb, vi, change);
-		    }
-		}
-	    } else if (tn instanceof ArrayAccess aa) {
-		// TODO: implement
-	    } else {
-		throw new IllegalStateException ("Unhandled post increment type: " + tn + ", " + tn.getClass ().getName () +
-						 ", " + tn.position ().toShortString ());
-	    }
-	}
-
-	private void incrementLocalVariable (CodeBuilder cb, int slot, int value) {
-	    cb.incrementInstruction (slot, value);
-	}
-
-	private void incrementField (CodeBuilder cb, VariableInfo vi, int change) {
-	    ClassDesc owner = ClassDescUtils.getClassDesc (cip.getFullName (td));
-	    ClassDesc type = vi.typeClassDesc ();
-	    if (isInstanceField (vi)) {
-		cb.aload (cb.receiverSlot ());
-		cb.dup ();
-	    }
-	    if (isInstanceField (vi))
-		cb.getfield (owner, vi.name (), type);
-	    else
-		cb.getstatic (owner, vi.name (), type);
-	    CodeUtil.handleInt (cb, change);
-	    cb.iadd ();
-	    if (isInstanceField (vi))
-		cb.putfield (owner, vi.name (), type);
-	    else
-		cb.putstatic (owner, vi.name (), type);
-	}
-
 	@Override public Opcode getReverseZeroJump (Token t) {
 	    if (t == javaTokens.DOUBLE_EQUAL) return Opcode.IFNE;
 	    if (t == javaTokens.NOT_EQUAL) return Opcode.IFEQ;
@@ -810,7 +757,7 @@ public class BytecodeGenerator {
 	private void getField (CodeBuilder cb, VariableInfo vi) {
 	    ClassDesc owner = ClassDescUtils.getClassDesc (cip.getFullName (td));
 	    ClassDesc type = vi.typeClassDesc ();
-	    if (isInstanceField (vi)) {
+	    if (Flags.isInstanceField (vi)) {
 		cb.aload (cb.receiverSlot ());
 		cb.getfield (owner, vi.name (), type);
 	    } else {
@@ -826,18 +773,14 @@ public class BytecodeGenerator {
 	private void putField (CodeBuilder cb, VariableInfo vi, Handler h) {
 	    ClassDesc owner = ClassDescUtils.getClassDesc (cip.getFullName (td));
 	    ClassDesc type = vi.typeClassDesc ();
-	    if (isInstanceField (vi))
+	    if (Flags.isInstanceField (vi))
 		cb.aload (cb.receiverSlot ());
 	    h.run (cb);
-	    if (isInstanceField (vi)) {
+	    if (Flags.isInstanceField (vi)) {
 		cb.putfield (owner, vi.name (), type);
 	    } else {
 		cb.putstatic (owner, vi.name (), type);
 	    }
-	}
-
-	private boolean isInstanceField (VariableInfo vi) {
-	    return !Flags.isStatic (vi.flags ());
 	}
 
 	private void handleToken (CodeBuilder cb, TokenNode tn) {

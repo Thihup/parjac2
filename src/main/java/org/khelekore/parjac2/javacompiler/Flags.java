@@ -52,6 +52,10 @@ public class Flags {
     public static boolean isVarArgs (int flag) {
 	return (flag & ACC_VARARGS) == ACC_VARARGS;
     }
+
+    public static boolean isInstanceField (VariableInfo vi) {
+	return !isStatic (vi.flags ());
+    }
 }
 
 /*
