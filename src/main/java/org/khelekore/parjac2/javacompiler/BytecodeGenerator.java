@@ -29,6 +29,7 @@ import io.github.dmlloyd.classfile.TypeKind;
 import io.github.dmlloyd.classfile.attribute.SignatureAttribute;
 import io.github.dmlloyd.classfile.attribute.SourceFileAttribute;
 
+import org.khelekore.parjac2.javacompiler.code.ArrayGenerator;
 import org.khelekore.parjac2.javacompiler.code.AttributeHelper;
 import org.khelekore.parjac2.javacompiler.code.CodeUtil;
 import org.khelekore.parjac2.javacompiler.code.SwitchGenerator;
@@ -354,11 +355,7 @@ public class BytecodeGenerator {
 	    return parts.size () > 0 && parts.get (parts.size () - 1) instanceof ReturnStatement;
 	}
 
-	@Override public void handleStatements (CodeBuilder cb, ParseTreeNode statement) {
-	    handleStatements (cb, List.of (statement));
-	}
-
-	private void handleStatements (CodeBuilder cb, List<? extends ParseTreeNode> statements) {
+	@Override public void handleStatements (CodeBuilder cb, List<? extends ParseTreeNode> statements) {
 	    Deque<Object> partsToHandle = new ArrayDeque<> ();
 	    partsToHandle.addAll (statements);
 	    while (!partsToHandle.isEmpty ()) {
@@ -386,8 +383,8 @@ public class BytecodeGenerator {
 	    case EnhancedForStatement efs -> handleEnhancedFor (cb, efs);
 	    case SynchronizedStatement ss -> SynchronizationGenerator.handleSynchronized (this, cb, ss);
 	    case ClassInstanceCreationExpression cic -> CodeUtil.callNew (cb, cic);
-	    case ArrayCreationExpression ace -> handleArrayCreation (cb, ace);
-	    case ArrayAccess aa -> handleArrayAccess (cb, aa);
+	    case ArrayCreationExpression ace -> ArrayGenerator.handleArrayCreation (this, cb, ace);
+	    case ArrayAccess aa -> ArrayGenerator.handleArrayAccess (this, cb, aa);
 	    case SwitchExpression se -> SwitchGenerator.handleSwitchExpression (this, cb, se);
 
 	    // We get LambdaExpression and MethodReference in Assignment, so we just want to store the handle to it
@@ -1235,30 +1232,6 @@ public class BytecodeGenerator {
 		return Opcode.IF_ACMPEQ;
 	    else
 		throw new IllegalStateException ("unhandled jump type: " + token);
-	}
-
-	private void handleArrayCreation (CodeBuilder cb, ArrayCreationExpression ace) {
-	    handleStatements (cb, ace.getChildren ());
-	    FullNameHandler type = ace.innerFullName ();
-	    if (ace.rank () == 1) {
-		if (type.isPrimitive ()) {
-		    TypeKind kind = FullNameHelper.getTypeKind (type);
-		    cb.newarray (kind);
-		} else {
-		    ClassDesc desc = ClassDescUtils.getClassDesc (type);
-		    cb.anewarray (desc);
-		}
-	    } else {
-		ClassDesc desc = ClassDescUtils.getClassDesc (ace.fullName ());
-		cb.multianewarray (desc, ace.dimExprs ());
-	    }
-	}
-
-	private void handleArrayAccess (CodeBuilder cb, ArrayAccess aa) {
-	    handleStatements (cb, aa.from ());
-	    handleStatements (cb, aa.slot ());
-	    TypeKind tk = FullNameHelper.getTypeKind (FullNameHelper.type (aa));
-	    cb.arrayLoadInstruction (tk);
 	}
 
 	private void getField (CodeBuilder cb, VariableInfo vi) {
