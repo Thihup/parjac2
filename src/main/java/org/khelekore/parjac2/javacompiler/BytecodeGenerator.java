@@ -32,8 +32,10 @@ import io.github.dmlloyd.classfile.attribute.SourceFileAttribute;
 import org.khelekore.parjac2.javacompiler.code.ArrayGenerator;
 import org.khelekore.parjac2.javacompiler.code.AttributeHelper;
 import org.khelekore.parjac2.javacompiler.code.CodeUtil;
+import org.khelekore.parjac2.javacompiler.code.IfGenerator;
 import org.khelekore.parjac2.javacompiler.code.LocalVariableHandler;
 import org.khelekore.parjac2.javacompiler.code.LoopHandler;
+import org.khelekore.parjac2.javacompiler.code.StringGenerator;
 import org.khelekore.parjac2.javacompiler.code.SwitchGenerator;
 import org.khelekore.parjac2.javacompiler.code.SynchronizationGenerator;
 import org.khelekore.parjac2.javacompiler.syntaxtree.*;
@@ -344,8 +346,8 @@ public class BytecodeGenerator {
 	    case ReturnStatement r -> handleReturn (cb, r);
 	    case UnaryExpression u -> handleUnaryExpression (cb, u);
 	    case TwoPartExpression tp -> handleTwoPartExpression (cb, tp);
-	    case Ternary t -> handleTernary (cb, t);
-	    case IfThenStatement ifts -> handleIf (cb, ifts);
+	    case Ternary t -> IfGenerator.handleTernary (this, cb, t);
+	    case IfThenStatement ifts -> IfGenerator.handleIf (this, cb, ifts);
 	    case Assignment a -> handleAssignment (cb, partsToHandle, a);
 	    case LocalVariableDeclaration lv -> LocalVariableHandler.handleLocalVariables (this, cb, lv);
 	    case PostIncrementExpression pie -> handlePostIncrement (cb, pie);
@@ -575,9 +577,9 @@ public class BytecodeGenerator {
 	// for statements outside of if-tests and similar
 	private void handleTwoPartExpression (CodeBuilder cb, TwoPartExpression two) {
 	    if (CodeUtil.isString (two)) {
-		handleStringConcat (cb, two);
+		StringGenerator.handleStringConcat (this, cb, two);
 	    } else if (isArithmeticOrLogical (two)) {
-		handleTwoPartSetup (cb, two);
+		IfGenerator.handleTwoPartSetup (this, cb, two);
 		mathOp (cb, two.fullName (), two.token ());
 	    } else if (two.token () == javaTokens.LOGICAL_AND) {
 		handleLogicalAnd (cb, two);
@@ -585,79 +587,16 @@ public class BytecodeGenerator {
 		handleLogicalOr (cb, two);
 	    } else if (two.token () == javaTokens.INSTANCEOF) {
 		Label elseLabel = cb.newLabel ();
-		handleInstanceOf (cb, two, elseLabel);
+		IfGenerator.handleInstanceOf (this, cb, two, elseLabel);
 		cb.labelBinding (elseLabel);
 	    } else {
-		Opcode jumpInstruction = handleOtherTwoPart (cb, two);
+		Opcode jumpInstruction = IfGenerator.handleOtherTwoPart (this, cb, two);
 		cb.ifThenElse (jumpInstruction, b -> b.iconst_1 (), b -> b.iconst_0 ());
 	    }
 	}
 
-	private void handleStringConcat (CodeBuilder cb, TwoPartExpression two) {
-	    List<ParseTreeNode> parts = getAllStringParts (two);
-	    List<ClassDesc> types = new ArrayList<> ();
-	    StringBuilder recipeBuilder = new StringBuilder ();
-	    for (ParseTreeNode p : parts) {
-		if (CodeUtil.isLiteral (p)) {
-		    recipeBuilder.append (p.getValue ());
-		} else {
-		    handleStatements (cb, p);
-		    types.add (ClassDescUtils.getClassDesc (FullNameHelper.type (p)));
-		    recipeBuilder.append ("\1");
-		}
-	    }
-	    String recipe = recipeBuilder.toString ();
-
-	    DirectMethodHandleDesc.Kind kind = DirectMethodHandleDesc.Kind.STATIC;
-	    ClassDesc owner = ClassDesc.ofInternalName ("java/lang/invoke/StringConcatFactory");
-	    String name = "makeConcatWithConstants";
-	    MethodTypeDesc lookupMethodType =
-		MethodTypeDesc.ofDescriptor ("(" +
-					     "Ljava/lang/invoke/MethodHandles$Lookup;" +
-					     "Ljava/lang/String;" +                        // name
-					     "Ljava/lang/invoke/MethodType;" +             // concat type
-					     "Ljava/lang/String;" +                        // recipe
-					     "[Ljava/lang/Object;" +                       // constants
-					     ")" +
-					     "Ljava/lang/invoke/CallSite;");
-	    DirectMethodHandleDesc bootstrapMethod =
-		MethodHandleDesc.ofMethod (kind, owner, name, lookupMethodType);
-	    ClassDesc ret = ClassDescUtils.getClassDesc (FullNameHandler.JL_STRING);
-	    MethodTypeDesc invocationType = MethodTypeDesc.of (ret, types);
-	    ConstantDesc[] bootstrapArgs = {recipe};
-	    DynamicCallSiteDesc ref = DynamicCallSiteDesc.of (bootstrapMethod, name, invocationType, bootstrapArgs);
-	    cb.invokedynamic (ref);
-	}
-
-	private List<ParseTreeNode> getAllStringParts (TwoPartExpression tp) {
-	    List<ParseTreeNode> res = new ArrayList<> ();
-	    Deque<ParseTreeNode> queue = new ArrayDeque<> ();
-	    queue.addLast (tp.part1 ());
-	    queue.addLast (tp.part2 ());
-	    while (!queue.isEmpty ()) {
-		ParseTreeNode p = queue.removeFirst ();
-		if (p instanceof TwoPartExpression t && CodeUtil.isString (t)) {
-		    queue.addFirst (t.part2 ());
-		    queue.addFirst (t.part1 ());
-		} else {
-		    res.add (p);
-		}
-	    }
-	    return res;
-	}
-
 	private boolean isArithmeticOrLogical (TwoPartExpression two) {
 	    return javaTokens.isArithmeticOrLogical (two.token ());
-	}
-
-	private void handleTwoPartSetup (CodeBuilder cb, TwoPartExpression two) {
-	    FullNameHandler fnt = two.fullName ();
-	    ParseTreeNode p1 = two.part1 ();
-	    handleStatements (cb, p1);
-	    CodeUtil.widen (cb, fnt, p1);
-	    ParseTreeNode p2 = two.part2 ();
-	    handleStatements (cb, p2);
-	    CodeUtil.widen (cb, fnt, p2);
 	}
 
 	private void mathOp (CodeBuilder cb, FullNameHandler fullName, Token token) {
@@ -668,36 +607,6 @@ public class BytecodeGenerator {
 	    if (c == null)
 		throw new IllegalArgumentException ("Unhandled type for math operations: " + fullName.getFullDotName () + ", token: " + token);
 	    c.accept (cb);
-	}
-
-	private void handleInstanceOf (CodeBuilder cb, TwoPartExpression tp, Label elseLabel) {
-	    handleStatements (cb, tp.part1 ());
-	    ParseTreeNode p2 = tp.part2 ();
-	    FullNameHandler check = FullNameHelper.type (p2);
-	    cb.instanceof_ (ClassDescUtils.getClassDesc (check));
-	    if (p2 instanceof LocalVariableDeclaration lvd) {
-		cb.ifeq (elseLabel);
-		LocalVariableHandler.handleLocalVariables (this, cb, lvd); // get slot for variable
-		handleStatements (cb, tp.part1 ());
-		cb.checkcast (ClassDescUtils.getClassDesc (check));
-		cb.astore (lvd.getDeclarators ().get (0).slot ()); // only one!
-	    }
-	}
-
-	private Opcode handleOtherTwoPart (CodeBuilder cb, TwoPartExpression two) {
-	    FullNameHandler fnt = two.fullName ();
-	    ParseTreeNode p1 = two.part1 ();
-	    handleStatements (cb, p1);
-	    CodeUtil.widen (cb, fnt, p1);
-
-	    ParseTreeNode p2 = two.part2 ();
-	    Opcode jumpInstruction = Opcode.IFEQ;
-	    if (!(fnt == FullNameHandler.BOOLEAN && p2 instanceof IntLiteral il && il.intValue () == 0)) {
-		handleStatements (cb, p2);
-		CodeUtil.widen (cb, fnt, p2);
-		jumpInstruction = getTwoPartJump (two);
-	    }
-	    return jumpInstruction;
 	}
 
 	private void handleLogicalAnd (CodeBuilder cb, TwoPartExpression tp) {
@@ -730,152 +639,6 @@ public class BytecodeGenerator {
 	    cb.iconst_0 ();
 	    cb.labelBinding (returnLabel);
 	    cb.ireturn ();
-	}
-
-	private void handleTernary (CodeBuilder cb, Ternary t) {
-	    handleGenericIfElse (cb, t.test (), t.thenPart (), t.elsePart ());
-	}
-
-	private void handleIf (CodeBuilder cb, IfThenStatement i) {
-	    handleGenericIfElse (cb, i.test (), i.thenPart (), i.elsePart ());
-	}
-
-	private void handleGenericIfElse (CodeBuilder cb, ParseTreeNode test, ParseTreeNode thenPart, ParseTreeNode elsePart) {
-	    Opcode jumpInstruction = null;
-	    if (test instanceof TwoPartExpression tp) {
-		Token token = tp.token ();
-		if (isShortCircut (token)) {
-		    handleLogicalIf (cb, thenPart, elsePart, tp);
-		    return;
-		}
-
-		if (token == javaTokens.INSTANCEOF) {
-		    handleStatements (cb, tp.part1 ());
-		    FullNameHandler check = FullNameHelper.type (tp.part2 ());
-		    cb.instanceof_ (ClassDescUtils.getClassDesc (check));
-		    jumpInstruction = Opcode.IFNE; // jump inverts, so we will use IFEQ
-		} else {
-		    handleTwoPartSetup (cb, tp);
-		    jumpInstruction = getTwoPartJump (tp);
-		}
-	    } else {
-		handleStatements (cb, test);
-		jumpInstruction = Opcode.IFNE;
-	    }
-	    if (elsePart != null) {
-		cb.ifThenElse (jumpInstruction,
-			       x -> handleStatements (x, thenPart),
-			       x -> handleStatements (x, elsePart));
-	    } else {
-		cb.ifThen (jumpInstruction,
-			   x -> handleStatements (x, thenPart));
-	    }
-	}
-
-	private void handleLogicalIf (CodeBuilder cb, ParseTreeNode thenPart, ParseTreeNode elsePart, TwoPartExpression tp) {
-	    Label thenLabel = cb.newLabel ();
-	    Label elseLabel = cb.newLabel ();
-	    handleLogicalChain (cb, tp, thenLabel, elseLabel, false);
-	    handleIfThenParts (cb, thenPart, elsePart, thenLabel, elseLabel);
-	}
-
-
-	/*
-	  On their own:
-	  && first test: false -> jump to elseLabel
-	  && second test: false -> jump to elseLabel
-	  || first test: true -> jump to thenLabel
-	  || second test: false -> jump to elseLabel
-
-	  Howerver
-	  && inside || need change:
-	  && first test: false -> jump to elseLabel
-	  && second test: true -> jump to thenLabel
-	*/
-	private void handleLogicalChain (CodeBuilder cb, TwoPartExpression tp, Label thenLabel, Label elseLabel, boolean insideOr) {
-	    ParseTreeNode p1 = tp.part1 ();
-	    ParseTreeNode p2 = tp.part2 ();
-	    boolean isOr = tp.token () == javaTokens.LOGICAL_OR;
-
-	    Label nextOption = null;
-	    if (isOr)
-		nextOption = cb.newLabel ();
-	    TwoPartExpression tp2 = null;
-	    if (p1 instanceof TwoPartExpression two)
-		tp2 = two;
-	    if (tp2 != null && isShortCircut (tp2.token ())) {
-		if (isOr)
-		    handleLogicalChain (cb, tp2, thenLabel, nextOption, true);
-		else
-		    handleLogicalChain (cb, tp2, thenLabel, elseLabel, false);
-	    } else if (tp2 != null && tp2.token () == javaTokens.INSTANCEOF) {
-		handleInstanceOf (cb, tp2, elseLabel);
-	    } else if (tp2 != null) {
-		handleOtherTwoPart (cb, tp2);
-		cb.branchInstruction (getReverseTwoPartJump (tp2), elseLabel);
-	    } else {
-		handleStatements (cb, p1);
-		firstTest (cb, isOr, thenLabel, elseLabel);
-	    }
-	    if (isOr)
-		cb.labelBinding (nextOption);
-
-	    tp2 = p2 instanceof TwoPartExpression two ? two : null;
-	    if (tp2 != null && isShortCircut (tp2.token ())) {
-		handleLogicalChain (cb, tp2, thenLabel, elseLabel, false);
-	    } else if (tp2 != null && tp2.token () == javaTokens.INSTANCEOF) {
-		handleInstanceOf (cb, tp2, elseLabel);
-	    } else if (tp2 != null) {
-		handleOtherTwoPart (cb, tp2);
-		cb.branchInstruction (getReverseTwoPartJump (tp2), elseLabel);
-	    } else {
-		handleStatements (cb, p2);
-		secondTest (cb, isOr, thenLabel, elseLabel, insideOr);
-	    }
-	}
-
-	private void firstTest (CodeBuilder cb, boolean isOr, Label thenLabel, Label elseLabel) {
-	    if (isOr)
-		cb.ifne (thenLabel);
-	    else
-		cb.ifeq (elseLabel);
-	}
-
-	private void secondTest (CodeBuilder cb, boolean isOr, Label thenLabel, Label elseLabel, boolean insideOr) {
-	    if (isOr)
-		cb.ifeq (elseLabel);
-	    else if (insideOr)
-		cb.ifne (thenLabel);
-	    else
-		cb.ifeq (elseLabel);
-	}
-
-	private void handleIfThenParts (CodeBuilder cb, ParseTreeNode thenPart, ParseTreeNode elsePart, Label thenLabel, Label elseLabel) {
-	    cb.labelBinding (thenLabel);
-	    handleStatements (cb, thenPart);
-	    Label endLabel = cb.newLabel ();
-	    if (!endsWithReturn (thenPart))
-		cb.goto_ (endLabel);
-	    cb.labelBinding (elseLabel);
-	    if (elsePart != null)
-		handleStatements (cb, elsePart);
-	    cb.labelBinding (endLabel);
-	}
-
-	private boolean endsWithReturn (ParseTreeNode p) {
-	    // TOOD: we might need more cases
-	    if (p instanceof ReturnStatement)
-		return true;
-	    if (p instanceof Block b) {
-		List<ParseTreeNode> ls = b.get ();
-		if (!ls.isEmpty () && ls.getLast () instanceof ReturnStatement)
-		    return true;
-	    }
-	    return false;
-	}
-
-	private boolean isShortCircut (Token token) {
-	    return token == javaTokens.LOGICAL_AND || token == javaTokens.LOGICAL_OR;
 	}
 
 	private void handleAssignment (CodeBuilder cb, Deque<Object> partsToHandle, Assignment a) {
@@ -1098,6 +861,10 @@ public class BytecodeGenerator {
 	    List<ParseTreeNode> parts = p.getChildren ();
 	    for (int i = parts.size () - 1; i >= 0; i--)
 		partsToHandle.addFirst (parts.get (i));
+	}
+
+	@Override public JavaTokens javaTokens () {
+	    return javaTokens;
 	}
     }
 

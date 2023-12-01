@@ -20,4 +20,6 @@ public interface MethodContentGenerator {
     Opcode getReverseZeroJump (Token t);
     Opcode getTwoPartJump (TwoPartExpression t);
     Opcode getReverseTwoPartJump (TwoPartExpression t);
+
+    JavaTokens javaTokens ();
 }

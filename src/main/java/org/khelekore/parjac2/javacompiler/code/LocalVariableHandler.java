@@ -1,0 +1,28 @@
+package org.khelekore.parjac2.javacompiler.code;
+
+import org.khelekore.parjac2.javacompiler.MethodContentGenerator;
+import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
+import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHelper;
+import org.khelekore.parjac2.javacompiler.syntaxtree.LocalVariableDeclaration;
+import org.khelekore.parjac2.javacompiler.syntaxtree.VariableDeclarator;
+
+import io.github.dmlloyd.classfile.CodeBuilder;
+import io.github.dmlloyd.classfile.TypeKind;
+
+public class LocalVariableHandler {
+
+    public static void handleLocalVariables (MethodContentGenerator mcg, CodeBuilder cb, LocalVariableDeclaration lvs) {
+	FullNameHandler fn = FullNameHelper.type (lvs.getType ());
+	for (VariableDeclarator lv : lvs.getDeclarators ()) {
+	    TypeKind kind = FullNameHelper.getTypeKind (fn);
+	    int slot = cb.allocateLocal (kind);
+	    lv.localSlot (slot);
+	    if (lv.hasInitializer ()) {
+		mcg.handleStatements (cb, lv.initializer ());
+		FullNameHandler fromType = FullNameHelper.type (lv.initializer ());
+		CodeUtil.widenOrAutoBoxAsNeeded (cb, fromType, fn, kind);
+		cb.storeInstruction (kind, slot);
+	    }
+	}
+    }
+}
