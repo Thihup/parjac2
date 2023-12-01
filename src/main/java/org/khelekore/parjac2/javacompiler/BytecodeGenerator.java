@@ -29,6 +29,7 @@ import org.khelekore.parjac2.javacompiler.code.ArrayGenerator;
 import org.khelekore.parjac2.javacompiler.code.AttributeHelper;
 import org.khelekore.parjac2.javacompiler.code.CodeUtil;
 import org.khelekore.parjac2.javacompiler.code.DynamicGenerator;
+import org.khelekore.parjac2.javacompiler.code.FieldGenerator;
 import org.khelekore.parjac2.javacompiler.code.IfGenerator;
 import org.khelekore.parjac2.javacompiler.code.IncrementGenerator;
 import org.khelekore.parjac2.javacompiler.code.LocalVariableHandler;
@@ -337,7 +338,6 @@ public class BytecodeGenerator {
 	private void handleStatement (CodeBuilder cb, TypeDeclaration td, Deque<Object> partsToHandle, Object p) {
 	    //System.err.println ("looking at: " + p + ", " + p.getClass ().getName ());
 	    switch (p) {
-	    case Handler h -> h.run (cb);
 	    case ExpressionName e -> runParts (partsToHandle, e.replaced ());
 	    case FieldAccess fa -> fieldAccess (cb, fa);
 	    case MethodInvocation mi -> methodInvocation (cb, mi);
@@ -373,9 +373,6 @@ public class BytecodeGenerator {
 	    }
 	}
 
-	private interface Handler {
-	    void run (CodeBuilder cb);
-	}
 
 	private void fieldAccess (CodeBuilder cb, FieldAccess fa) {
 	    cb.lineNumber (fa.position ().getLineNumber ()); // should be good enough
@@ -393,7 +390,7 @@ public class BytecodeGenerator {
 		    TypeKind kind = FullNameHelper.getTypeKind (fn);
 		    cb.loadInstruction (kind, slot);
 		} else { // field
-		    getField (cb, vi);
+		    FieldGenerator.getField (cip, td, cb, vi);
 		}
 	    }
 	}
@@ -618,12 +615,12 @@ public class BytecodeGenerator {
 		VariableInfo vi = fa.variableInfo ();
 		if (from != null) {
 		    handleStatements (cb, from);
-		    putField (cb, vi, value);
+		    FieldGenerator.putField (this, cip, td, cb, vi, value);
 		} else { // this or local or static field
 		    TypeKind kind = FullNameHelper.getTypeKind (vi.typeName ());
 		    switch (vi.fieldType ()) {
 		    case VariableInfo.Type.FIELD ->
-			putField (cb, vi, value);
+			FieldGenerator.putField (this, cip, td, cb, vi, value);
 		    case VariableInfo.Type.PARAMETER ->
 			putInLocalSlot (cb, kind, ((FormalParameterBase)vi).slot (), value);
 		    case VariableInfo.Type.LOCAL ->
@@ -716,35 +713,6 @@ public class BytecodeGenerator {
 		return Opcode.IF_ACMPEQ;
 	    else
 		throw new IllegalStateException ("unhandled jump type: " + token);
-	}
-
-	private void getField (CodeBuilder cb, VariableInfo vi) {
-	    ClassDesc owner = ClassDescUtils.getClassDesc (cip.getFullName (td));
-	    ClassDesc type = vi.typeClassDesc ();
-	    if (Flags.isInstanceField (vi)) {
-		cb.aload (cb.receiverSlot ());
-		cb.getfield (owner, vi.name (), type);
-	    } else {
-		cb.getstatic (owner, vi.name (), type);
-	    }
-	}
-
-	public void putField (CodeBuilder cb, VariableInfo vi, ParseTreeNode value) {
-	    Handler h = c -> handleStatements (c, value);
-	    putField (cb, vi, h);
-	}
-
-	private void putField (CodeBuilder cb, VariableInfo vi, Handler h) {
-	    ClassDesc owner = ClassDescUtils.getClassDesc (cip.getFullName (td));
-	    ClassDesc type = vi.typeClassDesc ();
-	    if (Flags.isInstanceField (vi))
-		cb.aload (cb.receiverSlot ());
-	    h.run (cb);
-	    if (Flags.isInstanceField (vi)) {
-		cb.putfield (owner, vi.name (), type);
-	    } else {
-		cb.putstatic (owner, vi.name (), type);
-	    }
 	}
 
 	private void handleToken (CodeBuilder cb, TokenNode tn) {
