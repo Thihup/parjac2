@@ -26,18 +26,15 @@ public class FieldGenerator {
 	}
     }
 
-    public static void putField (MethodContentGenerator mcg, FullNameHandler fieldOwner,
-				 CodeBuilder cb, VariableInfo vi, ParseTreeNode value) {
-	// TODO: handle "from" better
-	ClassDesc owner = ClassDescUtils.getClassDesc (fieldOwner);
+    public static void putField (MethodContentGenerator mcg, CodeBuilder cb,
+				 ParseTreeNode from, FullNameHandler currentClass, VariableInfo vi, ParseTreeNode value) {
+	FromResult fr = handleFrom (mcg, cb, from, currentClass, vi);
 	ClassDesc type = vi.typeClassDesc ();
-	if (Flags.isInstanceField (vi))
-	    cb.aload (cb.receiverSlot ());
 	mcg.handleStatements (cb, value);
 	if (Flags.isInstanceField (vi)) {
-	    cb.putfield (owner, vi.name (), type);
+	    cb.putfield (fr.owner (), vi.name (), type);
 	} else {
-	    cb.putstatic (owner, vi.name (), type);
+	    cb.putstatic (fr.owner (), vi.name (), type);
 	}
     }
 

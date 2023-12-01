@@ -2,7 +2,6 @@ package org.khelekore.parjac2.javacompiler.code;
 
 import java.lang.constant.ClassDesc;
 
-import org.khelekore.parjac2.javacompiler.Flags;
 import org.khelekore.parjac2.javacompiler.LocalVariable;
 import org.khelekore.parjac2.javacompiler.MethodContentGenerator;
 import org.khelekore.parjac2.javacompiler.VariableInfo;

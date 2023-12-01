@@ -398,7 +398,7 @@ public class TestFullCompilation {
     }
 
     @Test
-    public void testPutFieldInOtherClass () throws ReflectiveOperationException {
+    public void testPutStaticFieldInOtherClass () throws ReflectiveOperationException {
 	String code = "class A { public static int z = 1; } class B { public static void a () { A.z *= 3; }}";
 	Map<String, Class<?>> classes = compileAndGetClasses (code);
 	Class<?> aClass = classes.get ("A");
@@ -412,6 +412,17 @@ public class TestFullCompilation {
 	m.setAccessible (true);
 	m.invoke (null);
         r = (Integer)aField.get (null);
+	assert r == 3;
+    }
+
+    @Test
+    public void testPutInstanceFieldInOtherClass () throws ReflectiveOperationException {
+	Class<?> b = compileAndGetClass ("B", "class A { public int z = 1; } " +
+					 "public class B { private A a = new A (); public int a () { a.z *= 3; return a.z; }}");
+	Object o = b.getConstructor ().newInstance ();
+        Method m = b.getMethod ("a");
+	m.setAccessible (true);
+	int r = (Integer)m.invoke (o);
 	assert r == 3;
     }
 

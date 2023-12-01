@@ -597,20 +597,14 @@ public class BytecodeGenerator {
 		// TODO: need to handle from better.
 		ParseTreeNode from = fa.from ();
 		VariableInfo vi = fa.variableInfo ();
-		if (from != null) {
-		    handleStatements (cb, from);
-		    FullNameHandler owner = FullNameHelper.type (from);
-		    FieldGenerator.putField (this, owner, cb, vi, value);
-		} else { // this or local or static field
-		    TypeKind kind = FullNameHelper.getTypeKind (vi.typeName ());
-		    switch (vi.fieldType ()) {
-		    case VariableInfo.Type.FIELD ->
-			FieldGenerator.putField (this, cip.getFullName (td), cb, vi, value);
-		    case VariableInfo.Type.PARAMETER ->
-			putInLocalSlot (cb, kind, ((FormalParameterBase)vi).slot (), value);
-		    case VariableInfo.Type.LOCAL ->
-			putInLocalSlot (cb, kind, ((LocalVariable)vi).slot (), value);
-		    }
+		TypeKind kind = FullNameHelper.getTypeKind (vi.typeName ());
+		switch (vi.fieldType ()) {
+		case VariableInfo.Type.FIELD ->
+		    FieldGenerator.putField (this, cb, from, cip.getFullName (td), vi, value);
+		case VariableInfo.Type.PARAMETER ->
+		    putInLocalSlot (cb, kind, ((FormalParameterBase)vi).slot (), value);
+		case VariableInfo.Type.LOCAL ->
+		    putInLocalSlot (cb, kind, ((LocalVariable)vi).slot (), value);
 		}
 	    } else if (p instanceof ArrayAccess aa) {
 		// field, slot, value, arraystore
