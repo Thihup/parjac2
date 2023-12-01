@@ -420,6 +420,9 @@ public class ClassSetter {
 	    } else if (init instanceof SwitchExpression se) {
 		CustomHandler h = e -> setTypeOnSwitchExpression (se, lhs);
 		partsToHandle.addFirst (new StatementHandler (et, h));
+	    } else if (init instanceof ArrayInitializer ai) {
+		CustomHandler h = e -> setTypeOnArrayInitializer (ai, lhs);
+		partsToHandle.addFirst (new StatementHandler (et, h));
 	    } else if (init != null) {
 		CustomHandler h = e -> checkAssignmentType (lhs, init);
 		partsToHandle.addFirst (new StatementHandler (et, h));
@@ -438,6 +441,12 @@ public class ClassSetter {
 	    }
 	}
 	se.type (wantedType);
+    }
+
+    private void setTypeOnArrayInitializer (ArrayInitializer ai, FullNameHandler lhs) {
+	FullNameHandler slotType = lhs.inner ();
+	ai.slotType (slotType);
+	ai.variableInitializers ().forEach (p -> checkAssignment (slotType, p));
     }
 
     private void checkAssignmentType (FullNameHandler varType, ParseTreeNode initializer) {

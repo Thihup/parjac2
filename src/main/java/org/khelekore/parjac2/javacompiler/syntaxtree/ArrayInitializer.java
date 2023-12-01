@@ -9,13 +9,28 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class ArrayInitializer extends SyntaxTreeNode {
     private final VariableInitializerList variableList;
+    private FullNameHandler slotType; // for an int[] this is int
 
     public ArrayInitializer (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
+	// icky to know if we have a list or not:
+	// '{' [VariableInitializerList] [','] '}'
 	if (rule.get (1) == ctx.getGrammar ().getRuleGroupId ("VariableInitializerList"))
 	    variableList = (VariableInitializerList)children.get (1);
 	else
 	    variableList = null;
+    }
+
+    public void slotType (FullNameHandler slotType) {
+	this.slotType = slotType;
+    }
+
+    public FullNameHandler slotType () {
+	return slotType;
+    }
+
+    public int size () {
+	return variableList != null ? variableList.size () : 0;
     }
 
     public List<ParseTreeNode> variableInitializers () {

@@ -10,11 +10,13 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.DottedName;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FieldAccess;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FormalParameterBase;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
+import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHelper;
 import org.khelekore.parjac2.javacompiler.syntaxtree.PostDecrementExpression;
 import org.khelekore.parjac2.javacompiler.syntaxtree.PostIncrementExpression;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 import io.github.dmlloyd.classfile.CodeBuilder;
+import io.github.dmlloyd.classfile.TypeKind;
 
 public class IncrementGenerator {
     public static void handlePostIncrement (MethodContentGenerator mcg, CodeBuilder cb,
@@ -40,7 +42,14 @@ public class IncrementGenerator {
 	    case VariableInfo.Type.FIELD -> incrementField (mcg, cb, from, currentClass, vi, change);
 	    }
 	} else if (tn instanceof ArrayAccess aa) {
-	    // TODO: implement
+	    mcg.handleStatements (cb, aa.from ());
+	    mcg.handleStatements (cb, aa.slot ());
+	    cb.dup2 ();   // dup or dup2?
+	    TypeKind kind = FullNameHelper.getTypeKind (FullNameHelper.type (aa));
+	    cb.arrayLoadInstruction (kind);
+	    CodeUtil.handleInt (cb, change);
+	    cb.iadd ();
+	    cb.arrayStoreInstruction (kind);
 	} else {
 	    throw new IllegalStateException ("Unhandled post increment type: " + tn + ", " + tn.getClass ().getName () +
 					     ", " + tn.position ().toShortString ());

@@ -354,8 +354,11 @@ public class BytecodeGenerator {
 	    case EnhancedForStatement efs -> LoopGenerator.handleEnhancedFor (this, cb, efs);
 	    case SynchronizedStatement ss -> SynchronizationGenerator.handleSynchronized (this, cb, ss);
 	    case ClassInstanceCreationExpression cic -> CodeUtil.callNew (cb, cic);
+
 	    case ArrayCreationExpression ace -> ArrayGenerator.handleArrayCreation (this, cb, ace);
 	    case ArrayAccess aa -> ArrayGenerator.handleArrayAccess (this, cb, aa);
+	    case ArrayInitializer ai -> ArrayGenerator.handleArrayInitializer (this, cb, ai);
+
 	    case SwitchExpression se -> SwitchGenerator.handleSwitchExpression (this, cb, se);
 
 	    // We get LambdaExpression and MethodReference in Assignment, so we just want to store the handle to it

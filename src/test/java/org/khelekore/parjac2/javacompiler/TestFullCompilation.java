@@ -379,6 +379,14 @@ public class TestFullCompilation {
     }
 
     @Test
+    public void testPostIncrementArraySlot () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { static int[] x = {17, 3, 7, 19, 23};" +
+			      "public static int r () { x[4]++; return x[4]; }}", "r");
+	int r = (Integer)m.invoke (null);
+	assert r == 24 : "Increment returned wrong value: " + r;
+    }
+
+    @Test
     public void testPostIncrementThisField () throws ReflectiveOperationException {
 	Class<?> c = compileAndGetClass ("C", "public class C { int x = 17; public int r () { this.x++; return this.x; }}");
 	Object o = c.getConstructor ().newInstance ();;

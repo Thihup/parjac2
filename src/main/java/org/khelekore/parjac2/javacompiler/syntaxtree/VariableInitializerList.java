@@ -14,11 +14,15 @@ public class VariableInitializerList extends SyntaxTreeNode {
 	super (n.position ());
 	variableInitializers = new ArrayList<> ();
 	variableInitializers.add (children.get (0));
-	if (rule.size () > 2) {
+	if (rule.size () > 1) {
 	    Multiple z = (Multiple)children.get (1);
 	    for (int j = 1, e = z.size (); j < e; j += 2)
 		variableInitializers.add (z.get (j));
 	}
+    }
+
+    public int size () {
+	return variableInitializers.size ();
     }
 
     public List<ParseTreeNode> variableInitializers () {

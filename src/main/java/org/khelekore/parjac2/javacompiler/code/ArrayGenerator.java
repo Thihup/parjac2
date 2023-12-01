@@ -6,8 +6,10 @@ import org.khelekore.parjac2.javacompiler.ClassDescUtils;
 import org.khelekore.parjac2.javacompiler.MethodContentGenerator;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayAccess;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayCreationExpression;
+import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayInitializer;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHelper;
+import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 import io.github.dmlloyd.classfile.CodeBuilder;
 import io.github.dmlloyd.classfile.TypeKind;
@@ -37,4 +39,17 @@ public class ArrayGenerator {
 	cb.arrayLoadInstruction (tk);
     }
 
+    public static void handleArrayInitializer (MethodContentGenerator mcg, CodeBuilder cb, ArrayInitializer ai) {
+	int numSlots = ai.size ();
+	CodeUtil.handleInt (cb, numSlots);
+	TypeKind kind = FullNameHelper.getTypeKind (ai.slotType ());
+	cb.newarray (kind);
+	int pos = 0;
+	for (ParseTreeNode p : ai.variableInitializers ()) {
+	    cb.dup ();
+	    CodeUtil.handleInt (cb, pos++);
+	    mcg.handleStatements (cb, p);
+	    cb.arrayStoreInstruction (kind);
+	}
+    }
 }
