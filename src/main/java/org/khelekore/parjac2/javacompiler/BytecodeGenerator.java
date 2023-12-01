@@ -155,7 +155,7 @@ public class BytecodeGenerator {
     }
 
     private String getClassSignature (TypeParameters tps, ClassType superClass, List<ClassType> superInterfaces) {
-	if (tps != null || hasGenericType (superClass) || hasGenericType (superInterfaces)) {
+	if (tps != null || SignatureHelper.hasGenericType (superClass) || SignatureHelper.hasGenericType (superInterfaces)) {
 	    StringBuilder sb = new StringBuilder ();
 	    genericTypeHelper.appendTypeParametersSignature (sb, tps, cip, false);
 	    if (superClass != null) {
@@ -170,18 +170,6 @@ public class BytecodeGenerator {
 	    return sb.toString ();
 	}
 	return null;
-    }
-
-    private boolean hasGenericType (List<ClassType> ls) {
-	return ls != null && ls.stream ().anyMatch (this::hasGenericType);
-    }
-
-    private boolean hasGenericType (ParseTreeNode p) {
-	return p instanceof ClassType ct && hasGenericType (ct);
-    }
-
-    private boolean hasGenericType (ClassType ct) {
-	return ct != null && (ct.fullName ().hasGenericType () || ct.getTypeParameter () != null);
     }
 
     private byte[] generateClass (ImplicitClassFlags icf, String signature, ClassType superType, List<ClassType> superInterfaces) {
@@ -253,37 +241,33 @@ public class BytecodeGenerator {
     private void addConstructors (ClassBuilder classBuilder, TypeDeclaration td) {
 	td.getConstructors ().forEach (c -> {
 		int flags = c.flags ();
-		MethodSignatureHolder msh = getMethodSignature (c);
-		classBuilder.withMethod (ConstantDescs.INIT_NAME, msh.desc, flags, mb -> {
+		SignatureHelper.MethodSignatureHolder msh = getMethodSignature (c);
+		classBuilder.withMethod (ConstantDescs.INIT_NAME, msh.desc (), flags, mb -> {
 			mb.withCode (cb -> {
 				MethodContentBuilder mcb = new MethodContentBuilder (classBuilder, INSTANCE_INIT, flags);
 				mcb.createConstructorContents (cb, c, msh);
 			    });
-			if (msh.signature != null)
-			    mb.with (SignatureAttribute.of (MethodSignature.parseFrom (msh.signature)));
+			if (msh.signature () != null)
+			    mb.with (SignatureAttribute.of (MethodSignature.parseFrom (msh.signature ())));
 		    });
 	    });
     }
 
-    private MethodSignatureHolder getMethodSignature (ConstructorDeclarationInfo c) {
-	return getMethodSignature (c.getTypeParameters (), c.getFormalParameterList (), VOID_RETURN);
-    }
-
     private void addMethods (ClassBuilder classBuilder, TypeDeclaration td) {
 	td.getMethods ().forEach (m -> {
-		MethodSignatureHolder msh = getMethodSignature (m);
+		SignatureHelper.MethodSignatureHolder msh = getMethodSignature (m);
 		int flags = m.flags ();
 		TypeKind returnType = FullNameHelper.getTypeKind (m.result ());
 		ParseTreeNode body = m.getMethodBody ();
-		classBuilder.withMethod (m.name (), msh.desc, flags, mb -> {
+		classBuilder.withMethod (m.name (), msh.desc (), flags, mb -> {
 			if (!m.isAbstract ()) {
 			    mb.withCode (cb -> {
 				    MethodContentBuilder mcb = new MethodContentBuilder (classBuilder, m.name (), flags);
 				    mcb.addMethodContent (cb, (Block)body, returnType);
 				});
 			}
-			if (msh.signature != null)
-			    mb.with (SignatureAttribute.of (MethodSignature.parseFrom (msh.signature)));
+			if (msh.signature () != null)
+			    mb.with (SignatureAttribute.of (MethodSignature.parseFrom (msh.signature ())));
 		    });
 	    });
     }
@@ -315,7 +299,7 @@ public class BytecodeGenerator {
 	    this.flags = flags;
 	}
 
-	private void createConstructorContents (CodeBuilder cb, ConstructorDeclarationInfo cdb, MethodSignatureHolder msh) {
+	private void createConstructorContents (CodeBuilder cb, ConstructorDeclarationInfo cdb, SignatureHelper.MethodSignatureHolder msh) {
 	    ConstructorBody body = cdb.body ();
 	    List<ParseTreeNode> statements = body.statements ();
 	    boolean explicitInvocation = false;
@@ -1291,42 +1275,11 @@ public class BytecodeGenerator {
 	}
     }
 
-    private MethodSignatureHolder getMethodSignature (MethodDeclarationBase m) {
-	return getMethodSignature (m.getTypeParameters (), m.getFormalParameterList (), m.getResult ());
+    private SignatureHelper.MethodSignatureHolder getMethodSignature (ConstructorDeclarationInfo c) {
+	return SignatureHelper.getMethodSignature (cip, genericTypeHelper, c.getTypeParameters (), c.getFormalParameterList (), VOID_RETURN);
     }
 
-    private MethodSignatureHolder getMethodSignature (TypeParameters tps, FormalParameterList params, ParseTreeNode result) {
-	StringBuilder sb = new StringBuilder ();
-	boolean foundGenericTypes = false;
-	if (tps != null) {
-	    foundGenericTypes = true;
-	    genericTypeHelper.appendTypeParametersSignature (sb, tps, cip, false);
-	}
-
-	List<ClassDesc> paramDescs = List.of ();
-	sb.append ("(");
-	if (params != null) {
-	    paramDescs = new ArrayList<> (params.size ());
-	    for (FormalParameterBase fp : params.getParameters ()) {
-		ParseTreeNode p = fp.type ();
-		foundGenericTypes |= hasGenericType (p);
-		paramDescs.add (ClassDescUtils.getParseTreeClassDesc (p));
-		sb.append (genericTypeHelper.getGenericType (p, cip, true));
-	    }
-	}
-	sb.append (")");
-
-	foundGenericTypes |= hasGenericType (result);
-	ClassDesc returnDesc = ClassDescUtils.getParseTreeClassDesc (result);
-	sb.append (genericTypeHelper.getGenericType (result, cip, true));
-
-	MethodTypeDesc descriptor = MethodTypeDesc.of (returnDesc, paramDescs.toArray (new ClassDesc[paramDescs.size ()]));
-
-	String signature = foundGenericTypes ? sb.toString () : null;
-	return new MethodSignatureHolder (descriptor, signature);
-    }
-
-    private record MethodSignatureHolder (MethodTypeDesc desc, String signature) {
-	// empty
+    private SignatureHelper.MethodSignatureHolder getMethodSignature (MethodDeclarationBase m) {
+	return SignatureHelper.getMethodSignature (cip, genericTypeHelper, m.getTypeParameters (), m.getFormalParameterList (), m.getResult ());
     }
 }
