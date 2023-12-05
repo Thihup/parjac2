@@ -1,24 +1,24 @@
 package org.khelekore.parjac2.javacompiler;
 
-import io.github.dmlloyd.classfile.Classfile;
+import io.github.dmlloyd.classfile.ClassFile;
 
 public class Flags {
 
-    public static final int ACC_ABSTRACT = Classfile.ACC_ABSTRACT;
-    public static final int ACC_FINAL = Classfile.ACC_FINAL;
-    public static final int ACC_NATIVE = Classfile.ACC_NATIVE;
-    public static final int ACC_PRIVATE = Classfile.ACC_PRIVATE;
-    public static final int ACC_PROTECTED = Classfile.ACC_PROTECTED;
-    public static final int ACC_PUBLIC = Classfile.ACC_PUBLIC;
-    public static final int ACC_STATIC = Classfile.ACC_STATIC;
-    public static final int ACC_STRICT = Classfile.ACC_STRICT;
-    public static final int ACC_SYNCHRONIZED = Classfile.ACC_SYNCHRONIZED;
-    public static final int ACC_INTERFACE = Classfile.ACC_INTERFACE;
-    public static final int ACC_ENUM = Classfile.ACC_ENUM;
-    public static final int ACC_VARARGS = Classfile.ACC_VARARGS;
-    public static final int ACC_SYNTHETIC = Classfile.ACC_SYNTHETIC;
+    public static final int ACC_ABSTRACT = ClassFile.ACC_ABSTRACT;
+    public static final int ACC_FINAL = ClassFile.ACC_FINAL;
+    public static final int ACC_NATIVE = ClassFile.ACC_NATIVE;
+    public static final int ACC_PRIVATE = ClassFile.ACC_PRIVATE;
+    public static final int ACC_PROTECTED = ClassFile.ACC_PROTECTED;
+    public static final int ACC_PUBLIC = ClassFile.ACC_PUBLIC;
+    public static final int ACC_STATIC = ClassFile.ACC_STATIC;
+    public static final int ACC_STRICT = ClassFile.ACC_STRICT;
+    public static final int ACC_SYNCHRONIZED = ClassFile.ACC_SYNCHRONIZED;
+    public static final int ACC_INTERFACE = ClassFile.ACC_INTERFACE;
+    public static final int ACC_ENUM = ClassFile.ACC_ENUM;
+    public static final int ACC_VARARGS = ClassFile.ACC_VARARGS;
+    public static final int ACC_SYNTHETIC = ClassFile.ACC_SYNTHETIC;
 
-    // This one does not exist in Classfile.
+    // This one does not exist in ClassFile.
     public static final int ACC_DEFAULT = 262144;
 
     public static boolean isPrivate (int flag) {

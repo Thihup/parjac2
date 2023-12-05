@@ -15,7 +15,7 @@ import java.util.function.Consumer;
 
 import io.github.dmlloyd.classfile.ClassBuilder;
 import io.github.dmlloyd.classfile.ClassSignature;
-import io.github.dmlloyd.classfile.Classfile;
+import io.github.dmlloyd.classfile.ClassFile;
 import io.github.dmlloyd.classfile.CodeBuilder;
 import io.github.dmlloyd.classfile.Label;
 import io.github.dmlloyd.classfile.MethodSignature;
@@ -65,13 +65,13 @@ public class BytecodeGenerator {
     public static final MethodTypeDesc INIT_SIGNATURE = MethodTypeDesc.ofDescriptor ("()V");
 
     private enum ImplicitClassFlags {
-	CLASS_FLAGS (Classfile.ACC_SUPER),
-	ENUM_FLAGS (Classfile.ACC_FINAL | Classfile.ACC_ENUM),
-	RECORD_FLAGS (Classfile.ACC_FINAL | Classfile.ACC_SUPER),
-	INTERFACE_FLAGS (Classfile.ACC_INTERFACE | Classfile.ACC_ABSTRACT),
-	ANNOTATION_FLAGS (Classfile.ACC_ANNOTATION | Classfile.ACC_INTERFACE),
-	ENUM_CONSTANT_FLAGS (Classfile.ACC_FINAL),
-	ANONYMOUS_CLASS_FLAGS (Classfile.ACC_SUPER);
+	CLASS_FLAGS (ClassFile.ACC_SUPER),
+	ENUM_FLAGS (ClassFile.ACC_FINAL | ClassFile.ACC_ENUM),
+	RECORD_FLAGS (ClassFile.ACC_FINAL | ClassFile.ACC_SUPER),
+	INTERFACE_FLAGS (ClassFile.ACC_INTERFACE | ClassFile.ACC_ABSTRACT),
+	ANNOTATION_FLAGS (ClassFile.ACC_ANNOTATION | ClassFile.ACC_INTERFACE),
+	ENUM_CONSTANT_FLAGS (ClassFile.ACC_FINAL),
+	ANONYMOUS_CLASS_FLAGS (ClassFile.ACC_SUPER);
 
 	private int flags;
 
@@ -161,8 +161,8 @@ public class BytecodeGenerator {
     }
 
     private byte[] generateClass (ImplicitClassFlags icf, String signature, ClassType superType, List<ClassType> superInterfaces) {
-	byte[] b = Classfile.of().build (ClassDesc.of (name.getFullDollarName ()), classBuilder -> {
-		classBuilder.withVersion (Classfile.JAVA_21_VERSION, 0);  // possible minor: PREVIEW_MINOR_VERSION
+	byte[] b = ClassFile.of().build (ClassDesc.of (name.getFullDollarName ()), classBuilder -> {
+		classBuilder.withVersion (ClassFile.JAVA_21_VERSION, 0);  // possible minor: PREVIEW_MINOR_VERSION
 		classBuilder.withFlags (td.flags () | icf.flags);
 		classBuilder.withSuperclass (ClassDesc.of ((superType != null ? superType : objectClassType).getFullDollarName ()));
 		addSuperInterfaces (classBuilder, superInterfaces);

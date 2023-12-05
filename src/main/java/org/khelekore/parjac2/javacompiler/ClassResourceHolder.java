@@ -22,7 +22,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHelper;
 
 import io.github.dmlloyd.classfile.Attributes;
 import io.github.dmlloyd.classfile.ClassModel;
-import io.github.dmlloyd.classfile.Classfile;
+import io.github.dmlloyd.classfile.ClassFile;
 import io.github.dmlloyd.classfile.FieldModel;
 import io.github.dmlloyd.classfile.MethodModel;
 import io.github.dmlloyd.classfile.attribute.SignatureAttribute;
@@ -232,7 +232,7 @@ public class ClassResourceHolder {
 
 	protected void readNode (byte[] data) throws IOException {
 	    try {
-		ClassModel model = Classfile.of ().parse (data);
+		ClassModel model = ClassFile.of ().parse (data);
 		ClassInfoExtractor cie = new ClassInfoExtractor (this, model);
 		cie.parse ();
 	    } catch (RuntimeException e) {
