@@ -726,6 +726,11 @@ public class TestClassSetter {
 	getTypes ("class C { static void a (String s) {Object o = switch (s) { case \"foo\" -> 1; case \"bar\" -> \"what\"; default -> null; }; }}");
     }
 
+    @Test
+    public void testFieldFromSuperSuper () {
+	getTypes ("class A { int f; } class B extends A {} class C extends B { public C () {f = 7;}}");
+    }
+
     /* TODO: implement full generic handling */
     /*
     @Test

@@ -1,9 +1,7 @@
 package org.khelekore.parjac2.javacompiler;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
@@ -29,10 +27,6 @@ public record EnclosingTypes (EnclosingTypes previous, Enclosure<?> enclosure)
 
     public FullNameHandler fqn () {
 	return enclosure.fqn ();
-    }
-
-    public List<FullNameHandler> getSuperClasses (ClassInformationProvider cip) {
-	return enclosure.getSuperClasses (cip);
     }
 
     public TypeParameter getTypeParameter (String id) {
@@ -67,13 +61,6 @@ public record EnclosingTypes (EnclosingTypes previous, Enclosure<?> enclosure)
 	@Override public boolean isStatic () { return Flags.isStatic (td.flags ()); }
 	@Override public TypeDeclaration td () { return td; }
 	@Override public FullNameHandler fqn () { return fqn; }
-	@Override public List<FullNameHandler> getSuperClasses (ClassInformationProvider cip) {
-	    try {
-		return cip.getSuperTypes (fqn.getFullDotName (), false);
-	    } catch (IOException e) {
-		throw new RuntimeException ("Unable to load superclasses of: " + td.getName ());
-	    }
-	}
 	@Override public Map<String, FieldInfo> getFields () { return td.getFields (); }
     }
 

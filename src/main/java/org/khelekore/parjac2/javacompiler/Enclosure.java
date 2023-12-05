@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.javacompiler;
 
-import java.util.List;
 import java.util.Map;
 
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
@@ -15,8 +14,6 @@ public interface Enclosure<V extends VariableInfo> {
     default FullNameHandler fqn () { return null; }
 
     default TypeParameter getTypeParameter (String id) { return null; }
-
-    default List<FullNameHandler> getSuperClasses (ClassInformationProvider cip) { return List.of (); }
 
     Map<String, V> getFields ();
 

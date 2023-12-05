@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -120,7 +121,7 @@ public class ClassSetter {
 	classSetters.parallelStream ().forEach (ClassSetter::registerMethods);
 
 	// now that we know what types, fields and methods we have we check the method contents
-	classSetters.parallelStream ().forEach (ClassSetter::checkMethodBodies);
+	classSetters.parallelStream ().sequential ().forEach (ClassSetter::checkMethodBodies); //qwerty
 
 	classSetters.parallelStream ().forEach (cs -> cs.checkUnusedImport ());
     }
@@ -655,7 +656,8 @@ public class ClassSetter {
     }
 
     private VariableInfo findField (EnclosingTypes et, String name) {
-	return getField (n -> et.enclosure ().getField (n), () -> et.getSuperClasses (cip), name);
+	FullNameHandler fn = currentClass (et);
+	return getField (n -> et.enclosure ().getField (n), () -> getAllSuperTypes (fn), name);
     }
 
     private String nonStaticAccess (String name) {
@@ -1098,7 +1100,7 @@ public class ClassSetter {
     }
 
     private Set<FullNameHandler> getAllSuperTypes (FullNameHandler subtype) {
-	Set<FullNameHandler> ret = new HashSet<> ();
+	Set<FullNameHandler> ret = new LinkedHashSet<> ();
 	Deque<FullNameHandler> d = new ArrayDeque<> ();
 	d.add (subtype);
 	while (!d.isEmpty ()) {
@@ -1232,6 +1234,7 @@ public class ClassSetter {
 	}
 
 	String id = fa.name ();
+
 	VariableInfo fi = getField (fn, id);
 	if (fi != null) {
 	    fa.variableInfo (fi);
@@ -1241,15 +1244,15 @@ public class ClassSetter {
     }
 
     private VariableInfo getField (FullNameHandler fn, String name) {
-	return getField (n -> cip.getFieldInformation (fn, n), () -> getSuperClasses (fn), name);
+	return getField (n -> cip.getFieldInformation (fn, n), () -> getAllSuperTypes (fn), name);
     }
 
     private VariableInfo getField (Function<String, VariableInfo> fieldGetter,
-				   Supplier<List<FullNameHandler>> superClassesGetter,
+				   Supplier<Set<FullNameHandler>> superClassesGetter,
 				   String name) {
 	VariableInfo fi = fieldGetter.apply (name);
 	if (fi == null) {
-	    List<FullNameHandler> supers = superClassesGetter.get ();
+	    Set<FullNameHandler> supers = superClassesGetter.get ();
 	    if (supers != null) {
 		for (FullNameHandler sfn : supers) {
 		    fi = cip.getFieldInformation (sfn, name);
