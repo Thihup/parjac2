@@ -2,8 +2,12 @@ package org.khelekore.parjac2.javacompiler;
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
+import java.util.Map;
 
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
+
+import io.github.dmlloyd.classfile.MethodSignature;
+import io.github.dmlloyd.classfile.Signature;
 
 /** description of a method in a class. Used to make compiled
  *  methods and resource methods be handled the same way.
@@ -34,5 +38,16 @@ public interface MethodInfo {
 
     FullNameHandler parameter (int i);
 
-    // TODO: generic types?
+    String signature ();
+
+    default FullNameHandler genericResult (Map<String, FullNameHandler> genericTypes) {
+	String signature = signature ();
+	if (signature () != null) {
+	    // TODO: possibly something like this: ??
+	    MethodSignature ms = MethodSignature.parseFrom (signature);
+	    Signature result = ms.result ();
+	    return genericTypes.get (((Signature.TypeVarSig)result).identifier ());
+	}
+	return result ();
+    }
 }

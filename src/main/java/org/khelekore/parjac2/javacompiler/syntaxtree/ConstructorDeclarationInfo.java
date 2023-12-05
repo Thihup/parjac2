@@ -54,4 +54,8 @@ public interface ConstructorDeclarationInfo extends MethodInfo {
     @Override default FullNameHandler parameter (int i) {
 	return FullNameHelper.type (getFormalParameterList ().getParameters ().get (i));
     }
+
+    @Override default String signature () {
+	return null; // TODO: can we have a signature here?
+    }
 }

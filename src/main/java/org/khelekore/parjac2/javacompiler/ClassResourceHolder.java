@@ -477,6 +477,10 @@ public class ClassResourceHolder {
 	    return params.get (i);
 	}
 
+	@Override public String signature () {
+	    return signature;
+	}
+
 	private void cacheFullNames () {
 	    synchronized (this) {
 		if (params != null)

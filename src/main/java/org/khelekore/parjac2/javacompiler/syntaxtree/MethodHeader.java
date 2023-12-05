@@ -14,6 +14,7 @@ public class MethodHeader extends SyntaxTreeNode {
     private final ParseTreeNode result;
     private final MethodDeclarator methodDeclarator;
     private final Throws t;
+    private String signature;
 
     // Result MethodDeclarator [Throws]
     // TypeParameters {Annotation} Result MethodDeclarator [Throws]
@@ -44,7 +45,7 @@ public class MethodHeader extends SyntaxTreeNode {
 	t = null;
     }
 
-    @Override public Object getValue() {
+    @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	if (types != null)
 	    sb.append (types).append (" ");
@@ -88,6 +89,19 @@ public class MethodHeader extends SyntaxTreeNode {
 
     public FormalParameterList getFormalParameterList () {
 	return methodDeclarator.getFormalParameterList ();
+    }
+
+    public String signature () {
+	if (types == null)
+	    return null;
+	return createAndCacheSignature ();
+    }
+
+    private synchronized String createAndCacheSignature () {
+	if (signature != null)
+	    return signature;
+
+	return "";
     }
 
     public Dims getDims () {

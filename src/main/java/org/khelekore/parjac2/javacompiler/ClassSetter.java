@@ -391,7 +391,7 @@ public class ClassSetter {
     }
 
     private void handlePartsAndField (EnclosingTypes et, FieldAccess fa, Deque<StatementHandler> partsToHandle) {
-	CustomHandler h = e -> setType (e, fa);
+ 	CustomHandler h = e -> setType (e, fa);
 	partsToHandle.addFirst (new StatementHandler (et, h));
 	addParts (et, fa, partsToHandle);
     }
@@ -700,7 +700,8 @@ public class ClassSetter {
 
 		MethodInfo info = getMethod (mi, methodOn, on, name, args, insideStatic);
 		if (info != null) {
-		    mi.info (info);
+		    Map<String, FullNameHandler> genericTypes = getGenericTypes (on);
+		    mi.info (info, genericTypes);
 		    break;
 		}
 	    }
@@ -716,6 +717,11 @@ public class ClassSetter {
 	    les.forEach (le -> addLambdaReturnCheck (currentBlock, le, partsToHandle));
 	    addParts (currentBlock, les, partsToHandle);
 	}
+    }
+
+    private Map<String, FullNameHandler> getGenericTypes (ParseTreeNode on) {
+	// TODO: figure this one out
+	return Map.of ();
     }
 
     private MethodInfo getMethod (MethodInvocation mi, FullNameHandler methodOn,

@@ -104,6 +104,10 @@ public class MethodDeclarationBase extends FlaggedBase implements MethodInfo {
 	return FullNameHelper.type (getFormalParameterList ().getParameters ().get (i));
     }
 
+    @Override public String signature () {
+	return header.signature ();
+    }
+
     @Override public String name () {
 	return header.getName ();
     }

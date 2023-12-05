@@ -744,8 +744,18 @@ public class TestClassSetter {
     }
 
     @Test
-    public void testGenericReturn () {
+    public void testGenericReturnFromResourceClass () {
 	getTypes ("import java.util.Map; class C { Map<String, String> m; void foo () { int l = m.get (\"\").length (); }}");
+    }
+
+    @Test
+    public void testGenericReturnFromCompiledClass () {
+	getTypes ("class C<T> { T t; T a() { return t; } void b () { T t1 = a (); }}");
+    }
+
+    @Test
+    public void testFieldFromGenericCompiledClass () {
+	getTypes ("class A { String s; } class C { java.util.Map<String, A> m; void c () { String s = m.get (\"\").s; }}");
     }
     */
 

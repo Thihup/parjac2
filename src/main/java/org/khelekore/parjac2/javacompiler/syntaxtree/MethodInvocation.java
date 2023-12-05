@@ -1,6 +1,7 @@
 package org.khelekore.parjac2.javacompiler.syntaxtree;
 
 import java.util.List;
+import java.util.Map;
 
 import org.khelekore.parjac2.javacompiler.MethodInfo;
 import org.khelekore.parjac2.parser.ParsePosition;
@@ -13,6 +14,7 @@ public class MethodInvocation extends SyntaxTreeNode {
     private final TypeArguments types;
     private final UntypedMethodInvocation mi;
     private MethodInfo info;
+    private Map<String, FullNameHandler> genericTypes;
 
     public MethodInvocation (ParsePosition pos, ParseTreeNode on, boolean isSuper,
 			     TypeArguments types, UntypedMethodInvocation mi) {
@@ -23,8 +25,9 @@ public class MethodInvocation extends SyntaxTreeNode {
 	this.mi = mi;
     }
 
-    public void info (MethodInfo info) {
+    public void info (MethodInfo info, Map<String, FullNameHandler> genericTypes) {
 	this.info = info;
+	this.genericTypes = genericTypes;
     }
 
     public MethodInfo info () {
@@ -36,6 +39,10 @@ public class MethodInvocation extends SyntaxTreeNode {
     }
 
     public FullNameHandler result () {
+	return info != null ? info.result () : null;
+    }
+
+    public FullNameHandler genericResult () {
 	return info != null ? info.result () : null;
     }
 
