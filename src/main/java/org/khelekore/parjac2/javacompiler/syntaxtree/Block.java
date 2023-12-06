@@ -41,6 +41,6 @@ public class Block extends SyntaxTreeNode {
     public List<ParseTreeNode> get () {
 	if (statements == null)
 	    return List.of ();
-	return statements.getStatements ();
+	return statements.statements ();
     }
 }

@@ -14,6 +14,10 @@ public class SwitchLabelColon extends SyntaxTreeNode {
 	label = (SwitchLabel)children.get (0);
     }
 
+    public SwitchLabel label () {
+	return label;
+    }
+
     @Override public Object getValue () {
 	return label.getValue () + ": ";
     }

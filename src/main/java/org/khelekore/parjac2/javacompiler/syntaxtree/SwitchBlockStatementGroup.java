@@ -6,7 +6,7 @@ import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
-public class SwitchBlockStatementGroup extends SyntaxTreeNode {
+public class SwitchBlockStatementGroup extends SyntaxTreeNode implements SwitchPart {
     private final List<SwitchLabelColon> labels;
     private final BlockStatements statements;
 
@@ -15,6 +15,14 @@ public class SwitchBlockStatementGroup extends SyntaxTreeNode {
 	// SwitchLabels BlockStatements
 	labels = ((SwitchLabels)children.get (0)).getLabels ();
 	statements = (BlockStatements)children.get (1);
+    }
+
+    public List<SwitchLabelColon> labels () {
+	return labels;
+    }
+
+    @Override public BlockStatements handler () {
+	return statements;
     }
 
     @Override public Object getValue () {

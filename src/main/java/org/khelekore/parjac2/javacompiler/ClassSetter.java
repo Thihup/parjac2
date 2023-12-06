@@ -288,7 +288,7 @@ public class ClassSetter {
 	    et = et.enclosingBlock (false);
 	    BlockStatements bs = block.getStatements ();
 	    if (bs != null)
-		setTypesForMethodStatement (et, bs.getStatements ());
+		setTypesForMethodStatement (et, bs.statements ());
 	}
     }
 

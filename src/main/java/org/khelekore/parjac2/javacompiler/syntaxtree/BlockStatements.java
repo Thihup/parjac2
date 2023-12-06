@@ -34,7 +34,7 @@ public class BlockStatements extends SyntaxTreeNode {
 	statements.forEach (v::accept);
     }
 
-    public List<ParseTreeNode> getStatements () {
+    public List<ParseTreeNode> statements () {
 	return statements;
     }
 }

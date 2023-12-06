@@ -6,7 +6,7 @@ import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
-public class SwitchRule extends SyntaxTreeNode {
+public class SwitchRule extends SyntaxTreeNode implements SwitchPart {
     private final SwitchLabel label;
     private final ParseTreeNode handler;
     private FullNameHandler wantedType;
@@ -21,7 +21,7 @@ public class SwitchRule extends SyntaxTreeNode {
 	return label;
     }
 
-    public ParseTreeNode handler () {
+    @Override public ParseTreeNode handler () {
 	return handler;
     }
 

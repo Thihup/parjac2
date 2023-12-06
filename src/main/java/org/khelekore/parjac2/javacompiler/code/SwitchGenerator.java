@@ -10,16 +10,23 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.khelekore.parjac2.javacompiler.IntLiteral;
 import org.khelekore.parjac2.javacompiler.MethodContentGenerator;
+import org.khelekore.parjac2.javacompiler.syntaxtree.BlockStatements;
+import org.khelekore.parjac2.javacompiler.syntaxtree.BreakStatement;
 import org.khelekore.parjac2.javacompiler.syntaxtree.CaseLabel;
 import org.khelekore.parjac2.javacompiler.syntaxtree.CasePatternLabel;
 import org.khelekore.parjac2.javacompiler.syntaxtree.DefaultLabel;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHelper;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SwitchBlock;
+import org.khelekore.parjac2.javacompiler.syntaxtree.SwitchBlockStatementGroup;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SwitchExpression;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SwitchLabel;
+import org.khelekore.parjac2.javacompiler.syntaxtree.SwitchLabelColon;
+import org.khelekore.parjac2.javacompiler.syntaxtree.SwitchPart;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SwitchRule;
+import org.khelekore.parjac2.javacompiler.syntaxtree.SwitchStatement;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 import io.github.dmlloyd.classfile.CodeBuilder;
@@ -28,8 +35,60 @@ import io.github.dmlloyd.classfile.TypeKind;
 import io.github.dmlloyd.classfile.instruction.SwitchCase;
 
 public class SwitchGenerator {
+
+    public static void handleSwitchStatement (MethodContentGenerator mcg, CodeBuilder cb, SwitchStatement ss) {
+	handleSwitch (mcg, cb, ss.expression (), null, ss.block ());
+    }
+
     public static void handleSwitchExpression (MethodContentGenerator mcg, CodeBuilder cb, SwitchExpression se) {
-	ParseTreeNode exp = se.expression ();
+	handleSwitch (mcg, cb, se.expression (), FullNameHelper.type (se), se.block ());
+    }
+
+    private static void handleSwitch (MethodContentGenerator mcg, CodeBuilder cb, ParseTreeNode exp,
+				      FullNameHandler resultType, SwitchBlock block) {
+	IntCases ic = IntCases.tryCreate (cb, block);
+	if (ic != null) {
+	    handleIntSwitch (mcg, cb, exp, resultType, block, ic);
+	} else {
+	    handleObjectSwitch (mcg, cb, exp, resultType, block);
+	}
+    }
+
+    private static void handleIntSwitch (MethodContentGenerator mcg, CodeBuilder cb, ParseTreeNode exp,
+					 FullNameHandler resultType, SwitchBlock block, IntCases ic) {
+	TypeKind tkTo = resultType == null ? TypeKind.VoidType : FullNameHelper.getTypeKind (resultType);
+
+	mcg.handleStatements (cb, exp);
+
+	// TODO: javac generates tableswitch in some cases, figure out when to use that instead.
+	Label defaultTarget = cb.newLabel ();
+	cb.lookupswitch (defaultTarget, ic.intCases);
+	Label end = cb.newLabel ();
+	ic.part2target.forEach ((p, l) -> {
+		cb.labelBinding (l);
+		runHandler (cb, mcg, p.handler (), resultType, tkTo);
+		possiblyAddGoto (cb, end, p.handler ());
+	    });
+
+	cb.labelBinding (defaultTarget);
+	if (ic.defaultRule != null) {
+	    runHandler (cb, mcg, ic.defaultRule.handler (), resultType, tkTo);
+	}
+	cb.labelBinding (end);
+    }
+
+    private static void possiblyAddGoto (CodeBuilder cb, Label end, ParseTreeNode handler) {
+	if (handler instanceof BlockStatements bs) {
+	    List<ParseTreeNode> ls = bs.statements ();
+	    if (ls.size () > 0 && ls.get (ls.size () - 1) instanceof BreakStatement)
+		cb.goto_ (end);
+	} else {
+	    cb.goto_ (end);
+	}
+    }
+
+    private static void handleObjectSwitch (MethodContentGenerator mcg, CodeBuilder cb, ParseTreeNode exp,
+					    FullNameHandler resultType, SwitchBlock block) {
 	TypeKind kind = FullNameHelper.getTypeKind (FullNameHelper.type (exp));
 	int expressionSlot = cb.allocateLocal (kind);
 	mcg.handleStatements (cb, exp);
@@ -45,7 +104,7 @@ public class SwitchGenerator {
 	String name = "hashCode";
 	MethodTypeDesc type = MethodTypeDesc.ofDescriptor ("()I");
 	cb.invokevirtual (owner, name, type);
-	SwitchBlockInfo blockInfo = new SwitchBlockInfo (cb, se);
+	SwitchBlockInfo blockInfo = new SwitchBlockInfo (cb, block);
 	Label nextLookup = cb.newLabel ();
 	cb.lookupswitch (nextLookup, blockInfo.primarySwitchCases);
 
@@ -71,27 +130,78 @@ public class SwitchGenerator {
 	cb.labelBinding (nextLookup);
 	cb.iload (lookupSlot);
 
-	FullNameHandler toType = FullNameHelper.type (se);
-	TypeKind tkTo = FullNameHelper.getTypeKind (toType);
+	TypeKind tkTo = resultType == null ? TypeKind.VoidType : FullNameHelper.getTypeKind (resultType);
 	Label secondaryDefaultLabel = cb.newLabel ();
 	Label end = cb.newLabel ();
 	cb.lookupswitch (secondaryDefaultLabel, blockInfo.secondarySwitchCases);
 	blockInfo.secondaryOptions.forEach ((sc, srl) -> {
 		cb.labelBinding (sc.target ());
-		ParseTreeNode handler = srl.sr.handler ();
-		mcg.handleStatements (cb, handler);
-		FullNameHandler fn = FullNameHelper.type (handler);
-		CodeUtil.widenOrAutoBoxAsNeeded (cb, fn, toType, tkTo);
+		runHandler (cb, mcg, srl.sr.handler (), resultType, tkTo);
 		cb.goto_ (end);
 	    });
 	cb.labelBinding (secondaryDefaultLabel);
 	if (blockInfo.secondaryDefault != null) {
-	    ParseTreeNode handler = blockInfo.secondaryDefault.handler ();
-	    mcg.handleStatements (cb, handler);
-	    FullNameHandler fn = FullNameHelper.type (handler);
-	    CodeUtil.widenOrAutoBoxAsNeeded (cb, fn, toType, tkTo);
+	    runHandler (cb, mcg, blockInfo.secondaryDefault.handler (), resultType, tkTo);
 	}
 	cb.labelBinding (end);
+    }
+
+    private static void runHandler (CodeBuilder cb, MethodContentGenerator mcg, ParseTreeNode handler,
+				    FullNameHandler resultType, TypeKind tkTo) {
+	mcg.handleStatements (cb, handler);
+	if (resultType != null) {
+	    FullNameHandler fn = FullNameHelper.type (handler);
+	    CodeUtil.widenOrAutoBoxAsNeeded (cb, fn, resultType, tkTo);
+	}
+    }
+
+    private record IntCases (List<SwitchCase> intCases, Map<SwitchPart, Label> part2target, SwitchPart defaultRule) {
+	// empty
+
+	public static IntCases tryCreate (CodeBuilder cb, SwitchBlock block) {
+	    List<SwitchCase> intCases = new ArrayList<> ();
+	    Map<SwitchPart, Label> part2target = new LinkedHashMap<> ();
+	    SwitchPart defaultRule = null;
+
+	    Map<SwitchPart, List<SwitchLabel>> part2labels = new LinkedHashMap<> ();
+
+	    if (block instanceof SwitchBlock.SwitchBlockStatements sbs) {
+		for (SwitchBlockStatementGroup sbsg : sbs.statementGroups ()) {
+		    List<SwitchLabel> ls = new ArrayList<> ();
+		    part2labels.put (sbsg, ls);
+		    List<SwitchLabelColon> labels = sbsg.labels ();
+		    for (SwitchLabelColon slc : labels)
+			ls.add (slc.label ());
+		}
+	    } else if (block instanceof SwitchBlock.SwitchBlockRule sbr) {
+		for (SwitchRule r : sbr.rules ())
+		    part2labels.put (r, List.of (r.label ()));
+	    }
+
+	    for (Map.Entry<SwitchPart, List<SwitchLabel>> me : part2labels.entrySet ()) {
+		SwitchPart part = me.getKey ();
+		List<SwitchLabel> ls = me.getValue ();
+		for (SwitchLabel label : ls) {
+		    if (label instanceof CaseLabel cl) {
+			Label l = cb.newLabel ();
+			part2target.put (part, l);
+			for (ParseTreeNode exp : cl.expressions ()) {
+			    if (exp instanceof IntLiteral il) {
+				SwitchCase sc = SwitchCase.of (il.intValue (), l);
+				intCases.add (sc);
+			    } else {
+				return null;
+			    }
+			}
+		    } else if (label instanceof DefaultLabel dl) {
+			defaultRule = part;
+		    } else if (label instanceof CasePatternLabel cpl) {
+			return null;
+		    }
+		}
+	    }
+	    return new IntCases (intCases, part2target, defaultRule);
+	}
     }
 
     private static class SwitchBlockInfo {
@@ -103,8 +213,7 @@ public class SwitchGenerator {
 	private LinkedHashMap<SwitchCase, SwitchRuleLabel> secondaryOptions = new LinkedHashMap<> ();
 	private SwitchRule secondaryDefault;
 
-	public SwitchBlockInfo (CodeBuilder cb, SwitchExpression se) {
-	    SwitchBlock block = se.block ();
+	public SwitchBlockInfo (CodeBuilder cb, SwitchBlock block) {
 	    SwitchBlock.SwitchBlockRule sbr = (SwitchBlock.SwitchBlockRule)block;
 	    List<SwitchRule> rules = sbr.rules ();
 	    int secondaryValue = 0;

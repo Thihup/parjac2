@@ -359,6 +359,7 @@ public class BytecodeGenerator {
 	    case ArrayAccess aa -> ArrayGenerator.handleArrayAccess (this, cb, aa);
 	    case ArrayInitializer ai -> ArrayGenerator.handleArrayInitializer (this, cb, ai);
 
+	    case SwitchStatement ss -> SwitchGenerator.handleSwitchStatement (this, cb, ss);
 	    case SwitchExpression se -> SwitchGenerator.handleSwitchExpression (this, cb, se);
 
 	    // We get LambdaExpression and MethodReference in Assignment, so we just want to store the handle to it
@@ -706,6 +707,8 @@ public class BytecodeGenerator {
 		cb.iconst_1 ();
 	    else if (t == javaTokens.FALSE)
 		cb.iconst_0 ();
+	    else if (t == javaTokens.SEMICOLON)
+		; // empty
 	    else
 		throw new IllegalStateException ("Unhandled token type: " + t);
 	}

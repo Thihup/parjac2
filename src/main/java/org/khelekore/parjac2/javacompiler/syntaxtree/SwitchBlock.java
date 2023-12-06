@@ -49,6 +49,14 @@ public abstract class SwitchBlock extends SyntaxTreeNode {
 	    }
 	}
 
+	public List<SwitchBlockStatementGroup> statementGroups () {
+	    return ls;
+	}
+
+	public List<SwitchLabelColon> trailingLabels () {
+	    return trailingLabels;
+	}
+
 	@Override public Object getValue () {
 	    StringBuilder sb = new StringBuilder ();
 	    sb.append ("{");

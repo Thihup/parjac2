@@ -9,7 +9,7 @@ public class DefaultLabel extends SwitchLabel {
     }
 
     @Override public Object getValue () {
-	return "default:";
+	return "default";
     }
 
     @Override public void visitChildNodes (NodeVisitor v) {
