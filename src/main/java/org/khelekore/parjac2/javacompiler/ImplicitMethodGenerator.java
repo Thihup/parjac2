@@ -31,12 +31,7 @@ public class ImplicitMethodGenerator {
     private final CompilerDiagnosticCollector diagnostics;
     private final OrdinaryCompilationUnit ocu; // we do not care about ModularCompilationUnit (for now?)
 
-    /** High level description:
-     *  For each class:
-     *      Setup a Scope
-     *      Find fields, set type on them, add to scope of class
-     *      Find methods, set type on arguments and add to scope of method
-     *      Set type of expression
+    /** Add implicit constructors, fields and methods to the given classes
      */
     public static void addImplicitMethods (ClassInformationProvider cip,
 					   JavaTokens javaTokens,
