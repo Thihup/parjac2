@@ -78,12 +78,13 @@ public class Compiler {
 
 	optimize (trees);
 
-	runTimed (() -> createOutputDirectories (settings.getClassWriter()),
-		  "Creating output directories");
-	if (diagnostics.hasError ())
-	    return;
-
-	runTimed (() -> writeClasses (settings.getClassWriter()), "Writing classes");
+	BytecodeWriter bw = settings.getClassWriter ();
+	if (bw != null) {
+	    runTimed (() -> createOutputDirectories (bw), "Creating output directories");
+	    if (diagnostics.hasError ())
+		return;
+	    runTimed (() -> writeClasses (bw), "Writing classes");
+	}
     }
 
     private void setupSourceProvider (SourceProvider sourceProvider) {
@@ -153,7 +154,7 @@ public class Compiler {
 	 */
 	runTimed (() -> ClassSetter.fillInClasses (javaTokens, cip, trees, diagnostics), "Setting classes");
 
-	//runTimed (() -> checkNamesAndModifiers (trees), "Checking names and modifiers");
+	runTimed (() -> NameModifierChecker.checkNamesAndModifiers (cip, trees, diagnostics), "Checking names and modifiers");
 
 	// TODO: not sure about this one.
 	//runTimed (() -> setFieldsAndMethods (trees), "Setting fields and method types");

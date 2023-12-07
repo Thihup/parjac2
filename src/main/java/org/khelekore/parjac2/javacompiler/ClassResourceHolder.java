@@ -143,7 +143,15 @@ public class ClassResourceHolder {
 	return LookupResult.NOT_FOUND;
     }
 
-    public List<FullNameHandler> getSuperTypes (String fqn) throws IOException {
+    public int flags (String fqn) {
+	ClasspathClassInformation r = foundClasses.get (fqn);
+	if (r == null)
+	    return 0;
+	loadNoCheckedException (r);
+	return r.accessFlags;
+    }
+
+    public List<FullNameHandler> getSuperTypes (String fqn) {
 	ClasspathClassInformation r = foundClasses.get (fqn);
 	if (r == null)
 	    return null;

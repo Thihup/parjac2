@@ -117,6 +117,12 @@ public class ClassInformationProvider {
 	return cth.getOriginFile (td);
     }
 
+    public int flags (FullNameHandler fqn) {
+	return tryActions (fqn,
+			   td -> td.flags (),
+			   dn -> crh.flags (dn));
+    }
+
     public VariableInfo getFieldInformation (FullNameHandler fqn, String field) {
 	return tryActions (fqn,
 			   td -> td.getFields ().get (field),

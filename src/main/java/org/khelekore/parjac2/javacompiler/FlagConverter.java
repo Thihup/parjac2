@@ -22,6 +22,7 @@ public class FlagConverter {
 	store (tokens.STRICTFP, ACC_STRICT);
 	store (tokens.DEFAULT, ACC_DEFAULT);
 	store (tokens.SYNCHRONIZED, ACC_SYNCHRONIZED);
+	store (tokens.VOLATILE, ACC_VOLATILE);
     }
 
     private void store (Token t, int value) {

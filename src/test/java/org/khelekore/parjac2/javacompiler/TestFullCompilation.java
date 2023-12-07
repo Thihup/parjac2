@@ -4,12 +4,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.nio.CharBuffer;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Collection;
 import java.util.Map;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
@@ -805,72 +800,7 @@ public class TestFullCompilation {
 	c.compile ();
 	assert diagnostics.errorCount () == 0 :
 	String.format ("Expected no compilation errors: %s", TestParserHelper.getParseOutput (diagnostics));
-	InMemoryClassLoader cl = new InMemoryClassLoader (bytecodeWriter.classes);
+	InMemoryClassLoader cl = new InMemoryClassLoader (bytecodeWriter.classes ());
 	return cl.loadAllClasses ();
-    }
-
-    private static class InMemorySourceProvider implements SourceProvider {
-	private String filename;
-	private String input;
-
-	@Override public void setup (CompilerDiagnosticCollector diagnostics) {
-	    // empty
-	}
-
-	@Override public Collection<DirAndPath> getSourcePaths () {
-	    return List.of (new DirAndPath (Paths.get ("src"), Paths.get (filename)));
-	}
-
-	@Override public CharBuffer getInput (Path path) {
-	    return CharBuffer.wrap (input);
-	}
-
-	public void input (String filename, String input) {
-	    this.filename = filename;
-	    this.input = input;
-	}
-
-	public void clean () {
-	    input = null;
-	    filename = null;
-	}
-    }
-
-    private static class InMemoryBytecodeWriter implements BytecodeWriter {
-	private Map<String, byte[]> classes = new HashMap<> ();
-
-	@Override public void createDirectory (Path path) {
-	    // ignore, everything in memory
-	}
-
-	@Override public void write (String className, Path path, byte[] data) {
-	    classes.put (className, data);
-	}
-
-	public void clean () {
-	    classes.clear ();
-	}
-    }
-
-    private static class InMemoryClassLoader extends ClassLoader {
-	private final Map<String, byte[]> classes;
-
-	public InMemoryClassLoader (Map<String, byte[]> classes) {
-	    this.classes = classes;
-	}
-
-	@Override protected Class<?> findClass (String name) throws ClassNotFoundException {
-	    byte[] data = classes.get (name);
-	    if (data == null)
-		throw new ClassNotFoundException (name + " not found");
-	    return defineClass (name, data, 0, data.length);
-	}
-
-	public Map<String, Class<?>> loadAllClasses () throws ClassNotFoundException {
-	    Map<String, Class<?>> ret = new HashMap<> ();
-	    for (String name : classes.keySet ())
-		ret.put (name, loadClass (name));
-	    return ret;
-	}
     }
 }

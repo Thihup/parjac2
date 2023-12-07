@@ -17,6 +17,7 @@ public class Flags {
     public static final int ACC_ENUM = ClassFile.ACC_ENUM;
     public static final int ACC_VARARGS = ClassFile.ACC_VARARGS;
     public static final int ACC_SYNTHETIC = ClassFile.ACC_SYNTHETIC;
+    public static final int ACC_VOLATILE = ClassFile.ACC_VOLATILE;
 
     // This one does not exist in ClassFile.
     public static final int ACC_DEFAULT = 262144;
@@ -53,6 +54,22 @@ public class Flags {
 	return (flag & ACC_VARARGS) == ACC_VARARGS;
     }
 
+    public static boolean isVolatile (int flag) {
+	return (flag & ACC_VOLATILE) == ACC_VOLATILE;
+    }
+
+    public static boolean isNative (int flag) {
+	return (flag & ACC_NATIVE) == ACC_NATIVE;
+    }
+
+    public static boolean isStrict (int flag) {
+	return (flag & ACC_STRICT) == ACC_STRICT;
+    }
+
+    public static boolean isSynchronized (int flag) {
+	return (flag & ACC_SYNCHRONIZED) == ACC_SYNCHRONIZED;
+    }
+
     public static boolean isInstanceField (VariableInfo vi) {
 	return !isStatic (vi.flags ());
     }
@@ -83,5 +100,4 @@ public class Flags {
     public static final int ACC_TRANSIENT = 128;
     public static final int ACC_TRANSITIVE = 32;
     public static final int ACC_VARARGS = 128;
-    public static final int ACC_VOLATILE = 64;
 */
