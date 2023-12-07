@@ -1,6 +1,7 @@
 package org.khelekore.parjac2.javacompiler;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.function.Consumer;
@@ -8,17 +9,24 @@ import java.util.stream.Collectors;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.SourceDiagnostics;
+import org.khelekore.parjac2.javacompiler.syntaxtree.Assignment;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Block;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ConstructorDeclaration;
+import org.khelekore.parjac2.javacompiler.syntaxtree.ConstructorDeclarationInfo;
 import org.khelekore.parjac2.javacompiler.syntaxtree.EnumConstant;
 import org.khelekore.parjac2.javacompiler.syntaxtree.EnumDeclaration;
+import org.khelekore.parjac2.javacompiler.syntaxtree.ExpressionName;
+import org.khelekore.parjac2.javacompiler.syntaxtree.FieldAccess;
+import org.khelekore.parjac2.javacompiler.syntaxtree.FormalParameter;
+import org.khelekore.parjac2.javacompiler.syntaxtree.FormalParameterBase;
 import org.khelekore.parjac2.javacompiler.syntaxtree.MethodDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.NormalClassDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.OrdinaryCompilationUnit;
 import org.khelekore.parjac2.javacompiler.syntaxtree.RecordComponent;
 import org.khelekore.parjac2.javacompiler.syntaxtree.RecordDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ReturnStatement;
+import org.khelekore.parjac2.javacompiler.syntaxtree.ThisPrimary;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
 import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -79,7 +87,7 @@ public class ImplicitMethodGenerator {
 	}
 	if (ls.isEmpty ()) {
 	    int flags = Flags.isPublic (n.flags ()) ? Flags.ACC_PUBLIC : 0;
-	    ls.add (ConstructorDeclaration.create (n.position (), javaTokens, flags, id, List.of ()));
+	    ls.add (ConstructorDeclaration.create (n.position (), javaTokens, flags, id, List.of (), List.of (), List.of ()));
 	}
     }
 
@@ -90,7 +98,20 @@ public class ImplicitMethodGenerator {
 	for (RecordComponent rc : rcs) {
 	    r.addField (new FieldInfo (VariableInfo.Type.FIELD, rc.name (), rc.position (), RECORD_FIELD_FLAGS, rc.type (), 0));
 	}
-	// Add: Constructor, toString(), hashCode(), equals(Object o)
+	List<ConstructorDeclarationInfo> ls = r.getConstructors ();
+	if (ls.isEmpty ()) {
+	    int flags = Flags.isPublic (r.flags ()) ? Flags.ACC_PUBLIC : 0;
+	    List<FormalParameterBase> params = new ArrayList<> ();
+	    List<ParseTreeNode> statements = new ArrayList<> ();
+	    for (RecordComponent rc : rcs) {
+		params.add (getFormalParameter (rc));
+		statements.add (getAssignment (rc));
+	    }
+	    ls.add (ConstructorDeclaration.create (r.position (), javaTokens, flags, r.getName (), List.of (), params, statements));
+	}
+
+	// We do not add toString, equals or hashCode here, they are added in bytecode generation
+	// Since they exist in Object we will find them if we use them anyway.
 
 	// Add a field-getter for each field.
 	for (RecordComponent rc : rcs) {
@@ -100,6 +121,17 @@ public class ImplicitMethodGenerator {
 	    r.addMethod (new MethodDeclaration (pos, flags, rc.name (), res,
 						new Block (pos, new ReturnStatement (pos, rc.name ()))));
 	}
+    }
+
+    private FormalParameterBase getFormalParameter (RecordComponent rc) {
+	return new FormalParameter (rc.position (), List.of (), rc.type (), rc.name (), 0);
+    }
+
+    private ParseTreeNode getAssignment (RecordComponent rc) {
+	ParsePosition pos = rc.position ();
+	ParseTreeNode left = new FieldAccess (pos, new ThisPrimary (rc), rc.name ());
+	ParseTreeNode right = new ExpressionName (pos, rc.name ());
+	return new Assignment (left, javaTokens.EQUAL, right);
     }
 
     private static final int ENUM_FIELD_FLAGS = Flags.ACC_PUBLIC | Flags.ACC_STATIC | Flags.ACC_FINAL | Flags.ACC_ENUM;

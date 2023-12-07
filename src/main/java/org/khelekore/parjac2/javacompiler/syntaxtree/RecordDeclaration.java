@@ -19,6 +19,7 @@ public class RecordDeclaration extends TypeDeclaration {
     private final RecordHeader recordHeader;
     private final Superinterfaces classImplements;
     private final RecordBody body;
+    private List<ConstructorDeclarationInfo> constructors;
 
     private static FlagCalculator flagCalculator = FlagCalculator.SIMPLE_ACCESS;
     private final static ClassType RECORD_SUPER = new ClassType (FullNameHandler.JL_RECORD);
@@ -115,17 +116,15 @@ public class RecordDeclaration extends TypeDeclaration {
 	getMethods ().add (m);
     }
 
-    @Override public List<? extends ConstructorDeclarationInfo> getConstructors () {
-	List<CompactConstructorDeclaration> lsc = body.getCompactConstructors ();
-	List<ConstructorDeclaration> lsn = body.getConsructors ();
-	if (lsc.isEmpty ())
-	    return lsn;
-	if (lsn.isEmpty ())
-	    return lsc;
-	List<ConstructorDeclarationInfo> ret = new ArrayList<ConstructorDeclarationInfo> (lsc.size () + lsn.size ());
-	ret.addAll (lsn);
-	ret.addAll (lsc);
-	return ret;
+    @Override public synchronized List<ConstructorDeclarationInfo> getConstructors () {
+	if (constructors == null) {
+	    List<CompactConstructorDeclaration> lsc = body.getCompactConstructors ();
+	    List<ConstructorDeclaration> lsn = body.getConsructors ();
+	    constructors = new ArrayList<ConstructorDeclarationInfo> (lsc.size () + lsn.size ());
+	    constructors.addAll (lsn);
+	    constructors.addAll (lsc);
+	}
+	return constructors;
     }
 
     @Override public List<SyntaxTreeNode> getInstanceInitializers () {

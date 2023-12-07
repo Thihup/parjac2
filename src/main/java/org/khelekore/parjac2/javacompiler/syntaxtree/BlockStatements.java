@@ -24,6 +24,11 @@ public class BlockStatements extends SyntaxTreeNode {
 	statements = List.of (statement);
     }
 
+    public BlockStatements (ParsePosition pos, List<ParseTreeNode> statements) {
+	super (pos);
+	this.statements = statements;
+    }
+
     @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	statements.forEach (s -> sb.append (s).append ("\n"));

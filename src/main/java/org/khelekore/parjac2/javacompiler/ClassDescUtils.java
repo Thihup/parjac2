@@ -3,6 +3,7 @@ package org.khelekore.parjac2.javacompiler;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
+import java.util.List;
 
 import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
@@ -58,11 +59,23 @@ public class ClassDescUtils {
     }
 
     public static MethodTypeDesc methodTypeDesc (FormalParameterList ls, FullNameHandler result) {
+	return methodTypeDescInternal (result, toFullNames (ls.getParameters ()));
+    }
+
+    private static List<FullNameHandler> toFullNames (List<FormalParameterBase> ls) {
+	return ls.stream ().map (fpb -> FullNameHelper.type (fpb)).toList ();
+    }
+
+    public static MethodTypeDesc methodTypeDesc (FullNameHandler result, FullNameHandler... params) {
+	return methodTypeDescInternal (result, List.of (params));
+    }
+
+    private static MethodTypeDesc methodTypeDescInternal (FullNameHandler result, Iterable<FullNameHandler> params) {
 	StringBuilder sb = new StringBuilder ();
 	sb.append ("(");
-	if (ls != null) {
-	    for (FormalParameterBase fp : ls.getParameters ())
-		sb.append (signatureType (FullNameHelper.type (fp)));
+	if (params != null) {
+	    for (FullNameHandler fn : params)
+		sb.append (signatureType (fn));
 	}
 	sb.append (")");
 	sb.append (signatureType (result));

@@ -38,12 +38,12 @@ public class ConstructorDeclarator extends SyntaxTreeNode {
 	// another ) here
     }
 
-    public ConstructorDeclarator (ParsePosition pos, String id) {
+    public ConstructorDeclarator (ParsePosition pos, String id, List<FormalParameterBase> args) {
 	super (pos);
 	this.types = null;
 	this.id = id;
 	this.rp = null;
-	this.params = null;
+	this.params = args == null ? null : new FormalParameterList (pos, args);
     }
 
 

@@ -32,11 +32,12 @@ public class ConstructorDeclaration extends ConstructorBase {
     }
 
     public static ConstructorDeclaration create (ParsePosition pos, JavaTokens javaTokens,
-						 int flags, String id, List<ParseTreeNode> superCallArguments) {
-	ConstructorDeclarator d = new ConstructorDeclarator (pos, id);
+						 int flags, String id, List<ParseTreeNode> superCallArguments,
+						 List<FormalParameterBase> parameters, List<ParseTreeNode> bodyContent) {
+	ConstructorDeclarator d = new ConstructorDeclarator (pos, id, parameters);
 	ArgumentList args = new ArgumentList (pos, superCallArguments);
 	ExplicitConstructorInvocation eci = new ExplicitConstructorInvocation (pos, javaTokens, args);
-	ConstructorBody body = new ConstructorBody (pos, eci);
+	ConstructorBody body = new ConstructorBody (pos, eci, bodyContent);
 	return new ConstructorDeclaration (pos, flags, d, body);
     }
 

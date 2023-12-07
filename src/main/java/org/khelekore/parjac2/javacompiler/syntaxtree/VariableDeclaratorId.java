@@ -3,6 +3,7 @@ package org.khelekore.parjac2.javacompiler.syntaxtree;
 import java.util.List;
 
 import org.khelekore.parjac2.javacompiler.Identifier;
+import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -16,6 +17,12 @@ public class VariableDeclaratorId extends SyntaxTreeNode {
 	id = ((Identifier)children.get (0)).getValue ();
 	if (rule.size () > 1)
 	    dims = (Dims)children.get (1);
+    }
+
+    public VariableDeclaratorId (ParsePosition pos, String id, int rank) {
+	super (pos);
+	this.id = id;
+	dims = new Dims (pos, rank);
     }
 
     @Override public Object getValue () {

@@ -764,7 +764,7 @@ public class TestFullCompilation {
     }
 
     @Test
-    public void testSwitchStatementFallThrough() throws ReflectiveOperationException {
+    public void testSwitchStatementFallThrough () throws ReflectiveOperationException {
 	Method m = getMethod ("C", "class C { public static int a (int s) {int r = 0; switch (s) { " +
 			      "case 1: r = 3; break; case 2: r = 7; case 3: r = 8; break; default: r = 43; } return r; }}",
 			      "a", Integer.TYPE);
@@ -776,6 +776,15 @@ public class TestFullCompilation {
 	assert r == 8;
 	r = (Integer)m.invoke (null, 2232312);
 	assert r == 43;
+    }
+
+    @Test
+    public void testRecordToString () throws ReflectiveOperationException {
+	Class<?> c = compileAndGetClass ("R", "public record R (int x, int y) {}");
+	Object o = c.getConstructor (Integer.TYPE, Integer.TYPE).newInstance (6, 4);
+	Method m = c.getMethod ("toString");
+	Object r = m.invoke (o);
+	assert r.equals ("R[x=6, y=4]") : "Got wrong string back: " + r;
     }
 
     private Method getMethod (String className, String text, String methodName, Class<?> ... types) throws ReflectiveOperationException {

@@ -3,6 +3,7 @@ package org.khelekore.parjac2.javacompiler.syntaxtree;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -19,6 +20,11 @@ public class FormalParameterList extends SyntaxTreeNode {
 	    for (int i = 1, e = z.size (); i < e; i += 2)
 		params.add ((FormalParameterBase)z.get (i));
 	}
+    }
+
+    public FormalParameterList (ParsePosition pos, List<FormalParameterBase> params) {
+	super (pos);
+	this.params = params;
     }
 
     @Override public Object getValue () {

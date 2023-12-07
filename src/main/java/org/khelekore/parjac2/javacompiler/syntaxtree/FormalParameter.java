@@ -3,6 +3,7 @@ package org.khelekore.parjac2.javacompiler.syntaxtree;
 import java.util.Collections;
 import java.util.List;
 
+import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -19,6 +20,13 @@ public class FormalParameter extends FormalParameterBase {
 	modifiers = (rule.size () > 2) ? ((Multiple)children.get (i++)).get () : Collections.emptyList ();
 	type = children.get (i++);
 	var = (VariableDeclaratorId)children.get (i);
+    }
+
+    public FormalParameter (ParsePosition pos, List<ParseTreeNode> modifiers, ParseTreeNode type, String id, int dims) {
+	super (pos);
+	this.modifiers = modifiers;
+	this.type = type;
+	var = new VariableDeclaratorId (pos, id, dims);
     }
 
     @Override public Object getValue () {

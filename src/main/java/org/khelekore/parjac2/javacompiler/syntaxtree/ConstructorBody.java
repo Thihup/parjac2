@@ -21,10 +21,10 @@ public class ConstructorBody extends SyntaxTreeNode {
 	    statements = (BlockStatements)children.get (i);
     }
 
-    public ConstructorBody (ParsePosition pos, ExplicitConstructorInvocation eci) {
+    public ConstructorBody (ParsePosition pos, ExplicitConstructorInvocation eci, List<ParseTreeNode> statements) {
 	super (pos);
 	this.eci = eci;
-	statements = null;
+	this.statements = new BlockStatements (pos, statements);
     }
 
     @Override public Object getValue () {
