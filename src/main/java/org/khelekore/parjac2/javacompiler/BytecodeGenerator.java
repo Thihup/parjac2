@@ -647,12 +647,13 @@ public class BytecodeGenerator {
 		VariableInfo vi = fa.variableInfo ();
 		TypeKind kind = FullNameHelper.getTypeKind (vi.typeName ());
 		switch (vi.fieldType ()) {
-		case VariableInfo.Type.FIELD ->
+		case FIELD ->
 		    FieldGenerator.putField (this, cb, from, cip.getFullName (td), vi, value);
-		case VariableInfo.Type.PARAMETER ->
+		case PARAMETER ->
 		    putInLocalSlot (cb, kind, ((FormalParameterBase)vi).slot (), value);
-		case VariableInfo.Type.LOCAL ->
+		case LOCAL ->
 		    putInLocalSlot (cb, kind, ((LocalVariable)vi).slot (), value);
+		case ARRAY_LENGTH -> throw new IllegalStateException ("Can not update array.length");
 		}
 	    } else if (p instanceof ArrayAccess aa) {
 		// field, slot, value, arraystore

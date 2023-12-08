@@ -20,7 +20,11 @@ public class FieldGenerator {
 	FromResult fr = handleFrom (mcg, cb, from, currentClass, vi);
 	ClassDesc type = vi.typeClassDesc ();
 	if (fr.instanceField ()) {
-	    cb.getfield (fr.owner (), vi.name (), type);
+	    if (vi.fieldType () == VariableInfo.Type.ARRAY_LENGTH) {
+		cb.arraylength ();
+	    } else {
+		cb.getfield (fr.owner (), vi.name (), type);
+	    }
 	} else {
 	    cb.getstatic (fr.owner (), vi.name (), type);
 	}

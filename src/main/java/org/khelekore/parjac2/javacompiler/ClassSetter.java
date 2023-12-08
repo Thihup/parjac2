@@ -580,6 +580,7 @@ public class ClassSetter {
 		    an.fullName (inner);
 		    FieldAccess fa = new FieldAccess (an.position (), an.replaced (), id);
 		    an.replace (fa);
+		    fa.variableInfo (new ArrayLengthAccess ());
 		} else {
 		    error (an, "No field: %s for array type", id);
 		    an.fullName (null);
@@ -1678,5 +1679,23 @@ public class ClassSetter {
 	if (fn == null)
 	    return "-";
 	return fn.getFullDotName ();
+    }
+
+    private class ArrayLengthAccess implements VariableInfo {
+	@Override public Type fieldType () {
+	    return VariableInfo.Type.ARRAY_LENGTH;
+	}
+
+	@Override public int flags () {
+	    return Flags.ACC_PUBLIC;
+	}
+
+	@Override public String name () {
+	    return "length";
+	}
+
+	@Override public FullNameHandler typeName () {
+	    return FullNameHandler.INT;
+	}
     }
 }

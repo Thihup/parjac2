@@ -787,6 +787,24 @@ public class TestFullCompilation {
 	assert r.equals ("R[x=6, y=4]") : "Got wrong string back: " + r;
     }
 
+    @Test
+    public void testVarArgCall () throws ReflectiveOperationException {
+	testIntArrayHandling ("C", "class C { public static int a (int... is) { if (is == null) return 0; return is.length; }}", "a");
+    }
+
+    @Test
+    public void testArrayLength () throws ReflectiveOperationException {
+	testIntArrayHandling ("C", "class C { public static int a (int[] is) { if (is == null) return 0; return is.length; }}", "a");
+    }
+
+    private void testIntArrayHandling (String cls, String text, String method) throws ReflectiveOperationException {
+	Method m = getMethod (cls, text, method, int[].class);
+	int r = (Integer)m.invoke (null, (int[])null);
+	assert r == 0;
+	r = (Integer)m.invoke (null, new int[] {1, 2});
+	assert r == 2;
+    }
+
     private Method getMethod (String className, String text, String methodName, Class<?> ... types) throws ReflectiveOperationException {
 	Class<?> c = compileAndGetClass (className, text);
 	Method m = c.getMethod (methodName, types);

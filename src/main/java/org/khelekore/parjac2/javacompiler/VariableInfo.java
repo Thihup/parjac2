@@ -11,7 +11,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 /** Interface with methods used to find fields or local variables */
 public interface VariableInfo {
-    public enum Type { FIELD, PARAMETER, LOCAL }
+    public enum Type { FIELD, PARAMETER, LOCAL, ARRAY_LENGTH }
 
     Type fieldType ();
 

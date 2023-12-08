@@ -40,6 +40,7 @@ public class IncrementGenerator {
 	    case VariableInfo.Type.PARAMETER -> incrementLocalVariable (cb, ((FormalParameterBase)vi).slot (), change);
 	    case VariableInfo.Type.LOCAL -> incrementLocalVariable (cb, ((LocalVariable)vi).slot (), change);
 	    case VariableInfo.Type.FIELD -> incrementField (mcg, cb, from, currentClass, vi, change);
+	    case VariableInfo.Type.ARRAY_LENGTH -> throw new IllegalStateException ("Can not increment array.length");
 	    }
 	} else if (tn instanceof ArrayAccess aa) {
 	    mcg.handleStatements (cb, aa.from ());

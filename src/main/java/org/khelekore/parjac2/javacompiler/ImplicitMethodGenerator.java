@@ -98,6 +98,8 @@ public class ImplicitMethodGenerator {
 	for (RecordComponent rc : rcs) {
 	    r.addField (new FieldInfo (VariableInfo.Type.FIELD, rc.name (), rc.position (), RECORD_FIELD_FLAGS, rc.type (), 0));
 	}
+
+	// TODO: we need to handle compact constructor inlining.
 	List<ConstructorDeclarationInfo> ls = r.getConstructors ();
 	if (ls.isEmpty ()) {
 	    int flags = Flags.isPublic (r.flags ()) ? Flags.ACC_PUBLIC : 0;
