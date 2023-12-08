@@ -19,6 +19,7 @@ import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.NoSourceDiagnostics;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHelper;
+import org.khelekore.parjac2.parser.ParsePosition;
 
 import io.github.dmlloyd.classfile.Attributes;
 import io.github.dmlloyd.classfile.ClassModel;
@@ -478,6 +479,10 @@ public class ClassResourceHolder {
 
 	@Override public MethodTypeDesc methodTypeDesc () {
 	    return md;
+	}
+
+	@Override public ParsePosition position () {
+	    return null;
 	}
 
 	@Override public FullNameHandler parameter (int i) {

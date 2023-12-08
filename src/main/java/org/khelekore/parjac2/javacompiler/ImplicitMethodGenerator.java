@@ -1,10 +1,7 @@
 package org.khelekore.parjac2.javacompiler;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Deque;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
@@ -66,7 +63,7 @@ public class ImplicitMethodGenerator {
     }
 
     private void addMethods () {
-	forAllTypes (this::addImplicits);
+	TypeTraverser.forAllTypes (ocu, this::addImplicits);
     }
 
     private void addImplicits (TypeDeclaration td) {
@@ -153,16 +150,6 @@ public class ImplicitMethodGenerator {
 	}
 	// private static E[] $values();
 	// static {};
-    }
-
-    private void forAllTypes (Consumer<TypeDeclaration> handler) {
-	Deque<TypeDeclaration> typesToHandle = new ArrayDeque<> ();
-	typesToHandle.addAll (ocu.getTypes ());
-	while (!typesToHandle.isEmpty ()) {
-	    TypeDeclaration td = typesToHandle.removeFirst ();
-	    handler.accept (td);
-	    typesToHandle.addAll (td.getInnerClasses ());
-	}
     }
 
     private void error (ParseTreeNode where, String template, Object... args) {

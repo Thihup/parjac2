@@ -5,12 +5,9 @@ import java.util.List;
 
 import org.khelekore.parjac2.javacompiler.ClassDescUtils;
 import org.khelekore.parjac2.javacompiler.MethodInfo;
-import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public interface ConstructorDeclarationInfo extends MethodInfo {
-
-    ParsePosition position ();
 
     List<? extends ParseTreeNode> getAnnotations ();
 

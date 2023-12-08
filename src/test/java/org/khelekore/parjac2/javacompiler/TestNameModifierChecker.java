@@ -1,42 +1,8 @@
 package org.khelekore.parjac2.javacompiler;
 
-import java.io.IOException;
-
-import org.khelekore.parjac2.CompilerDiagnosticCollector;
-import org.khelekore.parjac2.parser.Grammar;
-import org.khelekore.parjac2.parser.Rule;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-public class TestNameModifierChecker {
-
-    private Grammar grammar;
-    private Rule goalRule;
-    private JavaTokens javaTokens;
-    private InMemorySourceProvider sourceProvider;
-    private CompilationArguments settings;
-    private CompilerDiagnosticCollector diagnostics;
-    private ClassInformationProvider cip;
-
-    @BeforeClass
-    public void createTools () throws IOException {
-	grammar = new Grammar ();
-	goalRule = JavaGrammarHelper.readAndValidateRules (grammar, false);
-	javaTokens = new JavaTokens (grammar);
-	sourceProvider = new InMemorySourceProvider ();
-	settings = new CompilationArguments (sourceProvider, null, null, false, false);
-    }
-
-    @BeforeMethod
-    public void createDiagnostics () {
-	// start with a clean slate every time
-	diagnostics = new CompilerDiagnosticCollector ();
-	sourceProvider.clean ();
-
-	cip = new ClassInformationProvider (diagnostics, settings);
-	cip.scanClassPath ();
-    }
+public class TestNameModifierChecker extends TestCompilationErrorHandling {
 
     @Test
     public void testExtendingFinalClassGivesError () {
@@ -142,14 +108,5 @@ public class TestNameModifierChecker {
 	testClass ("C.java", "class C { int x (); }", 1);
 	diagnostics.clear ();
 	testClass ("C.java", "class C { private int x (); }", 1);
-    }
-
-    private void testClass (String filename, String text, int expectedErrors) {
-	sourceProvider.input (filename, text);
-	Compiler c = new Compiler (diagnostics, grammar, javaTokens, goalRule, settings);
-	c.compile ();
-	assert diagnostics.errorCount () == expectedErrors :
-	String.format ("Wrong number of errors generated, expected: %d, got: %d: \n%s",
-		       expectedErrors, diagnostics.errorCount (), TestParserHelper.getParseOutput (diagnostics));
     }
 }

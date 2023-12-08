@@ -158,6 +158,10 @@ public class Compiler {
 	if (diagnostics.hasError ())
 	    return;
 
+	runTimed (() -> DuplicateFinder.findDuplicateMethods (cip, trees, diagnostics), "Detecting method duplicates");
+	if (diagnostics.hasError ())
+	    return;
+
 	runTimed (() -> NameModifierChecker.checkNamesAndModifiers (cip, trees, diagnostics), "Checking names and modifiers");
 	if (diagnostics.hasError ())
 	    return;

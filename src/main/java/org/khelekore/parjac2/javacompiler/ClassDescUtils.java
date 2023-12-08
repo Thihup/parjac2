@@ -59,7 +59,8 @@ public class ClassDescUtils {
     }
 
     public static MethodTypeDesc methodTypeDesc (FormalParameterList ls, FullNameHandler result) {
-	return methodTypeDescInternal (result, toFullNames (ls.getParameters ()));
+	List<FormalParameterBase> params = ls == null ? List.of () : ls.getParameters ();
+	return methodTypeDescInternal (result, toFullNames (params));
     }
 
     private static List<FullNameHandler> toFullNames (List<FormalParameterBase> ls) {

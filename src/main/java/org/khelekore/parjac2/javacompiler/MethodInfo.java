@@ -5,6 +5,7 @@ import java.lang.constant.MethodTypeDesc;
 import java.util.Map;
 
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
+import org.khelekore.parjac2.parser.ParsePosition;
 
 import io.github.dmlloyd.classfile.MethodSignature;
 import io.github.dmlloyd.classfile.Signature;
@@ -22,6 +23,9 @@ public interface MethodInfo {
     }
 
     MethodTypeDesc methodTypeDesc ();
+
+    /** Return the position of this method, may be null if from a class resource */
+    ParsePosition position ();
 
     int flags ();
 
