@@ -22,4 +22,9 @@ public class TestMethodDuplicationFinder extends TestCompilationErrorHandling {
     public void testDifferentClassesButSameNameWorks () {
 	testClass ("C.java", "class List {} class C { int x(List ls) {} double x (java.util.List s) {} }", 0);
     }
+
+    @Test
+    public void testDuplicateConstructorsGivesErrors () {
+	testClass ("C.java", "class C { C (int x) {} C (int y) {}}", 1);
+    }
 }
