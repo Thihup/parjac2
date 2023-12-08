@@ -1,5 +1,7 @@
 package org.khelekore.parjac2.parser;
 
+import java.util.Comparator;
+
 public class ParsePosition {
     private int lineNumber;
     private int tokenColumn;
@@ -65,4 +67,9 @@ public class ParsePosition {
 	}
 	return false;
     }
+
+    public static Comparator<ParsePosition> PositionComparator =
+	Comparator
+	.comparingInt (ParsePosition::getLineNumber)
+	.thenComparingInt (ParsePosition::getTokenColumn);
 }

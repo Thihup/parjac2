@@ -1,6 +1,7 @@
 package org.khelekore.parjac2.javacompiler;
 
 import java.lang.constant.ClassDesc;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -50,11 +51,15 @@ public class DuplicateFinder {
     }
 
     public void findDuplicateMethods (List<MethodInfo> ls) {
-	Set<List<ClassDesc>> seen = new HashSet<> ();
+	Map<List<ClassDesc>, MethodInfo> seen = new HashMap<> ();
 	for (MethodInfo mi : ls) {
 	    List<ClassDesc> params = mi.methodTypeDesc ().parameterList ();
-	    if (!seen.add (params)) {
-		error (mi.position (), "Duplicate method found");
+	    MethodInfo previous = seen.put (params, mi);
+	    if (previous != null) {
+		ParsePosition mip = mi.position ();
+		ParsePosition pp = previous.position ();
+		ParsePosition last = ParsePosition.PositionComparator.compare (mip, pp) <= 0 ? pp : mip;
+		error (last, "Duplicate method found");
 	    }
 	}
     }
