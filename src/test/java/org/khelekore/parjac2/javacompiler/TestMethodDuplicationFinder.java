@@ -27,4 +27,14 @@ public class TestMethodDuplicationFinder extends TestCompilationErrorHandling {
     public void testDuplicateConstructorsGivesErrors () {
 	testClass ("C.java", "class C { C (int x) {} C (int y) {}}", 1);
     }
+
+    @Test
+    public void testMultipleInitBlocksWorks () {
+	testClass ("C.java", "class C { {} {} }", 0);
+    }
+
+    @Test
+    public void testMultipleInStaticBlocksWorks () {
+	testClass ("C.java", "class C { static {} static {} }", 0);
+    }
 }
