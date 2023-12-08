@@ -3,6 +3,7 @@ package org.khelekore.parjac2.javacompiler;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayType;
@@ -72,21 +73,12 @@ public class ClassDescUtils {
     }
 
     private static MethodTypeDesc methodTypeDescInternal (FullNameHandler result, Iterable<FullNameHandler> params) {
-	StringBuilder sb = new StringBuilder ();
-	sb.append ("(");
+	List<ClassDesc> paramCds = new ArrayList<> ();
 	if (params != null) {
 	    for (FullNameHandler fn : params)
-		sb.append (signatureType (fn));
+		paramCds.add (getClassDesc (fn));
 	}
-	sb.append (")");
-	sb.append (signatureType (result));
-
-	return MethodTypeDesc.ofDescriptor (sb.toString ());
-    }
-
-    private static String signatureType (FullNameHandler fn) {
-	if (fn.isPrimitive ())
-	    return fn.getSlashName ();
-	return "L" + fn.getSlashName () + ";";
+	ClassDesc resultCd = getClassDesc (result);
+	return MethodTypeDesc.of (resultCd, paramCds);
     }
 }
