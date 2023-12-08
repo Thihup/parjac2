@@ -147,17 +147,20 @@ public class Compiler {
 
 	// Add default constructors, fields and methods for enums, records and similar
 	runTimed (() -> ImplicitMethodGenerator.addImplicitMethods (cip, javaTokens, trees, diagnostics), "Adding implicit methods");
+	if (diagnostics.hasError ())
+	    return;
 	/*
 	 * 1: Set classes for fields, method parameters and method returns, setup scopes
 	 *    Scope hangs on class, method, for-clause and try (with resource) clause
 	 * 2: Set classes for local variables, field access and expressions
 	 */
 	runTimed (() -> ClassSetter.fillInClasses (javaTokens, cip, trees, diagnostics), "Setting classes");
+	if (diagnostics.hasError ())
+	    return;
 
 	runTimed (() -> NameModifierChecker.checkNamesAndModifiers (cip, trees, diagnostics), "Checking names and modifiers");
-
-	// TODO: not sure about this one.
-	//runTimed (() -> setFieldsAndMethods (trees), "Setting fields and method types");
+	if (diagnostics.hasError ())
+	    return;
 
 	//runTimed (() -> checkReturns (trees), "Checking returns");
     }
