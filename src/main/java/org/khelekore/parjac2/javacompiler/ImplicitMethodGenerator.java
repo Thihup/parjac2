@@ -9,6 +9,7 @@ import org.khelekore.parjac2.SourceDiagnostics;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Assignment;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Block;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
+import org.khelekore.parjac2.javacompiler.syntaxtree.CompactConstructorDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ConstructorDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ConstructorDeclarationInfo;
 import org.khelekore.parjac2.javacompiler.syntaxtree.EnumConstant;
@@ -97,16 +98,26 @@ public class ImplicitMethodGenerator {
 	}
 
 	// TODO: we need to handle compact constructor inlining.
-	List<ConstructorDeclarationInfo> ls = r.getConstructors ();
-	if (ls.isEmpty ()) {
+	List<CompactConstructorDeclaration> ccds = r.getCompactConstructors ();
+	if (ccds.size () > 1)
+	    error (ccds.get (1), "Can not have more than one compact constructor");
+	CompactConstructorDeclaration ccd = ccds.size () > 0 ? ccds.get (0) : null;
+
+	List<ConstructorDeclaration> ls = r.getConstructors ();
+	if (ls.isEmpty () || ccd != null) {
 	    int flags = Flags.isPublic (r.flags ()) ? Flags.ACC_PUBLIC : 0;
 	    List<FormalParameterBase> params = new ArrayList<> ();
 	    List<ParseTreeNode> statements = new ArrayList<> ();
+	    if (ccd != null) {
+		statements.addAll (ccd.statements ());
+	    }
+
 	    for (RecordComponent rc : rcs) {
 		params.add (getFormalParameter (rc));
 		statements.add (getAssignment (rc));
 	    }
-	    ls.add (ConstructorDeclaration.create (r.position (), javaTokens, flags, r.getName (), List.of (), params, statements));
+	    ParsePosition position = ccd != null ? ccd.position () : r.position ();
+	    ls.add (ConstructorDeclaration.create (position, javaTokens, flags, r.getName (), List.of (), params, statements));
 	}
 
 	// We do not add toString, equals or hashCode here, they are added in bytecode generation

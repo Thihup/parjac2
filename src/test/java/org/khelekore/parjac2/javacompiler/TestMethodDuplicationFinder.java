@@ -29,6 +29,17 @@ public class TestMethodDuplicationFinder extends TestCompilationErrorHandling {
     }
 
     @Test
+    public void testMultipleCompactConstructorsGivesError () {
+	testClass ("C.java", "record C(int x, int y) { C {} C {}}", 1);
+    }
+
+    @Test
+    public void testCompactConstructorClashWithNormalConstructor () {
+	testClass ("C.java", "record C(int x, int y) { C {} }", 0);
+	testClass ("C.java", "record C(int x, int y) { C {} C (int x, int y) {}}", 1);
+    }
+
+    @Test
     public void testMultipleInitBlocksWorks () {
 	testClass ("C.java", "class C { {} {} }", 0);
     }
