@@ -805,6 +805,25 @@ public class TestFullCompilation {
 	assert r == 2;
     }
 
+    @Test
+    public void testStackPopFromMethodCall () throws ReflectiveOperationException {
+	// having "int y = x (); x ();" does not trigger any problem, but with the if we do.
+	Method m = getMethod ("C", "class C { static int x () { return 43; } public static void a () { int y = x (); if (y > 3) x (); }}", "a");
+	m.invoke (null);
+    }
+
+    @Test
+    public void testStackPop2OnLongFromMethodCall () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { static int x () { return 43; } public static void a () { if (x() > 3) System.currentTimeMillis(); }}", "a");
+	m.invoke (null);
+    }
+
+    @Test
+    public void testStackPopNotDoneOnChainedMethod () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { static String x () { return \"foo\"; } public static void a () { int l = x ().length (); }}", "a");
+	m.invoke (null);
+    }
+
     private Method getMethod (String className, String text, String methodName, Class<?> ... types) throws ReflectiveOperationException {
 	Class<?> c = compileAndGetClass (className, text);
 	Method m = c.getMethod (methodName, types);

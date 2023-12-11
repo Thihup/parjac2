@@ -473,6 +473,16 @@ public class BytecodeGenerator {
 		else
 		    cb.invokevirtual (owner, name, type);
 	    }
+
+	    if (mi.returnValueDiscarded ()) {
+		FullNameHandler res = mi.result ();
+		if (res == FullNameHandler.LONG || res == FullNameHandler.DOUBLE) {
+		    cb.pop2 ();
+		} else if (res != FullNameHandler.VOID) {
+		    cb.pop ();
+		}
+	    }
+
 	}
 
 	private boolean isInterface (ParseTreeNode on) {

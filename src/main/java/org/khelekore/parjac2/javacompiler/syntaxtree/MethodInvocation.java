@@ -14,6 +14,7 @@ public class MethodInvocation extends SyntaxTreeNode {
     private final TypeArguments types;
     private final UntypedMethodInvocation mi;
     private MethodInfo info;
+    private boolean returnValueDiscarded = true;
     private Map<String, FullNameHandler> genericTypes;
 
     public MethodInvocation (ParsePosition pos, ParseTreeNode on, boolean isSuper,
@@ -88,5 +89,13 @@ public class MethodInvocation extends SyntaxTreeNode {
 
     public boolean isCallToStaticMethod () {
 	return info.isStatic ();
+    }
+
+    public boolean returnValueDiscarded () {
+	return returnValueDiscarded;
+    }
+
+    public void returnValueUsed () {
+	returnValueDiscarded = false;
     }
 }

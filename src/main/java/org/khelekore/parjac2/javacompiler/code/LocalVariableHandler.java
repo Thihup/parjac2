@@ -4,7 +4,9 @@ import org.khelekore.parjac2.javacompiler.MethodContentGenerator;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHelper;
 import org.khelekore.parjac2.javacompiler.syntaxtree.LocalVariableDeclaration;
+import org.khelekore.parjac2.javacompiler.syntaxtree.MethodInvocation;
 import org.khelekore.parjac2.javacompiler.syntaxtree.VariableDeclarator;
+import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 import io.github.dmlloyd.classfile.CodeBuilder;
 import io.github.dmlloyd.classfile.TypeKind;
@@ -17,9 +19,10 @@ public class LocalVariableHandler {
 	    TypeKind kind = FullNameHelper.getTypeKind (fn);
 	    int slot = cb.allocateLocal (kind);
 	    lv.localSlot (slot);
-	    if (lv.hasInitializer ()) {
-		mcg.handleStatements (cb, lv.initializer ());
-		FullNameHandler fromType = FullNameHelper.type (lv.initializer ());
+	    ParseTreeNode init = lv.initializer ();
+	    if (init != null) {
+		mcg.handleStatements (cb, init);
+		FullNameHandler fromType = FullNameHelper.type (init);
 		CodeUtil.widenOrAutoBoxAsNeeded (cb, fromType, fn, kind);
 		cb.storeInstruction (kind, slot);
 	    }

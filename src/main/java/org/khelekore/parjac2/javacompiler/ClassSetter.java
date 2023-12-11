@@ -476,6 +476,7 @@ public class ClassSetter {
 	    // If fi == null we have already signaled errors and do not want another one here.
 	    if (fi != null && !typesMatch (toType, fi))
 		error (rhs, "Types not compatible: %s <-> %s", toType.getFullDotName (), fi.getFullDotName ());
+	    markReturnValueUsed (rhs);
 	}
     }
 
@@ -685,6 +686,7 @@ public class ClassSetter {
 	    // AmbiguousName that could not be resolved and similar, no need for NPE or another error
 	    if (methodOn == null)
 		return;
+	    markReturnValueUsed (on);
 	}
 	if (isSuper) {
 	    // TODO: set methodOn
@@ -742,6 +744,8 @@ public class ClassSetter {
     }
 
     private MethodInfo getMatching (List<MethodInfo> options, ParseTreeNode on, List<ParseTreeNode> args, boolean insideStatic) {
+	if (options == null)
+	    return null;
 	for (MethodInfo info : options) {
 	    if (match (on, args, info, insideStatic))
 		return info;
@@ -847,6 +851,8 @@ public class ClassSetter {
 	} else {
 	    error (t, "Unhandled type in two part expression: %s: (%s, %s)", t, part1.getFullDotName (), part2.getFullDotName ());
 	}
+	markReturnValueUsed (t.part1 ());
+	markReturnValueUsed (t.part2 ());
     }
 
     private boolean isComparisson (Token t) {
@@ -1269,6 +1275,11 @@ public class ClassSetter {
 	    }
 	}
 	return fi;
+    }
+
+    private void markReturnValueUsed (ParseTreeNode p) {
+	if (p instanceof MethodInvocation mi)
+	    mi.returnValueUsed ();
     }
 
     private class ImportHandler {

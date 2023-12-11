@@ -731,6 +731,12 @@ public class TestClassSetter {
 	getTypes ("class A { int f; } class B extends A {} class C extends B { public C () {f = 7;}}");
     }
 
+    @Test
+    public void testMethodChainingMissmatch () {
+	// we used to crash when we found no methods at all.
+	getTypes ("class C { static int x () { return 6; } public static void a () { int l = x().length (); }}", 1);
+    }
+
     /* TODO: implement full generic handling */
     /*
     @Test
