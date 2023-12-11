@@ -55,25 +55,27 @@ public class TestParser {
 	boolean printSyntaxTree = false;
 	boolean fillInClasses = false;
 	int fileStart = 0;
-	if (args[fileStart].equals ("-encoding") && args.length > fileStart + 1) {
-	    charset = Charset.forName (args[++fileStart]);
-	    fileStart++;
-	}
-	if (args[fileStart].equals ("-fill_in_classes")) {
-	    fillInClasses = true;
-	    fileStart++;
-	}
-	if (args[fileStart].equals ("-print_parse")) {
-	    printParseTree = true;
-	    fileStart++;
-	}
-	if (args[fileStart].equals ("-print_syntax")) {
-	    printSyntaxTree = true;
-	    fileStart++;
-	}
 	int numThreads = Runtime.getRuntime ().availableProcessors ();
-	if (args[fileStart].equals ("-single_threaded")) {
-	    numThreads = 1;
+	while (fileStart < args.length && args[fileStart].startsWith ("-")) {
+	    System.out.println ("Trying to parse setting: " + args[fileStart]);
+	    if (args[fileStart].equals ("-encoding")) {
+		if (args.length > fileStart + 1)
+		    charset = Charset.forName (args[++fileStart]);
+		else
+		    System.err.println ("Actual encoding missing from arguments");
+	    }
+	    if (args[fileStart].equals ("-fill_in_classes")) {
+		fillInClasses = true;
+	    }
+	    if (args[fileStart].equals ("-print_parse")) {
+		printParseTree = true;
+	    }
+	    if (args[fileStart].equals ("-print_syntax")) {
+		printSyntaxTree = true;
+	    }
+	    if (args[fileStart].equals ("-single_threaded")) {
+		numThreads = 1;
+	    }
 	    fileStart++;
 	}
 
