@@ -2,10 +2,8 @@ package org.khelekore.parjac2.javacompiler;
 
 import java.lang.constant.ClassDesc;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;

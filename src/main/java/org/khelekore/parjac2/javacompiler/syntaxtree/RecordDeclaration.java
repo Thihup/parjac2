@@ -1,6 +1,5 @@
 package org.khelekore.parjac2.javacompiler.syntaxtree;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;

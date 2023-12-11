@@ -11,7 +11,6 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.Block;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.CompactConstructorDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ConstructorDeclaration;
-import org.khelekore.parjac2.javacompiler.syntaxtree.ConstructorDeclarationInfo;
 import org.khelekore.parjac2.javacompiler.syntaxtree.EnumConstant;
 import org.khelekore.parjac2.javacompiler.syntaxtree.EnumDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ExpressionName;

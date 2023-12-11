@@ -372,17 +372,17 @@ public class BytecodeGenerator {
 	}
 
 	@Override public void handleStatements (CodeBuilder cb, List<? extends ParseTreeNode> statements) {
-	    Deque<Object> partsToHandle = new ArrayDeque<> ();
+	    Deque<ParseTreeNode> partsToHandle = new ArrayDeque<> ();
 	    partsToHandle.addAll (statements);
 	    while (!partsToHandle.isEmpty ()) {
 		handleStatement (cb, td, partsToHandle, partsToHandle.removeFirst ());
 	    }
 	}
 
-	private void handleStatement (CodeBuilder cb, TypeDeclaration td, Deque<Object> partsToHandle, Object p) {
+	private void handleStatement (CodeBuilder cb, TypeDeclaration td, Deque<ParseTreeNode> partsToHandle, Object p) {
 	    //System.err.println ("looking at: " + p + ", " + p.getClass ().getName ());
 	    switch (p) {
-	    case ExpressionName e -> runParts (partsToHandle, e.replaced ());
+	    case ExpressionName e -> partsToHandle.addFirst (e.replaced ());
 	    case FieldAccess fa -> fieldAccess (cb, fa);
 	    case MethodInvocation mi -> methodInvocation (cb, mi);
 	    case ReturnStatement r -> handleReturn (cb, r);
@@ -390,7 +390,7 @@ public class BytecodeGenerator {
 	    case TwoPartExpression tp -> handleTwoPartExpression (cb, tp);
 	    case Ternary t -> IfGenerator.handleTernary (this, cb, t);
 	    case IfThenStatement ifts -> IfGenerator.handleIf (this, cb, ifts);
-	    case Assignment a -> handleAssignment (cb, partsToHandle, a);
+	    case Assignment a -> handleAssignment (cb, a);
 	    case LocalVariableDeclaration lv -> LocalVariableHandler.handleLocalVariables (this, cb, lv);
 	    case PostIncrementExpression pie -> IncrementGenerator.handlePostIncrement (this, cb, cip.getFullName (td), pie);
 	    case PostDecrementExpression pde -> IncrementGenerator.handlePostDecrement (this, cb, cip.getFullName (td), pde);
@@ -416,6 +416,7 @@ public class BytecodeGenerator {
 	    case DoubleLiteral d -> CodeUtil.handleDouble (cb, d);
 	    case ThisPrimary t -> CodeUtil.handleThis (cb);
 	    case TokenNode t -> handleToken (cb, t);
+
 	    case ParseTreeNode n -> addChildren (partsToHandle, n);
 	    default -> throw new IllegalArgumentException ("Unknown type: " + p + ", " + p.getClass ().getName ());
 	    }
@@ -635,7 +636,7 @@ public class BytecodeGenerator {
 	    cb.ireturn ();
 	}
 
-	private void handleAssignment (CodeBuilder cb, Deque<Object> partsToHandle, Assignment a) {
+	private void handleAssignment (CodeBuilder cb, Assignment a) {
 	    ParseTreeNode p = a.lhs ();
 	    if (p instanceof DottedName dn)
 		p = dn.replaced ();
@@ -758,12 +759,7 @@ public class BytecodeGenerator {
 		throw new IllegalStateException ("Unhandled token type: " + t);
 	}
 
-	private void runParts (Deque<Object> partsToHandle, Object... parts) {
-	    for (int i = parts.length - 1; i >= 0; i--)
-		partsToHandle.addFirst (parts[i]);
-	}
-
-	private void addChildren (Deque<Object> partsToHandle, ParseTreeNode p) {
+	private void addChildren (Deque<ParseTreeNode> partsToHandle, ParseTreeNode p) {
 	    List<ParseTreeNode> parts = p.getChildren ();
 	    for (int i = parts.size () - 1; i >= 0; i--)
 		partsToHandle.addFirst (parts.get (i));
