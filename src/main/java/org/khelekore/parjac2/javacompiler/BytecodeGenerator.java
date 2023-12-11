@@ -379,7 +379,7 @@ public class BytecodeGenerator {
 	    }
 	}
 
-	private void handleStatement (CodeBuilder cb, TypeDeclaration td, Deque<ParseTreeNode> partsToHandle, Object p) {
+	private void handleStatement (CodeBuilder cb, TypeDeclaration td, Deque<ParseTreeNode> partsToHandle, ParseTreeNode p) {
 	    //System.err.println ("looking at: " + p + ", " + p.getClass ().getName ());
 	    switch (p) {
 	    case ExpressionName e -> partsToHandle.addFirst (e.replaced ());
@@ -418,7 +418,6 @@ public class BytecodeGenerator {
 	    case TokenNode t -> handleToken (cb, t);
 
 	    case ParseTreeNode n -> addChildren (partsToHandle, n);
-	    default -> throw new IllegalArgumentException ("Unknown type: " + p + ", " + p.getClass ().getName ());
 	    }
 	}
 
