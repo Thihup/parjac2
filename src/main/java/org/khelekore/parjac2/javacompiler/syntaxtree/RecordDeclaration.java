@@ -112,10 +112,16 @@ public class RecordDeclaration extends TypeDeclaration {
 
     public void addMethod (MethodDeclaration m) {
 	getMethods ().add (m);
+	clearMethodInfoCache ();
     }
 
     @Override public List<ConstructorDeclaration> getConstructors () {
 	return body.getConsructors ();
+    }
+
+    public void addConstructor (ConstructorDeclaration cd) {
+	getConstructors ().add (cd);
+	clearMethodInfoCache ();
     }
 
     public List<CompactConstructorDeclaration> getCompactConstructors () {

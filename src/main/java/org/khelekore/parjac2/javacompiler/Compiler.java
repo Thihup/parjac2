@@ -145,10 +145,6 @@ public class Compiler {
     private void checkSemantics (List<ParsedEntry> trees) {
 	runTimed (() -> flagInterfaceMembersAsPublic (), "Flag interface members public");
 
-	// Add default constructors, fields and methods for enums, records and similar
-	runTimed (() -> ImplicitMethodGenerator.addImplicitMethods (cip, javaTokens, trees, diagnostics), "Adding implicit methods");
-	if (diagnostics.hasError ())
-	    return;
 	/*
 	 * 1: Set classes for fields, method parameters and method returns, setup scopes
 	 *    Scope hangs on class, method, for-clause and try (with resource) clause

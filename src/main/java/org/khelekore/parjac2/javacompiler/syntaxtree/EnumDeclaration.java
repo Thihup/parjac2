@@ -98,6 +98,11 @@ public class EnumDeclaration extends TypeDeclaration {
 	return body.getConsructors ();
     }
 
+    public void addConstructor (ConstructorDeclaration cd) {
+	getConstructors ().add (cd);
+	clearMethodInfoCache ();
+    }
+
     @Override public List<SyntaxTreeNode> getInstanceInitializers () {
 	return body.getInstanceInitializers ();
     }

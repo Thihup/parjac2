@@ -97,6 +97,12 @@ public abstract class TypeDeclaration extends FlaggedBase {
 	ls.add (mi);
     }
 
+    protected void clearMethodInfoCache () {
+	synchronized (this) {
+	    methodInfos = null;
+	}
+    }
+
     public abstract List<? extends ConstructorDeclarationInfo> getConstructors ();
 
     public abstract List<SyntaxTreeNode> getInstanceInitializers ();

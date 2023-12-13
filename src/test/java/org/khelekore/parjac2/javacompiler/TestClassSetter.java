@@ -393,12 +393,12 @@ public class TestClassSetter {
 
     @Test
     public void testFieldsFromSuperClassIsFound () {
-	getTypes ("class B { int flags; } class C extends B { B () { flags = 3; }}");
+	getTypes ("class B { int flags; } class C extends B { C () { flags = 3; }}");
     }
 
     @Test
     public void testThisFieldsFromSuperClassIsFound () {
-	getTypes ("class B { int flags; } class C extends B { B () { this.flags = 3; }}");
+	getTypes ("class B { int flags; } class C extends B { C () { this.flags = 3; }}");
     }
 
     @Test
@@ -568,12 +568,12 @@ public class TestClassSetter {
 
     @Test
     public void testAutoBoxToSyperType () {
-	getTypes ("class C { void a (Number n) {} f () { a (1); }}");
+	getTypes ("class C { void a (Number n) {} void f () { a (1); }}");
     }
 
     @Test
     public void testAutoBoxToInterface () {
-	getTypes ("class C { void a (java.io.Serializable s) {} f () { a (1); }}");
+	getTypes ("class C { void a (java.io.Serializable s) {} void f () { a (1); }}");
     }
 
     @Test

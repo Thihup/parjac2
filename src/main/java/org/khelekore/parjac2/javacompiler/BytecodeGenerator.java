@@ -258,50 +258,6 @@ public class BytecodeGenerator {
 			    mb.with (SignatureAttribute.of (MethodSignature.parseFrom (msh.signature ())));
 		    });
 	    });
-	if (td instanceof RecordDeclaration rd)
-	    addRecordMethods (classBuilder, rd);
-    }
-
-    private void addRecordMethods (ClassBuilder classBuilder, RecordDeclaration rd) {
-	if (!hasMethod (rd, "toString")) {
-	    addImplicit (classBuilder, rd, "toString", FullNameHandler.JL_STRING);
-	}
-	if (!hasMethod (rd, "hashCode")) {
-	    addImplicit (classBuilder, rd, "hashCode", FullNameHandler.INT);
-	}
-	if (!hasMethod (rd, "equals")) {
-	    addImplicit (classBuilder, rd, "equals", FullNameHandler.BOOLEAN, FullNameHandler.JL_OBJECT);
-	}
-    }
-
-    private boolean hasMethod (RecordDeclaration rd, String name, FullNameHandler... argTypes) {
-	FullNameHandler fqn = cip.getFullName (rd);
-	List<MethodInfo> ls = rd.getMethodInformation (fqn, "toString");
-	for (MethodInfo mi : ls) {
-	    if (mi.numberOfArguments () == argTypes.length && allTypesMatch (mi, argTypes)) {
-		return true;
-	    }
-	}
-	return false;
-    }
-
-    private void addImplicit (ClassBuilder classBuilder, RecordDeclaration rd, String method,
-			      FullNameHandler returnType, FullNameHandler... args) {
-	int flags = Flags.ACC_PUBLIC | Flags.ACC_FINAL;
-	MethodTypeDesc mtd = ClassDescUtils.methodTypeDesc (returnType, args);
-	classBuilder.withMethod (method, mtd, flags, mb -> {
-		mb.withCode (cb -> {
-			DynamicGenerator.callObjectMethods (cb, rd, cip.getFullName (rd), method, returnType, args);
-			cb.returnInstruction (FullNameHelper.getTypeKind (returnType));
-		    });
-	    });
-    }
-
-    private boolean allTypesMatch (MethodInfo mi, FullNameHandler... argTypes) {
-	for (int i = 0; i < mi.numberOfArguments (); i++)
-	    if (!mi.parameter (i).equals (argTypes[i]))
-		return false;
-	return true;
     }
 
     private void addStaticBlocks (ClassBuilder classBuilder, TypeDeclaration td) {

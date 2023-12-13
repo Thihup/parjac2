@@ -97,6 +97,7 @@ public class ClassSetter {
     private final String packageName;          // package name of the file we are looking at
     private final OrdinaryCompilationUnit ocu; // we do not care about ModularCompilationUnit (for now?)
     private final ImportHandler ih;            // keep track of the imports we have
+    private final ImplicitMethodGenerator img;
 
     // cache so we do not have to recalculate them, key is MethodDeclarationBase or Constructor or Class
     private final Map<Object, EnclosingTypes> enclosureCache = new HashMap<> ();
@@ -120,10 +121,11 @@ public class ClassSetter {
 	    return;
 	classSetters.parallelStream ().forEach (ClassSetter::registerSuperTypes);
 
+	// We add implicit fields and methods during these calls
 	classSetters.parallelStream ().forEach (ClassSetter::registerFields);
 	classSetters.parallelStream ().forEach (ClassSetter::registerMethods);
 
-	// now that we know what types, fields and methods we have we check the method contents
+	// Now that we know what types, fields and methods we have we check the method contents
 	classSetters.parallelStream ().forEach (ClassSetter::checkMethodBodies);
 
 	classSetters.parallelStream ().forEach (cs -> cs.checkUnusedImport ());
@@ -141,6 +143,7 @@ public class ClassSetter {
 	ocu = (OrdinaryCompilationUnit)pe.getRoot ();
 	packageName = ocu.getPackageName ();
 	ih = new ImportHandler (ocu);
+	img = new ImplicitMethodGenerator (cip, javaTokens, pe, diagnostics);
     }
 
     private void registerSuperTypes () {
@@ -196,6 +199,7 @@ public class ClassSetter {
 
     private void setFieldTypes (TypeDeclaration td, EnclosingTypes et) {
 	EnclosingTypes ett = registerTypeParameters (et, td.getTypeParameters ());
+	img.addImplicitFields (td);
 	Map<String, FieldInfo> fields = td.getFields ();
 	fields.forEach ((name, info) -> setFieldType (ett, name, info));
     }
@@ -211,7 +215,13 @@ public class ClassSetter {
     private void registerMethods (TypeDeclaration td, EnclosingTypes et) {
 	EnclosingTypes ett = registerTypeParameters (et, td.getTypeParameters ());
 	td.getMethods ().forEach (m -> setMethodTypes (ett, m));
+	img.addImplicitMethods (td).forEach (m -> setMethodTypes (ett, m));
+
 	td.getConstructors ().forEach (c -> setConstructorTypes (ett, c));
+	img.addImplicitConstructors (td).forEach (c -> setConstructorTypes (ett, c));
+
+	img.addImplicitStaticBlocks (td);
+
 	enclosureCache.put (td, ett);
     }
 
