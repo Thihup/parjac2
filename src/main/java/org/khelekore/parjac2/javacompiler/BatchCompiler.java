@@ -33,6 +33,7 @@ public class BatchCompiler {
 	collector.getDiagnostics ()
 	    .sorted (new DiagnosticsSorter ())
 	    .forEach (d -> System.err.println (d.getMessage (locale)));
+	System.exit (collector.hasError () ? -1 : 0);
     }
 
     public BatchCompiler (CompilerDiagnosticCollector diagnostics) {
