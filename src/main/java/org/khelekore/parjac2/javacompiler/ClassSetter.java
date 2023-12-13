@@ -1,6 +1,7 @@
 package org.khelekore.parjac2.javacompiler;
 
 import java.io.IOException;
+import java.lang.constant.MethodTypeDesc;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,6 +28,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.Assignment;
 import org.khelekore.parjac2.javacompiler.syntaxtree.BasicForStatement;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Block;
 import org.khelekore.parjac2.javacompiler.syntaxtree.BlockStatements;
+import org.khelekore.parjac2.javacompiler.syntaxtree.CastExpression;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassOrInterfaceTypeToInstantiate;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ConstructorDeclarationInfo;
@@ -36,6 +38,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.EnhancedForStatement;
 import org.khelekore.parjac2.javacompiler.syntaxtree.EnumConstant;
 import org.khelekore.parjac2.javacompiler.syntaxtree.EnumDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ExceptionTypeList;
+import org.khelekore.parjac2.javacompiler.syntaxtree.ExplicitConstructorInvocation;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ExpressionName;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FieldAccess;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FormalParameterBase;
@@ -295,6 +298,9 @@ public class ClassSetter {
     private void checkConstructorBodies (ConstructorDeclarationInfo cdb) {
 	EnclosingTypes et = enclosureCache.get (cdb);
 	et = et.enclosingBlock (false);
+	ExplicitConstructorInvocation eci = cdb.explicitConstructorInvocation ();
+	if (eci != null)
+	    setTypesForMethodStatement (et, List.of (eci));
 	setTypesForMethodStatement (et, cdb.statements ());
     }
 
@@ -326,6 +332,7 @@ public class ClassSetter {
 	    case ExpressionName en -> reclassifyAmbiguousName (et, en);
 	    case DottedName dt -> setType (et, dt);
 	    case ThisPrimary tp -> setType (et, tp);
+	    case CastExpression ce -> handleCast (et, ce, partsToHandle);
 	    case FieldAccess fa -> handlePartsAndField (et, fa, partsToHandle);
 	    case ClassOrInterfaceTypeToInstantiate coitti -> setType (et, coitti.type ());
 
@@ -388,6 +395,11 @@ public class ClassSetter {
 	@Override public FullNameHandler typeName () {
 	    return le.parameter (paramPos);
 	}
+    }
+
+    private void handleCast (EnclosingTypes et, CastExpression ce, Deque<StatementHandler> partsToHandle) {
+	markReturnValueUsed (ce.expression ());
+	addParts (et, ce, partsToHandle);
     }
 
     private void handlePartsAndField (EnclosingTypes et, FieldAccess fa, Deque<StatementHandler> partsToHandle) {
@@ -701,7 +713,7 @@ public class ClassSetter {
 		    methodOn = currentClass (et);
 		}
 
-		MethodInfo info = getMethod (mi, methodOn, on, name, args, insideStatic);
+		MethodInfo info = getMethod (et, mi, methodOn, on, name, args, insideStatic);
 		if (info != null) {
 		    Map<String, FullNameHandler> genericTypes = getGenericTypes (on);
 		    mi.info (info, genericTypes);
@@ -727,14 +739,14 @@ public class ClassSetter {
 	return Map.of ();
     }
 
-    private MethodInfo getMethod (MethodInvocation mi, FullNameHandler methodOn,
+    private MethodInfo getMethod (EnclosingTypes et, MethodInvocation mi, FullNameHandler methodOn,
 				  ParseTreeNode on, String name, List<ParseTreeNode> args, boolean insideStatic) {
-	MethodInfo info = getMatching (cip.getMethods (methodOn, name), on, args, insideStatic);
+	MethodInfo info = getMatching (et, getMethods (methodOn, name), on, args, insideStatic);
 	if (info == null) {
 	    List<FullNameHandler> supers = getSuperClasses (methodOn);
 	    if (supers != null) {
 		for (FullNameHandler sfn : supers) {
-		    info = getMatching (cip.getMethods (sfn, name), on, args, insideStatic);
+		    info = getMatching (et, getMethods (sfn, name), on, args, insideStatic);
 		    if (info != null)
 			break;
 		}
@@ -743,17 +755,23 @@ public class ClassSetter {
 	return info;
     }
 
-    private MethodInfo getMatching (List<MethodInfo> options, ParseTreeNode on, List<ParseTreeNode> args, boolean insideStatic) {
+    private List<MethodInfo> getMethods (FullNameHandler methodOn, String name) {
+	if (methodOn.isArray () && name.equals ("clone"))
+	    return List.of (new ArrayCloneMethodCall (methodOn));
+	return cip.getMethods (methodOn, name);
+    }
+
+    private MethodInfo getMatching (EnclosingTypes et, List<MethodInfo> options, ParseTreeNode on, List<ParseTreeNode> args, boolean insideStatic) {
 	if (options == null)
 	    return null;
 	for (MethodInfo info : options) {
-	    if (match (on, args, info, insideStatic))
+	    if (match (et, on, args, info, insideStatic))
 		return info;
 	}
 	return null;
     }
 
-    private boolean match (ParseTreeNode on, List<ParseTreeNode> args, MethodInfo info, boolean insideStatic) {
+    private boolean match (EnclosingTypes et, ParseTreeNode on, List<ParseTreeNode> args, MethodInfo info, boolean insideStatic) {
 	if (on instanceof DottedName dn)
 	    on = dn.replaced ();
 	boolean requireInstance = !Flags.isStatic (info.flags ());
@@ -771,6 +789,15 @@ public class ClassSetter {
 		return false;
 	    }
 	}
+
+	FullNameHandler onType;
+	if (on == null)
+	    onType = currentClass (et);
+	else
+	    onType = FullNameHelper.type (on);
+	FullNameHandler topLevelClass = et == null ? null : lastFQN (et);
+	if (!isMethodAccessible (et, info.owner (), onType, topLevelClass, info.flags ()))
+	    return false;
 
 	FullNameHandler lastVarArg = null;
 	if (varArgs) {
@@ -878,6 +905,7 @@ public class ClassSetter {
 	    error (r, "Return statement (%s) incompatible with method return type (%s)", fr.getFullDotName (), fm.getFullDotName ());
 	}
 	r.type (fm);
+	markReturnValueUsed (p);
     }
 
     private void checkIfExpressionType (EnclosingTypes et, IfThenStatement i) {
@@ -1388,14 +1416,30 @@ public class ClassSetter {
 	return isAccessible (et, fqn, topLevelClass, r.accessFlags ());
     }
 
-    private boolean isAccessible (EnclosingTypes et, FullNameHandler fqn, FullNameHandler topLevelClass, int flags) {
-	if (Flags.isPublic (flags)) {
+    private boolean isMethodAccessible (EnclosingTypes et, FullNameHandler fqn,
+					FullNameHandler methodOn, FullNameHandler topLevelClass, int flags) {
+	if (Flags.isPublic (flags))
 	    return true;
-	} else if (Flags.isProtected (flags)) {
-	    return samePackage (fqn, packageName) || insideSuperClass (et, fqn);
-	} else if (Flags.isPrivate (flags)) {
-	    return sameTopLevelClass (fqn, topLevelClass);
+	if (Flags.isProtected (flags)) {
+	    return samePackage (fqn, packageName) || insideSuperClass (fqn, methodOn);
 	}
+	if (Flags.isPrivate (flags))
+	    return sameTopLevelClass (fqn, topLevelClass);
+
+	// no specified access level
+	if (samePackage (fqn, packageName))
+	    return true;
+	return false;
+    }
+
+    private boolean isAccessible (EnclosingTypes et, FullNameHandler fqn, FullNameHandler topLevelClass, int flags) {
+	if (Flags.isPublic (flags))
+	    return true;
+	if (Flags.isProtected (flags))
+	    return samePackage (fqn, packageName) || insideSuperClass (et, fqn);
+	if (Flags.isPrivate (flags))
+	    return sameTopLevelClass (fqn, topLevelClass);
+
 	// No access level
 	if (samePackage (fqn, packageName))
 	    return true;
@@ -1403,23 +1447,30 @@ public class ClassSetter {
     }
 
     private boolean samePackage (FullNameHandler fnh, String packageName) {
-	String fqn = fnh.getFullDotName ();
+	String fqn = fnh.getFullDollarName ();
 	String start = packageName == null ? "" : packageName;
-	return fqn.length () > start.length () && fqn.startsWith (start) &&
-	    fqn.indexOf ('.', fqn.length ()) == -1;
+
+	if (start.isEmpty ()) {
+	    return fqn.indexOf ('.') == -1;
+	}
+	int sl = start.length ();
+	return fqn.length () > sl + 1 && fqn.startsWith (start) &&
+	    fqn.charAt (sl) == '.' &&
+	    fqn.indexOf ('.', sl + 1) == -1;
     }
 
     private boolean insideSuperClass (EnclosingTypes et, FullNameHandler fqn) {
-	for (EnclosingTypes c : et)
+	for (EnclosingTypes c : et) {
 	    if (c.fqn () != null)
 		if (insideSuperClass (fqn, c.fqn ()))
 		    return true;
+	}
 	return false;
     }
 
     private boolean insideSuperClass (FullNameHandler fqn, FullNameHandler currentClass) {
 	try {
-	    List<FullNameHandler> supers = cip.getSuperTypes (currentClass.getFullDotName (), false);
+	    List<FullNameHandler> supers = cip.getSuperTypes (currentClass.getFullDotName (), currentClass.isArray ());
 	    for (FullNameHandler s :  supers) {
 		if (startsWithOuter (fqn, s)) {
 		    return true;
@@ -1436,6 +1487,8 @@ public class ClassSetter {
     private boolean startsWithOuter (FullNameHandler inner, FullNameHandler outer) {
 	String c = inner.getFullDotName ();
 	String t = outer.getFullDotName ();
+	if (c.equals (t))
+	    return true;
 	return c.length () > t.length () && c.startsWith (t) && c.charAt (t.length ()) == '.';
     }
 
@@ -1707,6 +1760,49 @@ public class ClassSetter {
 
 	@Override public FullNameHandler typeName () {
 	    return FullNameHandler.INT;
+	}
+    }
+
+    private class ArrayCloneMethodCall implements MethodInfo {
+	private final FullNameHandler arrayClass;
+	public ArrayCloneMethodCall (FullNameHandler arrayClass) {
+	    this.arrayClass = arrayClass;
+	}
+
+	@Override public FullNameHandler owner () {
+	    return arrayClass;
+	}
+
+	@Override public MethodTypeDesc methodTypeDesc () {
+	    return ClassDescUtils.methodTypeDesc (null, FullNameHandler.JL_OBJECT);
+	}
+
+	@Override public ParsePosition position () {
+	    return null;
+	}
+
+	@Override public int flags () {
+	    return Flags.ACC_PUBLIC;
+	}
+
+	@Override public String name () {
+	    return "clone";
+	}
+
+	@Override public int numberOfArguments () {
+	    return 0;
+	}
+
+	@Override public FullNameHandler result () {
+	    return arrayClass;
+	}
+
+	@Override public FullNameHandler parameter (int i) {
+	    throw new IllegalStateException ("No parameters");
+	}
+
+	@Override public String signature () {
+	    throw new IllegalStateException ("Not implemented yet");
 	}
     }
 }

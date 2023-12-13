@@ -432,6 +432,16 @@ public class TestClassSetter {
     }
 
     @Test
+    public void testObjectCloneIsNotUsable () {
+	getTypes ("class C { void bar () { Object a = new Object (); Object b = a.clone (); }}", 1);
+    }
+
+    @Test
+    public void testArrayCloneIsUsable () {
+	getTypes ("class C { void bar () { Object[] a = {}; Object[] b = a.clone (); }}", 0);
+    }
+
+    @Test
     public void testThisPrimaryUsedForMethod () {
 	getTypes ("class C { void foo () { String s = this.getClass ().getName (); }}");
     }

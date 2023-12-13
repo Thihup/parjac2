@@ -1,9 +1,11 @@
 package org.khelekore.parjac2.javacompiler.syntaxtree;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 import org.khelekore.parjac2.javacompiler.FieldInfo;
+import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -23,6 +25,14 @@ public class UnqualifiedClassInstanceCreationExpression extends AnonymousClass {
 	args = (children.get (i) instanceof ArgumentList) ? (ArgumentList)children.get (i++) : null;
 	i++;
 	body = (rule.size () > i) ? (ClassBody)children.get (i) : null;
+    }
+
+    public UnqualifiedClassInstanceCreationExpression (ParsePosition pos, ClassType type, ParseTreeNode... args) {
+	super (pos);
+	this.types = null;
+	this.type = new ClassOrInterfaceTypeToInstantiate (pos, type);
+	this.args = new ArgumentList (pos, Arrays.asList (args));
+	this.body = null;
     }
 
     @Override public Object getValue () {
@@ -93,5 +103,9 @@ public class UnqualifiedClassInstanceCreationExpression extends AnonymousClass {
 
     public FullNameHandler type () {
 	return type.fullName ();
+    }
+
+    public List<ParseTreeNode> args () {
+	return args == null ? List.of () : args.get ();
     }
 }

@@ -88,6 +88,7 @@ public class FullNameHelper {
 	case ClassType ct -> ct.fullName ();
 	case PrimitiveType pt -> pt.fullName ();
 	case ArrayCreationExpression ac -> ac.fullName ();
+	case ArrayInitializer ai -> ai.type ();
 	case MethodInvocation mi -> mi.genericResult ();
 	case DottedName an -> an.fullName ();
 	case StringLiteral s -> JL_STRING;

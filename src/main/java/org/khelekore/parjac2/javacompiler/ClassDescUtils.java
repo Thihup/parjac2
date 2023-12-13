@@ -48,7 +48,7 @@ public class ClassDescUtils {
     public static ClassDesc getClassDesc (ClassType ct) {
 	if (ct == null)
 	    return ConstantDescs.CD_Object; // common for super classes to be null
-	return ClassDesc.of (ct.getFullDollarName ());
+	return getClassDesc (ct.fullName ());
     }
 
     public static ClassDesc getClassDesc (ArrayType at) {

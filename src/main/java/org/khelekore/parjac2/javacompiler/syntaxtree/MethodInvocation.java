@@ -26,6 +26,14 @@ public class MethodInvocation extends SyntaxTreeNode {
 	this.mi = mi;
     }
 
+    public MethodInvocation (ParsePosition pos, ParseTreeNode on, String methodName, ParseTreeNode... args) {
+	super (pos);
+	this.on = on;
+	this.types = null;
+	this.isSuper = false;
+	mi = new UntypedMethodInvocation (pos, methodName, args);
+    }
+
     public void info (MethodInfo info, Map<String, FullNameHandler> genericTypes) {
 	this.info = info;
 	this.genericTypes = genericTypes;

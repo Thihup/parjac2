@@ -21,6 +21,10 @@ public class ArrayInitializer extends SyntaxTreeNode {
 	    variableList = null;
     }
 
+    public FullNameHandler type () {
+	return FullNameHandler.arrayOf (slotType, 1);
+    }
+
     public void slotType (FullNameHandler slotType) {
 	this.slotType = slotType;
     }

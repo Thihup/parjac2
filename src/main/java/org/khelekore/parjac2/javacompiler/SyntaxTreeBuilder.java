@@ -110,7 +110,7 @@ public class SyntaxTreeBuilder {
 	register ("MethodModifier", this::liftUp);
 	register ("MethodHeader", (ctx, rule, n, children) -> new MethodHeader (ctx, rule, n, children));
 	register ("Result", this::liftUp);
-	register ("MethodDeclarator", MethodDeclarator::new);
+	register ("MethodDeclarator", (ctx, rule, n, children) -> new MethodDeclarator (ctx, rule, n, children));
 	register ("ReceiverParameter", ReceiverParameter::new);
 	register ("FormalParameterList", FormalParameterList::new);
 	register ("FormalParameter", this::formalParameter);
@@ -186,7 +186,8 @@ public class SyntaxTreeBuilder {
 	register ("BlockStatement", this::liftUp);
 	register ("LocalClassOrInterfaceDeclaration", this::liftUp);
 	register ("LocalVariableDeclarationStatement", LocalVariableDeclarationStatement::new);
-	register ("LocalVariableDeclaration", LocalVariableDeclaration::new);
+	register ("LocalVariableDeclaration", (rule, input, children) ->
+		  new LocalVariableDeclaration (rule, input, children));
 	register ("LocalVariableType", this::liftUp);
 	register ("Statement", this::liftUp);
 	register ("StatementNoShortIf", this::liftUp);
@@ -252,14 +253,16 @@ public class SyntaxTreeBuilder {
 	register ("Primary", this::liftUp);
 	register ("PrimaryNoNewArray", this::primaryNoNewArray);
 	register ("ClassLiteral", ClassLiteral::new);
-	register ("ClassInstanceCreationExpression", ClassInstanceCreationExpression::new);
-	register ("UnqualifiedClassInstanceCreationExpression", UnqualifiedClassInstanceCreationExpression::new);
+	register ("ClassInstanceCreationExpression",
+		  (rule, n, children) -> new ClassInstanceCreationExpression (rule, n, children));
+	register ("UnqualifiedClassInstanceCreationExpression",
+		  (rule, n, children) -> new UnqualifiedClassInstanceCreationExpression (rule, n, children));
 	register ("ClassOrInterfaceTypeToInstantiate", ClassOrInterfaceTypeToInstantiate::new);
 	register ("TypeArgumentsOrDiamond", this::typeArgumentsOrDiamond);
 	register ("FieldAccess", (ctx, rule, n, children) -> new FieldAccess (ctx, rule, n, children));
 	register ("ArrayAccess", ArrayAccess::new);
 	register ("MethodInvocation", this::methodInvocation);
-	register ("UntypedMethodInvocation", UntypedMethodInvocation::new);
+	register ("UntypedMethodInvocation", (rule, n, children) -> new UntypedMethodInvocation (rule, n, children));
 	register ("ArgumentList", ArgumentList::new);
 	register ("MethodReference", this::methodReference);
 	register ("ArrayCreationExpression", this::liftUp);

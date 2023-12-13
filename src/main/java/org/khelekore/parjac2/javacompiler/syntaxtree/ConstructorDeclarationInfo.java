@@ -22,6 +22,8 @@ public interface ConstructorDeclarationInfo extends MethodInfo {
 	return "<init>";
     }
 
+    ExplicitConstructorInvocation explicitConstructorInvocation ();
+
     List<ParseTreeNode> statements ();
 
     ReceiverParameter getReceiverParameter ();

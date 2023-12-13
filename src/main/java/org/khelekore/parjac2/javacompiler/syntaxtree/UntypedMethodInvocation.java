@@ -1,8 +1,10 @@
 package org.khelekore.parjac2.javacompiler.syntaxtree;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.khelekore.parjac2.javacompiler.Identifier;
+import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -18,6 +20,15 @@ public class UntypedMethodInvocation extends SyntaxTreeNode {
 	    args = (ArgumentList)children.get (2);
 	else
 	    args = null;
+    }
+
+    public UntypedMethodInvocation (ParsePosition pos, String methodName, ParseTreeNode... args) {
+	super (pos);
+	this.methodName = methodName;
+	if (args.length == 0)
+	    this.args = null;
+	else
+	    this.args = new ArgumentList (pos, Arrays.asList (args));
     }
 
     @Override public Object getValue () {

@@ -2,14 +2,16 @@ package org.khelekore.parjac2.javacompiler.syntaxtree;
 
 import java.util.List;
 
+import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class ClassInstanceCreationExpression extends SyntaxTreeNode {
+    // we may have one of name or primary
     private ExpressionName name;
     private ParseTreeNode primary;
-    private UnqualifiedClassInstanceCreationExpression exp;
+    private final UnqualifiedClassInstanceCreationExpression exp;
 
     public ClassInstanceCreationExpression (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
@@ -24,6 +26,11 @@ public class ClassInstanceCreationExpression extends SyntaxTreeNode {
 	} else {
 	    exp = (UnqualifiedClassInstanceCreationExpression)tn;
 	}
+    }
+
+    public ClassInstanceCreationExpression (ParsePosition pos, ClassType type, ParseTreeNode... args) {
+	super (pos);
+	exp = new UnqualifiedClassInstanceCreationExpression (pos, type, args);
     }
 
     @Override public Object getValue () {
@@ -46,5 +53,9 @@ public class ClassInstanceCreationExpression extends SyntaxTreeNode {
 
     public FullNameHandler type () {
 	return exp.type ();
+    }
+
+    public List<ParseTreeNode> args () {
+	return exp.args ();
     }
 }

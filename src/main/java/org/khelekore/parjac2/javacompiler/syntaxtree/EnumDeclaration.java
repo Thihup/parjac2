@@ -90,6 +90,10 @@ public class EnumDeclaration extends TypeDeclaration {
 	return body.getMethods ();
     }
 
+    public void addMethod (MethodDeclaration m) {
+	getMethods ().add (m);
+    }
+
     @Override public List<ConstructorDeclaration> getConstructors () {
 	return body.getConsructors ();
     }
@@ -100,6 +104,10 @@ public class EnumDeclaration extends TypeDeclaration {
 
     @Override public List<SyntaxTreeNode> getStaticInitializers () {
 	return body.getStaticInitializers ();
+    }
+
+    public void addStaticInitializer (Block b) {
+	getStaticInitializers ().add (b);
     }
 
     public List<EnumConstant> constants () {

@@ -89,6 +89,10 @@ public class ConstructorDeclaration extends ConstructorBase {
 	return declarator.getFormalParameterList ();
     }
 
+    @Override public ExplicitConstructorInvocation explicitConstructorInvocation () {
+	return body.explicitConstructorInvocation ();
+    }
+
     @Override public List<ParseTreeNode> statements () {
 	return body.statements ();
     }

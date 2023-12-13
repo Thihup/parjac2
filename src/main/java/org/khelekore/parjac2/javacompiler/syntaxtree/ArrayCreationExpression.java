@@ -2,12 +2,13 @@ package org.khelekore.parjac2.javacompiler.syntaxtree;
 
 import java.util.List;
 
+import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class ArrayCreationExpression extends SyntaxTreeNode {
-    private final SyntaxTreeNode type;
+    private final ParseTreeNode type;
     private final DimExprs dimExprs;
     private final Dims dims;
     private final ArrayInitializer initializer;
@@ -15,10 +16,18 @@ public class ArrayCreationExpression extends SyntaxTreeNode {
     public ArrayCreationExpression (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
 	int i = 1;
-	type = (SyntaxTreeNode)children.get (i++);
+	type = children.get (i++);
 	dimExprs = (children.get (i) instanceof DimExprs) ? (DimExprs)children.get (i++) : null;
 	dims = (children.size () > i) ? (Dims)children.get (i++) : null;
 	initializer = (children.size () > i) ? (ArrayInitializer)children.get (i++) : null;
+    }
+
+    public ArrayCreationExpression (ParsePosition pos, ParseTreeNode type, ParseTreeNode slots) {
+	super (pos);
+	this.type = type;
+	this.dimExprs = new DimExprs (pos, slots);
+	this.dims = null;
+	this.initializer = null;
     }
 
     public FullNameHandler fullName () {
@@ -38,8 +47,16 @@ public class ArrayCreationExpression extends SyntaxTreeNode {
 	return r;
     }
 
-    public int dimExprs () {
+    public int dimExprsRank () {
 	return dimExprs != null ? dimExprs.rank () : 0;
+    }
+
+    public DimExprs dimExprs () {
+	return dimExprs;
+    }
+
+    public Dims dims () {
+	return dims;
     }
 
     @Override public Object getValue () {

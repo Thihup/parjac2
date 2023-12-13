@@ -37,11 +37,11 @@ public class MethodDeclarator extends SyntaxTreeNode {
 	    dims = null;
     }
 
-    public MethodDeclarator (ParsePosition pos, String name) {
+    public MethodDeclarator (ParsePosition pos, String name, FormalParameterList params) {
 	super (pos);
 	this.id = name;
 	this.rp = null;
-	this.params = null;
+	this.params = params;
 	this.dims = null;
     }
 

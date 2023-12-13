@@ -58,8 +58,7 @@ public class SignatureHelper {
 	ClassDesc returnDesc = ClassDescUtils.getParseTreeClassDesc (result);
 	sb.append (genericTypeHelper.getGenericType (result, cip, true));
 
-	MethodTypeDesc descriptor = MethodTypeDesc.of (returnDesc, paramDescs.toArray (new ClassDesc[paramDescs.size ()]));
-
+	MethodTypeDesc descriptor = MethodTypeDesc.of (returnDesc, paramDescs);
 	String signature = foundGenericTypes ? sb.toString () : null;
 	return new MethodSignatureHolder (descriptor, signature);
     }

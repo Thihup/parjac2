@@ -33,10 +33,11 @@ public class MethodDeclarationBase extends FlaggedBase implements MethodInfo {
 	    flags |= Flags.ACC_VARARGS;
     }
 
-    public MethodDeclarationBase (ParsePosition pos, int flags, String name, ParseTreeNode result, Block body) {
+    public MethodDeclarationBase (ParsePosition pos, int flags, String name,
+				  ParseTreeNode result, FormalParameterList params, Block body) {
 	super (pos);
 	modifiers = List.of ();
-	header = new MethodHeader (pos, name, result);
+	header = new MethodHeader (pos, name, result, params);
 	this.body = body;
 	this.flags = flags;
     }

@@ -1,7 +1,6 @@
 package org.khelekore.parjac2.javacompiler.syntaxtree;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.khelekore.parjac2.parser.Rule;
@@ -23,14 +22,29 @@ public class CastExpression extends SyntaxTreeNode {
 	    Multiple z = (Multiple)children.get (i++);
 	    z.forEach (c -> additionalBounds.add ((ClassType)c));
 	} else {
-	    additionalBounds = Collections.emptyList ();
+	    additionalBounds = List.of ();
 	}
 	i++; // ')'
 	expression = children.get (i);
     }
 
+    public CastExpression (ParseTreeNode baseType, ParseTreeNode expression) {
+	super (baseType.position ());
+	this.baseType = baseType;
+	additionalBounds = List.of ();
+	this.expression = expression;
+    }
+
     public ParseTreeNode baseType () {
 	return baseType;
+    }
+
+    public List<ClassType> additionalBounds () {
+	return additionalBounds;
+    }
+
+    public ParseTreeNode expression () {
+	return expression;
     }
 
     @Override public Object getValue() {

@@ -3,6 +3,7 @@ package org.khelekore.parjac2.javacompiler.syntaxtree;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -20,6 +21,11 @@ public class DimExprs extends SyntaxTreeNode {
 	    Multiple z = (Multiple)children.get (1);
 	    dims.addAll (z.get ());
 	}
+    }
+
+    public DimExprs (ParsePosition pos, ParseTreeNode expression) {
+	super (pos);
+	dims = List.of (new DimExpr (pos, expression));
     }
 
     @Override public Object getValue () {

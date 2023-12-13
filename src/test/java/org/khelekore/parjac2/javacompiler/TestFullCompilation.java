@@ -1,6 +1,7 @@
 package org.khelekore.parjac2.javacompiler;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -822,6 +823,21 @@ public class TestFullCompilation {
     public void testStackPopNotDoneOnChainedMethod () throws ReflectiveOperationException {
 	Method m = getMethod ("C", "class C { static String x () { return \"foo\"; } public static void a () { int l = x ().length (); }}", "a");
 	m.invoke (null);
+    }
+
+    @Test
+    public void testEnumValues () throws ReflectiveOperationException {
+	Method m = getMethod ("E", "public enum E { Y, N }", "values");
+	Object o = m.invoke (null);
+	assert o != null;
+	assert o.getClass ().isArray ();
+	int expectedLength = 2;
+	assert Array.getLength (o) == expectedLength;
+	for (int i = 0; i < expectedLength; i++) {
+	    Object e = Array.get (o, i);
+	    assert e != null;
+	    assert e.getClass ().isEnum ();
+	}
     }
 
     private Method getMethod (String className, String text, String methodName, Class<?> ... types) throws ReflectiveOperationException {

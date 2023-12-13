@@ -7,6 +7,8 @@ import org.khelekore.parjac2.javacompiler.MethodContentGenerator;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayAccess;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayCreationExpression;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayInitializer;
+import org.khelekore.parjac2.javacompiler.syntaxtree.DimExprs;
+import org.khelekore.parjac2.javacompiler.syntaxtree.Dims;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHelper;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -16,7 +18,13 @@ import io.github.dmlloyd.classfile.TypeKind;
 
 public class ArrayGenerator {
     public static void handleArrayCreation (MethodContentGenerator mcg, CodeBuilder cb, ArrayCreationExpression ace) {
-	mcg.handleStatements (cb, ace.getChildren ());
+	// since all children of ace includes the type we call handleStatements on the parts we need.
+	DimExprs dimExprs = ace.dimExprs ();
+	if (dimExprs != null)
+	    mcg.handleStatements (cb, dimExprs);
+	Dims dims = ace.dims ();
+	if (dims != null)
+	    mcg.handleStatements (cb, dims);
 	FullNameHandler type = ace.innerFullName ();
 	if (ace.rank () == 1) {
 	    if (type.isPrimitive ()) {
@@ -28,7 +36,7 @@ public class ArrayGenerator {
 	    }
 	} else {
 	    ClassDesc desc = ClassDescUtils.getClassDesc (ace.fullName ());
-	    cb.multianewarray (desc, ace.dimExprs ());
+	    cb.multianewarray (desc, ace.dimExprsRank ());
 	}
     }
 
@@ -42,8 +50,15 @@ public class ArrayGenerator {
     public static void handleArrayInitializer (MethodContentGenerator mcg, CodeBuilder cb, ArrayInitializer ai) {
 	int numSlots = ai.size ();
 	CodeUtil.handleInt (cb, numSlots);
+	FullNameHandler type = ai.slotType ();
 	TypeKind kind = FullNameHelper.getTypeKind (ai.slotType ());
-	cb.newarray (kind);
+	if (type.isPrimitive ()) {
+	    cb.newarray (kind);
+	} else {
+	    ClassDesc cd = ClassDescUtils.getClassDesc (type);
+	    cb.anewarray (cd);
+	}
+
 	int pos = 0;
 	for (ParseTreeNode p : ai.variableInitializers ()) {
 	    cb.dup ();

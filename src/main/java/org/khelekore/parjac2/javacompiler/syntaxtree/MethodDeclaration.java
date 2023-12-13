@@ -22,7 +22,8 @@ public class MethodDeclaration extends MethodDeclarationBase {
 	super (ctx, rule, n, children, flagCalculator);
     }
 
-    public MethodDeclaration (ParsePosition pos, int flags, String name, ParseTreeNode result, Block body) {
-	super (pos, flags, name, result, body);
+    public MethodDeclaration (ParsePosition pos, int flags, String name,
+			      ParseTreeNode result, FormalParameterList params, Block body) {
+	super (pos, flags, name, result, params, body);
     }
 }

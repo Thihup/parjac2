@@ -36,12 +36,12 @@ public class MethodHeader extends SyntaxTreeNode {
     }
 
     /** Create a method header for a method with a given name and return type, no arguments */
-    public MethodHeader (ParsePosition pos, String name, ParseTreeNode result) {
+    public MethodHeader (ParsePosition pos, String name, ParseTreeNode result, FormalParameterList params) {
 	super (pos);
 	types = null;
 	annotations = List.of ();
 	this.result = result;
-	methodDeclarator = new MethodDeclarator (pos, name);
+	methodDeclarator = new MethodDeclarator (pos, name, params);
 	t = null;
     }
 

@@ -16,6 +16,11 @@ public class ReturnStatement extends SyntaxTreeNode {
 	expression = rule.size () > 2 ? children.get (1) : null;
     }
 
+    public ReturnStatement (ParsePosition pos, ParseTreeNode expression) {
+	super (pos);
+	this.expression = expression;
+    }
+
     public ReturnStatement (ParsePosition pos, String field) {
 	super (pos);
 	expression = new ExpressionName (pos, field);

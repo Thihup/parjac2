@@ -1,7 +1,7 @@
 package org.khelekore.parjac2.javacompiler.syntaxtree;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -9,6 +9,7 @@ import org.khelekore.parjac2.javacompiler.Context;
 import org.khelekore.parjac2.javacompiler.FieldInfo;
 import org.khelekore.parjac2.javacompiler.Flags;
 import org.khelekore.parjac2.javacompiler.JavaTokens;
+import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -34,7 +35,7 @@ public class ClassBody extends SyntaxTreeNode {
 
     public ClassBody (Context ctx, Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
-	declarations = hasDeclarations (rule) ? ((Multiple)children.get (1)).get () : Collections.emptyList ();
+	declarations = hasDeclarations (rule) ? ((Multiple)children.get (1)).get () : List.of ();
 	TypeDistributor td = DistributorHelper.getClassDistributor (classDeclarations);
 	td.addMapping (Block.class, instanceInitializers);
 	td.addMapping (StaticInitializer.class, staticInitializers);
@@ -46,6 +47,12 @@ public class ClassBody extends SyntaxTreeNode {
 	BodyHelper bh = new BodyHelper (classDeclarations, localClasses);
 	bh.findInnerClasses (this, declarations);
 	nameToField = bh.getFields (fieldDeclarations, ctx);
+    }
+
+    public ClassBody (ParsePosition pos) {
+	super (pos);
+	declarations = List.of ();
+	nameToField = new HashMap<> ();
     }
 
     protected void addAdditionalMappings (TypeDistributor td) {

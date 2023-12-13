@@ -6,8 +6,15 @@ import java.util.stream.Collectors;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.SourceDiagnostics;
+import org.khelekore.parjac2.javacompiler.syntaxtree.AmbiguousName;
+import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayAccess;
+import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayCreationExpression;
+import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Assignment;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Block;
+import org.khelekore.parjac2.javacompiler.syntaxtree.CastExpression;
+import org.khelekore.parjac2.javacompiler.syntaxtree.ClassInstanceCreationExpression;
+import org.khelekore.parjac2.javacompiler.syntaxtree.ClassLiteral;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.CompactConstructorDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ConstructorDeclaration;
@@ -17,7 +24,11 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.ExpressionName;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FieldAccess;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FormalParameter;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FormalParameterBase;
+import org.khelekore.parjac2.javacompiler.syntaxtree.FormalParameterList;
+import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
+import org.khelekore.parjac2.javacompiler.syntaxtree.LocalVariableDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.MethodDeclaration;
+import org.khelekore.parjac2.javacompiler.syntaxtree.MethodInvocation;
 import org.khelekore.parjac2.javacompiler.syntaxtree.NormalClassDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.OrdinaryCompilationUnit;
 import org.khelekore.parjac2.javacompiler.syntaxtree.RecordComponent;
@@ -127,7 +138,7 @@ public class ImplicitMethodGenerator {
 	    int flags = Flags.ACC_PUBLIC;
 	    ParsePosition pos = rc.position ();
 	    ParseTreeNode res = rc.type ();
-	    r.addMethod (new MethodDeclaration (pos, flags, rc.name (), res,
+	    r.addMethod (new MethodDeclaration (pos, flags, rc.name (), res, null,
 						new Block (pos, new ReturnStatement (pos, rc.name ()))));
 	}
     }
@@ -144,22 +155,112 @@ public class ImplicitMethodGenerator {
     }
 
     private static final int ENUM_FIELD_FLAGS = Flags.ACC_PUBLIC | Flags.ACC_STATIC | Flags.ACC_FINAL | Flags.ACC_ENUM;
+    private static final int ENUM_VALUES_FLAGS = Flags.ACC_PRIVATE | Flags.ACC_STATIC | Flags.ACC_FINAL | Flags.ACC_SYNTHETIC;
+    private static final int ENUM_METHODS_FLAGS = Flags.ACC_PUBLIC | Flags.ACC_STATIC;
+    private static final String VALUES_FIELD = "$VALUES";
+    private static final int VALUES_METHOD_FLAGS = Flags.ACC_PRIVATE | Flags.ACC_STATIC | Flags.ACC_SYNTHETIC;
 
     private void addEnumFieldsAndMethods (EnumDeclaration e) {
-	// TODO: implement
-	// fields
+	// one field for each constant.
 	for (EnumConstant ec : e.constants ()) {
 	    ClassType ct = new ClassType (cip.getFullName (e));
 	    e.addField (new FieldInfo (VariableInfo.Type.FIELD, ec.getName (), ec.position (), ENUM_FIELD_FLAGS, ct, 0));
 	}
+
+	// one field to hold the values
+	ParsePosition pos = e.position ();
+	ClassType ct = new ClassType (cip.getFullName (e));
+	ArrayType at = new ArrayType (ct, 1);
+	e.addField (new FieldInfo (VariableInfo.Type.FIELD, VALUES_FIELD, pos, ENUM_VALUES_FLAGS, at, 0));
+
 	// E[] values()
+	//     return (E[])$VALUES.clone();
+	ParseTreeNode on = new FieldAccess (pos, null, VALUES_FIELD);
+	ReturnStatement rs =
+	    new ReturnStatement (pos, new CastExpression (at, new MethodInvocation (pos, on, "clone")));
+	e.addMethod (new MethodDeclaration (pos, ENUM_METHODS_FLAGS, "values", at, null, new Block (pos, rs)));
+
 	// E valueOf(String)
+	// enum E { E valueOf (String e) { return Enum.valueOf (E.class, e); } ... }
+	String VALUE_OF_FIELD = "e";
+	on = new ClassType (FullNameHandler.JL_ENUM);
+	ClassLiteral ctClass = new ClassLiteral (pos, ct, 0);
+	ParseTreeNode[] args = { ctClass, new AmbiguousName (pos, List.of (VALUE_OF_FIELD)) };
+	rs = new ReturnStatement (pos, new CastExpression (ct, new MethodInvocation (pos, on, "valueOf", args)));
+	FormalParameterList params = getParams (pos, FullNameHandler.JL_STRING, VALUE_OF_FIELD);
+	e.addMethod (new MethodDeclaration (pos, ENUM_METHODS_FLAGS, "valueOf", ct, params, new Block (pos, rs)));
+
 	// private constructor
-	if (e.getConstructors ().isEmpty ()) {
-	    // Add a default one
+	List<ConstructorDeclaration> ls = e.getConstructors ();
+	if (ls.isEmpty ()) {
+	    int flags = Flags.ACC_PRIVATE;
+	    List<ParseTreeNode> superCallArguments = List.of (new AmbiguousName (pos, List.of ("name")),
+							      new AmbiguousName (pos, List.of ("ordinal")));
+	    List<FormalParameterBase> constructorParams =
+		List.of (getParam (pos, FullNameHandler.JL_STRING, "name"),
+			 getParam (pos, FullNameHandler.INT, "ordinal"));
+	    List<ParseTreeNode> statements = new ArrayList<> ();
+	    ls.add (ConstructorDeclaration.create (pos, javaTokens, flags, e.getName (),
+						   superCallArguments, constructorParams, statements));
 	}
+
 	// private static E[] $values();
+	// E[] es = new E[2];
+	// es[0] = Y;
+	// es[1] = N;
+	// return es
+	String localArray = "es";
+	List<ParseTreeNode> statements = new ArrayList<> ();
+	ParseTreeNode array = new AmbiguousName (pos, List.of (localArray));
+	IntLiteral il = new IntLiteral (javaTokens.INT_LITERAL, e.constants ().size (), pos);
+	ParseTreeNode init = new ArrayCreationExpression (pos, ct, il);
+	statements.add (new LocalVariableDeclaration (pos, at, localArray, init));
+	List<EnumConstant> constants = e.constants ();
+	for (int i = 0; i < constants.size (); i++) {
+	    statements.add (getArrayAssignment (pos, array, constants.get (i), i));
+	}
+	statements.add (new ReturnStatement (pos, array));
+	e.addMethod (new MethodDeclaration (pos, VALUES_METHOD_FLAGS, "$values", at, null, new Block (pos, statements)));
+
 	// static {};
+	// Y = new E ("Y", 0); N = new E ("N", 1); $VALUES = $values ();
+	statements = new ArrayList<> ();
+	for (int i = 0; i < constants.size (); i++) {
+	    String name = constants.get (i).getName ();
+	    statements.add (getEnumInstanceCreation (pos, ct, name, i));
+	}
+	statements.add (new Assignment (new ExpressionName (pos, VALUES_FIELD),
+					javaTokens.EQUAL,
+					new MethodInvocation (pos, null, "$values")));
+	Block block = new Block (pos, statements);
+	e.addStaticInitializer (block);
+    }
+
+    private Assignment getArrayAssignment (ParsePosition pos, ParseTreeNode array, EnumConstant ec, int slot) {
+	String name = ec.getName ();
+	ParseTreeNode left = new ArrayAccess (pos, array, intLiteral (pos, slot));
+	ParseTreeNode right = new ExpressionName (pos, name);
+	return new Assignment (left, javaTokens.EQUAL, right);
+    }
+
+    private FormalParameterList getParams (ParsePosition pos, FullNameHandler type, String name) {
+	return new FormalParameterList (pos, List.of (getParam (pos, type, name)));
+    }
+
+    private FormalParameter getParam (ParsePosition pos, FullNameHandler type, String name) {
+	ClassType ct = new ClassType (type);
+	return new FormalParameter (pos, List.of (), ct, name, 0);
+    }
+
+    private Assignment getEnumInstanceCreation (ParsePosition pos, ClassType type, String name, int ordinal) {
+	ParseTreeNode left = new ExpressionName (pos, name);
+	ParseTreeNode nameNode = new StringLiteral (javaTokens.STRING_LITERAL, name, pos);
+	ParseTreeNode right = new ClassInstanceCreationExpression (pos, type, nameNode, intLiteral (pos, ordinal));
+	return new Assignment (left, javaTokens.EQUAL, right);
+    }
+
+    private IntLiteral intLiteral (ParsePosition pos, int value) {
+	return new IntLiteral (javaTokens.INT_LITERAL, value, pos);
     }
 
     private void error (ParseTreeNode where, String template, Object... args) {

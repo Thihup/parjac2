@@ -47,6 +47,13 @@ public class ClassOrInterfaceTypeToInstantiate extends SyntaxTreeNode {
 	type = new ClassType (pos, scts);
     }
 
+    public ClassOrInterfaceTypeToInstantiate (ParsePosition pos, ClassType type) {
+	super (pos);
+	this.ids = List.of ();
+	this.type = type;
+	this.types = null;
+    }
+
     private List<Annotation> getAnnotations (Multiple z) {
 	return z.get ();
     }

@@ -332,19 +332,14 @@ public class BytecodeGenerator {
 	}
 
 	private void createConstructorContents (CodeBuilder cb, ConstructorDeclarationInfo cdb, SignatureHelper.MethodSignatureHolder msh) {
+	    ExplicitConstructorInvocation eci = cdb.explicitConstructorInvocation ();
 	    ConstructorBody body = cdb.body ();
 	    List<ParseTreeNode> statements = body.statements ();
-	    boolean explicitInvocation = false;
-	    if (!statements.isEmpty ()) {
-		ParseTreeNode p = statements.get (0);
-		if (isSuperOrThis (p)) {
-		    handleStatements (cb, p);
-		    explicitInvocation = true;
-		    statements = statements.subList (1, statements.size ());
-		}
-	    }
-	    if (!explicitInvocation)
+	    if (eci != null) {
+		CodeUtil.callSuperInit (this, cb, td, cdb, eci);
+	    } else {
 		CodeUtil.callSuperInit (cb, td, cdb);
+	    }
 
 	    List<SyntaxTreeNode> initializers = td.getInstanceInitializers ();
 	    if (initializers != null) {
@@ -352,10 +347,6 @@ public class BytecodeGenerator {
 	    }
 	    handleStatements (cb, statements);
 	    cb.return_ ();
-	}
-
-	private boolean isSuperOrThis (ParseTreeNode p) {
-	    return p instanceof ExplicitConstructorInvocation;
 	}
 
 	private void addMethodContent (CodeBuilder cb, Block body, TypeKind returnType) {
@@ -397,7 +388,7 @@ public class BytecodeGenerator {
 	    case BasicForStatement bfs -> LoopGenerator.handleBasicFor (this, cb, bfs);
 	    case EnhancedForStatement efs -> LoopGenerator.handleEnhancedFor (this, cb, efs);
 	    case SynchronizedStatement ss -> SynchronizationGenerator.handleSynchronized (this, cb, ss);
-	    case ClassInstanceCreationExpression cic -> CodeUtil.callNew (cb, cic);
+	    case ClassInstanceCreationExpression cic -> CodeUtil.callNew (this, cb, cic);
 
 	    case ArrayCreationExpression ace -> ArrayGenerator.handleArrayCreation (this, cb, ace);
 	    case ArrayAccess aa -> ArrayGenerator.handleArrayAccess (this, cb, aa);
@@ -410,6 +401,9 @@ public class BytecodeGenerator {
 	    case LambdaExpression le -> callLambda (cb, le);
 	    case MethodReference mr -> callMethodReference (cb, mr);
 
+	    case CastExpression ce -> handleCast (cb, ce);
+	    case ClassType ct -> cb.ldc (ClassDescUtils.getClassDesc (ct.fullName ()));
+	    case ClassLiteral cl -> cb.ldc (ClassDescUtils.getParseTreeClassDesc (cl.type ()));
 	    case StringLiteral l -> cb.ldc (l.getValue ());
 	    case IntLiteral i -> CodeUtil.handleInt (cb, i);
 	    case LongLiteral l -> CodeUtil.handleLong (cb, l);
@@ -417,6 +411,7 @@ public class BytecodeGenerator {
 	    case ThisPrimary t -> CodeUtil.handleThis (cb);
 	    case TokenNode t -> handleToken (cb, t);
 
+	    case AmbiguousName an -> addReplacedOrChildren (partsToHandle, an);
 	    case ParseTreeNode n -> addChildren (partsToHandle, n);
 	    }
 	}
@@ -576,6 +571,11 @@ public class BytecodeGenerator {
 	    } else {
 		throw new IllegalStateException ("Unhandled unary expression: " + u);
 	    }
+	}
+
+	private void handleCast (CodeBuilder cb, CastExpression ce) {
+	    handleStatements (cb, ce.expression ());
+	    cb.checkcast (ClassDescUtils.getParseTreeClassDesc (ce.baseType ()));
 	}
 
 	// for statements outside of if-tests and similar
@@ -766,6 +766,14 @@ public class BytecodeGenerator {
 		; // empty
 	    else
 		throw new IllegalStateException ("Unhandled token type: " + t);
+	}
+
+	private void addReplacedOrChildren (Deque<ParseTreeNode> partsToHandle, AmbiguousName an) {
+	    ParseTreeNode p = an.replaced ();
+	    if (p != an)
+		partsToHandle.addFirst (p);
+	    else
+		addChildren (partsToHandle, an);
 	}
 
 	private void addChildren (Deque<ParseTreeNode> partsToHandle, ParseTreeNode p) {

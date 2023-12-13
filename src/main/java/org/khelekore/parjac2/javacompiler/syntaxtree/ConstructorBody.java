@@ -27,6 +27,10 @@ public class ConstructorBody extends SyntaxTreeNode {
 	this.statements = new BlockStatements (pos, statements);
     }
 
+    public ExplicitConstructorInvocation explicitConstructorInvocation () {
+	return eci;
+    }
+
     @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	sb.append ("{\n");

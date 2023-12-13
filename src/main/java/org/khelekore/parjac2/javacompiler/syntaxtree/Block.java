@@ -20,6 +20,11 @@ public class Block extends SyntaxTreeNode {
 	statements = new BlockStatements (pos, statement);
     }
 
+    public Block (ParsePosition pos, List<ParseTreeNode> statements) {
+	super (pos);
+	this.statements = new BlockStatements (pos, statements);
+    }
+
     @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	sb.append ("{\n");

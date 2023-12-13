@@ -47,6 +47,10 @@ public class ExplicitConstructorInvocation extends SyntaxTreeNode {
 	where = javaTokens.SUPER;
     }
 
+    public List<ParseTreeNode> argumentList () {
+	return argumentList != null ? argumentList.get () : List.of ();
+    }
+
     @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	if (type != null)

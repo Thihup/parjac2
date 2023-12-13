@@ -2,6 +2,7 @@ package org.khelekore.parjac2.javacompiler.syntaxtree;
 
 import java.util.List;
 
+import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -22,6 +23,12 @@ public class VariableDeclarator extends SyntaxTreeNode {
 	super (id.position ());
 	this.id = id;
 	initializer = null;
+    }
+
+    public VariableDeclarator (ParsePosition pos, String name, ParseTreeNode initializer) {
+	super (pos);
+	id = new VariableDeclaratorId (pos, name, 0);
+	this.initializer = initializer;
     }
 
     public void type (ParseTreeNode type) {

@@ -56,6 +56,10 @@ public class CompactConstructorDeclaration extends ConstructorBase {
 	return null;  // TODO: not sure how to deal with this, should probably return RecordComponentList
     }
 
+    @Override public ExplicitConstructorInvocation explicitConstructorInvocation () {
+	return null;
+    }
+
     @Override public List<ParseTreeNode> statements () {
 	return body.statements ();
     }

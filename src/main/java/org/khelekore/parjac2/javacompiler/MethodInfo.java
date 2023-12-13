@@ -19,7 +19,7 @@ public interface MethodInfo {
     FullNameHandler owner ();
 
     default ClassDesc ownerDesc () {
-	return ClassDesc.of (owner ().getFullDollarName ());
+	return ClassDescUtils.getClassDesc (owner ());
     }
 
     MethodTypeDesc methodTypeDesc ();
@@ -46,7 +46,7 @@ public interface MethodInfo {
 
     default FullNameHandler genericResult (Map<String, FullNameHandler> genericTypes) {
 	String signature = signature ();
-	if (signature () != null) {
+	if (signature != null) {
 	    // TODO: possibly something like this: ??
 	    MethodSignature ms = MethodSignature.parseFrom (signature);
 	    Signature result = ms.result ();

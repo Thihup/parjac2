@@ -28,14 +28,13 @@ public class EnumBody extends SyntaxTreeNode {
 	if (children.get (i) instanceof EnumBodyDeclarations) {
 	    declarations = (EnumBodyDeclarations)children.get (i);
 	} else {
-	    declarations = null;
+	    declarations = new EnumBodyDeclarations (n.position ());
 	}
 	innerClasses = new ArrayList<> ();
 	if (constants != null) {
 	    constants.constants ().stream ().filter (EnumConstant::hasBody).forEach (innerClasses::add);
 	}
-	if (declarations != null)
-	    innerClasses.addAll (declarations.getInnerClasses ());
+	innerClasses.addAll (declarations.getInnerClasses ());
 	// TODO: do we not need to use BodyHelper here?
     }
 
@@ -73,37 +72,27 @@ public class EnumBody extends SyntaxTreeNode {
     }
 
     public Map<String, FieldInfo> getFields () {
-	if (declarations == null)
-	    return Map.of ();
 	return declarations.getFields ();
     }
 
     public List<MethodDeclaration> getMethods () {
-	if (declarations == null)
-	    return List.of ();
 	return declarations.getMethods ();
     }
 
     public List<ConstructorDeclaration> getConsructors () {
-	if (declarations == null)
-	    return List.of ();
 	return declarations.getConsructors ();
     }
 
     public List<SyntaxTreeNode> getInstanceInitializers () {
-	if (declarations == null)
-	    return List.of ();
 	return declarations.getInstanceInitializers ();
     }
 
     public List<SyntaxTreeNode> getStaticInitializers () {
-	if (declarations == null)
-	    return List.of ();
 	return declarations.getStaticInitializers ();
     }
 
     public List<EnumConstant> constants () {
-	if (declarations == null)
+	if (constants == null)
 	    return List.of ();
 	return constants.constants ();
     }

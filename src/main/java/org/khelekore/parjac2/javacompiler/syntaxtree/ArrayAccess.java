@@ -2,6 +2,7 @@ package org.khelekore.parjac2.javacompiler.syntaxtree;
 
 import java.util.List;
 
+import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -14,6 +15,12 @@ public class ArrayAccess extends SyntaxTreeNode {
 	super (n.position ());
 	from = children.get (0);
 	expression = children.get (2);
+    }
+
+    public ArrayAccess (ParsePosition pos, ParseTreeNode array, ParseTreeNode slot) {
+	super (pos);
+	from = array;
+	expression = slot;
     }
 
     public FullNameHandler type () {
