@@ -124,7 +124,7 @@ public class ClassSetter {
 	classSetters.parallelStream ().forEach (ClassSetter::registerMethods);
 
 	// now that we know what types, fields and methods we have we check the method contents
-	classSetters.parallelStream ().sequential ().forEach (ClassSetter::checkMethodBodies); //qwerty
+	classSetters.parallelStream ().forEach (ClassSetter::checkMethodBodies);
 
 	classSetters.parallelStream ().forEach (cs -> cs.checkUnusedImport ());
     }
