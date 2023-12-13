@@ -373,6 +373,7 @@ public class BytecodeGenerator {
 	private void handleStatement (CodeBuilder cb, TypeDeclaration td, Deque<ParseTreeNode> partsToHandle, ParseTreeNode p) {
 	    //System.err.println ("looking at: " + p + ", " + p.getClass ().getName ());
 	    switch (p) {
+	    case BytecodeBlock bb -> bb.generate (cb);
 	    case ExpressionName e -> partsToHandle.addFirst (e.replaced ());
 	    case FieldAccess fa -> fieldAccess (cb, fa);
 	    case MethodInvocation mi -> methodInvocation (cb, mi);
