@@ -747,6 +747,14 @@ public class TestClassSetter {
 	getTypes ("class C { static int x () { return 6; } public static void a () { int l = x().length (); }}", 1);
     }
 
+    @Test
+    public void testThrowsAreExceptions () {
+	// we used to crash when we found no methods at all.
+	getTypes ("class C { static void a () throws Exception { }}", 0);
+	getTypes ("class C { static void a () throws java.io.IOException { }}", 0);
+	getTypes ("class C { static void a () throws Integer { }}", 1);
+    }
+
     /* TODO: implement full generic handling */
     /*
     @Test

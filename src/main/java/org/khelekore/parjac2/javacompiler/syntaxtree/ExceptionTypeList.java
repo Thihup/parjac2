@@ -20,7 +20,7 @@ public class ExceptionTypeList extends SyntaxTreeNode {
 	}
     }
 
-    @Override public Object getValue() {
+    @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	sb.append (types.get (0));
 	for (int i = 1; i < types.size (); i++)

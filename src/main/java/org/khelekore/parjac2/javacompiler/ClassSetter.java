@@ -240,6 +240,7 @@ public class ClassSetter {
 	if (t != null) {
 	    ExceptionTypeList exceptions = t.getExceptions ();
 	    setTypes (et, exceptions.get ());
+	    validateThrowable (exceptions.get ());
 	}
 
 	enclosureCache.put (md, et);
@@ -1733,6 +1734,17 @@ public class ClassSetter {
 	diagnostics.report (SourceDiagnostics.warning (tree.getOrigin (),
 						       i.position (),
 						       "Unused import: %s", i.getValue ()));
+    }
+
+    private void validateThrowable (List<ClassType> types) {
+	types.forEach (this::validateThrowable);
+    }
+
+    private void validateThrowable (ClassType type) {
+	FullNameHandler fn = type.fullName ();
+	Set<FullNameHandler> allSupers = getAllSuperTypes (fn);
+	if (!allSupers.contains (FullNameHandler.JL_THROWABLE))
+	    error (type, "Incompatible types: %s is not a subclass of Throwable.", fn.getFullDotName ());
     }
 
     private void error (ParseTreeNode where, String template, Object... args) {

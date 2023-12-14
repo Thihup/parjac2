@@ -13,6 +13,7 @@ public interface FullNameHandler {
     public static final FullNameHandler JL_OBJECT = FullNameHandler.ofSimpleClassName ("java.lang.Object");
     public static final FullNameHandler JL_RECORD = FullNameHandler.ofSimpleClassName ("java.lang.Record");
     public static final FullNameHandler JL_STRING = FullNameHandler.ofSimpleClassName ("java.lang.String");
+    public static final FullNameHandler JL_THROWABLE = FullNameHandler.ofSimpleClassName ("java.lang.Throwable");
 
     public static final Primitive BYTE = new Primitive ("B", "byte");
     public static final Primitive SHORT = new Primitive ("S", "short");

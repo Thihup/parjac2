@@ -1,3 +1,5 @@
+Generics:
+* implement it
 
 Bytecode generation:
 * do-while loops
@@ -5,7 +7,7 @@ Bytecode generation:
 * try/catch/finally
 
 Add errors for:
-* Validate throws-clauses for method "void foo() throws A, B { ... }" -> A and B needs to be Throwables
+* Validate throws-clauses using generic types for method "void foo() throws T { ... }" -> T needs to be Throwables
 * validate throws clauses for method contents: "void foo () { throw new Foo(); }" -> Foo needs to be Throwable
 * Validate that we return and have no unreachable code
  ** Handle basic list of statements
