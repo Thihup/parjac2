@@ -25,4 +25,8 @@ public class Throws extends SyntaxTreeNode {
     public ExceptionTypeList getExceptions () {
 	return exceptionTypeList;
     }
+
+    public List<ClassType> thrownTypes () {
+	return exceptionTypeList.get ();
+    }
 }

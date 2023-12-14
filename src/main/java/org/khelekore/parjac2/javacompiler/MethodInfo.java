@@ -2,8 +2,10 @@ package org.khelekore.parjac2.javacompiler;
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
+import java.util.List;
 import java.util.Map;
 
+import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.parser.ParsePosition;
 
@@ -54,4 +56,7 @@ public interface MethodInfo {
 	}
 	return result ();
     }
+
+    /** Get the thrown ClassTypes, can only be used on code we are compiling */
+    List<ClassType> thrownTypes ();
 }

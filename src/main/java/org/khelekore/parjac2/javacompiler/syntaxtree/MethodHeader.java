@@ -112,6 +112,10 @@ public class MethodHeader extends SyntaxTreeNode {
 	return t;
     }
 
+    public List<ClassType> thrownTypes () {
+	return t == null ? null : t.thrownTypes ();
+    }
+
     public boolean isVarArgs () {
 	return methodDeclarator.isVarArgs ();
     }

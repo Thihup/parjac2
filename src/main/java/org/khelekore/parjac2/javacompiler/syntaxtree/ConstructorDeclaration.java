@@ -100,4 +100,12 @@ public class ConstructorDeclaration extends ConstructorBase {
     @Override public ConstructorBody body () {
 	return body;
     }
+
+    public Throws getThrows () {
+	return t;
+    }
+
+    @Override public List<ClassType> thrownTypes () {
+	return t == null ? null : t.thrownTypes ();
+    }
 }

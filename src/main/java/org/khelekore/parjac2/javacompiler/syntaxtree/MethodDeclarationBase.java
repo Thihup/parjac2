@@ -135,6 +135,10 @@ public class MethodDeclarationBase extends FlaggedBase implements MethodInfo {
 	return header.getThrows ();
     }
 
+    @Override public List<ClassType> thrownTypes () {
+	return header.thrownTypes ();
+    }
+
     public ParseTreeNode getMethodBody () {
 	return body;
     }

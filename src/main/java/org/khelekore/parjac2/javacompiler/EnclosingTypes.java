@@ -2,8 +2,10 @@ package org.khelekore.parjac2.javacompiler;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
+import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeParameter;
@@ -45,8 +47,11 @@ public record EnclosingTypes (EnclosingTypes previous, Enclosure<?> enclosure)
 	return new EnclosingTypes (this, new TypeParameterEnclosure (nameToTypeParameter));
     }
 
-    public EnclosingTypes enclosingMethod (ParseTreeNode returnType, Map<String, VariableInfo> nameToVariable, boolean isStatic) {
-	return new EnclosingTypes (this, new MethodEnclosure (returnType, nameToVariable, isStatic));
+    public EnclosingTypes enclosingMethod (ParseTreeNode returnType,
+					   Map<String, VariableInfo> nameToVariable,
+					   boolean isStatic,
+					   List<ClassType> thrownTypes) {
+	return new EnclosingTypes (this, new MethodEnclosure (returnType, nameToVariable, isStatic, thrownTypes));
     }
 
     public EnclosingTypes enclosingVariables (Map<String, VariableInfo> nameToVariable, boolean isStatic) {
@@ -70,7 +75,9 @@ public record EnclosingTypes (EnclosingTypes previous, Enclosure<?> enclosure)
 	@Override public Map<String, VariableInfo> getFields () { return Map.of (); }
     }
 
-    public record MethodEnclosure (ParseTreeNode returnType, Map<String, VariableInfo> variables, boolean isStatic) implements Enclosure<VariableInfo> {
+    public record MethodEnclosure (ParseTreeNode returnType, Map<String, VariableInfo> variables,
+				   boolean isStatic, List<ClassType> thrownTypes)
+	implements Enclosure<VariableInfo> {
 	@Override public Map<String, VariableInfo> getFields () { return variables; }
     }
 

@@ -17,6 +17,7 @@ import java.util.jar.JarFile;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.NoSourceDiagnostics;
+import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHelper;
 import org.khelekore.parjac2.parser.ParsePosition;
@@ -500,10 +501,14 @@ public class ClassResourceHolder {
 		    return;
 		returnType = FullNameHelper.get (md.returnType ());
 		int s = numberOfArguments ();
-		    params = new ArrayList<> (s);
+		params = new ArrayList<> (s);
 		for (int i = 0; i < s; i++)
 		    params.add (FullNameHelper.get (md.parameterType (i)));
 	    }
+	}
+
+	@Override public List<ClassType> thrownTypes () {
+	    throw new IllegalStateException ("Not implemented");
 	}
     }
 }

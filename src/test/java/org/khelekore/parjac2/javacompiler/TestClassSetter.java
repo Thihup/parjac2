@@ -760,7 +760,16 @@ public class TestClassSetter {
 	// we used to crash when we found no methods at all.
 	getTypes ("class C { static void a () { throw new RuntimeException (); }}", 0);
 	getTypes ("import java.io.IOException; class C { static void a () throws IOException { throw new IOException(); }}", 0);
-	getTypes ("class C { static void a () { throw Integer.valueOf (2); }}", 1);
+
+	// we get two errors here: 1) Integer is not a sublcass of Throwable and 2) Integer is not in throws-clause
+	getTypes ("class C { static void a () { throw Integer.valueOf (2); }}", 2);
+    }
+
+    @Test
+    public void testThrowStatementsMustBeDeclared () {
+	getTypes ("class C { void a () { throw new RuntimeException (); }}", 0);
+	getTypes ("import java.io.IOException; class C { void a () throws IOException { throw new IOException (); }}", 0);
+	getTypes ("import java.io.IOException; class C { void a () { throw new IOException (); }}", 1);
     }
 
     /* TODO: implement full generic handling */

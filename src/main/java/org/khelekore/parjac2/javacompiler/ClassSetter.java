@@ -235,7 +235,7 @@ public class ClassSetter {
 	    checkAnnotations (et, rp.getAnnotations ());
 	    setType (et, rp.getType ());
 	}
-	et = setFormalParameterListTypes (et, md.getResult (), md.getFormalParameterList (), md.isStatic ());
+	et = setFormalParameterListTypes (et, md.getResult (), md.getFormalParameterList (), md.isStatic (), md.thrownTypes ());
 
 	Throws t = md.getThrows ();
 	if (t != null) {
@@ -250,11 +250,13 @@ public class ClassSetter {
     private void setConstructorTypes (EnclosingTypes et, ConstructorDeclarationInfo cdb) {
 	checkAnnotations (et, cdb.getAnnotations ());
 	et = registerTypeParameters (et, cdb.getTypeParameters ());
-	et = setFormalParameterListTypes (et, null, cdb.getFormalParameterList (), false);
+	et = setFormalParameterListTypes (et, null, cdb.getFormalParameterList (), false, cdb.thrownTypes ());
 	enclosureCache.put (cdb, et);
     }
 
-    private EnclosingTypes setFormalParameterListTypes (EnclosingTypes et, ParseTreeNode result, FormalParameterList args, boolean isStatic) {
+    private EnclosingTypes setFormalParameterListTypes (EnclosingTypes et, ParseTreeNode result,
+							FormalParameterList args, boolean isStatic,
+							List<ClassType> thrownTypes) {
 	Map<String, VariableInfo> variables = new HashMap<> ();
 	if (args != null) {
 	    int i = 0;
@@ -269,7 +271,7 @@ public class ClassSetter {
 		}
 	    }
 	}
-	return et.enclosingMethod (result, variables, isStatic);
+	return et.enclosingMethod (result, variables, isStatic, thrownTypes);
     }
 
     private void checkFormalParameterModifiers (EnclosingTypes et, List<ParseTreeNode> modifiers) {
@@ -964,7 +966,40 @@ public class ClassSetter {
 
     private void checkThrowStatement (EnclosingTypes et, ThrowStatement ts) {
 	ParseTreeNode exp = ts.expression ();
-	validateThrowable (exp, FullNameHelper.type (exp));
+	FullNameHandler fn = FullNameHelper.type (exp);
+	if (fn != null) {
+	    Set<FullNameHandler> allSupers = getAllSuperTypes (fn);
+	    List<FullNameHandler> allTypes = new ArrayList<> (allSupers.size () + 1);
+	    allTypes.add (fn);
+	    allTypes.addAll (allSupers);
+	    validateThrowable (exp, fn, allTypes);
+	    if (!isRuntimeException (allTypes)) {
+		validateThrowsContains (et, ts, allTypes);
+	    }
+	}
+    }
+
+    private void validateThrowsContains (EnclosingTypes et, ThrowStatement ts, List<FullNameHandler> exceptionTypes) {
+	List<ClassType> thrown = null;
+	while (et != null) {
+	    Enclosure<?> e = et.enclosure ();
+	    if (e instanceof EnclosingTypes.MethodEnclosure me) {
+		thrown = me.thrownTypes ();
+		break;
+	    } else if (e instanceof EnclosingTypes.TypeEnclosure) {
+		thrown = List.of ();
+		break;
+	    }
+	    et = et.previous ();
+	}
+
+	if (thrown != null) {
+	    Set<FullNameHandler> thrownTypes = thrown.stream ().map (ct -> ct.fullName ()).collect (Collectors.toSet ());
+	    for (FullNameHandler st : exceptionTypes)
+		if (thrownTypes.contains (st))
+		    return;
+	}
+	error (ts, "Exception not found in methods throws clause");
     }
 
     private MethodInfo lambdaMatch (FullNameHandler type, LambdaExpression le) {
@@ -1160,6 +1195,8 @@ public class ClassSetter {
     }
 
     private Set<FullNameHandler> getAllSuperTypes (FullNameHandler subtype) {
+	if (subtype == null)
+	    return Set.of ();
 	Set<FullNameHandler> ret = new LinkedHashSet<> ();
 	Deque<FullNameHandler> d = new ArrayDeque<> ();
 	d.add (subtype);
@@ -1753,9 +1790,23 @@ public class ClassSetter {
     }
 
     private void validateThrowable (ParseTreeNode where, FullNameHandler fn) {
-	Set<FullNameHandler> allSupers = getAllSuperTypes (fn);
-	if (!allSupers.contains (FullNameHandler.JL_THROWABLE))
+	List<FullNameHandler> ls = new ArrayList<> ();
+	ls.add (fn);
+	ls.addAll (getAllSuperTypes (fn));
+	validateThrowable (where, fn, ls);
+    }
+
+    private void validateThrowable (ParseTreeNode where, FullNameHandler fn, List<FullNameHandler> allTypes) {
+	if (!isThrowable (allTypes))
 	    error (where, "Incompatible types: %s is not a subclass of Throwable.", fn.getFullDotName ());
+    }
+
+    private boolean isThrowable (List<FullNameHandler> allSupers) {
+	return allSupers.contains (FullNameHandler.JL_THROWABLE);
+    }
+
+    private boolean isRuntimeException (List<FullNameHandler> allSupers) {
+	return allSupers.contains (FullNameHandler.JL_RUNTIME_EXCEPTION);
     }
 
     private void error (ParseTreeNode where, String template, Object... args) {
@@ -1830,6 +1881,10 @@ public class ClassSetter {
 
 	@Override public String signature () {
 	    throw new IllegalStateException ("Not implemented yet");
+	}
+
+	@Override public List<ClassType> thrownTypes () {
+	    return null;
 	}
     }
 }

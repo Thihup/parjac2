@@ -67,4 +67,8 @@ public class CompactConstructorDeclaration extends ConstructorBase {
     @Override public ConstructorBody body () {
 	return body;
     }
+
+    @Override public List<ClassType> thrownTypes () {
+	return null;
+    }
 }
