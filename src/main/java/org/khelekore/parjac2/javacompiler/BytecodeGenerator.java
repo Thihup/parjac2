@@ -307,15 +307,22 @@ public class BytecodeGenerator {
 
 	private void addMethodContent (CodeBuilder cb, Block body, TypeKind returnType) {
 	    List<ParseTreeNode> statements = body.get ();
-	    boolean needReturn = !endsWithReturn (statements);
+	    boolean needReturn = !endsWithReturnOrThrows (statements);
 	    handleStatements (cb, statements);
 	    if (needReturn)
 		cb.returnInstruction (returnType);
 	}
 
-	private boolean endsWithReturn (List<ParseTreeNode> parts) {
+	private boolean endsWithReturnOrThrows (List<ParseTreeNode> parts) {
 	    // TODO: handle more cases, for example if/else where both parts return
-	    return parts.size () > 0 && parts.get (parts.size () - 1) instanceof ReturnStatement;
+	    if (parts.size () > 0) {
+		ParseTreeNode p = parts.get (parts.size () - 1);
+		if (p instanceof ReturnStatement)
+		    return true;
+		if (p instanceof ThrowStatement)
+		    return true;
+	    }
+	    return false;
 	}
 
 	@Override public void handleStatements (CodeBuilder cb, List<? extends ParseTreeNode> statements) {
@@ -357,6 +364,8 @@ public class BytecodeGenerator {
 	    // We get LambdaExpression and MethodReference in Assignment, so we just want to store the handle to it
 	    case LambdaExpression le -> callLambda (cb, le);
 	    case MethodReference mr -> callMethodReference (cb, mr);
+
+	    case ThrowStatement ts -> handleThrowStatement (cb, ts);
 
 	    case CastExpression ce -> handleCast (cb, ce);
 	    case ClassType ct -> cb.ldc (ClassDescUtils.getClassDesc (ct.fullName ()));
@@ -528,6 +537,11 @@ public class BytecodeGenerator {
 	    } else {
 		throw new IllegalStateException ("Unhandled unary expression: " + u);
 	    }
+	}
+
+	private void handleThrowStatement (CodeBuilder cb, ThrowStatement ts) {
+	    handleStatements (cb, ts.expression ());
+	    cb.athrow ();
 	}
 
 	private void handleCast (CodeBuilder cb, CastExpression ce) {

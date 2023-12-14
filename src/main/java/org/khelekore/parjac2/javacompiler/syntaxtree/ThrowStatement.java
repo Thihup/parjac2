@@ -14,6 +14,10 @@ public class ThrowStatement extends SyntaxTreeNode {
 	expression = children.get (1);
     }
 
+    public ParseTreeNode expression () {
+	return expression;
+    }
+
     @Override public Object getValue () {
 	return "throw " + expression + ";";
     }

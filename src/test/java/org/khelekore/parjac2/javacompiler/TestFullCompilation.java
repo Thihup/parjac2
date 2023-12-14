@@ -840,6 +840,12 @@ public class TestFullCompilation {
 	}
     }
 
+    @Test(expectedExceptions = ReflectiveOperationException.class)
+    public void testBasicThrows () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static void a () { throw new RuntimeException(); }}", "a");
+	Object o = m.invoke (null);
+    }
+
     private Method getMethod (String className, String text, String methodName, Class<?> ... types) throws ReflectiveOperationException {
 	Class<?> c = compileAndGetClass (className, text);
 	Method m = c.getMethod (methodName, types);
