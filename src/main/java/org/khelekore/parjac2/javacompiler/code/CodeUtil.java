@@ -29,9 +29,6 @@ import io.github.dmlloyd.classfile.TypeKind;
 
 public class CodeUtil {
 
-    // Would like to use ConstantDescs.CD_Void, but that causes error with signature "Ljava/lang/Void;
-    public static final ClassDesc CD_Void = ClassDesc.ofDescriptor ("V");
-
     public static void callSuperInit (CodeBuilder cb, TypeDeclaration td, ConstructorDeclarationInfo cdb) {
 	callSuperInit (null, cb, td, cdb, null);
     }
@@ -63,7 +60,7 @@ public class CodeUtil {
     // TODO: we should really match constructor calls inside ClassSetter and get this from the ConstructorInfo objects instead.
     private static MethodTypeDesc initMethodTypeDesc (List<ParseTreeNode> args) {
 	List<ClassDesc> argTypes = args.stream ().map (FullNameHelper::type).map (ClassDescUtils::getClassDesc).toList ();
-	return MethodTypeDesc.of (CD_Void, argTypes);
+	return MethodTypeDesc.of (ConstantDescs.CD_void, argTypes);
     }
 
     public static void loadParameter (CodeBuilder cb, FormalParameterBase fpb) {

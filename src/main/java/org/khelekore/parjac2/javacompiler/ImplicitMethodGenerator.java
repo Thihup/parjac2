@@ -58,7 +58,7 @@ public class ImplicitMethodGenerator {
     private static final MethodTypeDesc VALUE_OF_SIGNATURE =
 	MethodTypeDesc.of (ConstantDescs.CD_Enum, ConstantDescs.CD_Class, ConstantDescs.CD_String);
     private static final MethodTypeDesc ENUM_INIT_SIGNATURE =
-	MethodTypeDesc.of (CodeUtil.CD_Void, ConstantDescs.CD_String, ConstantDescs.CD_int);
+	MethodTypeDesc.of (ConstantDescs.CD_void, ConstantDescs.CD_String, ConstantDescs.CD_int);
 
     public ImplicitMethodGenerator (ClassInformationProvider cip,
 				    JavaTokens javaTokens,
