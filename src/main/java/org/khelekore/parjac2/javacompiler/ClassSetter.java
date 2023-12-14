@@ -70,6 +70,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.SwitchExpression;
 import org.khelekore.parjac2.javacompiler.syntaxtree.SwitchRule;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Ternary;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ThisPrimary;
+import org.khelekore.parjac2.javacompiler.syntaxtree.ThrowStatement;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Throws;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TwoPartExpression;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeArguments;
@@ -358,6 +359,8 @@ public class ClassSetter {
 	    case IfThenStatement i -> handlePartsAndHandler (et, i, e -> checkIfExpressionType (e, i), partsToHandle);
 	    case BasicForStatement bfs -> handlePartsAndHandler (et, bfs, e -> checkBasicForExpression (e, bfs), partsToHandle);
 	    case EnhancedForStatement efs -> handlePartsAndHandler (et, efs, e -> checkEnhancedForExpression (e, efs), partsToHandle);
+
+	    case ThrowStatement ts -> handlePartsAndHandler (et, ts, e -> checkThrowStatement (e, ts), partsToHandle);
 
 	    case ParseTreeNode ptn -> addParts (et, ptn, partsToHandle);
 
@@ -957,6 +960,11 @@ public class ClassSetter {
 	    type = fn.getFullDotName ();
 	}
 	error (test, "Test needs to evaluate to boolean value, current type: %s", type);
+    }
+
+    private void checkThrowStatement (EnclosingTypes et, ThrowStatement ts) {
+	ParseTreeNode exp = ts.expression ();
+	validateThrowable (exp, FullNameHelper.type (exp));
     }
 
     private MethodInfo lambdaMatch (FullNameHandler type, LambdaExpression le) {
@@ -1741,10 +1749,13 @@ public class ClassSetter {
     }
 
     private void validateThrowable (ClassType type) {
-	FullNameHandler fn = type.fullName ();
+	validateThrowable (type, type.fullName ());
+    }
+
+    private void validateThrowable (ParseTreeNode where, FullNameHandler fn) {
 	Set<FullNameHandler> allSupers = getAllSuperTypes (fn);
 	if (!allSupers.contains (FullNameHandler.JL_THROWABLE))
-	    error (type, "Incompatible types: %s is not a subclass of Throwable.", fn.getFullDotName ());
+	    error (where, "Incompatible types: %s is not a subclass of Throwable.", fn.getFullDotName ());
     }
 
     private void error (ParseTreeNode where, String template, Object... args) {
@@ -1759,12 +1770,6 @@ public class ClassSetter {
 	public static <T> ValueOrError<T> value (T value) {
 	    return new ValueOrError<T> (value, null);
 	}
-    }
-
-    private String dotName (FullNameHandler fn) {
-	if (fn == null)
-	    return "-";
-	return fn.getFullDotName ();
     }
 
     private class ArrayLengthAccess implements VariableInfo {

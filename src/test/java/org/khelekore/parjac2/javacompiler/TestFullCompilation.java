@@ -390,6 +390,13 @@ public class TestFullCompilation {
     }
 
     @Test
+    public void testValueFromPostChangeIsHandled () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static int a () { int r = 3; int x = r--; return x;  }}", "a");
+	int r = (Integer)m.invoke (null);
+	assert r == 3 : "Value from post decrement operation should be value from before change, but got: " + r;
+    }
+
+    @Test
     public void testPostIncrementThisField () throws ReflectiveOperationException {
 	Class<?> c = compileAndGetClass ("C", "public class C { int x = 17; public int r () { this.x++; return this.x; }}");
 	Object o = c.getConstructor ().newInstance ();;
@@ -843,7 +850,7 @@ public class TestFullCompilation {
     @Test(expectedExceptions = ReflectiveOperationException.class)
     public void testBasicThrows () throws ReflectiveOperationException {
 	Method m = getMethod ("C", "public class C { public static void a () { throw new RuntimeException(); }}", "a");
-	Object o = m.invoke (null);
+	m.invoke (null);
     }
 
     private Method getMethod (String className, String text, String methodName, Class<?> ... types) throws ReflectiveOperationException {

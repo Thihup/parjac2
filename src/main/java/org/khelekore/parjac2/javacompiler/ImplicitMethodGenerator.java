@@ -187,14 +187,17 @@ public class ImplicitMethodGenerator {
 
     private void recordToString (CodeBuilder cb, RecordDeclaration rd) {
 	DynamicGenerator.callObjectMethods (cb, rd, cip.getFullName (rd), "toString", FullNameHandler.JL_STRING);
+	cb.areturn ();
     }
 
     private void recordHashCode (CodeBuilder cb, RecordDeclaration rd) {
 	DynamicGenerator.callObjectMethods (cb, rd, cip.getFullName (rd), "hashCode", FullNameHandler.INT);
+	cb.ireturn ();
     }
 
     private void recordEquals (CodeBuilder cb, RecordDeclaration rd) {
 	DynamicGenerator.callObjectMethods (cb, rd, cip.getFullName (rd), "equals", FullNameHandler.BOOLEAN, FullNameHandler.JL_OBJECT);
+	cb.ireturn ();
     }
 
     private ConstructorDeclaration addDefaultConstructor (NormalClassDeclaration n) {
@@ -319,6 +322,7 @@ public class ImplicitMethodGenerator {
 	cb.getstatic (owner, VALUES_FIELD, arraytype);
 	cb.invokevirtual (arraytype, "clone", CLONE_SIGNATURE);
 	cb.checkcast (arraytype);
+	cb.areturn ();
     }
 
     // return Enum.valueOf (E.class, e); }
@@ -328,6 +332,7 @@ public class ImplicitMethodGenerator {
 	cb.aload (0);
 	cb.invokestatic (ConstantDescs.CD_Enum, "valueOf", VALUE_OF_SIGNATURE);
 	cb.checkcast (ourEnum);
+	cb.areturn ();
     }
 
     // private static E[] $values();
@@ -347,6 +352,7 @@ public class ImplicitMethodGenerator {
 	    cb.getstatic (ourEnum, ec.getName (), ourEnum);
 	    cb.aastore ();
 	}
+	cb.areturn ();
     }
 
     private void addEnumStaticBlock (EnumDeclaration e) {
@@ -372,6 +378,7 @@ public class ImplicitMethodGenerator {
 	MethodTypeDesc mtd = MethodTypeDesc.of (arrayType);
 	cb.invokestatic (ourEnum, VALUES_METHOD_NAME, mtd);
 	cb.putstatic (ourEnum, VALUES_FIELD, arrayType);
+	cb.return_ ();
     }
 
     private void error (ParseTreeNode where, String template, Object... args) {

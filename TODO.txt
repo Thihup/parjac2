@@ -1,14 +1,15 @@
 Generics:
 * implement it
+ ** Validate throws and throw-statements using generics
 
 Bytecode generation:
 * do-while loops
 * while loops
 * try/catch/finally
+* optimized post increment/decrement so we load value before change only if we use the value
+* optimized pre increment/decrement so we load value after change only if we use the value
 
 Add errors for:
-* Validate throws-clauses using generic types for method "void foo() throws T { ... }" -> T needs to be Throwables
-* validate throws clauses for method contents: "void foo () { throw new Foo(); }" -> Foo needs to be Throwable
 * Validate that we return and have no unreachable code
  ** Handle basic list of statements
  ** Handle if/then/else
@@ -18,6 +19,13 @@ Add errors for:
  ** Fields are set with initializer or set once in constructor
  ** Local variables are set once
 * Error if switch case tries to use something that has already been handled (case String s -> ... ; case String s when ...)
+* Validate that thrown throwables are declared in throws-clause
+* Check that ~ is used on integral type
+* Check that ! is used on boolean type
+* Check that TwoPartExpression with null only uses == or !=
+* Check Pre/Post-Increment/Decrement are done on numeric types (integral types?)
+* Ceck that DimExpr have an int expression
+* Check that break and continue go to valid labels
 
 Add warnings:
 * useless casts

@@ -1,52 +1,24 @@
 package org.khelekore.parjac2.javacompiler;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
-import org.khelekore.parjac2.SourceDiagnostics;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Block;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.MethodDeclarationBase;
-import org.khelekore.parjac2.javacompiler.syntaxtree.OrdinaryCompilationUnit;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
 import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
-public class NameModifierChecker {
+public class NameModifierChecker extends SemanticCheckerBase {
 
-    private final ClassInformationProvider cip;
-    private final ParsedEntry tree;
-    private final CompilerDiagnosticCollector diagnostics;
-
-    public static void checkNamesAndModifiers (ClassInformationProvider cip,
-					       List<ParsedEntry> trees,
-					       CompilerDiagnosticCollector diagnostics) {
-	List<NameModifierChecker> checkers =
-	    trees.stream ()
-	    .filter (pe -> (pe.getRoot () instanceof OrdinaryCompilationUnit))
-	    .map (t -> new NameModifierChecker (cip, t, diagnostics)).collect (Collectors.toList ());
-	checkers.parallelStream ().forEach (NameModifierChecker::check);
+    public NameModifierChecker (ClassInformationProvider cip, JavaTokens javaTokens,
+				ParsedEntry tree, CompilerDiagnosticCollector diagnostics) {
+	super (cip, javaTokens, tree, diagnostics);
     }
 
-    public NameModifierChecker (ClassInformationProvider cip, ParsedEntry tree, CompilerDiagnosticCollector diagnostics) {
-	this.cip = cip;
-	this.tree = tree;
-	this.diagnostics = diagnostics;
-    }
-
-    private void check () {
-	Deque<TypeDeclaration> typesToHandle = new ArrayDeque<> ();
-	OrdinaryCompilationUnit ocu = (OrdinaryCompilationUnit)tree.getRoot ();
-	typesToHandle.addAll (ocu.getTypes ());
-	while (!typesToHandle.isEmpty ()) {
-	    TypeDeclaration td = typesToHandle.removeFirst ();
-	    check (td);
-	    typesToHandle.addAll (td.getInnerClasses ());
-	}
+    @Override public void runCheck () {
+	forAllTypes (this::check);
     }
 
     private void check (TypeDeclaration td) {
@@ -154,13 +126,5 @@ public class NameModifierChecker {
 	    count++;
 	if (count > 1)
 	    error (pos, "Too many access flags, can only use one of: public, private andprotected)");
-    }
-
-    private void error (ParseTreeNode where, String template, Object... args) {
-	error (where.position (), template, args);
-    }
-
-    private void error (ParsePosition where, String template, Object... args) {
-	diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), where, template, args));
     }
 }

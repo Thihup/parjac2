@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.khelekore.parjac2.javacompiler.ClassDescUtils;
 import org.khelekore.parjac2.javacompiler.IntLiteral;
+import org.khelekore.parjac2.javacompiler.JavaTokens;
 import org.khelekore.parjac2.javacompiler.MethodContentGenerator;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Block;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
@@ -15,6 +16,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.Ternary;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TwoPartExpression;
 import org.khelekore.parjac2.parser.Token;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
+import org.khelekore.parjac2.parsetree.TokenNode;
 
 import io.github.dmlloyd.classfile.CodeBuilder;
 import io.github.dmlloyd.classfile.Label;
@@ -212,4 +214,7 @@ public class IfGenerator {
 	return token == mcg.javaTokens ().LOGICAL_AND || token == mcg.javaTokens ().LOGICAL_OR;
     }
 
+    public static boolean isTrue (ParseTreeNode p, JavaTokens javaTokens) {
+	return p instanceof TokenNode tn && tn.token () == javaTokens.TRUE;
+    }
 }

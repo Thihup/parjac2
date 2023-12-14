@@ -748,11 +748,19 @@ public class TestClassSetter {
     }
 
     @Test
-    public void testThrowsAreExceptions () {
+    public void testThrowsAreThrowable () {
 	// we used to crash when we found no methods at all.
 	getTypes ("class C { static void a () throws Exception { }}", 0);
 	getTypes ("class C { static void a () throws java.io.IOException { }}", 0);
 	getTypes ("class C { static void a () throws Integer { }}", 1);
+    }
+
+    @Test
+    public void testThrowStatementsAreThrowable () {
+	// we used to crash when we found no methods at all.
+	getTypes ("class C { static void a () { throw new RuntimeException (); }}", 0);
+	getTypes ("import java.io.IOException; class C { static void a () throws IOException { throw new IOException(); }}", 0);
+	getTypes ("class C { static void a () { throw Integer.valueOf (2); }}", 1);
     }
 
     /* TODO: implement full generic handling */

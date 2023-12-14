@@ -21,25 +21,25 @@ import io.github.dmlloyd.classfile.TypeKind;
 public class IncrementGenerator {
     public static void handlePostIncrement (MethodContentGenerator mcg, CodeBuilder cb,
 					    FullNameHandler currentClass, PostIncrementExpression pie) {
-	handlePostChange (mcg, cb, currentClass, pie.expression (), 1);
+	handlePostChange (mcg, cb, currentClass, pie.expression (), 1, pie.valueIsUsed ());
     }
 
     public static void handlePostDecrement (MethodContentGenerator mcg, CodeBuilder cb,
 					    FullNameHandler currentClass, PostDecrementExpression pde) {
-	handlePostChange (mcg, cb, currentClass, pde.expression (), -1);
+	handlePostChange (mcg, cb, currentClass, pde.expression (), -1, pde.valueIsUsed ());
     }
 
     private static void handlePostChange (MethodContentGenerator mcg, CodeBuilder cb,
-					  FullNameHandler currentClass, ParseTreeNode tn, int change) {
+					  FullNameHandler currentClass, ParseTreeNode tn, int change, boolean valueIsUsed) {
 	if (tn instanceof DottedName dn)
 	    tn = dn.replaced ();
 	if (tn instanceof FieldAccess fa) {
 	    ParseTreeNode from = fa.from ();
 	    VariableInfo vi = fa.variableInfo ();
 	    switch (vi.fieldType ()) {
-	    case VariableInfo.Type.PARAMETER -> incrementLocalVariable (cb, ((FormalParameterBase)vi).slot (), change);
-	    case VariableInfo.Type.LOCAL -> incrementLocalVariable (cb, ((LocalVariable)vi).slot (), change);
-	    case VariableInfo.Type.FIELD -> incrementField (mcg, cb, from, currentClass, vi, change);
+	    case VariableInfo.Type.PARAMETER -> incrementLocalVariable (cb, ((FormalParameterBase)vi).slot (), change, valueIsUsed);
+	    case VariableInfo.Type.LOCAL -> incrementLocalVariable (cb, ((LocalVariable)vi).slot (), change, valueIsUsed);
+	    case VariableInfo.Type.FIELD -> incrementField (mcg, cb, from, currentClass, vi, change, valueIsUsed);
 	    case VariableInfo.Type.ARRAY_LENGTH -> throw new IllegalStateException ("Can not increment array.length");
 	    }
 	} else if (tn instanceof ArrayAccess aa) {
@@ -48,6 +48,10 @@ public class IncrementGenerator {
 	    cb.dup2 ();   // dup or dup2?
 	    TypeKind kind = FullNameHelper.getTypeKind (FullNameHelper.type (aa));
 	    cb.arrayLoadInstruction (kind);
+	    /*
+	    if (valueIsUsed)
+		cb.dup ();
+	    */
 	    CodeUtil.handleInt (cb, change);
 	    cb.iadd ();
 	    cb.arrayStoreInstruction (kind);
@@ -57,12 +61,15 @@ public class IncrementGenerator {
 	}
     }
 
-    private static void incrementLocalVariable (CodeBuilder cb, int slot, int value) {
+    private static void incrementLocalVariable (CodeBuilder cb, int slot, int value, boolean valueIsUsed) {
+	if (valueIsUsed)
+	    cb.loadInstruction (TypeKind.IntType, slot);
 	cb.incrementInstruction (slot, value);
     }
 
     private static void incrementField (MethodContentGenerator mcg, CodeBuilder cb,
-					ParseTreeNode from, FullNameHandler currentClass, VariableInfo vi, int change) {
+					ParseTreeNode from, FullNameHandler currentClass, VariableInfo vi,
+					int change, boolean valueIsUsed) {
 	ClassDesc type = vi.typeClassDesc ();
 	FieldGenerator.FromResult fr = FieldGenerator.handleFrom (mcg, cb, from, currentClass, vi);
 	if (fr.instanceField ()) {

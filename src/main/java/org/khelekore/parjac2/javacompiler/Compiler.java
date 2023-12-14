@@ -150,19 +150,25 @@ public class Compiler {
 	 *    Scope hangs on class, method, for-clause and try (with resource) clause
 	 * 2: Set classes for local variables, field access and expressions
 	 */
-	runTimed (() -> ClassSetter.fillInClasses (javaTokens, cip, trees, diagnostics), "Setting classes");
+	runTimed (() -> ClassSetter.fillInClasses (javaTokens, cip, trees, diagnostics),
+		  "Setting classes");
 	if (diagnostics.hasError ())
 	    return;
 
-	runTimed (() -> DuplicateFinder.findDuplicateMethods (cip, trees, diagnostics), "Detecting method duplicates");
+	runTimed (() -> SemanticCheckerBase.runChecks (cip, javaTokens, trees, diagnostics, DuplicateFinder::new),
+		  "Detecting duplicate methods");
 	if (diagnostics.hasError ())
 	    return;
 
-	runTimed (() -> NameModifierChecker.checkNamesAndModifiers (cip, trees, diagnostics), "Checking names and modifiers");
+	runTimed (() -> SemanticCheckerBase.runChecks (cip, javaTokens, trees, diagnostics, NameModifierChecker::new),
+		  "Checking names and modifiers");
 	if (diagnostics.hasError ())
 	    return;
 
-	//runTimed (() -> checkReturns (trees), "Checking returns");
+	runTimed (() -> SemanticCheckerBase.runChecks (cip, javaTokens, trees, diagnostics, ReturnChecker::new),
+		  "Checking returns");
+	if (diagnostics.hasError ())
+	    return;
     }
 
     private void flagInterfaceMembersAsPublic () {

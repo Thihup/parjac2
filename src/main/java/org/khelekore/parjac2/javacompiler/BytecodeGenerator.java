@@ -245,13 +245,12 @@ public class BytecodeGenerator {
 	td.getMethods ().forEach (m -> {
 		SignatureHelper.MethodSignatureHolder msh = getMethodSignature (m);
 		int flags = m.flags ();
-		TypeKind returnType = FullNameHelper.getTypeKind (m.result ());
 		ParseTreeNode body = m.getMethodBody ();
 		classBuilder.withMethod (m.name (), msh.desc (), flags, mb -> {
 			if (!m.isAbstract ()) {
 			    mb.withCode (cb -> {
 				    MethodContentBuilder mcb = new MethodContentBuilder (classBuilder, m.name (), flags);
-				    mcb.addMethodContent (cb, (Block)body, returnType);
+				    mcb.addMethodContent (cb, (Block)body, m.implicitVoidReturn ());
 				});
 			}
 			if (msh.signature () != null)
@@ -305,24 +304,11 @@ public class BytecodeGenerator {
 	    cb.return_ ();
 	}
 
-	private void addMethodContent (CodeBuilder cb, Block body, TypeKind returnType) {
+	private void addMethodContent (CodeBuilder cb, Block body, boolean implicitVoidReturn) {
 	    List<ParseTreeNode> statements = body.get ();
-	    boolean needReturn = !endsWithReturnOrThrows (statements);
 	    handleStatements (cb, statements);
-	    if (needReturn)
-		cb.returnInstruction (returnType);
-	}
-
-	private boolean endsWithReturnOrThrows (List<ParseTreeNode> parts) {
-	    // TODO: handle more cases, for example if/else where both parts return
-	    if (parts.size () > 0) {
-		ParseTreeNode p = parts.get (parts.size () - 1);
-		if (p instanceof ReturnStatement)
-		    return true;
-		if (p instanceof ThrowStatement)
-		    return true;
-	    }
-	    return false;
+	    if (implicitVoidReturn)
+		cb.return_ ();
 	}
 
 	@Override public void handleStatements (CodeBuilder cb, List<? extends ParseTreeNode> statements) {

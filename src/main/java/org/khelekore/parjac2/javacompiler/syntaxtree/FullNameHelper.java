@@ -118,6 +118,7 @@ public class FullNameHelper {
 	case LambdaExpression le -> le.type ();
 	case MethodReference mr -> mr.type ();
 	case PostIncrementExpression pie -> type (pie.expression ());
+	case PostDecrementExpression pie -> type (pie.expression ());
 	case PreIncrementExpression pie -> type (pie.expression ());
 	case SwitchExpression se -> se.type ();
 	default -> throw new IllegalArgumentException ("Unhandled type: " + p + ", " + p.getClass ().getName ());

@@ -19,6 +19,7 @@ public class MethodDeclarationBase extends FlaggedBase implements MethodInfo {
     private final MethodHeader header;
     protected final ParseTreeNode body; // either ';' or a Block.
     private FullNameHandler owner;
+    private boolean implicitVoidReturn;
 
     //  {MethodModifier} MethodHeader MethodBody
     public MethodDeclarationBase (Context ctx, Rule rule, ParseTreeNode n,
@@ -136,5 +137,13 @@ public class MethodDeclarationBase extends FlaggedBase implements MethodInfo {
 
     public ParseTreeNode getMethodBody () {
 	return body;
+    }
+
+    public void implicitVoidReturn (boolean b) {
+	implicitVoidReturn = b;
+    }
+
+    public boolean implicitVoidReturn () {
+	return implicitVoidReturn;
     }
 }
