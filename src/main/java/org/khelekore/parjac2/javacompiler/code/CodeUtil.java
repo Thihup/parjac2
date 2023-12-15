@@ -102,25 +102,27 @@ public class CodeUtil {
 		}
 	    }
 	} else if (to.getType () == FullNameHandler.Type.PRIMITIVE) {
-	    autoUnBox (cb, from, (FullNameHandler.Primitive)to);
+	    autoUnBox (cb, from);
 	}
     }
 
     // We only know we want some kind of object, we can not pass in to to get the owner
-    private static void autoBox (CodeBuilder cb, FullNameHandler.Primitive p) {
+    public static FullNameHandler autoBox (CodeBuilder cb, FullNameHandler.Primitive p) {
 	FullNameHandler ab = FullNameHelper.getAutoBoxOption (p);
 	ClassDesc owner = ClassDescUtils.getClassDesc (ab);
 	String name = "valueOf";
-	MethodTypeDesc type = MethodTypeDesc.ofDescriptor ("(" + p.getSignature () + ")L" + ab.getSlashName () + ";");
+	MethodTypeDesc type = MethodTypeDesc.of (owner, ClassDescUtils.getClassDesc (p));
 	cb.invokestatic (owner, name, type);
+	return ab;
     }
 
-    // from will be java.lang.Long and to will be long, so here we can trust them
-    private static void autoUnBox (CodeBuilder cb, FullNameHandler from, FullNameHandler.Primitive to) {
+    public static FullNameHandler autoUnBox (CodeBuilder cb, FullNameHandler from) {
+	FullNameHandler.Primitive ab = FullNameHelper.getAutoUnBoxOption (from);
 	ClassDesc owner = ClassDescUtils.getClassDesc (from);
-	String name = to.getFullDotName () + "Value"; // intValue, longValue, ...
-	MethodTypeDesc type = MethodTypeDesc.ofDescriptor ("()"+ to.signature ());
+	String name = ab.getFullDotName () + "Value"; // intValue, longValue, ...
+	MethodTypeDesc type = MethodTypeDesc.of (ClassDescUtils.getClassDesc (ab));
 	cb.invokevirtual (owner, name, type);
+	return ab;
     }
 
     public static void handleThis (CodeBuilder cb) {

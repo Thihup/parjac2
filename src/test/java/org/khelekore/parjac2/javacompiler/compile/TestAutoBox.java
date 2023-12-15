@@ -52,4 +52,20 @@ public class TestAutoBox extends CompileAndRun {
 	Method m = getMethod ("C", "public class C { static void a (long l) {} public static void b () { a(4); }}", "b");
 	m.invoke (null);
     }
+
+    @Test
+    public void testAutoUnBoxForTilde () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static int a (Integer i) { return ~i; }}", "a", Integer.class);
+	Integer val = 3;
+	int r = (Integer)m.invoke (null, val);
+	assert r == ~val;
+    }
+
+    @Test
+    public void testAutoUnBoxForNot () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static boolean a (Boolean b) { return !b; }}", "a", Boolean.class);
+	Boolean val = Boolean.TRUE;
+	boolean r = (Boolean)m.invoke (null, val);
+	assert r == !val;
+    }
 }

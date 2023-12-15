@@ -520,9 +520,15 @@ public class BytecodeGenerator {
 		}
 	    } else if (t == javaTokens.TILDE) {
 		handleStatements (cb, u.expression ());
+		FullNameHandler fullName = FullNameHelper.type (u.expression ());
+		if (!fullName.isPrimitive ())
+		    fullName = CodeUtil.autoUnBox (cb, fullName);
 		mathOp (cb, FullNameHelper.type (u), t);
 	    } else if (t == javaTokens.NOT) {
 		handleStatements (cb, u.expression ());
+		FullNameHandler fullName = FullNameHelper.type (u.expression ());
+		if (!fullName.isPrimitive ())
+		    fullName = CodeUtil.autoUnBox (cb, fullName);
 		cb.ifThenElse (Opcode.IFEQ, b -> b.iconst_1 (), b -> b.iconst_0 ());
 	    } else {
 		throw new IllegalStateException ("Unhandled unary expression: " + u);

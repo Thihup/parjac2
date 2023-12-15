@@ -26,6 +26,7 @@ public class FullNameHelper {
     private static final Map<String, Primitive> SIGNATURE_LOOKUP = new HashMap<> ();
     private static final Map<Primitive, List<Primitive>> ALLOWED_UPCASTS = new HashMap<> ();
     private static final Map<Primitive, FullNameHandler> AUTO_BOX = new HashMap<> ();
+    private static final Map<FullNameHandler, Primitive> AUTO_UNBOX = new HashMap<> ();
     private static final Map<FullNameHandler, TypeKind> toTypeKind = new HashMap<> ();
 
     static {
@@ -45,13 +46,14 @@ public class FullNameHelper {
 	ALLOWED_UPCASTS.put (INT, Arrays.asList (LONG, FLOAT, DOUBLE));
 	ALLOWED_UPCASTS.put (FLOAT, Arrays.asList (DOUBLE));
 
-	AUTO_BOX.put (BYTE, FullNameHandler.ofSimpleClassName ("java.lang.Byte"));
-	AUTO_BOX.put (SHORT, FullNameHandler.ofSimpleClassName ("java.lang.Short"));
-	AUTO_BOX.put (CHAR, FullNameHandler.ofSimpleClassName ("java.lang.Char"));
-	AUTO_BOX.put (INT, FullNameHandler.ofSimpleClassName ("java.lang.Integer"));
-	AUTO_BOX.put (LONG, FullNameHandler.ofSimpleClassName ("java.lang.Long"));
-	AUTO_BOX.put (FLOAT, FullNameHandler.ofSimpleClassName ("java.lang.Float"));
-	AUTO_BOX.put (DOUBLE, FullNameHandler.ofSimpleClassName ("java.lang.Double"));
+	addBoxing (BOOLEAN, FullNameHandler.ofSimpleClassName ("java.lang.Boolean"));
+	addBoxing (BYTE, FullNameHandler.ofSimpleClassName ("java.lang.Byte"));
+	addBoxing (SHORT, FullNameHandler.ofSimpleClassName ("java.lang.Short"));
+	addBoxing (CHAR, FullNameHandler.ofSimpleClassName ("java.lang.Char"));
+	addBoxing (INT, FullNameHandler.ofSimpleClassName ("java.lang.Integer"));
+	addBoxing (LONG, FullNameHandler.ofSimpleClassName ("java.lang.Long"));
+	addBoxing (FLOAT, FullNameHandler.ofSimpleClassName ("java.lang.Float"));
+	addBoxing (DOUBLE, FullNameHandler.ofSimpleClassName ("java.lang.Double"));
 
 	toTypeKind.put (BYTE, TypeKind.ByteType);
 	toTypeKind.put (SHORT, TypeKind.ShortType);
@@ -63,6 +65,11 @@ public class FullNameHelper {
 	toTypeKind.put (BOOLEAN, TypeKind.BooleanType);
 	toTypeKind.put (VOID, TypeKind.VoidType);
     };
+
+    private static void addBoxing (FullNameHandler.Primitive pt, FullNameHandler fn) {
+	AUTO_BOX.put (pt, fn);
+	AUTO_UNBOX.put (fn, pt);
+    }
 
     public static Primitive getPrimitiveType (String signature) {
 	return SIGNATURE_LOOKUP.get (signature);
@@ -81,6 +88,16 @@ public class FullNameHelper {
 	case "void" -> VOID;
 	default -> throw new IllegalArgumentException ("Unhandled type: " + t + ", " + t.getClass ().getName ());
 	};
+    }
+
+    public static FullNameHandler.Primitive primitiveType (ParseTreeNode n) {
+	FullNameHandler fn = type (n);
+	if (fn.isPrimitive ())
+	    return (FullNameHandler.Primitive)fn;
+	FullNameHandler.Primitive p = AUTO_UNBOX.get (fn);
+	if (p != null)
+	    return p;
+	throw new IllegalArgumentException (fn.getFullDotName () + " is not a primitive type or a wrapper type");
     }
 
     public static FullNameHandler type (ParseTreeNode p) {
@@ -112,9 +129,8 @@ public class FullNameHelper {
 	case FieldAccess fa -> fa.fullName ();
 	case Ternary t -> t.type ();
 	case TwoPartExpression tp -> tp.fullName ();
-	case UnaryExpression ue when ue.operator ().getName ().equals ("-") -> type (ue.expression ());
 	case FormalParameterBase fp -> fp.typeName ();
-	case UnaryExpression ue -> type (ue.expression ());
+	case UnaryExpression ue -> primitiveType (ue.expression ());
 	case LambdaExpression le -> le.type ();
 	case MethodReference mr -> mr.type ();
 	case PostIncrementExpression pie -> type (pie.expression ());
@@ -123,6 +139,24 @@ public class FullNameHelper {
 	case SwitchExpression se -> se.type ();
 	default -> throw new IllegalArgumentException ("Unhandled type: " + p + ", " + p.getClass ().getName ());
 	};
+    }
+
+    public static boolean isConvertibleToIntegral (FullNameHandler fn) {
+	if (isIntegralType (fn))
+	    return true;
+	FullNameHandler ub = AUTO_UNBOX.get (fn);
+	if (ub != null && isIntegralType (ub))
+	    return true;
+	return false;
+    }
+
+    public static boolean isConvertibleToBoolean (FullNameHandler fn) {
+	if (FullNameHandler.BOOLEAN.equals (fn))
+	    return true;
+	FullNameHandler ub = AUTO_UNBOX.get (fn);
+	if (ub != null && FullNameHandler.BOOLEAN.equals (ub))
+	    return true;
+	return false;
     }
 
     public static boolean isIntegralType (FullNameHandler fn) {
@@ -163,6 +197,10 @@ public class FullNameHelper {
 
     public static FullNameHandler getAutoBoxOption (FullNameHandler fn) {
 	return AUTO_BOX.get (fn);
+    }
+
+    public static FullNameHandler.Primitive getAutoUnBoxOption (FullNameHandler fn) {
+	return AUTO_UNBOX.get (fn);
     }
 
     public static TypeKind getTypeKind (FullNameHandler fn) {

@@ -793,6 +793,11 @@ public class TestClassSetter {
 	getTypes ("class C { void a () { boolean b = true; b = ~b; }}", 1);
     }
 
+    @Test
+    public void testUnaryTildeAutoBox () {
+	getTypes ("class C { int a (Integer x) { return ~x; }}", 0);
+    }
+
     /* TODO: implement full generic handling */
     /*
     @Test

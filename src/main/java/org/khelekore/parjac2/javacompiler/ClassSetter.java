@@ -1010,11 +1010,11 @@ public class ClassSetter {
 	Token t = ue.operator ();
 	if (t == javaTokens.NOT) {
 	    FullNameHandler fn = FullNameHelper.type (ue.expression ());
-	    if (!FullNameHandler.BOOLEAN.equals (fn))
+	    if (!FullNameHelper.isConvertibleToBoolean (fn))
 		error (ue, "Operator '!' can only be used on boolean types");
 	} else if (t == javaTokens.TILDE) {
 	    FullNameHandler fn = FullNameHelper.type (ue.expression ());
-	    if (!FullNameHelper.isIntegralType (fn))
+	    if (!FullNameHelper.isConvertibleToIntegral (fn))
 		error (ue, "Operator '~' can only be used on integral types");
 	}
     }
