@@ -3,11 +3,7 @@ Generics:
  ** Validate throws and throw-statements using generics
 
 Bytecode generation:
-* do-while loops
-* while loops
 * try/catch/finally
-* optimized post increment/decrement so we load value before change only if we use the value
-* optimized pre increment/decrement so we load value after change only if we use the value
 
 Add errors for:
 * Validate that we return and have no unreachable code
