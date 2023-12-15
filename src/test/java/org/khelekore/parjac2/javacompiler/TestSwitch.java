@@ -1,139 +1,62 @@
 package org.khelekore.parjac2.javacompiler;
 
-import org.khelekore.parjac2.CompilerDiagnosticCollector;
-import org.khelekore.parjac2.parser.Grammar;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.BeforeTest;
+import java.lang.reflect.Method;
+
 import org.testng.annotations.Test;
 
-public class TestSwitch {
+public class TestSwitch extends CompileAndRun {
 
-    private Grammar g;
-    private CompilerDiagnosticCollector diagnostics;
-
-    @BeforeClass
-    public void createLRParser () {
-	g = TestParserHelper.getJavaGrammarFromFile ("SwitchStatement", false);
-    }
-
-    @BeforeTest
-    public void createDiagnostics () {
-	diagnostics = new CompilerDiagnosticCollector ();
-    }
-
-    @BeforeMethod
-    public void clearDiagnostics () {
-	diagnostics.clear ();
+    @Test
+    public void testSwitchExpression () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { public static Object a (String s) {Object o = switch (s) { " +
+			      "    case \"foo\" -> 1; case \"bar\" -> \"what\"; default -> null; }; return o; }}",
+			      "a", String.class);
+	Object o = m.invoke (null, "foo");
+	assert Integer.valueOf (1).equals (o);
+	o = m.invoke (null, "bar");
+	assert "what".equals (o);
+	o = m.invoke (null, "whatever");
+	assert o == null;
     }
 
     @Test
-    public void testOldStyleSwitch () {
-	testSuccessfulParse ("""
-			     switch (x) {
-			     case 5: break;
-			     default: break;
-			     }
-			     """);
+    public void testSwitchStatementSwitchRules () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { public static int a (int s) {int r = 0; switch (s) { " +
+			      "    case 1 -> r = 3; case 2 -> r = 7; default -> r = 43; } return r; }}",
+			      "a", Integer.TYPE);
+	int r = (Integer)m.invoke (null, 1);
+	assert r == 3;
+	r = (Integer)m.invoke (null, 2);
+	assert r == 7;
+	r = (Integer)m.invoke (null, 2232312);
+	assert r == 43;
     }
 
     @Test
-    public void testOldStyleMultiLabels () {
-	testSuccessfulParse ("""
-			     switch (x) {
-			     case 5:
-			     case 6:
-			     case 7:
-				 break;
-			     case 8:
-			     case 9:
-			     }
-			     """);
+    public void testSwitchStatementSwitchBlock () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { public static int a (int s) {int r = 0; switch (s) { " +
+			      "case 1: r = 3; break; case 2: r = 7; break; default: r = 43; } return r; }}",
+			      "a", Integer.TYPE);
+	int r = (Integer)m.invoke (null, 1);
+	assert r == 3;
+	r = (Integer)m.invoke (null, 2);
+	assert r == 7;
+	r = (Integer)m.invoke (null, 2232312);
+	assert r == 43;
     }
 
     @Test
-    public void testSimpleSwitchRule () {
-	testSuccessfulParse ("""
-			     switch (x) {
-			     case 5 -> {}
-			     default -> {}
-			     }
-			     """);
-    }
-
-    @Test
-    public void testSwitchRuleNull () {
-	testSuccessfulParse ("""
-			     switch (x) {
-			     case 5 -> {}
-			     case null -> {}
-			     default -> {}
-			     }
-			     """);
-    }
-
-    @Test
-    public void testSwitchRuleNullandDefault () {
-	testSuccessfulParse ("""
-			     switch (x) {
-			     case 5 -> {}
-			     case null, default -> {}
-			     }
-			     """);
-    }
-
-    @Test
-    public void testMultiConstant () {
-	testSuccessfulParse ("""
-			     switch (x) {
-			     case 5,6,7 -> {}
-			     default -> {}
-			     }
-			     """);
-    }
-
-    @Test
-    public void testSwitchPattern () {
-	testSuccessfulParse ("""
-			     switch (x) {
-			     case Integer i when i > 5 -> {}
-			     case Integer i -> {}
-			     default -> {}
-			     }
-			     """);
-    }
-
-    @Test
-    public void testIllegalDefault () {
-	TestParserHelper.syntaxTree (g, """
-				    switch (x) {
-				    case default -> {}
-				    }
-				     """,
-				     diagnostics, 1);
-    }
-
-    @Test
-    public void testIllegalNull () {
-	TestParserHelper.syntaxTree (g, """
-				    switch (x) {
-				    case 5, null -> {}
-				    }
-				     """,
-				     diagnostics, 1);
-    }
-
-    @Test
-    public void testIllegalDefaultAfterConstant () {
-	TestParserHelper.syntaxTree (g, """
-				    switch (x) {
-				    case 5, default -> {}
-				    }
-				     """,
-				     diagnostics, 1);
-    }
-
-    private void testSuccessfulParse (String s) {
-	TestParserHelper.testSuccessfulParse (g, s, diagnostics, null);
+    public void testSwitchStatementFallThrough () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { public static int a (int s) {int r = 0; switch (s) { " +
+			      "case 1: r = 3; break; case 2: r = 7; case 3: r = 8; break; default: r = 43; } return r; }}",
+			      "a", Integer.TYPE);
+	int r = (Integer)m.invoke (null, 1);
+	assert r == 3;
+	r = (Integer)m.invoke (null, 2);  // we fall through to 3
+	assert r == 8;
+	r = (Integer)m.invoke (null, 3);
+	assert r == 8;
+	r = (Integer)m.invoke (null, 2232312);
+	assert r == 43;
     }
 }
