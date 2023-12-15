@@ -125,6 +125,11 @@ public class FullNameHelper {
 	};
     }
 
+    public static boolean isIntegralType (FullNameHandler fn) {
+	return fn == FullNameHandler.BYTE || fn == FullNameHandler.SHORT ||
+	    fn == FullNameHandler.INT || fn == FullNameHandler.LONG || fn == FullNameHandler.CHAR;
+    }
+
     public static FullNameHandler wider (FullNameHandler f1, FullNameHandler f2) {
 	if (f1 == FullNameHandler.DOUBLE || f2 == FullNameHandler.DOUBLE)
 	    return FullNameHandler.DOUBLE;

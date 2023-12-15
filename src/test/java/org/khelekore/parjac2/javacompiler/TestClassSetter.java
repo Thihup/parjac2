@@ -772,6 +772,27 @@ public class TestClassSetter {
 	getTypes ("import java.io.IOException; class C { void a () { throw new IOException (); }}", 1);
     }
 
+    @Test
+    public void testUnaryNot () {
+	getTypes ("class C { void a () { boolean b = true; b = !b; }}", 0);
+	getTypes ("class C { void a () { int b = 0; b = !b; }}", 1);
+    }
+
+    @Test
+    public void testUnaryTildeIntegral () {
+	getTypes ("class C { void a () { int b = 0; b = ~b; }}", 0);
+    }
+
+    @Test
+    public void testUnaryTildeDouble () {
+	getTypes ("class C { void a () { double b = 0; b = ~b; }}", 1);
+    }
+
+    @Test
+    public void testUnaryTildeBoolean () {
+	getTypes ("class C { void a () { boolean b = true; b = ~b; }}", 1);
+    }
+
     /* TODO: implement full generic handling */
     /*
     @Test

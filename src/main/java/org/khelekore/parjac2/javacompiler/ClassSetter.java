@@ -80,6 +80,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.TypeImportOnDemandDeclarati
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeName;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeParameter;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeParameters;
+import org.khelekore.parjac2.javacompiler.syntaxtree.UnaryExpression;
 import org.khelekore.parjac2.javacompiler.syntaxtree.UnqualifiedClassInstanceCreationExpression;
 import org.khelekore.parjac2.javacompiler.syntaxtree.VariableDeclarator;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Wildcard;
@@ -364,6 +365,8 @@ public class ClassSetter {
 
 	    case ThrowStatement ts -> handlePartsAndHandler (et, ts, e -> checkThrowStatement (e, ts), partsToHandle);
 
+	    case UnaryExpression ue -> handlePartsAndHandler (et, ue, e -> checkUnaryExpression (ue), partsToHandle);
+
 	    case ParseTreeNode ptn -> addParts (et, ptn, partsToHandle);
 
 	    case CustomHandler ch -> ch.run (et);
@@ -429,15 +432,15 @@ public class ClassSetter {
 	FullNameHandler varType = FullNameHelper.type (vd.type ());
 	ParseTreeNode init = vd.initializer ();
 
-	checkAssignment (et, varType, init, partsToHandle);
+	checkAssignment (et, varType, init, partsToHandle, true);
     }
 
     private void handleAssignment (EnclosingTypes et, Assignment a, Deque<StatementHandler> partsToHandle) {
 	FullNameHandler toType = FullNameHelper.type (a.lhs ());
-	checkAssignment (et, toType, a.rhs (), partsToHandle);
+	checkAssignment (et, toType, a.rhs (), partsToHandle, false);
     }
 
-    private void checkAssignment (EnclosingTypes et, FullNameHandler lhs, ParseTreeNode init, Deque<StatementHandler> partsToHandle) {
+    private void checkAssignment (EnclosingTypes et, FullNameHandler lhs, ParseTreeNode init, Deque<StatementHandler> partsToHandle, boolean checkInit) {
 	if (init instanceof LambdaExpression le) {
 	    setTypeOnLambda (lhs, le);
 	    addLambdaReturnCheck (et, le, partsToHandle);
@@ -456,8 +459,9 @@ public class ClassSetter {
 		CustomHandler h = e -> checkAssignmentType (lhs, init);
 		partsToHandle.addFirst (new StatementHandler (et, h));
 	    }
-	    if (init != null)
+	    if (checkInit && init != null) {
 		partsToHandle.addFirst (new StatementHandler (et, init));
+	    }
 	}
     }
 
@@ -1000,6 +1004,19 @@ public class ClassSetter {
 		    return;
 	}
 	error (ts, "Exception not found in methods throws clause");
+    }
+
+    private void checkUnaryExpression (UnaryExpression ue) {
+	Token t = ue.operator ();
+	if (t == javaTokens.NOT) {
+	    FullNameHandler fn = FullNameHelper.type (ue.expression ());
+	    if (!FullNameHandler.BOOLEAN.equals (fn))
+		error (ue, "Operator '!' can only be used on boolean types");
+	} else if (t == javaTokens.TILDE) {
+	    FullNameHandler fn = FullNameHelper.type (ue.expression ());
+	    if (!FullNameHelper.isIntegralType (fn))
+		error (ue, "Operator '~' can only be used on integral types");
+	}
     }
 
     private MethodInfo lambdaMatch (FullNameHandler type, LambdaExpression le) {
