@@ -1,4 +1,4 @@
-package org.khelekore.parjac2.javacompiler;
+package org.khelekore.parjac2.javacompiler.semantic;
 
 import org.testng.annotations.Test;
 

@@ -1,10 +1,11 @@
-package org.khelekore.parjac2.javacompiler;
+package org.khelekore.parjac2.javacompiler.parse;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
+import org.khelekore.parjac2.javacompiler.TestParserHelper;
 import org.khelekore.parjac2.javacompiler.syntaxtree.OrdinaryCompilationUnit;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
 import org.khelekore.parjac2.parser.Grammar;

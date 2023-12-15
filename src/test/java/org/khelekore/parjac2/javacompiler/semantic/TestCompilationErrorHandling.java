@@ -1,8 +1,15 @@
-package org.khelekore.parjac2.javacompiler;
+package org.khelekore.parjac2.javacompiler.semantic;
 
 import java.io.IOException;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
+import org.khelekore.parjac2.javacompiler.ClassInformationProvider;
+import org.khelekore.parjac2.javacompiler.CompilationArguments;
+import org.khelekore.parjac2.javacompiler.Compiler;
+import org.khelekore.parjac2.javacompiler.InMemorySourceProvider;
+import org.khelekore.parjac2.javacompiler.JavaGrammarHelper;
+import org.khelekore.parjac2.javacompiler.JavaTokens;
+import org.khelekore.parjac2.javacompiler.TestParserHelper;
 import org.khelekore.parjac2.parser.Grammar;
 import org.khelekore.parjac2.parser.Rule;
 import org.testng.annotations.BeforeClass;

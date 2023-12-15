@@ -65,6 +65,10 @@ public class ReturnChecker extends SemanticCheckerBase {
 	boolean hasReturnOrThrow = false;
 	for (int i = 0, s = ls.size (); i < s; i++) {
 	    ParseTreeNode p = ls.get (i);
+	    if (hasReturnOrThrow) {
+		error (p, "Unreachable code");
+		break;
+	    }
 	    switch (p) {
 	    case ReturnStatement rs -> hasReturnOrThrow = true;
 	    case ThrowStatement ts -> hasReturnOrThrow = true;
@@ -78,7 +82,7 @@ public class ReturnChecker extends SemanticCheckerBase {
 
 	    case ExpressionStatement es -> handleIncrementDecrement (es);
 
-	    default -> { if (hasReturnOrThrow) { error (p, "Unreachable code"); break; }}
+	    default -> { /* empty */ }
 	    }
 	}
 	return hasReturnOrThrow;
