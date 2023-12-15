@@ -1,4 +1,4 @@
-package org.khelekore.parjac2.javacompiler;
+package org.khelekore.parjac2.javacompiler.parse;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.testng.annotations.BeforeTest;

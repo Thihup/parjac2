@@ -1,4 +1,4 @@
-package org.khelekore.parjac2.javacompiler;
+package org.khelekore.parjac2.javacompiler.compile;
 
 import java.lang.reflect.Method;
 import java.util.List;

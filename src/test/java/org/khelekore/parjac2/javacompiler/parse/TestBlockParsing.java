@@ -1,6 +1,7 @@
-package org.khelekore.parjac2.javacompiler;
+package org.khelekore.parjac2.javacompiler.parse;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
+import org.khelekore.parjac2.javacompiler.TestParserHelper;
 import org.khelekore.parjac2.parser.Grammar;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeTest;

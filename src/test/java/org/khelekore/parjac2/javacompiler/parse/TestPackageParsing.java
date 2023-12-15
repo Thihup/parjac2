@@ -1,8 +1,9 @@
-package org.khelekore.parjac2.javacompiler;
+package org.khelekore.parjac2.javacompiler.parse;
 
 import java.util.List;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
+import org.khelekore.parjac2.javacompiler.TestParserHelper;
 import org.khelekore.parjac2.javacompiler.syntaxtree.MarkerAnnotation;
 import org.khelekore.parjac2.javacompiler.syntaxtree.PackageDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeName;
