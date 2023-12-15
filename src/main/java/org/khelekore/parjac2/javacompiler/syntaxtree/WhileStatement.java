@@ -16,6 +16,14 @@ public class WhileStatement extends SyntaxTreeNode {
 	statement = children.get (4);
     }
 
+    public ParseTreeNode expression () {
+	return expression;
+    }
+
+    public ParseTreeNode statement () {
+	return statement;
+    }
+
     @Override public Object getValue () {
 	return "while (" + expression + ") " + statement;
     }

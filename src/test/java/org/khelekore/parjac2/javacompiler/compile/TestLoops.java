@@ -41,4 +41,28 @@ public class TestLoops extends CompileAndRun {
 	assert r == data.size () : "Unexpected return value: " + r;
     }
 
+    @Test
+    public void testWhile () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static int a (int r) { int ret = 0; while (r > 0) { ret += r; r--; } return ret; }}",
+			      "a", Integer.TYPE);
+	validateStaticIntIntMethodResult (m, -1, 0);
+	validateStaticIntIntMethodResult (m, 0, 0);
+	validateStaticIntIntMethodResult (m, 1, 1);
+	validateStaticIntIntMethodResult (m, 2, 3);
+    }
+
+    @Test
+    public void testDoWhile () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static int a (int r) { int ret = 0; do { ret += r; r--; } while (r > 0); return ret; }}",
+			      "a", Integer.TYPE);
+	validateStaticIntIntMethodResult (m, -1, -1);
+	validateStaticIntIntMethodResult (m, 0, 0);
+	validateStaticIntIntMethodResult (m, 1, 1);
+	validateStaticIntIntMethodResult (m, 2, 3);
+    }
+
+    private void validateStaticIntIntMethodResult (Method m, int argument, int expectedResult) throws ReflectiveOperationException {
+	int r = (Integer)m.invoke (null, argument);
+	assert r == expectedResult : "Got wrong result back: argument: " + argument + ", expectedResult: " + expectedResult + ", actual result: " + r;
+    }
 }

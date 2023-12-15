@@ -335,8 +335,12 @@ public class BytecodeGenerator {
 	    case LocalVariableDeclaration lv -> LocalVariableHandler.handleLocalVariables (this, cb, lv);
 	    case PostIncrementExpression pie -> IncrementGenerator.handlePostIncrement (this, cb, cip.getFullName (td), pie);
 	    case PostDecrementExpression pde -> IncrementGenerator.handlePostDecrement (this, cb, cip.getFullName (td), pde);
+
 	    case BasicForStatement bfs -> LoopGenerator.handleBasicFor (this, cb, bfs);
 	    case EnhancedForStatement efs -> LoopGenerator.handleEnhancedFor (this, cb, efs);
+	    case WhileStatement ws -> LoopGenerator.handleWhile (this, cb, ws);
+	    case DoStatement ds -> LoopGenerator.handleDo (this, cb, ds);
+
 	    case SynchronizedStatement ss -> SynchronizationGenerator.handleSynchronized (this, cb, ss);
 	    case ClassInstanceCreationExpression cic -> CodeUtil.callNew (this, cb, cic);
 
@@ -657,6 +661,16 @@ public class BytecodeGenerator {
 	    cb.storeInstruction (kind, slot);
 	}
 
+	@Override public Opcode getForwardZeroJump (Token t) {
+	    if (t == javaTokens.DOUBLE_EQUAL) return Opcode.IFEQ;
+	    if (t == javaTokens.NOT_EQUAL) return Opcode.IFNE;
+	    if (t == javaTokens.LT) return Opcode.IFLT;
+	    if (t == javaTokens.GT) return Opcode.IFGT;
+	    if (t == javaTokens.LE) return Opcode.IFLE;
+	    if (t == javaTokens.GE) return Opcode.IFGE;
+	    throw new IllegalArgumentException ("Unknown zero comparisson: " + t);
+	}
+
 	@Override public Opcode getReverseZeroJump (Token t) {
 	    if (t == javaTokens.DOUBLE_EQUAL) return Opcode.IFNE;
 	    if (t == javaTokens.NOT_EQUAL) return Opcode.IFEQ;
@@ -667,7 +681,7 @@ public class BytecodeGenerator {
 	    throw new IllegalArgumentException ("Unknown zero comparisson: " + t);
 	}
 
-	@Override public Opcode getTwoPartJump (TwoPartExpression t) {
+	@Override public Opcode getForwardTwoPartJump (TwoPartExpression t) {
 	    return getForwardJump (t.token (), t.optype () == TwoPartExpression.OpType.PRIMITIVE_OP);
 	}
 

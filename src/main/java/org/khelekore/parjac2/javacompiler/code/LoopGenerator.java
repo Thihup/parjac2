@@ -9,6 +9,7 @@ import org.khelekore.parjac2.javacompiler.ClassDescUtils;
 import org.khelekore.parjac2.javacompiler.IntLiteral;
 import org.khelekore.parjac2.javacompiler.MethodContentGenerator;
 import org.khelekore.parjac2.javacompiler.syntaxtree.BasicForStatement;
+import org.khelekore.parjac2.javacompiler.syntaxtree.DoStatement;
 import org.khelekore.parjac2.javacompiler.syntaxtree.EnhancedForStatement;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHelper;
@@ -16,6 +17,8 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.LocalVariableDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TwoPartExpression;
 import org.khelekore.parjac2.javacompiler.syntaxtree.UnaryExpression;
 import org.khelekore.parjac2.javacompiler.syntaxtree.VariableDeclarator;
+import org.khelekore.parjac2.javacompiler.syntaxtree.WhileStatement;
+import org.khelekore.parjac2.parser.Token;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 import io.github.dmlloyd.classfile.CodeBuilder;
@@ -36,31 +39,12 @@ public class LoopGenerator {
 	Label lExp = cb.newBoundLabel ();
 	Label lEnd = cb.newLabel ();
 	if (expression != null) {
-	    handleForExpression (mcg, cb, expression, lEnd);
+	    handleExitTest (mcg, cb, expression, lEnd);
 	}
 	mcg.handleStatements (cb, statement);
 	mcg.handleStatements (cb, forUpdate);
 	cb.goto_ (lExp); // what about goto_w?
 	cb.labelBinding (lEnd);
-    }
-
-    private static void handleForExpression (MethodContentGenerator mcg, CodeBuilder cb, ParseTreeNode exp, Label endLabel) {
-	Opcode operator = Opcode.IFEQ;
-	if (exp instanceof UnaryExpression) {
-	    mcg.handleStatements (cb, exp);
-	    operator = Opcode.IFNE;
-	} else if (exp instanceof TwoPartExpression tp) {
-	    mcg.handleStatements (cb, tp.part1 ());
-
-	    ParseTreeNode p2 = tp.part2 ();
-	    if (p2 instanceof IntLiteral il && il.intValue () == 0) {
-		operator = mcg.getReverseZeroJump (tp.token ());
-	    } else {
-		mcg.handleStatements (cb, tp.part2 ());
-		operator = mcg.getReverseTwoPartJump (tp);
-	    }
-	}
-	cb.branchInstruction (operator, endLabel);
     }
 
     public static void handleEnhancedFor (MethodContentGenerator mcg, CodeBuilder cb, EnhancedForStatement efs) {
@@ -170,4 +154,69 @@ public class LoopGenerator {
 	cb.goto_ (loopLabel); // what about goto_w?
 	cb.labelBinding (endLabel);
     }
+
+    public static void handleWhile (MethodContentGenerator mcg, CodeBuilder cb, WhileStatement ws) {
+	Label loopLabel = cb.newBoundLabel ();
+	Label endLabel = cb.newLabel ();
+
+	handleExitTest (mcg, cb, ws.expression (), endLabel);
+	mcg.handleStatements (cb, ws.statement ());
+	cb.goto_ (loopLabel);
+	cb.labelBinding (endLabel);
+    }
+
+    public static void handleDo (MethodContentGenerator mcg, CodeBuilder cb, DoStatement ws) {
+	Label loopLabel = cb.newBoundLabel ();
+	mcg.handleStatements (cb, ws.statement ());
+	handleRunAgainTest (mcg, cb, ws.expression (), loopLabel);
+    }
+
+    private static void handleExitTest (MethodContentGenerator mcg, CodeBuilder cb, ParseTreeNode exp, Label endLabel) {
+	handleTest (mcg, cb, exp, endLabel, REVERSE_LOOP_TESTER);
+    }
+
+    private static void handleRunAgainTest (MethodContentGenerator mcg, CodeBuilder cb, ParseTreeNode exp, Label loopStart) {
+	handleTest (mcg, cb, exp, loopStart, RUN_AGAIN_LOOP_TESTER);
+    }
+
+    private static void handleTest (MethodContentGenerator mcg, CodeBuilder cb, ParseTreeNode exp, Label label, LoopTester tester) {
+	Opcode operator = Opcode.IFEQ;
+	if (exp instanceof UnaryExpression) {
+	    mcg.handleStatements (cb, exp);
+	    operator = tester.unaryOpcode ();
+	} else if (exp instanceof TwoPartExpression tp) {
+	    mcg.handleStatements (cb, tp.part1 ());
+
+	    ParseTreeNode p2 = tp.part2 ();
+	    if (p2 instanceof IntLiteral il && il.intValue () == 0) {
+		operator = tester.zeroJump (mcg, tp.token ());
+	    } else {
+		mcg.handleStatements (cb, tp.part2 ());
+		operator = tester.twoPartJump (mcg, tp);
+	    }
+	}
+	cb.branchInstruction (operator, label);
+    }
+
+    private interface LoopTester {
+	Opcode unaryOpcode ();
+	Opcode zeroJump (MethodContentGenerator mcg, Token t);
+	Opcode twoPartJump (MethodContentGenerator mcg, TwoPartExpression tp);
+    }
+
+    private static class ReverseLoopTester implements LoopTester {
+	@Override public Opcode unaryOpcode () { return Opcode.IFNE; }
+	@Override public Opcode zeroJump (MethodContentGenerator mcg, Token t) { return mcg.getReverseZeroJump (t); }
+	@Override public Opcode twoPartJump (MethodContentGenerator mcg, TwoPartExpression tp) { return mcg.getReverseTwoPartJump (tp); }
+    }
+
+    private static final LoopTester REVERSE_LOOP_TESTER = new ReverseLoopTester ();
+
+    private static class RunAgainLoopTester implements LoopTester {
+	@Override public Opcode unaryOpcode () { return Opcode.IFEQ; }
+	@Override public Opcode zeroJump (MethodContentGenerator mcg, Token t) { return mcg.getForwardZeroJump (t); }
+	@Override public Opcode twoPartJump (MethodContentGenerator mcg, TwoPartExpression tp) { return mcg.getForwardTwoPartJump (tp); }
+    }
+
+    private static final LoopTester RUN_AGAIN_LOOP_TESTER = new RunAgainLoopTester ();
 }

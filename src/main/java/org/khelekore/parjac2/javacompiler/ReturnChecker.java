@@ -72,7 +72,7 @@ public class ReturnChecker extends SemanticCheckerBase {
 
 	    case IfThenStatement ifts -> hasReturnOrThrow = handleIf (ifts);
 	    case WhileStatement ws -> hasReturnOrThrow = handleWhile (ws);
-	    case DoStatement ds -> hasReturnOrThrow = handleDoW (ds);
+	    case DoStatement ds -> hasReturnOrThrow = handleDo (ds);
 	    case BasicForStatement f -> hasReturnOrThrow = handleBasicFor (f);
 	    case EnhancedForStatement f -> hasReturnOrThrow = handleEnhancedFor (f);
 
@@ -99,26 +99,22 @@ public class ReturnChecker extends SemanticCheckerBase {
     }
 
     private boolean handleWhile (WhileStatement ws) {
-	return false;
+	handleStatementList (ws.expression ());
+	checkStatement (ws.statement ());
+	return false;  // we do not know if it runs or not
     }
 
-    private boolean handleDoW (DoStatement ds) {
+    private boolean handleDo (DoStatement ds) {
+	handleStatementList (ds.expression ());
+	checkStatement (ds.statement ());
 	return false;
     }
 
     private boolean handleBasicFor (BasicForStatement bfs) {
-	// check init and update for pre/post increment/decrement
 	handleStatementList (bfs.forInit ());
 	handleStatementList (bfs.forUpdate ());
 	checkStatement (bfs.statement ());
-	/*
-	ParseTreeNode exp = bfs.expression ();
-	if (exp == null)
-	    ender.isInfiniteLoop = true;
-	else
-	    ender.mayRun ();
-	*/
-	return false;
+	return false;  // we do not know if it runs or not
     }
 
     private void handleStatementList (ParseTreeNode p) {

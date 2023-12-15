@@ -16,6 +16,14 @@ public class DoStatement extends SyntaxTreeNode {
 	expression = children.get (4);
     }
 
+    public ParseTreeNode expression () {
+	return expression;
+    }
+
+    public ParseTreeNode statement () {
+	return statement;
+    }
+
     @Override public Object getValue () {
 	return "do " + statement + " while (" + expression + ");";
     }

@@ -48,7 +48,7 @@ public class IfGenerator {
 		jumpInstruction = Opcode.IFNE; // jump inverts, so we will use IFEQ
 	    } else {
 		handleTwoPartSetup (mcg, cb, tp);
-		jumpInstruction = mcg.getTwoPartJump (tp);
+		jumpInstruction = mcg.getForwardTwoPartJump (tp);
 	    }
 	} else {
 	    mcg.handleStatements (cb, test);
@@ -139,7 +139,7 @@ public class IfGenerator {
 	if (!(fnt == FullNameHandler.BOOLEAN && p2 instanceof IntLiteral il && il.intValue () == 0)) {
 	    mcg.handleStatements (cb, p2);
 	    CodeUtil.widen (cb, fnt, p2);
-	    jumpInstruction = mcg.getTwoPartJump (two);
+	    jumpInstruction = mcg.getForwardTwoPartJump (two);
 	}
 	return jumpInstruction;
     }

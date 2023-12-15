@@ -18,8 +18,10 @@ public interface MethodContentGenerator {
     void handleStatements (CodeBuilder cb, List<? extends ParseTreeNode> statements);
 
     Opcode getReverseZeroJump (Token t);
-    Opcode getTwoPartJump (TwoPartExpression t);
     Opcode getReverseTwoPartJump (TwoPartExpression t);
+
+    Opcode getForwardZeroJump (Token t);
+    Opcode getForwardTwoPartJump (TwoPartExpression t);
 
     JavaTokens javaTokens ();
 }
