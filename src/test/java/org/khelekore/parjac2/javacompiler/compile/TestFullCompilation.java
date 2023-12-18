@@ -359,6 +359,16 @@ public class TestFullCompilation extends CompileAndRun {
     }
 
     @Test
+    public void testPreIncrementDoubleInstanceField () throws ReflectiveOperationException {
+	Class<?> c = compileAndGetClass ("C", "public class C { public double d = 7.2; public double a () { double r = ++d; return r; }}");
+	Object instance = c.getConstructor ().newInstance ();
+	Method m = c.getMethod ("a");
+	m.setAccessible (true);
+	double r = (Double)m.invoke (instance);
+	assert r == 8.2;
+    }
+
+    @Test
     public void testPutStaticFieldInOtherClass () throws ReflectiveOperationException {
 	String code = "class A { public static int z = 1; } class B { public static void a () { A.z *= 3; }}";
 	Map<String, Class<?>> classes = compileAndGetClasses (code);

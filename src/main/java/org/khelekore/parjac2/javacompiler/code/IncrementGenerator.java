@@ -148,28 +148,34 @@ public class IncrementGenerator {
 	} else {
 	    cb.getstatic (fr.owner (), vi.name (), type);
 	}
-	if (valueIsUsed && valueFromBeforeChange) {
-	    if (kind == TypeKind.DoubleType || kind == TypeKind.LongType)
-		cb.dup2 ();
-	    else
-		cb.dup ();
-	}
+	if (valueIsUsed && valueFromBeforeChange)
+	    dup (cb, kind, fr.instanceField ());
 	switch (kind) {
 	case IntType -> { CodeUtil.handleInt (cb, value); cb.iadd (); }
 	case DoubleType -> incDoubleField (cb, value);
 	case FloatType -> incFloatField (cb, value);
 	default -> incIntegralField (cb, value);
 	}
-	if (valueIsUsed && !valueFromBeforeChange) {
-	    if (kind == TypeKind.DoubleType || kind == TypeKind.LongType)
-		cb.dup2 ();
-	    else
-		cb.dup ();
-	}
+	if (valueIsUsed && !valueFromBeforeChange)
+	    dup (cb, kind, fr.instanceField ());
 	if (fr.instanceField ())
 	    cb.putfield (fr.owner (), vi.name (), type);
 	else
 	    cb.putstatic (fr.owner (), vi.name (), type);
+    }
+
+    private static void dup (CodeBuilder cb, TypeKind kind, boolean instanceField) {
+	if (kind == TypeKind.DoubleType || kind == TypeKind.LongType) {
+	    if (instanceField)
+		cb.dup2_x1 ();
+	    else
+		cb.dup2 ();
+	} else {
+	    if (instanceField)
+		cb.dup_x1 ();
+	    else
+		cb.dup ();
+	}
     }
 
     private static void incDoubleField (CodeBuilder cb, int value) {
