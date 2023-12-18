@@ -53,10 +53,11 @@ public class IncrementGenerator {
 	    ParseTreeNode from = fa.from ();
 	    VariableInfo vi = fa.variableInfo ();
 	    FullNameHandler fn = FullNameHelper.type (fa);
+	    TypeKind kind = FullNameHelper.getTypeKind (fn);
 	    switch (vi.fieldType ()) {
-	    case VariableInfo.Type.PARAMETER -> incrementLocalVariable (cb, fn, ((FormalParameterBase)vi).slot (), change, valueIsUsed, valueFromBeforeChange);
-	    case VariableInfo.Type.LOCAL -> incrementLocalVariable (cb, fn, ((LocalVariable)vi).slot (), change, valueIsUsed, valueFromBeforeChange);
-	    case VariableInfo.Type.FIELD -> incrementField (mcg, cb, from, currentClass, vi, change, valueIsUsed, valueFromBeforeChange);
+	    case VariableInfo.Type.PARAMETER -> incrementLocalVariable (cb, kind, ((FormalParameterBase)vi).slot (), change, valueIsUsed, valueFromBeforeChange);
+	    case VariableInfo.Type.LOCAL -> incrementLocalVariable (cb, kind, ((LocalVariable)vi).slot (), change, valueIsUsed, valueFromBeforeChange);
+	    case VariableInfo.Type.FIELD -> incrementField (mcg, cb, kind, from, currentClass, vi, change, valueIsUsed, valueFromBeforeChange);
 	    case VariableInfo.Type.ARRAY_LENGTH -> throw new IllegalStateException ("Can not increment array.length");
 	    }
 	} else if (tn instanceof ArrayAccess aa) {
@@ -78,22 +79,22 @@ public class IncrementGenerator {
 	}
     }
 
-    private static void incrementLocalVariable (CodeBuilder cb, FullNameHandler fn, int slot, int value,
+    private static void incrementLocalVariable (CodeBuilder cb, TypeKind kind, int slot, int value,
 						boolean valueIsUsed, boolean valueFromBeforeChange) {
-	TypeKind kind = FullNameHelper.getTypeKind (fn);
-	if (fn == FullNameHandler.INT) {
-	    if (valueIsUsed && valueFromBeforeChange)
-		cb.loadInstruction (kind, slot);
-	    cb.incrementInstruction (slot, value);
-	    if (valueIsUsed && !valueFromBeforeChange)
-		cb.loadInstruction (kind, slot);
-	} else {
-	    switch (kind) {
-	    case DoubleType -> incDouble (cb, slot, value, valueIsUsed, valueFromBeforeChange);
-	    case FloatType -> incFloat (cb, slot, value, valueIsUsed, valueFromBeforeChange);
-	    default -> incIntegral (cb, kind, slot, value, valueIsUsed, valueFromBeforeChange);
-	    }
+	switch (kind) {
+	case IntType -> incInt (cb, slot, value, valueIsUsed, valueFromBeforeChange);
+	case DoubleType -> incDouble (cb, slot, value, valueIsUsed, valueFromBeforeChange);
+	case FloatType -> incFloat (cb, slot, value, valueIsUsed, valueFromBeforeChange);
+	default -> incIntegral (cb, kind, slot, value, valueIsUsed, valueFromBeforeChange);
 	}
+    }
+
+    private static void incInt (CodeBuilder cb, int slot, int value, boolean valueIsUsed, boolean valueFromBeforeChange) {
+	if (valueIsUsed && valueFromBeforeChange)
+	    cb.iload (slot);
+	cb.incrementInstruction (slot, value);
+	if (valueIsUsed && !valueFromBeforeChange)
+	    cb.iload (slot);
     }
 
     private static void incDouble (CodeBuilder cb, int slot, int value, boolean valueIsUsed, boolean valueFromBeforeChange) {
@@ -136,9 +137,9 @@ public class IncrementGenerator {
 	cb.istore (slot);
     }
 
-    private static void incrementField (MethodContentGenerator mcg, CodeBuilder cb,
+    private static void incrementField (MethodContentGenerator mcg, CodeBuilder cb, TypeKind kind,
 					ParseTreeNode from, FullNameHandler currentClass, VariableInfo vi,
-					int change, boolean valueIsUsed, boolean valueFromBeforeChange) {
+					int value, boolean valueIsUsed, boolean valueFromBeforeChange) {
 	ClassDesc type = vi.typeClassDesc ();
 	FieldGenerator.FromResult fr = FieldGenerator.handleFrom (mcg, cb, from, currentClass, vi);
 	if (fr.instanceField ()) {
@@ -147,11 +148,51 @@ public class IncrementGenerator {
 	} else {
 	    cb.getstatic (fr.owner (), vi.name (), type);
 	}
-	CodeUtil.handleInt (cb, change);
-	cb.iadd ();
+	if (valueIsUsed && valueFromBeforeChange) {
+	    if (kind == TypeKind.DoubleType || kind == TypeKind.LongType)
+		cb.dup2 ();
+	    else
+		cb.dup ();
+	}
+	switch (kind) {
+	case IntType -> { CodeUtil.handleInt (cb, value); cb.iadd (); }
+	case DoubleType -> incDoubleField (cb, value);
+	case FloatType -> incFloatField (cb, value);
+	default -> incIntegralField (cb, value);
+	}
+	if (valueIsUsed && !valueFromBeforeChange) {
+	    if (kind == TypeKind.DoubleType || kind == TypeKind.LongType)
+		cb.dup2 ();
+	    else
+		cb.dup ();
+	}
 	if (fr.instanceField ())
 	    cb.putfield (fr.owner (), vi.name (), type);
 	else
 	    cb.putstatic (fr.owner (), vi.name (), type);
+    }
+
+    private static void incDoubleField (CodeBuilder cb, int value) {
+	cb.dconst_1 ();
+	if (value == 1)
+	    cb.dadd ();
+	else
+	    cb.dsub ();
+    }
+
+    private static void incFloatField (CodeBuilder cb, int value) {
+	cb.fconst_1 ();
+	if (value == 1)
+	    cb.fadd ();
+	else
+	    cb.fsub ();
+    }
+
+    private static void incIntegralField (CodeBuilder cb, int value) {
+	cb.iconst_1 ();
+	if (value == 1)
+	    cb.iadd ();
+	else
+	    cb.isub ();
     }
 }

@@ -345,6 +345,20 @@ public class TestFullCompilation extends CompileAndRun {
     }
 
     @Test
+    public void testPostIncrementDoubleField () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static double d = 7.2; public static double a () { double r = d++; return r; }}", "a");
+	double r = (Double)m.invoke (null);
+	assert r == 7.2;
+    }
+
+    @Test
+    public void testPreIncrementDoubleField () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static double d = 7.2; public static double a () { double r = ++d; return r; }}", "a");
+	double r = (Double)m.invoke (null);
+	assert r == 8.2;
+    }
+
+    @Test
     public void testPutStaticFieldInOtherClass () throws ReflectiveOperationException {
 	String code = "class A { public static int z = 1; } class B { public static void a () { A.z *= 3; }}";
 	Map<String, Class<?>> classes = compileAndGetClasses (code);
