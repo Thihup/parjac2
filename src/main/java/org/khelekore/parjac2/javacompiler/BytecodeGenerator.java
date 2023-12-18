@@ -367,6 +367,7 @@ public class BytecodeGenerator {
 	    case LongLiteral l -> CodeUtil.handleLong (cb, l);
 	    case FloatLiteral f -> CodeUtil.handleFloat (cb, f);
 	    case DoubleLiteral d -> CodeUtil.handleDouble (cb, d);
+	    case CharLiteral c -> CodeUtil.handleChar (cb, c);
 	    case ThisPrimary t -> CodeUtil.handleThis (cb);
 	    case TokenNode t -> handleToken (cb, t);
 
@@ -544,8 +545,28 @@ public class BytecodeGenerator {
 	}
 
 	private void handleCast (CodeBuilder cb, CastExpression ce) {
-	    handleStatements (cb, ce.expression ());
-	    cb.checkcast (ClassDescUtils.getParseTreeClassDesc (ce.baseType ()));
+	    FullNameHandler fn = FullNameHelper.type (ce);
+	    ParseTreeNode exp = ce.expression ();
+	    if (exp instanceof NumericLiteral nl) {
+		if (fn == FullNameHandler.DOUBLE)
+		    CodeUtil.handleDouble (cb, nl.doubleValue ());
+		else if (fn == FullNameHandler.FLOAT)
+		    CodeUtil.handleFloat (cb, nl.floatValue ());
+		else if (fn == FullNameHandler.LONG)
+		    CodeUtil.handleLong (cb, nl.longValue ());
+		else
+		    CodeUtil.handleIntTo (cb, nl.intValue (), fn);
+	    } else {
+		handleStatements (cb, exp);
+		if (fn.isPrimitive ()) {
+		    FullNameHandler fe = FullNameHelper.type (exp);
+		    TypeKind from = FullNameHelper.getTypeKind (fe);
+		    TypeKind to = FullNameHelper.getTypeKind (fn);
+		    cb.convertInstruction (from, to);
+		} else {
+		    cb.checkcast (ClassDescUtils.getParseTreeClassDesc (ce.baseType ()));
+		}
+	    }
 	}
 
 	// for statements outside of if-tests and similar

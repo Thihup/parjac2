@@ -506,10 +506,22 @@ public class ClassSetter {
 	} else {
 	    FullNameHandler fi = FullNameHelper.type (rhs);
 	    // If fi == null we have already signaled errors and do not want another one here.
-	    if (fi != null && !typesMatch (toType, fi))
+	    if (fi != null && !isLiteralAndSmallEnough (rhs, toType) && !typesMatch (toType, fi)) {
 		error (rhs, "Types not compatible: %s <-> %s", toType.getFullDotName (), fi.getFullDotName ());
+	    }
 	    markReturnValueUsed (rhs);
 	}
+    }
+
+    private boolean isLiteralAndSmallEnough (ParseTreeNode rhs, FullNameHandler toType) {
+	if (rhs instanceof IntLiteral il) {
+	    int intValue = il.intValue ();
+	    if (toType == FullNameHandler.BYTE)
+		return intValue < 1<<8;
+	    if (toType == FullNameHandler.SHORT)
+		return intValue < 1<<16;
+	}
+	return false;
     }
 
     private void handleMethodInvocation (EnclosingTypes et, MethodInvocation mi, Deque<StatementHandler> partsToHandle) {

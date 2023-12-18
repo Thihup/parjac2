@@ -12,6 +12,10 @@ public class CharLiteral extends TokenNode {
 	this.value = value;
     }
 
+    public char charValue () {
+	return value;
+    }
+
     @Override public Object getValue () {
 	return value;
     }

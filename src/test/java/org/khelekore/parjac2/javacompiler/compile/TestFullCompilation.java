@@ -95,6 +95,13 @@ public class TestFullCompilation extends CompileAndRun {
     }
 
     @Test
+    public void testByteArray () throws ReflectiveOperationException {
+	Class<?> c = compileAndGetClass ("C", "public class C { public byte[] bs = {3, 7, (byte)0xff}; }");
+	Object o = c.getConstructor ().newInstance ();
+	assert o != null;
+    }
+
+    @Test
     public void testReturnConditional () throws ReflectiveOperationException {
 	testReturnConditional ("C", "class C { public static boolean isZero (int x) { return x == 0; }}", "isZero");
 	testReturnConditional ("C", "class C { public static boolean isZero (int x) { return 0 == x; }}", "isZero");

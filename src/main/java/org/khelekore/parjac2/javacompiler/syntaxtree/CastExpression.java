@@ -47,7 +47,7 @@ public class CastExpression extends SyntaxTreeNode {
 	return expression;
     }
 
-    @Override public Object getValue() {
+    @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	sb.append ("(").append (baseType);
 	if (!additionalBounds.isEmpty ())

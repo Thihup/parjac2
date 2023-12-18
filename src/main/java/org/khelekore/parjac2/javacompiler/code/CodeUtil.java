@@ -6,6 +6,7 @@ import java.lang.constant.MethodTypeDesc;
 import java.util.List;
 
 import org.khelekore.parjac2.javacompiler.BytecodeGenerator;
+import org.khelekore.parjac2.javacompiler.CharLiteral;
 import org.khelekore.parjac2.javacompiler.ClassDescUtils;
 import org.khelekore.parjac2.javacompiler.DoubleLiteral;
 import org.khelekore.parjac2.javacompiler.FloatLiteral;
@@ -131,6 +132,19 @@ public class CodeUtil {
 	cb.aload (cb.receiverSlot ());
     }
 
+    public static void handleIntTo (CodeBuilder cb, int i, FullNameHandler fn) {
+	// we do the cast to get the sign extension and be able to use shorter form for negative numbers
+	if (fn == FullNameHandler.BYTE) {
+	    byte b = (byte)i;
+	    handleInt (cb, b);
+	} else if (fn == FullNameHandler.SHORT) {
+	    short b = (short)i;
+	    handleInt (cb, b);
+	} else {
+	    handleInt (cb, i);
+	}
+    }
+
     public static void handleInt (CodeBuilder cb, IntLiteral il) {
 	int i = il.intValue ();
 	handleInt (cb, i);
@@ -157,11 +171,18 @@ public class CodeUtil {
     }
 
     public static void handleLong (CodeBuilder cb, LongLiteral l) {
-	cb.ldc (l.longValue ());
+	handleLong (cb, l.longValue ());
+    }
+
+    public static void handleLong (CodeBuilder cb, long l) {
+	cb.ldc (l);
     }
 
     public static void handleFloat (CodeBuilder cb, FloatLiteral il) {
-	float f = il.floatValue ();
+	handleFloat (cb, il.floatValue ());
+    }
+
+    public static void handleFloat (CodeBuilder cb, float f) {
 	if (f == 0)
 	    cb.fconst_0 ();
 	else if (f == 1)
@@ -173,7 +194,10 @@ public class CodeUtil {
     }
 
     public static void handleDouble (CodeBuilder cb, DoubleLiteral dl) {
-	double d = dl.doubleValue ();
+	handleDouble (cb, dl.doubleValue ());
+    }
+
+    public static void handleDouble (CodeBuilder cb, double d) {
 	if (d == 0) {
 	    cb.dconst_0 ();
 	} else if (d == 1) {
@@ -181,6 +205,11 @@ public class CodeUtil {
 	} else {
 	    cb.ldc (d);
 	}
+    }
+
+    public static void handleChar (CodeBuilder cb, CharLiteral cl) {
+	char c = cl.charValue ();
+	handleInt (cb, c);
     }
 
     public static boolean isLiteral (ParseTreeNode p) {
