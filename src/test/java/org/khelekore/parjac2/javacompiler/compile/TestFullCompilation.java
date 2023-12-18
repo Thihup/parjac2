@@ -83,6 +83,18 @@ public class TestFullCompilation extends CompileAndRun {
     }
 
     @Test
+    public void testFloatArray () throws ReflectiveOperationException {
+	Class<?> c = compileAndGetClass ("C", "public class C { public float[] fs = {7.2F, 3.9F}; }");
+	Object o = c.getConstructor ().newInstance ();
+	Field f = c.getField ("fs");
+	Object fs = f.get (o);
+	assert fs.getClass ().isArray ();
+	Object v = Array.get (fs, 0);
+	float actual = (Float)v;
+	assert actual == 7.2F;
+    }
+
+    @Test
     public void testReturnConditional () throws ReflectiveOperationException {
 	testReturnConditional ("C", "class C { public static boolean isZero (int x) { return x == 0; }}", "isZero");
 	testReturnConditional ("C", "class C { public static boolean isZero (int x) { return 0 == x; }}", "isZero");
@@ -301,7 +313,7 @@ public class TestFullCompilation extends CompileAndRun {
     @Test
     public void testPostIncrementThisField () throws ReflectiveOperationException {
 	Class<?> c = compileAndGetClass ("C", "public class C { int x = 17; public int r () { this.x++; return this.x; }}");
-	Object o = c.getConstructor ().newInstance ();;
+	Object o = c.getConstructor ().newInstance ();
 	Method m = c.getMethod ("r");
 	int r = (Integer)m.invoke (o);
 	assert r == 18 : "Increment returned wrong value: " + r;

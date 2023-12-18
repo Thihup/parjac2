@@ -365,6 +365,7 @@ public class BytecodeGenerator {
 	    case StringLiteral l -> cb.ldc (l.getValue ());
 	    case IntLiteral i -> CodeUtil.handleInt (cb, i);
 	    case LongLiteral l -> CodeUtil.handleLong (cb, l);
+	    case FloatLiteral f -> CodeUtil.handleFloat (cb, f);
 	    case DoubleLiteral d -> CodeUtil.handleDouble (cb, d);
 	    case ThisPrimary t -> CodeUtil.handleThis (cb);
 	    case TokenNode t -> handleToken (cb, t);

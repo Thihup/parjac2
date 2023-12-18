@@ -8,6 +8,7 @@ import java.util.List;
 import org.khelekore.parjac2.javacompiler.BytecodeGenerator;
 import org.khelekore.parjac2.javacompiler.ClassDescUtils;
 import org.khelekore.parjac2.javacompiler.DoubleLiteral;
+import org.khelekore.parjac2.javacompiler.FloatLiteral;
 import org.khelekore.parjac2.javacompiler.IntLiteral;
 import org.khelekore.parjac2.javacompiler.LongLiteral;
 import org.khelekore.parjac2.javacompiler.MethodContentGenerator;
@@ -157,6 +158,18 @@ public class CodeUtil {
 
     public static void handleLong (CodeBuilder cb, LongLiteral l) {
 	cb.ldc (l.longValue ());
+    }
+
+    public static void handleFloat (CodeBuilder cb, FloatLiteral il) {
+	float f = il.floatValue ();
+	if (f == 0)
+	    cb.fconst_0 ();
+	else if (f == 1)
+	    cb.fconst_1 ();
+	else if (f == 2)
+	    cb.fconst_2 ();
+	else
+	    cb.ldc (f);
     }
 
     public static void handleDouble (CodeBuilder cb, DoubleLiteral dl) {
