@@ -4,8 +4,6 @@ Generics:
 
 Bytecode generation:
 * try/catch/finally
-* increment and decrement on fields, used value
-* increment and decrement on arrays, used value
 
 Add errors for:
 * Validate that we return and have no unreachable code

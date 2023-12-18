@@ -34,13 +34,11 @@ public class IncrementGenerator {
 
     public static void handlePreIncrement (MethodContentGenerator mcg, CodeBuilder cb,
 					   FullNameHandler currentClass, PreIncrementExpression pie) {
-	// TODO: this works reasonably well for slots, but we need to make it correct
 	handlePostChange (mcg, cb, currentClass, pie.expression (), 1, pie.valueIsUsed (), false);
     }
 
     public static void handlePreDecrement (MethodContentGenerator mcg, CodeBuilder cb,
 					   FullNameHandler currentClass, PreDecrementExpression pde) {
-	// TODO: this works reasonably well for slots, but we need to make it correct
 	handlePostChange (mcg, cb, currentClass, pde.expression (), -1, pde.valueIsUsed (), false);
     }
 
