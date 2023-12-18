@@ -7,7 +7,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class PreDecrementExpression extends ChangeByOneExpression {
     public PreDecrementExpression (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (rule, n, children);
+	super (rule, n, children, 1);
     }
 
     @Override public Object getValue() {

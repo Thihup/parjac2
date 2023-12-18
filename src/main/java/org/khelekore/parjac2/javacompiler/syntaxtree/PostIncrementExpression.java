@@ -7,7 +7,7 @@ import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class PostIncrementExpression extends ChangeByOneExpression {
     public PostIncrementExpression (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	super (rule, n, children);
+	super (rule, n, children, 0);
     }
 
     @Override public Object getValue () {

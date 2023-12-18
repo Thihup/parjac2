@@ -335,6 +335,8 @@ public class BytecodeGenerator {
 	    case LocalVariableDeclaration lv -> LocalVariableHandler.handleLocalVariables (this, cb, lv);
 	    case PostIncrementExpression pie -> IncrementGenerator.handlePostIncrement (this, cb, cip.getFullName (td), pie);
 	    case PostDecrementExpression pde -> IncrementGenerator.handlePostDecrement (this, cb, cip.getFullName (td), pde);
+	    case PreIncrementExpression pie -> IncrementGenerator.handlePreIncrement (this, cb, cip.getFullName (td), pie);
+	    case PreDecrementExpression pde -> IncrementGenerator.handlePreDecrement (this, cb, cip.getFullName (td), pde);
 
 	    case BasicForStatement bfs -> LoopGenerator.handleBasicFor (this, cb, bfs);
 	    case EnhancedForStatement efs -> LoopGenerator.handleEnhancedFor (this, cb, efs);

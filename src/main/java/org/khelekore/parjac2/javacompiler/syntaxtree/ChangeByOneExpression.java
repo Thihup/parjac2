@@ -12,9 +12,9 @@ public abstract class ChangeByOneExpression extends SyntaxTreeNode {
     protected final ParseTreeNode expression;
     private boolean valueIsUsed = true;
 
-    public ChangeByOneExpression (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
+    public ChangeByOneExpression (Rule rule, ParseTreeNode n, List<ParseTreeNode> children, int expressionPos) {
 	super (n.position ());
-	expression = children.get (0);
+	expression = children.get (expressionPos);
     }
 
     public ParseTreeNode expression () {

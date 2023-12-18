@@ -43,7 +43,7 @@ public class FieldGenerator {
     }
 
     public static FromResult handleFrom (MethodContentGenerator mcg, CodeBuilder cb,
-					ParseTreeNode from, FullNameHandler currentClass, VariableInfo vi) {
+					 ParseTreeNode from, FullNameHandler currentClass, VariableInfo vi) {
 	ClassDesc owner;
 	boolean instanceField = Flags.isInstanceField (vi);
 	if (from instanceof ClassType ct) {

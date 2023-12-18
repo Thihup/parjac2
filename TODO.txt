@@ -4,6 +4,8 @@ Generics:
 
 Bytecode generation:
 * try/catch/finally
+* increment and decrement on fields, used value
+* increment and decrement on arrays, used value
 
 Add errors for:
 * Validate that we return and have no unreachable code
@@ -16,10 +18,12 @@ Add errors for:
  ** Local variables are set once
 * Error if switch case tries to use something that has already been handled (case String s -> ... ; case String s when ...)
 * Check that TwoPartExpression with null only uses == or !=
-* Check Pre/Post-Increment/Decrement are done on numeric types (integral types?)
+* Check Pre/Post-Increment/Decrement are done on numeric types
 * Ceck that DimExpr have an int expression
 * Check that break and continue go to valid labels
 
 Add warnings:
 * useless casts
 
+Other:
+Rewrite the parser so we co not remove nullable rules and explode the rule numbers

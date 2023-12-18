@@ -66,7 +66,8 @@ public class CodeUtil {
     public static void loadParameter (CodeBuilder cb, FormalParameterBase fpb) {
 	int slot = cb.parameterSlot (fpb.slot ());
 	FullNameHandler type = fpb.typeName ();
-	if (type == FullNameHandler.INT || type == FullNameHandler.BOOLEAN)
+	if (type == FullNameHandler.INT || type == FullNameHandler.BOOLEAN ||
+	    type == FullNameHandler.CHAR || type == FullNameHandler.BYTE || type == FullNameHandler.SHORT)
 	    cb.iload (slot);
 	else if (type == FullNameHandler.LONG)
 	    cb.lload (slot);
@@ -74,7 +75,7 @@ public class CodeUtil {
 	    cb.dload (slot);
 	else if (type == FullNameHandler.FLOAT)
 	    cb.fload (slot);
-	else {  // TODO: more types
+	else {
 	    cb.aload (slot);
 	}
     }
