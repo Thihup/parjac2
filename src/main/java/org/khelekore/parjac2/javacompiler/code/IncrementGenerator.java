@@ -66,17 +66,23 @@ public class IncrementGenerator {
 	    cb.dup2 ();   // dup or dup2?
 	    TypeKind kind = FullNameHelper.getTypeKind (FullNameHelper.type (aa));
 	    cb.arrayLoadInstruction (kind);
-	    /* TODO: check this
-	    if (valueIsUsed)
-		cb.dup ();
-	    */
-	    CodeUtil.handleInt (cb, change);
-	    cb.iadd ();
+	    if (valueIsUsed && valueFromBeforeChange)
+		arrayDupX2 (cb, kind);
+	    addOne (cb, kind, change);
+	    if (valueIsUsed && !valueFromBeforeChange)
+		arrayDupX2 (cb, kind);
 	    cb.arrayStoreInstruction (kind);
 	} else {
 	    throw new IllegalStateException ("Unhandled post increment type: " + tn + ", " + tn.getClass ().getName () +
 					     ", " + tn.position ().toShortString ());
 	}
+    }
+
+    private static void arrayDupX2 (CodeBuilder cb, TypeKind kind) {
+	if (kind == TypeKind.DoubleType || kind == TypeKind.LongType)
+	    cb.dup2_x2 ();
+	else
+	    cb.dup_x2 ();
     }
 
     private static void incrementLocalVariable (CodeBuilder cb, TypeKind kind, int slot, int value,
@@ -150,12 +156,7 @@ public class IncrementGenerator {
 	}
 	if (valueIsUsed && valueFromBeforeChange)
 	    dup (cb, kind, fr.instanceField ());
-	switch (kind) {
-	case IntType -> { CodeUtil.handleInt (cb, value); cb.iadd (); }
-	case DoubleType -> incDoubleField (cb, value);
-	case FloatType -> incFloatField (cb, value);
-	default -> incIntegralField (cb, value);
-	}
+	addOne (cb, kind, value);
 	if (valueIsUsed && !valueFromBeforeChange)
 	    dup (cb, kind, fr.instanceField ());
 	if (fr.instanceField ())
@@ -175,6 +176,15 @@ public class IncrementGenerator {
 		cb.dup_x1 ();
 	    else
 		cb.dup ();
+	}
+    }
+
+    private static void addOne (CodeBuilder cb, TypeKind kind, int value) {
+	switch (kind) {
+	case IntType -> { CodeUtil.handleInt (cb, value); cb.iadd (); }
+	case DoubleType -> incDoubleField (cb, value);
+	case FloatType -> incFloatField (cb, value);
+	default -> incIntegralField (cb, value);
 	}
     }
 
