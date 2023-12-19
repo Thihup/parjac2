@@ -15,8 +15,6 @@ Add errors for:
  ** Fields are set with initializer or set once in constructor
  ** Local variables are set once
 * Error if switch case tries to use something that has already been handled (case String s -> ... ; case String s when ...)
-* Check that TwoPartExpression with null only uses == or !=
-* Check Pre/Post-Increment/Decrement are done on numeric types
 * Ceck that DimExpr have an int expression
 * Check that break and continue go to valid labels
 
