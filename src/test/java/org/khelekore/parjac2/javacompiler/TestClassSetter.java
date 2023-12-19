@@ -472,6 +472,30 @@ public class TestClassSetter {
     }
 
     @Test
+    public void testImpossibleCast () {
+	getTypes ("class C { void foo () { Object c = new C (); int l = ((String)c).length (); }}", 0);
+	getTypes ("class C { void foo () { C c = new C (); int l = ((String)c).length (); }}", 1);
+    }
+
+    @Test
+    public void testPrimitiveCasts () {
+	getTypes ("class C { byte b = (byte)34; }");
+	getTypes ("class C { short b = (short)23; }");
+	getTypes ("class C { int b = (int)23L; }");
+	getTypes ("class C { float b = (float)4.3; }");
+	getTypes ("class C { int x = (int)4.3; }");
+    }
+
+    @Test public void testBooleanCasts () {
+	getTypes ("class C { boolean x = (boolean)4.3; }", 1);
+    }
+
+    @Test public void testWideningCast () {
+	// no error and no warning in modern java.
+	getTypes ("class C { long x = (long)5; }");
+    }
+
+    @Test
     public void testTwoPartString () {
 	getTypes ("class C { void foo () { int l = (\"a\" + \"b\").length (); }}");
     }

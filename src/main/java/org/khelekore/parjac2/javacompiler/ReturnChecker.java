@@ -5,20 +5,7 @@ import java.util.List;
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.javacompiler.code.BytecodeBlockBase;
 import org.khelekore.parjac2.javacompiler.code.IfGenerator;
-import org.khelekore.parjac2.javacompiler.syntaxtree.BasicForStatement;
-import org.khelekore.parjac2.javacompiler.syntaxtree.Block;
-import org.khelekore.parjac2.javacompiler.syntaxtree.ChangeByOneExpression;
-import org.khelekore.parjac2.javacompiler.syntaxtree.DoStatement;
-import org.khelekore.parjac2.javacompiler.syntaxtree.EnhancedForStatement;
-import org.khelekore.parjac2.javacompiler.syntaxtree.ExpressionStatement;
-import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
-import org.khelekore.parjac2.javacompiler.syntaxtree.IfThenStatement;
-import org.khelekore.parjac2.javacompiler.syntaxtree.MethodDeclarationBase;
-import org.khelekore.parjac2.javacompiler.syntaxtree.ReturnStatement;
-import org.khelekore.parjac2.javacompiler.syntaxtree.StatementExpressionList;
-import org.khelekore.parjac2.javacompiler.syntaxtree.ThrowStatement;
-import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
-import org.khelekore.parjac2.javacompiler.syntaxtree.WhileStatement;
+import org.khelekore.parjac2.javacompiler.syntaxtree.*;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class ReturnChecker extends SemanticCheckerBase {
@@ -89,6 +76,7 @@ public class ReturnChecker extends SemanticCheckerBase {
     }
 
     private boolean handleIf (IfThenStatement ifts) {
+	handleStatementList (ifts.test ());
 	boolean endsWithReturnOrThrow = checkStatement (ifts.thenPart ());
 	ParseTreeNode ep = ifts.elsePart ();
 	if (ep == null) {

@@ -20,71 +20,7 @@ import java.util.stream.Collectors;
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.NoSourceDiagnostics;
 import org.khelekore.parjac2.SourceDiagnostics;
-import org.khelekore.parjac2.javacompiler.syntaxtree.AmbiguousName;
-import org.khelekore.parjac2.javacompiler.syntaxtree.Annotation;
-import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayInitializer;
-import org.khelekore.parjac2.javacompiler.syntaxtree.ArrayType;
-import org.khelekore.parjac2.javacompiler.syntaxtree.Assignment;
-import org.khelekore.parjac2.javacompiler.syntaxtree.BasicForStatement;
-import org.khelekore.parjac2.javacompiler.syntaxtree.Block;
-import org.khelekore.parjac2.javacompiler.syntaxtree.BlockStatements;
-import org.khelekore.parjac2.javacompiler.syntaxtree.CastExpression;
-import org.khelekore.parjac2.javacompiler.syntaxtree.ClassOrInterfaceTypeToInstantiate;
-import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
-import org.khelekore.parjac2.javacompiler.syntaxtree.ConstructorDeclarationInfo;
-import org.khelekore.parjac2.javacompiler.syntaxtree.ConstructorMethodReference;
-import org.khelekore.parjac2.javacompiler.syntaxtree.DottedName;
-import org.khelekore.parjac2.javacompiler.syntaxtree.EnhancedForStatement;
-import org.khelekore.parjac2.javacompiler.syntaxtree.EnumConstant;
-import org.khelekore.parjac2.javacompiler.syntaxtree.EnumDeclaration;
-import org.khelekore.parjac2.javacompiler.syntaxtree.ExceptionTypeList;
-import org.khelekore.parjac2.javacompiler.syntaxtree.ExplicitConstructorInvocation;
-import org.khelekore.parjac2.javacompiler.syntaxtree.ExpressionName;
-import org.khelekore.parjac2.javacompiler.syntaxtree.FieldAccess;
-import org.khelekore.parjac2.javacompiler.syntaxtree.FormalParameterBase;
-import org.khelekore.parjac2.javacompiler.syntaxtree.FormalParameterList;
-import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
-import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHelper;
-import org.khelekore.parjac2.javacompiler.syntaxtree.IfThenStatement;
-import org.khelekore.parjac2.javacompiler.syntaxtree.ImportDeclaration;
-import org.khelekore.parjac2.javacompiler.syntaxtree.LambdaExpression;
-import org.khelekore.parjac2.javacompiler.syntaxtree.MethodDeclarationBase;
-import org.khelekore.parjac2.javacompiler.syntaxtree.MethodInvocation;
-import org.khelekore.parjac2.javacompiler.syntaxtree.MethodReference;
-import org.khelekore.parjac2.javacompiler.syntaxtree.NamePartHandler;
-import org.khelekore.parjac2.javacompiler.syntaxtree.NormalClassDeclaration;
-import org.khelekore.parjac2.javacompiler.syntaxtree.NormalInterfaceDeclaration;
-import org.khelekore.parjac2.javacompiler.syntaxtree.NormalMethodReference;
-import org.khelekore.parjac2.javacompiler.syntaxtree.OrdinaryCompilationUnit;
-import org.khelekore.parjac2.javacompiler.syntaxtree.PrimitiveType;
-import org.khelekore.parjac2.javacompiler.syntaxtree.ReceiverParameter;
-import org.khelekore.parjac2.javacompiler.syntaxtree.RecordDeclaration;
-import org.khelekore.parjac2.javacompiler.syntaxtree.ReturnStatement;
-import org.khelekore.parjac2.javacompiler.syntaxtree.SimpleClassType;
-import org.khelekore.parjac2.javacompiler.syntaxtree.SingleStaticImportDeclaration;
-import org.khelekore.parjac2.javacompiler.syntaxtree.SingleTypeImportDeclaration;
-import org.khelekore.parjac2.javacompiler.syntaxtree.StaticImportOnDemandDeclaration;
-import org.khelekore.parjac2.javacompiler.syntaxtree.SuperMethodReference;
-import org.khelekore.parjac2.javacompiler.syntaxtree.SwitchBlock;
-import org.khelekore.parjac2.javacompiler.syntaxtree.SwitchExpression;
-import org.khelekore.parjac2.javacompiler.syntaxtree.SwitchRule;
-import org.khelekore.parjac2.javacompiler.syntaxtree.Ternary;
-import org.khelekore.parjac2.javacompiler.syntaxtree.ThisPrimary;
-import org.khelekore.parjac2.javacompiler.syntaxtree.ThrowStatement;
-import org.khelekore.parjac2.javacompiler.syntaxtree.Throws;
-import org.khelekore.parjac2.javacompiler.syntaxtree.TwoPartExpression;
-import org.khelekore.parjac2.javacompiler.syntaxtree.TypeArguments;
-import org.khelekore.parjac2.javacompiler.syntaxtree.TypeBound;
-import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
-import org.khelekore.parjac2.javacompiler.syntaxtree.TypeImportOnDemandDeclaration;
-import org.khelekore.parjac2.javacompiler.syntaxtree.TypeName;
-import org.khelekore.parjac2.javacompiler.syntaxtree.TypeParameter;
-import org.khelekore.parjac2.javacompiler.syntaxtree.TypeParameters;
-import org.khelekore.parjac2.javacompiler.syntaxtree.UnaryExpression;
-import org.khelekore.parjac2.javacompiler.syntaxtree.UnqualifiedClassInstanceCreationExpression;
-import org.khelekore.parjac2.javacompiler.syntaxtree.VariableDeclarator;
-import org.khelekore.parjac2.javacompiler.syntaxtree.Wildcard;
-import org.khelekore.parjac2.javacompiler.syntaxtree.WildcardBounds;
+import org.khelekore.parjac2.javacompiler.syntaxtree.*;
 import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Token;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -417,8 +353,23 @@ public class ClassSetter {
     }
 
     private void handleCast (EnclosingTypes et, CastExpression ce, Deque<StatementHandler> partsToHandle) {
+ 	CustomHandler h = e -> CheckCastType (e, ce);
+	partsToHandle.addFirst (new StatementHandler (et, h));
 	markReturnValueUsed (ce.expression ());
 	addParts (et, ce, partsToHandle);
+    }
+
+    private void CheckCastType (EnclosingTypes et, CastExpression ce) {
+	FullNameHandler fo = FullNameHelper.type (ce);
+	FullNameHandler fi = FullNameHelper.type (ce.expression ());
+	if (fo.isPrimitive () && fi.isPrimitive ()) {
+	    if (fo == FullNameHandler.BOOLEAN || fi == FullNameHandler.BOOLEAN)
+		error (ce, "Impossible cast from %s to %s", fi.getFullDotName (), fo.getFullDotName ());
+	} else {
+	    Set<FullNameHandler> supers = getAllSuperTypes (fo);
+	    if (!supers.contains (fi))
+		error (ce, "Impossible cast from %s to %s", fi.getFullDotName (), fo.getFullDotName ());
+	}
     }
 
     private void handlePartsAndField (EnclosingTypes et, FieldAccess fa, Deque<StatementHandler> partsToHandle) {
