@@ -845,6 +845,10 @@ public class ClassSetter {
 	if (part1 == null || part2 == null) // missing thingy, reported elsewhere
 	    return;
 	Token token = t.token ();
+	if ((token == javaTokens.DOUBLE_EQUAL || token == javaTokens.NOT_EQUAL) &&
+	    (part1 == FullNameHandler.NULL && part2.isPrimitive () ||
+	     part2 == FullNameHandler.NULL && part1.isPrimitive ()))
+	    error (t, "Primitive and null can not be compared with '%s'", token.getName ());
 	if (part1.isPrimitive () && part2.isPrimitive ()) {
 	    if (isComparisson (t.token ()))
 		t.fullName (FullNameHandler.BOOLEAN);

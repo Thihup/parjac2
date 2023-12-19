@@ -822,6 +822,13 @@ public class TestClassSetter {
 	getTypes ("class C { int a (Integer x) { return ~x; }}", 0);
     }
 
+    @Test
+    public void testNullComparisson () {
+	getTypes ("class C { boolean b = null == new Object (); }");
+	getTypes ("class C { boolean b = null != new Object (); }");
+	getTypes ("class C { int b = 3; int x = 0; { if (b == null) x = 1; }}", 1);
+    }
+
     /* TODO: implement full generic handling */
     /*
     @Test
