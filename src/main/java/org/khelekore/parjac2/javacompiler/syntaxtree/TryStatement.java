@@ -34,6 +34,22 @@ public class TryStatement extends SyntaxTreeNode {
 	}
     }
 
+    public ResourceList resources () {
+	return resources;
+    }
+
+    public Block block () {
+	return block;
+    }
+
+    public Catches catches () {
+	return catches;
+    }
+
+    public Finally finallyBlock () {
+	return finallyBlock;
+    }
+
     @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	sb.append ("try");

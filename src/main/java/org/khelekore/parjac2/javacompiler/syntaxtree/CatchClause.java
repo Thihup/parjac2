@@ -16,6 +16,14 @@ public class CatchClause extends SyntaxTreeNode {
 	block = (Block)children.get (4);
     }
 
+    public CatchFormalParameter param () {
+	return param;
+    }
+
+    public Block block () {
+	return block;
+    }
+
     @Override public Object getValue () {
 	return "catch (" + param + ")" + block;
     }

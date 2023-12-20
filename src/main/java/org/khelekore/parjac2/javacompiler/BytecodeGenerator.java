@@ -37,6 +37,7 @@ import org.khelekore.parjac2.javacompiler.code.LoopGenerator;
 import org.khelekore.parjac2.javacompiler.code.StringGenerator;
 import org.khelekore.parjac2.javacompiler.code.SwitchGenerator;
 import org.khelekore.parjac2.javacompiler.code.SynchronizationGenerator;
+import org.khelekore.parjac2.javacompiler.code.TryGenerator;
 import org.khelekore.parjac2.javacompiler.syntaxtree.*;
 import org.khelekore.parjac2.parser.Grammar;
 import org.khelekore.parjac2.parser.Token;
@@ -358,6 +359,7 @@ public class BytecodeGenerator {
 	    case MethodReference mr -> callMethodReference (cb, mr);
 
 	    case ThrowStatement ts -> handleThrowStatement (cb, ts);
+	    case TryStatement t -> TryGenerator.handleTryStatement (this, cb, t);
 
 	    case CastExpression ce -> handleCast (cb, ce);
 	    case ClassType ct -> cb.ldc (ClassDescUtils.getClassDesc (ct.fullName ()));

@@ -14,6 +14,10 @@ public class Finally extends SyntaxTreeNode {
 	block = (Block)children.get (1);
     }
 
+    public Block block () {
+	return block;
+    }
+
     @Override public Object getValue () {
 	return "finally " + block;
     }

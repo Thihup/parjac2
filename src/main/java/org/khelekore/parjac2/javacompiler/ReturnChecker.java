@@ -42,6 +42,8 @@ public class ReturnChecker extends SemanticCheckerBase {
     }
 
     private boolean checkStatement (ParseTreeNode p) {
+	if (p == null)
+	    return false;
 	if (p instanceof Block b) {
 	    return endsWithReturnOrThrow (b.get ());
 	}
@@ -52,6 +54,7 @@ public class ReturnChecker extends SemanticCheckerBase {
 	boolean hasReturnOrThrow = false;
 	for (int i = 0, s = ls.size (); i < s; i++) {
 	    ParseTreeNode p = ls.get (i);
+	    //System.err.println ("About to check: " + p);
 	    if (hasReturnOrThrow) {
 		error (p, "Unreachable code");
 		break;
@@ -66,6 +69,8 @@ public class ReturnChecker extends SemanticCheckerBase {
 	    case DoStatement ds -> hasReturnOrThrow = handleDo (ds);
 	    case BasicForStatement f -> hasReturnOrThrow = handleBasicFor (f);
 	    case EnhancedForStatement f -> hasReturnOrThrow = handleEnhancedFor (f);
+
+	    case TryStatement t -> handleTry (t);
 
 	    case ExpressionStatement es -> handleIncrementDecrement (es);
 
@@ -119,6 +124,19 @@ public class ReturnChecker extends SemanticCheckerBase {
     private boolean handleEnhancedFor (EnhancedForStatement efs) {
 	checkStatement (efs.statement ());
 	return false;
+    }
+
+    private void handleTry (TryStatement t) {
+	handleStatementList (t.resources ());
+	checkStatement (t.block ());
+
+	Catches c = t.catches ();
+	if (c != null)
+	    endsWithReturnOrThrow (c.get ());
+
+	Finally fb = t.finallyBlock ();
+	if (fb != null)
+	    checkStatement (fb.block ());
     }
 
     // a "i++;" on its own means that the code does not use the value
