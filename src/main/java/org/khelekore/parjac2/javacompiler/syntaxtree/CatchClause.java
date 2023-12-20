@@ -20,6 +20,10 @@ public class CatchClause extends SyntaxTreeNode {
 	return param;
     }
 
+    public UnannClassType firstType () {
+	return param.firstType ();
+    }
+
     public Block block () {
 	return block;
     }

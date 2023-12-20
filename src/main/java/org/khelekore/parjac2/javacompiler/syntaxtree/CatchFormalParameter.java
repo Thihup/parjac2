@@ -19,6 +19,22 @@ public class CatchFormalParameter extends SyntaxTreeNode {
 	vid = (VariableDeclaratorId)children.get (i);
     }
 
+    public List<ParseTreeNode> variableModifiers () {
+	return variableModifiers;
+    }
+
+    public CatchType type () {
+	return type;
+    }
+
+    public UnannClassType firstType () {
+	return type.firstType ();
+    }
+
+    public VariableDeclaratorId variableDeclaratorId () {
+	return vid;
+    }
+
     @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	if (!variableModifiers.isEmpty ())

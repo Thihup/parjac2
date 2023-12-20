@@ -24,6 +24,14 @@ public class CatchType extends SyntaxTreeNode {
 	}
     }
 
+    public UnannClassType firstType () {
+	return firstType;
+    }
+
+    public List<ClassType> otherTypes () {
+	return otherTypes;
+    }
+
     @Override public Object getValue () {
 	if (otherTypes.isEmpty ())
 	    return firstType.toString ();
