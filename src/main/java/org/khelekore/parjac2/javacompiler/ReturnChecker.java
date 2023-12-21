@@ -70,7 +70,7 @@ public class ReturnChecker extends SemanticCheckerBase {
 	    case BasicForStatement f -> hasReturnOrThrow = handleBasicFor (f);
 	    case EnhancedForStatement f -> hasReturnOrThrow = handleEnhancedFor (f);
 
-	    case TryStatement t -> handleTry (t);
+	    case TryStatement t -> hasReturnOrThrow = handleTry (t);
 
 	    case ExpressionStatement es -> handleIncrementDecrement (es);
 
@@ -126,17 +126,24 @@ public class ReturnChecker extends SemanticCheckerBase {
 	return false;
     }
 
-    private void handleTry (TryStatement t) {
+    private boolean handleTry (TryStatement t) {
 	handleStatementList (t.resources ());
-	checkStatement (t.block ());
+	boolean blockEndsWithReturnOrThrow = checkStatement (t.block ());
 
+	boolean allCatchReturnsOrThrows = true;
 	Catches c = t.catches ();
-	if (c != null)
-	    endsWithReturnOrThrow (c.get ());
+	if (c != null) {
+	    for (ParseTreeNode cs : c.get ()) {
+		allCatchReturnsOrThrows &= checkStatement (cs);
+	    }
+	}
 
+	boolean finallyReturnsOrThrows = false;
 	Finally fb = t.finallyBlock ();
 	if (fb != null)
-	    checkStatement (fb.block ());
+	    finallyReturnsOrThrows = checkStatement (fb.block ());
+
+	return (blockEndsWithReturnOrThrow && allCatchReturnsOrThrows) || finallyReturnsOrThrows;
     }
 
     // a "i++;" on its own means that the code does not use the value

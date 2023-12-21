@@ -4,7 +4,6 @@ import java.lang.constant.ClassDesc;
 
 import org.khelekore.parjac2.javacompiler.ClassDescUtils;
 import org.khelekore.parjac2.javacompiler.MethodContentGenerator;
-import org.khelekore.parjac2.javacompiler.syntaxtree.Block;
 import org.khelekore.parjac2.javacompiler.syntaxtree.CatchClause;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Catches;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Finally;
@@ -29,10 +28,13 @@ public class TryGenerator {
 	    mcg.handleStatements (cb, f);
 	cb.goto_ (afterTry);
 
+	int exceptionSlot = cb.allocateLocal (TypeKind.ReferenceType);
 	Catches cc = t.catches ();
 	if (cc != null) {
 	    for (ParseTreeNode p : cc.get ()) {
 		Label handler = cb.newBoundLabel ();
+		cb.astore (exceptionSlot);
+
 		CatchClause c = (CatchClause)p;
 		// TODO: deal with more types.
 		UnannClassType uct = c.firstType ();
@@ -46,7 +48,6 @@ public class TryGenerator {
 
 	if (f != null) {
 	    Label handler = cb.newBoundLabel ();
-	    int exceptionSlot = cb.allocateLocal (TypeKind.ReferenceType);
 	    cb.astore (exceptionSlot);
 	    mcg.handleStatements (cb, f);
 	    cb.aload (exceptionSlot);
