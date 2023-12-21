@@ -21,4 +21,16 @@ public class TestTryCatchFinally extends CompileAndRun {
 	    assert cause instanceof IOException;
 	}
     }
+
+    /* TODO: this crashes during bytecode generation:
+     * TODO: it tries to inline the finally after the throws (which is wrong) and adds a jump to position outside of method (also wrong)
+     */
+    /*
+    @Test
+    public void testTryFinallyTryAlwaysThrows () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "import java.io.*; class C { public static int a (boolean b) throws IOException {" +
+			      "int x = 7; try { if (b) throw new IOException (); else throw new RuntimeException (); } finally { x++; }}}",
+			      "a", Boolean.TYPE);
+    }
+    */
 }
