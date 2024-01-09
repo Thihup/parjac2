@@ -25,3 +25,4 @@ Add warnings:
 
 Other:
 Rewrite the parser so we co not remove nullable rules and explode the rule numbers
+- first version in branch: nullable_grammar_rewrite, need to check performance
