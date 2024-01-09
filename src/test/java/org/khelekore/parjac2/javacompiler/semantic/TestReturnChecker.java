@@ -30,6 +30,7 @@ public class TestReturnChecker extends TestCompilationErrorHandling {
 	testClass ("C.java", "class C { int foo () throws java.io.IOException { for (; 1 * 3 == 3;) System.in.read (); }}", 0);
 	testClass ("C.java", "class C { int foo () throws java.io.IOException { for (; 12 / 4 == 3;) System.in.read (); }}", 0);
 	testClass ("C.java", "class C { int foo () throws java.io.IOException { for (; \"a\" == \"a\";) System.in.read (); }}", 0);
+	testClass ("C.java", "class C { int foo () throws java.io.IOException { for (; \"a\" + \"b\" == \"ab\";) System.in.read (); }}", 0);
     }
 
     @Test

@@ -565,6 +565,10 @@ public class SyntaxTreeBuilder {
 	} else if (operator == javaTokens.PLUS) {
 	    if (t1 instanceof IntLiteral i1 && t2 instanceof IntLiteral i2)
 		return new IntLiteral (javaTokens.INT_LITERAL, i1.intValue () + i2.intValue (), i1.position ());
+	    if (t1 instanceof StringLiteral || t2 instanceof StringLiteral)
+		return new StringLiteral (javaTokens.STRING_LITERAL,
+					  String.valueOf (t1.getValue ()) + String.valueOf (t2.getValue ()),
+					  t1.position ());
 	} else if (operator == javaTokens.MINUS) {
 	    if (t1 instanceof IntLiteral i1 && t2 instanceof IntLiteral i2)
 		return new IntLiteral (javaTokens.INT_LITERAL, i1.intValue () - i2.intValue (), i1.position ());
