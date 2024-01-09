@@ -12,6 +12,7 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.*;
 import org.khelekore.parjac2.parser.Grammar;
 import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
+import org.khelekore.parjac2.parser.Token;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.khelekore.parjac2.parsetree.RuleNode;
 import org.khelekore.parjac2.parsetree.TokenNode;
@@ -544,12 +545,51 @@ public class SyntaxTreeBuilder {
     private ParseTreeNode oneOrTwoParter (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	if (rule.size () == 1)
 	    return children.get (0);
+	ParseTreeNode p1 = children.get (0);
+	Token op = ((TokenNode)children.get (1)).token ();
+	ParseTreeNode p2 = children.get (2);
+	if (p1 instanceof TokenNode t1 && p2 instanceof TokenNode t2) {
+	    ParseTreeNode p = evaluate (t1, op, t2);
+	    if (p != null)
+		return p;
+	}
 	return new TwoPartExpression (rule, n, children);
+    }
+
+    private ParseTreeNode evaluate (TokenNode t1, Token operator, TokenNode t2) {
+	if (operator == javaTokens.DOUBLE_EQUAL) {
+	    if (t1 instanceof IntLiteral i1 && t2 instanceof IntLiteral i2)
+		return new TokenNode (i1.intValue () == i2.intValue () ?  javaTokens.TRUE : javaTokens.FALSE, t1.position ());
+	    if (t1 instanceof StringLiteral s1 && t2 instanceof StringLiteral s2)
+		return new TokenNode (s1.getValue ().equals (s2.getValue ()) ?  javaTokens.TRUE : javaTokens.FALSE, t1.position ());
+	} else if (operator == javaTokens.PLUS) {
+	    if (t1 instanceof IntLiteral i1 && t2 instanceof IntLiteral i2)
+		return new IntLiteral (javaTokens.INT_LITERAL, i1.intValue () + i2.intValue (), i1.position ());
+	} else if (operator == javaTokens.MINUS) {
+	    if (t1 instanceof IntLiteral i1 && t2 instanceof IntLiteral i2)
+		return new IntLiteral (javaTokens.INT_LITERAL, i1.intValue () - i2.intValue (), i1.position ());
+	} else if (operator == javaTokens.MULTIPLY) {
+	    if (t1 instanceof IntLiteral i1 && t2 instanceof IntLiteral i2)
+		return new IntLiteral (javaTokens.INT_LITERAL, i1.intValue () * i2.intValue (), i1.position ());
+	} else if (operator == javaTokens.DIVIDE) {
+	    if (t1 instanceof IntLiteral i1 && t2 instanceof IntLiteral i2)
+		return new IntLiteral (javaTokens.INT_LITERAL, i1.intValue () / i2.intValue (), i1.position ());
+	}
+
+	// TODO: implement more options
+	return null;
     }
 
     private ParseTreeNode unaryExpression (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	if (rule.size () == 1)
 	    return children.get (0);
+	Token operator = ((TokenNode)children.get (0)).token ();
+	ParseTreeNode p = children.get (1);
+	if (p instanceof TokenNode tn) {
+	    if (operator == javaTokens.NOT)
+		return new TokenNode (tn.token () == javaTokens.TRUE ? javaTokens.FALSE : javaTokens.TRUE, n.position ());
+	    // TODO: deal with PLUS, MINUS, TILDE
+	}
 	return new UnaryExpression (rule, n, children);
     }
 

@@ -7,6 +7,7 @@ import org.khelekore.parjac2.javacompiler.code.BytecodeBlockBase;
 import org.khelekore.parjac2.javacompiler.code.IfGenerator;
 import org.khelekore.parjac2.javacompiler.syntaxtree.*;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
+import org.khelekore.parjac2.parsetree.TokenNode;
 
 public class ReturnChecker extends SemanticCheckerBase {
 
@@ -111,7 +112,16 @@ public class ReturnChecker extends SemanticCheckerBase {
 	handleStatementList (bfs.forInit ());
 	handleStatementList (bfs.forUpdate ());
 	checkStatement (bfs.statement ());
+
+	if (isInfinite (bfs.expression ()))
+	    return true;
 	return false;  // we do not know if it runs or not
+    }
+
+    private boolean isInfinite (ParseTreeNode p) {
+	if (p == null)
+	    return true;
+	return p instanceof TokenNode tn && tn.token () == javaTokens.TRUE;
     }
 
     private void handleStatementList (ParseTreeNode p) {

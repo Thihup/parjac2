@@ -33,6 +33,15 @@ public class IfGenerator {
 
     private static void handleGenericIfElse (MethodContentGenerator mcg, CodeBuilder cb, ParseTreeNode test,
 					     ParseTreeNode thenPart, ParseTreeNode elsePart) {
+	if (isTrue (test, mcg.javaTokens ())) {
+	    mcg.handleStatements (cb, thenPart);
+	    return;
+	} else if (isFalse (test, mcg.javaTokens ())) {
+	    if (elsePart != null)
+		mcg.handleStatements (cb, elsePart);
+	    return;
+	}
+
 	Opcode jumpInstruction = null;
 	if (test instanceof TwoPartExpression tp) {
 	    Token token = tp.token ();
@@ -216,5 +225,9 @@ public class IfGenerator {
 
     public static boolean isTrue (ParseTreeNode p, JavaTokens javaTokens) {
 	return p instanceof TokenNode tn && tn.token () == javaTokens.TRUE;
+    }
+
+    public static boolean isFalse (ParseTreeNode p, JavaTokens javaTokens) {
+	return p instanceof TokenNode tn && tn.token () == javaTokens.FALSE;
     }
 }
