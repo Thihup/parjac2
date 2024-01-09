@@ -24,6 +24,7 @@ import org.khelekore.parjac2.parser.ParsePosition;
 
 import io.github.dmlloyd.classfile.Attributes;
 import io.github.dmlloyd.classfile.ClassModel;
+import io.github.dmlloyd.classfile.ClassSignature;
 import io.github.dmlloyd.classfile.ClassFile;
 import io.github.dmlloyd.classfile.FieldModel;
 import io.github.dmlloyd.classfile.MethodModel;
@@ -141,7 +142,7 @@ public class ClassResourceHolder {
 	ClasspathClassInformation r = foundClasses.get (fqn);
 	if (r != null)
 	    if (loadNoCheckedException (r))
-		return new LookupResult (true, r.accessFlags, r.getFullName ());
+		return new LookupResult (true, r.accessFlags, r.getFullName (), r.signature);
 	return LookupResult.NOT_FOUND;
     }
 
@@ -212,6 +213,7 @@ public class ClassResourceHolder {
 
     private static abstract class ClasspathClassInformation {
 	private FullNameHandler fullName;
+	private ClassSignature signature;
 	private boolean loaded = false;
 	private FullNameHandler superClass;
 	private List<FullNameHandler> superTypes;
@@ -354,6 +356,7 @@ public class ClassResourceHolder {
 	public void parse () {
 	    parseAccessFlags ();
 	    parseSuperTypes ();
+	    parseSignature ();
 	    parseFields ();
 	    parseMethods ();
 	}
@@ -383,6 +386,14 @@ public class ClassResourceHolder {
 	    String dollarName = slashName.replace ('/', '.');
 	    String dotName = dollarName.replace ('$', '.');
 	    return FullNameHandler.of (dotName, dollarName);
+	}
+
+	private void parseSignature () {
+	    Optional<SignatureAttribute> o = model.findAttribute (Attributes.SIGNATURE);
+	    if (o.isPresent ()) {
+		SignatureAttribute sa = o.get ();
+		r.signature = sa.asClassSignature ();
+	    }
 	}
 
 	private void parseFields () {

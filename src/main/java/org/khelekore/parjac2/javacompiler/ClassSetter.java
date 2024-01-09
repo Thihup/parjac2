@@ -1284,6 +1284,12 @@ public class ClassSetter {
 		tas.getTypeArguments ().forEach (tn -> setType (et, tn));
 	    }
 	}
+	if (fqn.type != null) {
+	    TypeArguments ta = ct.getTypeArguments ();
+	    if (ta == null && fqn.type.hasGenericType ()){
+		warning (ct, "Generic type %s used without type arguments", fqn.type.getFullDotName ());
+	    }
+	}
     }
 
     private void setType (EnclosingTypes et, DottedName tn) {
@@ -1795,6 +1801,10 @@ public class ClassSetter {
 
     private void error (ParseTreeNode where, String template, Object... args) {
 	diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), where.position (), template, args));
+    }
+
+    private void warning (ParseTreeNode where, String template, Object... args) {
+	diagnostics.report (SourceDiagnostics.warning (tree.getOrigin (), where.position (), template, args));
     }
 
     private record ValueOrError<T> (T value, String error) {

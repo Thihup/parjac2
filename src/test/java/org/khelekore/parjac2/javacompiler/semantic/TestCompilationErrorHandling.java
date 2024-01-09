@@ -45,11 +45,18 @@ public abstract class TestCompilationErrorHandling {
     }
 
     public void testClass (String filename, String text, int expectedErrors) {
+	testClass (filename, text, expectedErrors, 0);
+    }
+
+    public void testClass (String filename, String text, int expectedErrors, int expectedWarnings) {
 	sourceProvider.input (filename, text);
 	Compiler c = new Compiler (diagnostics, grammar, javaTokens, goalRule, settings);
 	c.compile ();
 	assert diagnostics.errorCount () == expectedErrors :
 	String.format ("Wrong number of errors generated, expected: %d, got: %d: \n%s",
 		       expectedErrors, diagnostics.errorCount (), TestParserHelper.getParseOutput (diagnostics));
+	assert diagnostics.warningCount () == expectedWarnings :
+	String.format ("Wrong number of warnings generated, expected: %d, got: %d: \n%s",
+		       expectedWarnings, diagnostics.warningCount (), TestParserHelper.getParseOutput (diagnostics));
     }
 }

@@ -24,6 +24,8 @@ import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.UnqualifiedClassInstanceCreationExpression;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
+import io.github.dmlloyd.classfile.ClassSignature;
+
 public class CompiledTypesHolder {
 
     // full class name to declaration, name only has '.' as separator, no / or $
@@ -38,7 +40,8 @@ public class CompiledTypesHolder {
 	    return LookupResult.NOT_FOUND;
 	int flags = ni.flags ();
 	FullNameHandler name = typeToInfo.get (ni).getFullName ();
-	return new LookupResult (true, flags, name);
+	ClassSignature signature = null; // TODO: implement this or change to something that is not a ClassSignature
+	return new LookupResult (true, flags, name, signature);
     }
 
     public void addTypes (ParseTreeNode n, Path origin) {
