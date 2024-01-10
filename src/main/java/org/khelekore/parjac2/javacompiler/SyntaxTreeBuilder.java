@@ -563,21 +563,21 @@ public class SyntaxTreeBuilder {
 	    if (t1 instanceof StringLiteral s1 && t2 instanceof StringLiteral s2)
 		return new TokenNode (s1.getValue ().equals (s2.getValue ()) ?  javaTokens.TRUE : javaTokens.FALSE, t1.position ());
 	} else if (operator == javaTokens.PLUS) {
-	    if (t1 instanceof IntLiteral i1 && t2 instanceof IntLiteral i2)
-		return new IntLiteral (javaTokens.INT_LITERAL, i1.intValue () + i2.intValue (), i1.position ());
 	    if (t1 instanceof StringLiteral || t2 instanceof StringLiteral)
 		return new StringLiteral (javaTokens.STRING_LITERAL,
 					  String.valueOf (t1.getValue ()) + String.valueOf (t2.getValue ()),
 					  t1.position ());
+	    if (t1 instanceof NumericLiteral i1 && t2 instanceof NumericLiteral i2)
+		return ConstantValueCalculator.add (javaTokens, i1, i2);
 	} else if (operator == javaTokens.MINUS) {
-	    if (t1 instanceof IntLiteral i1 && t2 instanceof IntLiteral i2)
-		return new IntLiteral (javaTokens.INT_LITERAL, i1.intValue () - i2.intValue (), i1.position ());
+	    if (t1 instanceof NumericLiteral i1 && t2 instanceof NumericLiteral i2)
+		return ConstantValueCalculator.subtract (javaTokens, i1, i2);
 	} else if (operator == javaTokens.MULTIPLY) {
-	    if (t1 instanceof IntLiteral i1 && t2 instanceof IntLiteral i2)
-		return new IntLiteral (javaTokens.INT_LITERAL, i1.intValue () * i2.intValue (), i1.position ());
+	    if (t1 instanceof NumericLiteral i1 && t2 instanceof NumericLiteral i2)
+		return ConstantValueCalculator.multiply (javaTokens, i1, i2);
 	} else if (operator == javaTokens.DIVIDE) {
-	    if (t1 instanceof IntLiteral i1 && t2 instanceof IntLiteral i2)
-		return new IntLiteral (javaTokens.INT_LITERAL, i1.intValue () / i2.intValue (), i1.position ());
+	    if (t1 instanceof NumericLiteral i1 && t2 instanceof NumericLiteral i2)
+		return ConstantValueCalculator.divide (javaTokens, i1, i2);
 	}
 
 	// TODO: implement more options

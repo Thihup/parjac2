@@ -52,6 +52,14 @@ public abstract class SemanticCheckerBase {
 	diagnostics.report (SourceDiagnostics.error (tree.getOrigin (), where, template, args));
     }
 
+    protected void warning (ParseTreeNode where, String template, Object... args) {
+	warning (where.position (), template, args);
+    }
+
+    protected void warning (ParsePosition where, String template, Object... args) {
+	diagnostics.report (SourceDiagnostics.warning (tree.getOrigin (), where, template, args));
+    }
+
     public interface SemanticCheckerBaseFactory<T extends SemanticCheckerBase> {
 	T create (ClassInformationProvider cip, JavaTokens javaTokens,
 		  ParsedEntry tree, CompilerDiagnosticCollector diagnostics);

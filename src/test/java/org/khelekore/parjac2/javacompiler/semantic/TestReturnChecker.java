@@ -15,8 +15,23 @@ public class TestReturnChecker extends TestCompilationErrorHandling {
     }
 
     @Test
+    public void testTrueIfWithReturnRequiresRerturnAfter () {
+	testClass ("C.java", "class C { int a () { if (true) return 1; }}", 1);
+    }
+
+    @Test
+    public void testTrueIfWithReturnAfterGivesWarning () {
+	testClass ("C.java", "class C { int a () { if (true) return 1; return 2; }}", 0, 1);
+    }
+
+    @Test
     public void testIfElseBothReturnShouldMarkCodeAfterAsUnreachable () {
 	testClass ("C.java", "class C { int a (int x) { if (x == 0) return 1; else return 2; x++; }}", 1);
+    }
+
+    @Test
+    public void testIfElseBothThrowShouldMarkCodeAfterAsUnreachable () {
+	testClass ("C.java", "class C { int a (int x) { if (x == 0) throw new RuntimeException (); else throw new RuntimeException (); x++; }}", 1);
     }
 
     @Test
