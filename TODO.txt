@@ -4,6 +4,7 @@ Generics:
 
 Bytecode generation:
 * try/catch/finally
+* Stop generation for current block after return (for "if(true) return 3; return 5" and similar cases)
 
 Add errors for:
 * Validate that we return and have no unreachable code
@@ -15,7 +16,7 @@ Add errors for:
  ** Fields are set with initializer or set once in constructor
  ** Local variables are set once
 * Error if switch case tries to use something that has already been handled (case String s -> ... ; case String s when ...)
-* Ceck that DimExpr have an int expression
+* Check that DimExpr have an int expression
 * Check that break and continue go to valid labels
 * Check that exceptions that are thrown but also caught does not need to be declared
 * Check that exceptions from method calls are declared or caught.
