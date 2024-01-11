@@ -10,6 +10,11 @@ public class TestReturnChecker extends TestCompilationErrorHandling {
     }
 
     @Test
+    public void testBlockInsideMethod () {
+	testClass ("C.java", "class C { int a () { { return 3; } return 4; }}", 1);
+    }
+
+    @Test
     public void testIfWithReturnDoesNotMarkUnreachable () {
 	testClass ("C.java", "class C { void a (int x) { if (x == 0) return; x++; }}", 0);
     }

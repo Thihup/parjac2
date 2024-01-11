@@ -44,6 +44,10 @@ public abstract class SemanticCheckerBase {
 	TypeTraverser.forAllTypes ((OrdinaryCompilationUnit)tree.getRoot (), tc);
     }
 
+    public ParsedEntry parsedEntry () {
+	return tree;
+    }
+
     protected void error (ParseTreeNode where, String template, Object... args) {
 	error (where.position (), template, args);
     }

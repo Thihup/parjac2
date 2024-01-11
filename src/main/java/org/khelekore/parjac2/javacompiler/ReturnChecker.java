@@ -66,15 +66,19 @@ public class ReturnChecker extends SemanticCheckerBase {
     }
 
     private State endsWithReturnOrThrow (List<ParseTreeNode> ls) {
+	int unreachableStart = -1;
 	State hasReturnOrThrow = State.NO_RETURN;
 	for (int i = 0, s = ls.size (); i < s; i++) {
 	    ParseTreeNode p = ls.get (i);
 	    if (hasReturnOrThrow == State.RETURNS) {
 		error (p, "Unreachable code");
+		unreachableStart = i;
 		break;
 	    }
 	    if (hasReturnOrThrow == State.SOFT_RETURN) {
 		warning (p, "Unreachable code");
+		if (unreachableStart < 0)
+		    unreachableStart = i;
 	    }
 	    switch (p) {
 	    case ReturnStatement rs -> hasReturnOrThrow = State.RETURNS;
@@ -89,11 +93,16 @@ public class ReturnChecker extends SemanticCheckerBase {
 
 	    case TryStatement t -> hasReturnOrThrow = handleTry (t);
 
+	    case Block b -> hasReturnOrThrow = endsWithReturnOrThrow (b.get ());
+
 	    case ExpressionStatement es -> handleIncrementDecrement (es);
 
 	    default -> { /* empty */ }
 	    }
 	}
+	if (unreachableStart > -1)
+	    for (int i = ls.size () - 1; i >= unreachableStart; i--)
+		ls.remove (i);
 	return hasReturnOrThrow;
     }
 

@@ -67,13 +67,18 @@ public abstract class CompileAndRun {
 	return compileAndGetClasses ("dynamic.java", text);
     }
 
-    private Map<String, Class<?>> compileAndGetClasses (String filename, String text) throws ClassNotFoundException {
+    public Map<String, Class<?>> compileAndGetClasses (String filename, String text) throws ClassNotFoundException {
+	Map<String, byte[]> classes = compileAndGetBytecode (filename, text);
+	InMemoryClassLoader cl = new InMemoryClassLoader (classes);
+	return cl.loadAllClasses ();
+    }
+
+    public Map<String, byte[]> compileAndGetBytecode (String filename, String text) {
 	sourceProvider.input (filename, text);
 	Compiler c = new Compiler (diagnostics, grammar, javaTokens, goalRule, settings);
 	c.compile ();
 	assert diagnostics.errorCount () == 0 :
 	String.format ("Expected no compilation errors: %s", TestParserHelper.getParseOutput (diagnostics));
-	InMemoryClassLoader cl = new InMemoryClassLoader (bytecodeWriter.classes ());
-	return cl.loadAllClasses ();
+	return bytecodeWriter.classes ();
     }
 }
