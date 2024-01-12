@@ -23,9 +23,9 @@ public class TryGenerator {
 	Label tryStart = cb.newBoundLabel ();
 	mcg.handleStatements (cb, t.block ());
 	Label tryEnd = cb.newBoundLabel ();
-	Finally f = t.finallyBlock ();
-	if (f != null)
-	    mcg.handleStatements (cb, f);
+	Finally finallyStatements = t.finallyBlock ();
+	if (finallyStatements != null)
+	    mcg.handleStatements (cb, finallyStatements);
 	cb.goto_ (afterTry);
 
 	int exceptionSlot = cb.allocateLocal (TypeKind.ReferenceType);
@@ -46,10 +46,10 @@ public class TryGenerator {
 	    }
 	}
 
-	if (f != null) {
+	if (finallyStatements != null) {
 	    Label handler = cb.newBoundLabel ();
 	    cb.astore (exceptionSlot);
-	    mcg.handleStatements (cb, f);
+	    mcg.handleStatements (cb, finallyStatements);
 	    cb.aload (exceptionSlot);
 	    cb.athrow ();
 	    cb.exceptionCatchAll (tryStart, tryEnd, handler);
@@ -57,5 +57,4 @@ public class TryGenerator {
 
 	cb.labelBinding (afterTry);
     }
-
 }
