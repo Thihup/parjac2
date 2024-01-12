@@ -50,4 +50,10 @@ public class ConstantValueCalculator {
 	    return new IntLiteral (javaTokens.INT_LITERAL, n1.intValue () / n2.intValue (), n1.position ());
 	}
     }
+
+    public static ParseTreeNode bitNegate (JavaTokens javaTokens, NumericLiteral n) {
+	if (n instanceof LongLiteral)
+	    return new LongLiteral (javaTokens.LONG_LITERAL, ~n.longValue (), n.position ());
+	return new IntLiteral (javaTokens.INT_LITERAL, ~n.intValue (), n.position ());
+    }
 }
