@@ -4,7 +4,6 @@ Generics:
 
 Bytecode generation:
 * try/catch/finally
-* Stop generation for current block after return (for "if(true) return 3; return 5" and similar cases)
 
 Add errors for:
 * Validate that we return and have no unreachable code
