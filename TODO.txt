@@ -21,7 +21,6 @@ Add errors for:
 * Check that exceptions from method calls are declared or caught.
 
 Add warnings:
-* useless casts
 
 Other:
 Rewrite the parser so we co not remove nullable rules and explode the rule numbers

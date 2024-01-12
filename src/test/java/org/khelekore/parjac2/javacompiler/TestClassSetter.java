@@ -478,6 +478,21 @@ public class TestClassSetter {
     }
 
     @Test
+    public void testNonNeededPrimitiveCastGiveWarning () {
+	getTypes ("class C { void foo () { double d = 3.4; double f = (double)d; }}", 0, 1);
+    }
+
+    @Test
+    public void testNonNeededCastGiveWarning () {
+	getTypes ("class C { void foo () { C c = new C(); C d = (C)c; }}", 0, 1);
+    }
+
+    @Test
+    public void testNonNeededCastGiveWarningForSubclassToSuperclassCast () {
+	getTypes ("class A {} class C extends A { void foo () { C c = new C(); A a = (A)c; }}", 0, 1);
+    }
+
+    @Test
     public void testPrimitiveCasts () {
 	getTypes ("class C { byte b = (byte)34; }");
 	getTypes ("class C { short b = (short)23; }");
@@ -872,12 +887,20 @@ public class TestClassSetter {
     }
 
     private List<TypeDeclaration> getTypes (String txt, int expectedErrors) {
+	return getTypes (txt, expectedErrors, 0);
+    }
+
+    private List<TypeDeclaration> getTypes (String txt, int expectedErrors, int expectedWarnings) {
 	ParsedEntry tree = syntaxTree (txt);
 	cip.addTypes (tree.getRoot (), tree.getOrigin ());
 	ClassSetter.fillInClasses (javaTokens, cip, List.of (tree), diagnostics);
 	assert diagnostics.errorCount () == expectedErrors
 	    : String.format ("Got unexpected number of errors: %d, expected %d: errors:\n%s",
 			     diagnostics.errorCount (), expectedErrors, TestParserHelper.getParseOutput (diagnostics));
+	assert diagnostics.warningCount () == expectedWarnings
+	    : String.format ("Got unexpected number of warnings: %d, expected %d: warnings:\n%s",
+			     diagnostics.warningCount (), expectedWarnings, TestParserHelper.getParseOutput (diagnostics));
+
 	OrdinaryCompilationUnit ocu = (OrdinaryCompilationUnit)tree.getRoot ();
 	return ocu.getTypes ();
     }

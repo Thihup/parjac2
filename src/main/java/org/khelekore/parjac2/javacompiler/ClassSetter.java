@@ -363,13 +363,19 @@ public class ClassSetter {
     private void CheckCastType (EnclosingTypes et, CastExpression ce) {
 	FullNameHandler fo = FullNameHelper.type (ce);
 	FullNameHandler fi = FullNameHelper.type (ce.expression ());
-	if (fo.isPrimitive () && fi.isPrimitive ()) {
-	    if (fo == FullNameHandler.BOOLEAN || fi == FullNameHandler.BOOLEAN)
-		error (ce, "Impossible cast from %s to %s", fi.getFullDotName (), fo.getFullDotName ());
+
+	if (fo.equals (fi) || getAllSuperTypes (fi).contains (fo)) {
+	    warning (ce, "Cast is not neccessary, expression is already: " + fi.getFullDotName ());
 	} else {
-	    Set<FullNameHandler> supers = getAllSuperTypes (fo);
-	    if (!supers.contains (fi))
-		error (ce, "Impossible cast from %s to %s", fi.getFullDotName (), fo.getFullDotName ());
+	    if (fo.isPrimitive () && fi.isPrimitive ()) {
+		if (fo == FullNameHandler.BOOLEAN || fi == FullNameHandler.BOOLEAN)
+		    error (ce, "Impossible cast from %s to %s", fi.getFullDotName (), fo.getFullDotName ());
+	    } else {
+		// We check that fo is a subclass of fi, complain if it is not
+		Set<FullNameHandler> supers = getAllSuperTypes (fo);
+		if (!supers.contains (fi))
+		    error (ce, "Impossible cast from %s to %s", fi.getFullDotName (), fo.getFullDotName ());
+	    }
 	}
     }
 

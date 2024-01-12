@@ -123,7 +123,7 @@ public class CompiledTypesHolder {
 	}
 
 	@Override public boolean hasGenericType () {
-	    return outer.hasGenericType () || td.getTypeParameters () != null;
+	    return td.getTypeParameters () != null;
 	}
 
 	@Override public String getSignature (GenericTypeHelper gth, ClassInformationProvider cip,
