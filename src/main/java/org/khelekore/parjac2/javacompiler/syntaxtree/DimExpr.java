@@ -27,6 +27,10 @@ public class DimExpr extends SyntaxTreeNode {
 	this.expression = expression;
     }
 
+    public ParseTreeNode expression () {
+	return expression;
+    }
+
     @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
 	if (!annotations.isEmpty ())

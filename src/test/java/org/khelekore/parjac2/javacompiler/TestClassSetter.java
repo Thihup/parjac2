@@ -829,6 +829,12 @@ public class TestClassSetter {
 	getTypes ("class C { int b = 3; int x = 0; { if (b == null) x = 1; }}", 1);
     }
 
+    @Test
+    public void testDimExprWithDoubleGivesError () {
+	getTypes ("class C { int x = 3; int[] a = new int[x]; }", 0);
+	getTypes ("class C { int[] a = new int[3.14]; }", 1);
+    }
+
     /* TODO: implement full generic handling */
     /*
     @Test

@@ -16,7 +16,6 @@ Add errors for:
  ** Fields are set with initializer or set once in constructor
  ** Local variables are set once
 * Error if switch case tries to use something that has already been handled (case String s -> ... ; case String s when ...)
-* Check that DimExpr have an int expression
 * Check that break and continue go to valid labels
 * Check that exceptions that are thrown but also caught does not need to be declared
 * Check that exceptions from method calls are declared or caught.

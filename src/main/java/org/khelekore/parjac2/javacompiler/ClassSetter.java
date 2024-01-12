@@ -300,8 +300,9 @@ public class ClassSetter {
 	    case EnhancedForStatement efs -> handlePartsAndHandler (et, efs, e -> checkEnhancedForExpression (e, efs), partsToHandle);
 
 	    case ThrowStatement ts -> handlePartsAndHandler (et, ts, e -> checkThrowStatement (e, ts), partsToHandle);
-
 	    case UnaryExpression ue -> handlePartsAndHandler (et, ue, e -> checkUnaryExpression (ue), partsToHandle);
+
+	    case DimExpr de -> handlePartsAndHandler (et, de, e -> checkDimExpr (de), partsToHandle);
 
 	    case ParseTreeNode ptn -> addParts (et, ptn, partsToHandle);
 
@@ -984,6 +985,13 @@ public class ClassSetter {
 	    if (!FullNameHelper.isConvertibleToIntegral (fn))
 		error (ue, "Operator '~' can only be used on integral types");
 	}
+    }
+
+    private void checkDimExpr (DimExpr de) {
+	ParseTreeNode p = de.expression ();
+	FullNameHandler fn = FullNameHelper.type (p);
+	if (!fn.equals (FullNameHandler.INT))
+	    error (de, "DimExpr must be integer");
     }
 
     private MethodInfo lambdaMatch (FullNameHandler type, LambdaExpression le) {
