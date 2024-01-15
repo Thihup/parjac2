@@ -798,6 +798,8 @@ public class ClassSetter {
 	Map<LambdaExpression, Runnable> lambdaTypes = new HashMap<> ();
 	boolean usedVarArgs = false;
 	for (int i = 0; i < args.size (); i++) {
+	    if (i >= info.numberOfArguments () && !usedVarArgs)
+		return false;
 	    FullNameHandler pfn;
 	    if (varArgs && i > info.numberOfArguments () - 1) {
 		pfn = lastVarArg;

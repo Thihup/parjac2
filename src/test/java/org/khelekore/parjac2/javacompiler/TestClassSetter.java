@@ -382,6 +382,18 @@ public class TestClassSetter {
     }
 
     @Test
+    public void testVarArgWithTooManyArgs () {
+	getTypes ("class T {} class C { void foo (String... args) {} " +
+		  "void bar (String s1, String s2) { foo (new String[]{\"a\"}, s1, s2); }}", 1);
+    }
+
+    @Test
+    public void testVarArgWithNonMatchingPart () {
+	getTypes ("class T {} class C { void foo (String... args) {} " +
+		  "void bar (String s1, String s2) { foo (s1, s2, new String[]{\"a\"}); }}", 1);
+    }
+
+    @Test
     public void testClassLiteral () {
 	getTypes ("class C { void foo () { C.class.getResource (\"a\"); }}");
     }
