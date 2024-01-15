@@ -781,29 +781,25 @@ public class ClassSetter {
 	    }
 	}
 
-	FullNameHandler onType;
-	if (on == null)
-	    onType = currentClass (et);
-	else
-	    onType = FullNameHelper.type (on);
+	FullNameHandler onType = on == null ? currentClass (et) : FullNameHelper.type (on);
 	FullNameHandler topLevelClass = et == null ? null : lastFQN (et);
 	if (!isMethodAccessible (et, info.owner (), onType, topLevelClass, info.flags ()))
 	    return false;
 
-	FullNameHandler lastVarArg = null;
+	FullNameHandler varArgComponentType = null;
 	if (varArgs) {
-	    lastVarArg = info.parameter (info.numberOfArguments () - 1);
-	    lastVarArg = lastVarArg.inner ();
+	    varArgComponentType = info.parameter (info.numberOfArguments () - 1);
+	    varArgComponentType = varArgComponentType.inner ();
 	}
 	Map<LambdaExpression, Runnable> lambdaTypes = new HashMap<> ();
-	boolean usedVarArgs = false;
+	boolean hasVarArgComponents = false;
 	for (int i = 0; i < args.size (); i++) {
-	    if (i >= info.numberOfArguments () && !usedVarArgs)
+	    if (i >= info.numberOfArguments () && !hasVarArgComponents)
 		return false;
 	    FullNameHandler pfn;
-	    if (varArgs && i > info.numberOfArguments () - 1) {
-		pfn = lastVarArg;
-		usedVarArgs = true;
+	    if (varArgs && i >= info.numberOfArguments ()) {
+		pfn = varArgComponentType;
+		hasVarArgComponents = true;
 	    } else {
 		// possibly two options if we are on last arg in vararg-call
 		pfn = info.parameter (i);
@@ -825,8 +821,8 @@ public class ClassSetter {
 	    // Useful when debugging
 	    //System.err.println ("    " +i + ", args(" + i + "): " + pa + " -> " + afn.getFullDotName () + ", pfn: "+ pfn.getFullDotName ());
 	    if (!typesMatch (pfn, afn)) {
-		if (varArgs && i == info.numberOfArguments () - 1 && typesMatch (lastVarArg, afn)) {
-		    usedVarArgs = true;
+		if (varArgs && i == info.numberOfArguments () - 1 && typesMatch (varArgComponentType, afn)) {
+		    hasVarArgComponents = true;
 		    continue;
 		}
 		return false;
@@ -834,18 +830,22 @@ public class ClassSetter {
 	}
 	// we only set the types if we actually found a match.
 	lambdaTypes.values ().forEach (r -> r.run ());
-	if (usedVarArgs) {
-	    // replace args content from vararg position
-	    List<ParseTreeNode> varArgParts = new ArrayList<> (args.subList (info.numberOfArguments () - 1, args.size ()));
-	    for (int i = args.size () - 1; i >= info.numberOfArguments () - 1; i--)
-		args.removeLast ();
-	    ParsePosition pos = varArgParts.get (0).position ();
-	    DimExprs dims = new DimExprs (pos, new IntLiteral (javaTokens.INT_LITERAL, varArgParts.size (), pos));
-	    ArrayCreationExpression ace =
-		new ArrayCreationExpression (pos, new ClassType (lastVarArg), dims, varArgParts);
-	    args.add (ace);
+	if (hasVarArgComponents) {
+	    replaceVarArgArgumentsWithArray (args, info, varArgComponentType);
 	}
 	return true;
+    }
+
+    private void replaceVarArgArgumentsWithArray (List<ParseTreeNode> args, MethodInfo info, FullNameHandler lastVarArg) {
+	// replace args content from vararg position
+	List<ParseTreeNode> varArgParts = new ArrayList<> (args.subList (info.numberOfArguments () - 1, args.size ()));
+	for (int i = args.size () - 1; i >= info.numberOfArguments () - 1; i--)
+	    args.removeLast ();
+	ParsePosition pos = varArgParts.get (0).position ();
+	DimExprs dims = new DimExprs (pos, new IntLiteral (javaTokens.INT_LITERAL, varArgParts.size (), pos));
+	ArrayCreationExpression ace =
+	    new ArrayCreationExpression (pos, new ClassType (lastVarArg), dims, varArgParts);
+	args.add (ace);
     }
 
     private boolean isAccessible (EnclosingTypes et, FullNameHandler fqn, VariableInfo fi) {
