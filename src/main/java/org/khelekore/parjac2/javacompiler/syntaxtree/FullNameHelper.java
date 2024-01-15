@@ -92,6 +92,8 @@ public class FullNameHelper {
 
     public static FullNameHandler.Primitive primitiveType (ParseTreeNode n) {
 	FullNameHandler fn = type (n);
+	if (fn == null)
+	    throw new NullPointerException ("Unable to get type of: " + n + ", " + n.getClass ().getName ());
 	if (fn.isPrimitive ())
 	    return (FullNameHandler.Primitive)fn;
 	FullNameHandler.Primitive p = AUTO_UNBOX.get (fn);
@@ -101,6 +103,7 @@ public class FullNameHelper {
     }
 
     public static FullNameHandler type (ParseTreeNode p) {
+	//System.err.println ("FullNameHelper: Looking at: " + p + ", " + p.getClass ().getName ());
 	return switch (p) {
 	case ClassType ct -> ct.fullName ();
 	case PrimitiveType pt -> pt.fullName ();

@@ -22,12 +22,12 @@ public class ArrayCreationExpression extends SyntaxTreeNode {
 	initializer = (children.size () > i) ? (ArrayInitializer)children.get (i++) : null;
     }
 
-    public ArrayCreationExpression (ParsePosition pos, ParseTreeNode type, ParseTreeNode slots) {
+    public ArrayCreationExpression (ParsePosition pos, ParseTreeNode type, DimExprs dims, List<ParseTreeNode> initializerParts) {
 	super (pos);
 	this.type = type;
-	this.dimExprs = new DimExprs (pos, slots);
+	this.dimExprs = dims;
 	this.dims = null;
-	this.initializer = null;
+	this.initializer = new ArrayInitializer (initializerParts);
     }
 
     public FullNameHandler fullName () {
@@ -57,6 +57,10 @@ public class ArrayCreationExpression extends SyntaxTreeNode {
 
     public Dims dims () {
 	return dims;
+    }
+
+    public ArrayInitializer initializer () {
+	return initializer;
     }
 
     @Override public Object getValue () {

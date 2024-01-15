@@ -268,8 +268,8 @@ public class SyntaxTreeBuilder {
 	register ("MethodReference", this::methodReference);
 	register ("ArrayCreationExpression", this::liftUp);
 	// TODO: do we want to split these two?
-	register ("ArrayCreationExpressionWithoutInitializer", ArrayCreationExpression::new);
-	register ("ArrayCreationExpressionWithInitializer", ArrayCreationExpression::new);
+	register ("ArrayCreationExpressionWithoutInitializer", (rule, n, children) -> new ArrayCreationExpression (rule, n, children));
+	register ("ArrayCreationExpressionWithInitializer", (rule, n, children) -> new ArrayCreationExpression (rule, n, children));
 	register ("DimExprs", DimExprs::new);
 	register ("DimExpr", DimExpr::new);
 	register ("Expression", this::liftUp);

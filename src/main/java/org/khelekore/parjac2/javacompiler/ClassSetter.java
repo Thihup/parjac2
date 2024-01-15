@@ -686,8 +686,9 @@ public class ClassSetter {
 	    methodOn = FullNameHelper.type (on);
 
 	    // AmbiguousName that could not be resolved and similar, no need for NPE or another error
-	    if (methodOn == null)
+	    if (methodOn == null) {
 		return;
+	    }
 	    markReturnValueUsed (on);
 	}
 	if (isSuper) {
@@ -795,11 +796,14 @@ public class ClassSetter {
 	    lastVarArg = lastVarArg.inner ();
 	}
 	Map<LambdaExpression, Runnable> lambdaTypes = new HashMap<> ();
+	boolean usedVarArgs = false;
 	for (int i = 0; i < args.size (); i++) {
 	    FullNameHandler pfn;
-	    if (varArgs && i >= info.numberOfArguments () - 1) {
+	    if (varArgs && i > info.numberOfArguments () - 1) {
 		pfn = lastVarArg;
+		usedVarArgs = true;
 	    } else {
+		// possibly two options if we are on last arg in vararg-call
 		pfn = info.parameter (i);
 	    }
 
@@ -817,13 +821,28 @@ public class ClassSetter {
 		afn = FullNameHelper.type (pa);
 	    }
 	    // Useful when debugging
-	    //System.err.println ("    " +i + ", args(" + i + "): " + pa + " -> " + dotName (afn) + ", pfn: "+ dotName (pfn));
-	    if (!typesMatch (pfn, afn))
+	    //System.err.println ("    " +i + ", args(" + i + "): " + pa + " -> " + afn.getFullDotName () + ", pfn: "+ pfn.getFullDotName ());
+	    if (!typesMatch (pfn, afn)) {
+		if (varArgs && i == info.numberOfArguments () - 1 && typesMatch (lastVarArg, afn)) {
+		    usedVarArgs = true;
+		    continue;
+		}
 		return false;
+	    }
 	}
-
 	// we only set the types if we actually found a match.
 	lambdaTypes.values ().forEach (r -> r.run ());
+	if (usedVarArgs) {
+	    // replace args content from vararg position
+	    List<ParseTreeNode> varArgParts = new ArrayList<> (args.subList (info.numberOfArguments () - 1, args.size ()));
+	    for (int i = args.size () - 1; i >= info.numberOfArguments () - 1; i--)
+		args.removeLast ();
+	    ParsePosition pos = varArgParts.get (0).position ();
+	    DimExprs dims = new DimExprs (pos, new IntLiteral (javaTokens.INT_LITERAL, varArgParts.size (), pos));
+	    ArrayCreationExpression ace =
+		new ArrayCreationExpression (pos, new ClassType (lastVarArg), dims, varArgParts);
+	    args.add (ace);
+	}
 	return true;
     }
 

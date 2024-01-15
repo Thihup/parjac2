@@ -21,6 +21,11 @@ public class VariableInitializerList extends SyntaxTreeNode {
 	}
     }
 
+    public VariableInitializerList (List<ParseTreeNode> parts) {
+	super (parts.get (0).position ());
+	variableInitializers = parts;
+    }
+
     public int size () {
 	return variableInitializers.size ();
     }

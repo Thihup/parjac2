@@ -21,6 +21,11 @@ public class ArrayInitializer extends SyntaxTreeNode {
 	    variableList = null;
     }
 
+    public ArrayInitializer (List<ParseTreeNode> parts) {
+	super (parts.get (0).position ());
+	variableList = new VariableInitializerList (parts);
+    }
+
     public FullNameHandler type () {
 	return FullNameHandler.arrayOf (slotType, 1);
     }

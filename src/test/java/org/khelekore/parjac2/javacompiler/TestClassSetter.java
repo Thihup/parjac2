@@ -850,6 +850,11 @@ public class TestClassSetter {
 	getTypes ("class C { int[] a = new int[3.14]; }", 1);
     }
 
+    @Test
+    public void testNotInIf () {
+	getTypes ("import java.util.Set; class C { int foo () { Set<String> s = null; String t = \"a\"; if (!s.contains (t)) return 3; return 4; }}");
+    }
+
     /* TODO: implement full generic handling */
     /*
     @Test

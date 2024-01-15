@@ -33,6 +33,12 @@ public class ArrayGenerator {
 	    } else {
 		ClassDesc desc = ClassDescUtils.getClassDesc (type);
 		cb.anewarray (desc);
+
+		ArrayInitializer init = ace.initializer ();
+		if (init != null) {
+		    TypeKind kind = FullNameHelper.getTypeKind (ace.innerFullName ());
+		    setSlotData (mcg, cb, init, kind);
+		}
 	    }
 	} else {
 	    ClassDesc desc = ClassDescUtils.getClassDesc (ace.fullName ());
@@ -59,6 +65,10 @@ public class ArrayGenerator {
 	    cb.anewarray (cd);
 	}
 
+	setSlotData (mcg, cb, ai, kind);
+    }
+
+    private static void setSlotData (MethodContentGenerator mcg, CodeBuilder cb, ArrayInitializer ai, TypeKind kind) {
 	int pos = 0;
 	for (ParseTreeNode p : ai.variableInitializers ()) {
 	    cb.dup ();
