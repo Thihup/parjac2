@@ -373,8 +373,9 @@ public class ClassSetter {
 	    } else {
 		// We check that fo is a subclass of fi, complain if it is not
 		Set<FullNameHandler> supers = getAllSuperTypes (fo);
-		if (!supers.contains (fi))
+		if (!supers.contains (fi)) {
 		    error (ce, "Impossible cast from %s to %s", fi.getFullDotName (), fo.getFullDotName ());
+		}
 	    }
 	}
     }
@@ -716,7 +717,7 @@ public class ClassSetter {
 	}
 	if (mi.info () == null) {
 	    // useful when debugging
-	    //System.err.println ("Failed to find method: " + name);
+	    //System.err.println ("Failed to find method: " + name + ", mi: "+  mi + ", pos: " + mi.position () + ", " + tree.getOrigin ());
 	    error (mi, "No matching method named %s found in %s", name, methodOn.getFullDotName ());
 	} else {
 	    // now that we know the type of the lambdas we can check them.
@@ -794,8 +795,9 @@ public class ClassSetter {
 	Map<LambdaExpression, Runnable> lambdaTypes = new HashMap<> ();
 	boolean hasVarArgComponents = false;
 	for (int i = 0; i < args.size (); i++) {
-	    if (i >= info.numberOfArguments () && !hasVarArgComponents)
+	    if (i >= info.numberOfArguments () && !hasVarArgComponents) {
 		return false;
+	    }
 	    FullNameHandler pfn;
 	    if (varArgs && i >= info.numberOfArguments ()) {
 		pfn = varArgComponentType;
@@ -820,12 +822,22 @@ public class ClassSetter {
 	    }
 	    // Useful when debugging
 	    //System.err.println ("    " +i + ", args(" + i + "): " + pa + " -> " + afn.getFullDotName () + ", pfn: "+ pfn.getFullDotName ());
-	    if (!typesMatch (pfn, afn)) {
-		if (varArgs && i == info.numberOfArguments () - 1 && typesMatch (varArgComponentType, afn)) {
+
+	    boolean typesMatch = typesMatch (pfn, afn);
+	    boolean possibleVarArg = (varArgs && i == info.numberOfArguments () - 1 && typesMatch (varArgComponentType, afn));
+
+	    if (typesMatch && possibleVarArg) {
+		if (i == info.numberOfArguments () - 1 && i == args.size () - 1) {
+		    warning (pa, "Last argument matches both vararg type and vararg element types, will use vararg type.");
+		} else {
 		    hasVarArgComponents = true;
-		    continue;
 		}
-		return false;
+	    }
+	    if (!typesMatch) {
+		if (possibleVarArg)
+		    hasVarArgComponents = true;
+		else
+		    return false;
 	    }
 	}
 	// we only set the types if we actually found a match.
@@ -1216,6 +1228,8 @@ public class ClassSetter {
     private Set<FullNameHandler> getAllSuperTypes (FullNameHandler subtype) {
 	if (subtype == null)
 	    return Set.of ();
+	if (subtype.isArray ())
+	    return Set.of (FullNameHandler.JL_OBJECT);
 	Set<FullNameHandler> ret = new LinkedHashSet<> ();
 	Deque<FullNameHandler> d = new ArrayDeque<> ();
 	d.add (subtype);

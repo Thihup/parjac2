@@ -394,6 +394,30 @@ public class TestClassSetter {
     }
 
     @Test
+    public void testVarArgWithNoArgs () {
+	getTypes ("class T {} class C { void foo (Object... args) {} " +
+		  "void bar () { foo (); }}", 0, 0);
+    }
+
+    @Test
+    public void testVarArgWithArray () {
+	getTypes ("class T {} class C { void foo (Object... args) {} " +
+		  "void bar (String[] s1) { foo (s1); }}", 0, 1);
+    }
+
+    @Test
+    public void testVarArgWithArrayAndMore () {
+	getTypes ("class T {} class C { void foo (Object... args) {} " +
+		  "void bar (String[] s1, String s2) { foo (s1, s2); }}", 0);
+    }
+
+    @Test
+    public void testVarArgWithArgsAndArray () {
+	getTypes ("class T {} class C { void foo (Object... args) {} " +
+		  "void bar (String s1, String[] s2) { foo (s1, s2); }}", 0);
+    }
+
+    @Test
     public void testClassLiteral () {
 	getTypes ("class C { void foo () { C.class.getResource (\"a\"); }}");
     }

@@ -217,7 +217,7 @@ public class CompiledTypesHolder {
 	    addInterfaces (ls, cts);
 	    return Optional.of (ls);
 	}
-	return Optional.empty ();
+	return Optional.of (List.of (FullNameHandler.JL_OBJECT));
     }
 
     private Optional<List<FullNameHandler>> getSuperTypes (UnqualifiedClassInstanceCreationExpression at) {
@@ -226,7 +226,7 @@ public class CompiledTypesHolder {
 	    List<FullNameHandler> ret = Arrays.asList (getFullNameHandler (ct));
 	    return Optional.of (ret);
 	}
-	return Optional.empty ();
+	return Optional.of (List.of (FullNameHandler.JL_OBJECT));
     }
 
     private Optional<List<FullNameHandler>> getSuperTypes (EnumDeclaration ed) {
