@@ -103,6 +103,7 @@ public class FullNameHelper {
     }
 
     public static FullNameHandler type (ParseTreeNode p) {
+	// Useful when debugging
 	//System.err.println ("FullNameHelper: Looking at: " + p + ", " + p.getClass ().getName ());
 	return switch (p) {
 	case ClassType ct -> ct.fullName ();

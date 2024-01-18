@@ -1,3 +1,9 @@
+Bytecode generation:
+* break
+* continue
+* yield
+* TryWithResourcesStatement
+
 Generics:
 * implement it
  ** Validate throws and throw-statements using generics

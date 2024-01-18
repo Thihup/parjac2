@@ -303,6 +303,7 @@ public class ClassSetter {
 	    case UnaryExpression ue -> handlePartsAndHandler (et, ue, e -> checkUnaryExpression (ue), partsToHandle);
 
 	    case DimExpr de -> handlePartsAndHandler (et, de, e -> checkDimExpr (de), partsToHandle);
+	    case YieldStatement ys -> handlePartsAndHandler (et, ys, e -> checkYieldType (ys), partsToHandle);
 
 	    case ParseTreeNode ptn -> addParts (et, ptn, partsToHandle);
 
@@ -1031,6 +1032,13 @@ public class ClassSetter {
 	FullNameHandler fn = FullNameHelper.type (p);
 	if (!fn.equals (FullNameHandler.INT))
 	    error (de, "DimExpr must be integer");
+    }
+
+    private void checkYieldType (YieldStatement ys) {
+	ParseTreeNode p = ys.expression ();
+	FullNameHandler fn = FullNameHelper.type (p);
+	if (FullNameHandler.VOID.equals (fn))
+	    error (ys, "Yield may not be void");
     }
 
     private MethodInfo lambdaMatch (FullNameHandler type, LambdaExpression le) {

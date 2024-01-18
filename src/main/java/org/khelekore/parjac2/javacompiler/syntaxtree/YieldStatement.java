@@ -14,11 +14,15 @@ public class YieldStatement extends SyntaxTreeNode {
 	expression = children.get (1);
     }
 
+    public ParseTreeNode expression () {
+	return expression;
+    }
+
     @Override public Object getValue () {
 	return "yield " + expression.getValue () + ";";
     }
 
     @Override public void visitChildNodes (NodeVisitor v) {
-	expression.visitChildNodes (v);
+	v.accept (expression);
     }
 }

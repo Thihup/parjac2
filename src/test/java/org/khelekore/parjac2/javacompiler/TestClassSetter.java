@@ -751,6 +751,13 @@ public class TestClassSetter {
 	getTypes ("class C { int x; void a () {java.util.function.IntSupplier s = () -> System.out.println (); }}", 1);
     }
 
+    /*
+    @Test
+    public void testLambdaExpressionContent () {
+	getTypes ("class C { void foo () { java.util.List<String> ls = null; ls.stream ().filter (i -> !i.isEmpty ()).forEach(i -> { }); }}", 0);
+    }
+    */
+
     @Test
     public void testInstanceofInReturn () {
 	getTypes ("class C { boolean a (Object o) { return o instanceof String s; }}");
@@ -889,6 +896,11 @@ public class TestClassSetter {
     @Test
     public void testNotInIf () {
 	getTypes ("import java.util.Set; class C { int foo () { Set<String> s = null; String t = \"a\"; if (!s.contains (t)) return 3; return 4; }}");
+    }
+
+    @Test
+    public void testYieldVoid () {
+	getTypes ("class C { int foo (int i) { return switch (i) { case 0 -> { yield bar (); } default -> 14; };} void bar () { }}", 1);
     }
 
     /* TODO: implement full generic handling */
