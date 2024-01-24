@@ -2,7 +2,7 @@ Parjac is a java compiler, it is supposed to be fast, it is supposed
 to use modern tools and thus be easily hackable.
 
 Some things:
-*) Development is done using java 11, no support for earlier versions.
+*) Development is done using java 21, no support for earlier versions.
 *) Compilation is done on directories, not files (internally it is a
    fileset that can be any number of files).
 *) Every step should be internally time logged so that it is easy to
