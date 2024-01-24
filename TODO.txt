@@ -1,8 +1,14 @@
 Bytecode generation:
-* break
-* continue
+* break    - need to get labels for closest loop or labeled loop
+ ** verify correct handling of try/catch/finally and resource cleanup
+* continue - need to get labels for closest loop or labeled loop
+ ** verify correct handling of try/catch/finally and resource cleanup
 * yield
+ ** verify correct handling of try/catch/finally and resource cleanup
 * TryWithResourcesStatement
+
+Abstract:
+* Verify that classes implement all required methods
 
 Generics:
 * implement it

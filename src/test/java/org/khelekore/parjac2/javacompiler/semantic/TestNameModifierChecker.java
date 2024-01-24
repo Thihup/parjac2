@@ -16,7 +16,7 @@ public class TestNameModifierChecker extends TestCompilationErrorHandling {
 
     @Test
     public void testNonClassesDoNotGiveErrors () {
-	testClass ("E.java", "enum E { Y, N}", 0);
+	testClass ("E.java", "enum E { Y, N }", 0);
 	testClass ("R.java", "record R (int x) {}", 0);
 	testClass ("I.java", "interface I extends java.io.Serializable {}", 0);
     }
@@ -108,5 +108,20 @@ public class TestNameModifierChecker extends TestCompilationErrorHandling {
 	testClass ("C.java", "class C { int x (); }", 1);
 	diagnostics.clear ();
 	testClass ("C.java", "class C { private int x (); }", 1);
+    }
+
+    @Test
+    public void testAnonymousClasses () {
+	testClass ("C.java", "class C { Runnable r = new Runnable () { public void run () { }}; }", 0);
+    }
+
+    @Test
+    public void testAnonymousClassesWithoutAllMethods () {  // TYPO: "urn", not "run"
+	testClass ("C.java", "class C { Runnable r = new Runnable () { public void urn () { }}; }", 1);
+    }
+
+    @Test
+    public void testLambda () {
+	testClass ("C.java", "class C { Runnable r = () -> { };}", 0);
     }
 }

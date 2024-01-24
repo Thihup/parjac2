@@ -25,6 +25,10 @@ public class FlagCalculator {
 	this.baseValue = baseValue;
     }
 
+    @Override public String toString () {
+	return "FlagCalculator{baseValue: " + baseValue + "}";
+    }
+
     public void addDefaultUnless (int value, int flagMask) {
 	addDefaultUnless.add (new Combination (value, flagMask));
     }

@@ -8,7 +8,6 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1234,25 +1233,12 @@ public class ClassSetter {
     }
 
     private Set<FullNameHandler> getAllSuperTypes (FullNameHandler subtype) {
-	if (subtype == null)
-	    return Set.of ();
-	if (subtype.isArray ())
-	    return Set.of (FullNameHandler.JL_OBJECT);
-	Set<FullNameHandler> ret = new LinkedHashSet<> ();
-	Deque<FullNameHandler> d = new ArrayDeque<> ();
-	d.add (subtype);
-	while (!d.isEmpty ()) {
-	    FullNameHandler s = d.removeFirst ();
-	    List<FullNameHandler> supers = getSuperClasses (s);
-	    if (supers != null) {
-		for (FullNameHandler f : supers) {
-		    if (ret.add (f)) {
-			d.addLast (f);
-		    }
-		}
-	    }
+	try {
+	    return cip.getAllSuperTypes (subtype);
+	} catch (IOException e) {
+	    diagnostics.report (new NoSourceDiagnostics ("Failed to load super types for class: " + subtype, e));
 	}
-	return ret;
+	return Set.of ();
     }
 
     private ParseTreeNode currentMethodReturn (EnclosingTypes et) {

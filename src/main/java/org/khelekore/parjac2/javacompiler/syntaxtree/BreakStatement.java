@@ -15,6 +15,10 @@ public class BreakStatement extends SyntaxTreeNode {
 	id = rule.size () > 2 ? ((Identifier)children.get (1)).getValue () : null;
     }
 
+    public String id () {
+	return id;
+    }
+
     @Override public Object getValue () {
 	return id != null ? "break " + id + ";" : "break;";
     }

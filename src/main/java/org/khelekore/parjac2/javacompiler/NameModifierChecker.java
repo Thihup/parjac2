@@ -1,12 +1,20 @@
 package org.khelekore.parjac2.javacompiler;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.SequencedSet;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
+import org.khelekore.parjac2.NoSourceDiagnostics;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Block;
 import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
+import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.MethodDeclarationBase;
+import org.khelekore.parjac2.javacompiler.syntaxtree.NormalInterfaceDeclaration;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
+import org.khelekore.parjac2.javacompiler.syntaxtree.UnqualifiedClassInstanceCreationExpression;
 import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
@@ -28,6 +36,7 @@ public class NameModifierChecker extends SemanticCheckerBase {
 	checkConstructors (td);
 	checkFields (td, topLevel);
 	checkMethods (td);
+	checkAbstract (td);
     }
 
     private void checkNameAndFlags (TypeDeclaration td, boolean topLevel) {
@@ -65,7 +74,7 @@ public class NameModifierChecker extends SemanticCheckerBase {
 	    int flags = cip.flags (superclass.fullName ());
 	    if (Flags.isFinal (flags))
 		error (superclass, "Can not extend final class");
-	    if (Flags.isInterface (flags))
+	    if (!isAnonymousClass (td) && Flags.isInterface (flags))
 		error (superclass, "Can not extend interface");
 	}
     }
@@ -126,5 +135,65 @@ public class NameModifierChecker extends SemanticCheckerBase {
 	    count++;
 	if (count > 1)
 	    error (pos, "Too many access flags, can only use one of: public, private andprotected)");
+    }
+
+    private void checkAbstract (TypeDeclaration td) {
+	int flags = td.flags ();
+	if (Flags.isAbstract (flags))
+	    return;
+	ClassType superclass = td.getSuperClass ();
+	if (superclass == null)
+	    return;
+	FullNameHandler fn = superclass.fullName ();
+	flags = cip.flags (fn);
+	if (!(Flags.isAbstract (flags) || td instanceof NormalInterfaceDeclaration))
+	    return;
+	validateAllAbstractMethodsAreImplemented (td);
+    }
+
+    private void validateAllAbstractMethodsAreImplemented (TypeDeclaration td) {
+	try {
+	    SequencedSet<FullNameHandler> types = cip.getAllSuperTypes (td);
+	    types.addFirst (cip.getFullName (td));
+	    types = types.reversed ();
+
+	    Map<String, MethodInfo> abstractMethods = new HashMap<> ();
+	    for (FullNameHandler fn : types) {
+		Map<String, List<MethodInfo>> methods = cip.getMethods (fn);
+		for (List<MethodInfo> ls : methods.values ()) {
+		    for (MethodInfo mi : ls) {
+			String mid = getMethodId (mi);
+			if (Flags.isAbstract (mi.flags ())) {
+			    abstractMethods.put (mid, mi);
+			} else {
+			    abstractMethods.remove (mid);
+			}
+		    }
+		}
+	    }
+	    for (String mid : abstractMethods.keySet ()) {
+		error (td, "Abstract method %s not implemented, add implementation or mark class as abstrct", mid);
+	    }
+	} catch (IOException e) {
+	    diagnostics.report (new NoSourceDiagnostics ("Failed to load super types of: " + td.getName (), e));
+	}
+    }
+
+    private String getMethodId (MethodInfo mi) {
+	StringBuilder sb = new StringBuilder ();
+	sb.append (mi.name ());
+	sb.append ("(");
+	for (int i = 0, s = mi.numberOfArguments (); i < s; i++) {
+	    if (i > 0)
+		sb.append (", ");
+	    FullNameHandler fn = mi.parameter (i);
+	    sb.append (fn.getFullDotName ());
+	}
+	sb.append (")");
+	return sb.toString ();
+    }
+
+    private boolean isAnonymousClass (TypeDeclaration td) {
+	return td instanceof UnqualifiedClassInstanceCreationExpression;
     }
 }

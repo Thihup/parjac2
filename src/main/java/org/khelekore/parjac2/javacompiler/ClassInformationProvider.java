@@ -2,12 +2,17 @@ package org.khelekore.parjac2.javacompiler;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Deque;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.SequencedSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
@@ -42,6 +47,36 @@ public class ClassInformationProvider {
 	return crh.hasVisibleType (dottedName);
     }
 
+    public SequencedSet<FullNameHandler> getAllSuperTypes (TypeDeclaration td) throws IOException {
+	return getAllSuperTypes (getFullName (td));
+    }
+
+    public SequencedSet<FullNameHandler> getAllSuperTypes (FullNameHandler fn) throws IOException {
+	if (fn == null)
+	    return new LinkedHashSet<> ();
+	if (fn.isArray ()) {
+	    return new LinkedHashSet<> (Set.of (FullNameHandler.JL_OBJECT));
+	}
+	SequencedSet<FullNameHandler> ret = new LinkedHashSet<> ();
+	Deque<FullNameHandler> d = new ArrayDeque<> ();
+	d.add (fn);
+	while (!d.isEmpty ()) {
+	    FullNameHandler s = d.removeFirst ();
+	    List<FullNameHandler> supers = getSuperClasses (s);
+	    if (supers != null) {
+		for (FullNameHandler f : supers) {
+		    if (ret.add (f)) {
+			d.addLast (f);
+		    }
+		}
+	    }
+	}
+	return ret;
+    }
+
+    private List<FullNameHandler> getSuperClasses (FullNameHandler type) throws IOException {
+	return getSuperTypes (type.getFullDotName (), type.isArray ());
+    }
 
     public List<FullNameHandler> getSuperTypes (String fqn, boolean isArray) throws IOException {
 	if (isArray)
@@ -147,9 +182,9 @@ public class ClassInformationProvider {
 
     public boolean isInterface (String fqn) {
 	TypeDeclaration td = cth.getType (fqn);
-	if (td instanceof NormalInterfaceDeclaration)
-	    return true;
-	return crh.isInterface (fqn);
+	if (td == null)
+	    return crh.isInterface (fqn);
+	return td instanceof NormalInterfaceDeclaration;
     }
 
     private <R> R tryActions (FullNameHandler fqn, Function<TypeDeclaration, R> tdFunc, Function<String, R> crhFunc) {

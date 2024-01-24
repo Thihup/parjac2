@@ -8,15 +8,24 @@ import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class LabeledStatement extends SyntaxTreeNode {
-    private String id;
-    private ParseTreeNode statement;
+    private final String id;
+    private final ParseTreeNode statement;
+
     public LabeledStatement (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
 	id = ((Identifier)children.get (0)).getValue ();
 	statement = children.get (2);
     }
 
-    @Override public Object getValue() {
+    public String id () {
+	return id;
+    }
+
+    public ParseTreeNode statement () {
+	return statement;
+    }
+
+    @Override public Object getValue () {
 	return id + ":" + statement;
     }
 
