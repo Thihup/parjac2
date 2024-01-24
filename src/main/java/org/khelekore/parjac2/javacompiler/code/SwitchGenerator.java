@@ -78,6 +78,7 @@ public class SwitchGenerator {
 	Label defaultTarget = cb.newLabel ();
 	cb.lookupswitch (defaultTarget, ic.intCases);
 	Label end = cb.newLabel ();
+	mcg.registerJumpTargets ("", null, end);
 	ic.part2target.forEach ((p, l) -> {
 		cb.labelBinding (l);
 		runHandler (cb, mcg, p.handler (), resultType, tkTo);
@@ -147,6 +148,7 @@ public class SwitchGenerator {
 	TypeKind tkTo = resultType == null ? TypeKind.VoidType : FullNameHelper.getTypeKind (resultType);
 	Label secondaryDefaultLabel = cb.newLabel ();
 	Label end = cb.newLabel ();
+	mcg.registerJumpTargets ("", null, end);
 	cb.lookupswitch (secondaryDefaultLabel, blockInfo.secondarySwitchCases);
 	blockInfo.secondaryOptions.forEach ((sc, srl) -> {
 		cb.labelBinding (sc.target ());

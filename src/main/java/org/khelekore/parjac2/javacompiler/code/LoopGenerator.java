@@ -38,6 +38,7 @@ public class LoopGenerator {
 	    mcg.handleStatements (cb, forInit);
 	Label lExp = cb.newBoundLabel ();
 	Label lEnd = cb.newLabel ();
+	mcg.registerJumpTargets ("", lExp, lEnd);
 	if (expression != null) {
 	    handleExitTest (mcg, cb, expression, lEnd);
 	}
@@ -60,9 +61,9 @@ public class LoopGenerator {
     /*
       static int a (int[] x) {          Transformed into this:
       int r = 0;                    int r = 0;
-      int[] xc = x; int s = xc.length;
+                                    int[] xc = x; int s = xc.length;
       for (int a : x)               for (int i = 0; i < s; i++) {
-      r += a;                        a = xc[i]; r += a;
+          r += a;                       a = xc[i]; r += a;
       }                             }
       return r;                     return r;
       }}
@@ -82,6 +83,7 @@ public class LoopGenerator {
 
 	Label loopLabel = cb.newBoundLabel ();
 	Label endLabel = cb.newLabel ();
+	mcg.registerJumpTargets ("", loopLabel, endLabel);
 	arrayLoopIndexCheck (cb, ai, endLabel);          // i < s
 	storeArrayLoopValue (mcg, cb, ai, lv, vd, varKind);   // a = xc[i]
 	mcg.handleStatements (cb, efs.statement ());
@@ -133,6 +135,7 @@ public class LoopGenerator {
 
 	Label loopLabel = cb.newBoundLabel ();
 	Label endLabel = cb.newLabel ();
+	mcg.registerJumpTargets ("", loopLabel, endLabel);
 
 	cb.aload (iteratorSlot);
 	type = MethodTypeDesc.ofDescriptor ("()Z");
@@ -158,6 +161,7 @@ public class LoopGenerator {
     public static void handleWhile (MethodContentGenerator mcg, CodeBuilder cb, WhileStatement ws) {
 	Label loopLabel = cb.newBoundLabel ();
 	Label endLabel = cb.newLabel ();
+	mcg.registerJumpTargets ("", loopLabel, endLabel);
 
 	handleExitTest (mcg, cb, ws.expression (), endLabel);
 	mcg.handleStatements (cb, ws.statement ());
@@ -167,8 +171,11 @@ public class LoopGenerator {
 
     public static void handleDo (MethodContentGenerator mcg, CodeBuilder cb, DoStatement ws) {
 	Label loopLabel = cb.newBoundLabel ();
+	Label endLabel = cb.newLabel ();
+	mcg.registerJumpTargets ("", loopLabel, endLabel);
 	mcg.handleStatements (cb, ws.statement ());
 	handleRunAgainTest (mcg, cb, ws.expression (), loopLabel);
+	cb.labelBinding (endLabel);
     }
 
     private static void handleExitTest (MethodContentGenerator mcg, CodeBuilder cb, ParseTreeNode exp, Label endLabel) {

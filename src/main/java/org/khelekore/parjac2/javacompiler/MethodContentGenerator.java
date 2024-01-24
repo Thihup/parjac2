@@ -7,6 +7,7 @@ import org.khelekore.parjac2.parser.Token;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 import io.github.dmlloyd.classfile.CodeBuilder;
+import io.github.dmlloyd.classfile.Label;
 import io.github.dmlloyd.classfile.Opcode;
 
 public interface MethodContentGenerator {
@@ -22,6 +23,10 @@ public interface MethodContentGenerator {
 
     Opcode getForwardZeroJump (Token t);
     Opcode getForwardTwoPartJump (TwoPartExpression t);
+
+    void registerJumpTargets (String id, Label start, Label end);
+    void jumpToEnd (CodeBuilder cb, String id);
+    void jumpToStart (CodeBuilder cb, String id);
 
     JavaTokens javaTokens ();
 }

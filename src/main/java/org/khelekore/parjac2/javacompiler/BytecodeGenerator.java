@@ -280,6 +280,7 @@ public class BytecodeGenerator {
 	private final ClassBuilder classBuilder;
 	private final String methodName;
 	private final int flags;
+	private Map<String, StartEndLabels> jumpTargets = new HashMap<> ();
 
 	public MethodContentBuilder (ClassBuilder classBuilder, String methodName, int flags) {
 	    this.classBuilder = classBuilder;
@@ -360,6 +361,10 @@ public class BytecodeGenerator {
 
 	    case ThrowStatement ts -> handleThrowStatement (cb, ts);
 	    case TryStatement t -> TryGenerator.handleTryStatement (this, cb, t);
+
+	    case LabeledStatement ls -> { /* TODO */ } // TODO: register label id, but for the thing it deals with
+	    case BreakStatement bs -> jumpToEnd (cb, bs.id ());
+	    case ContinueStatement cs -> jumpToStart (cb, cs.id ());
 
 	    case CastExpression ce -> handleCast (cb, ce);
 	    case ClassType ct -> cb.ldc (ClassDescUtils.getClassDesc (ct.fullName ()));
@@ -785,6 +790,26 @@ public class BytecodeGenerator {
 		partsToHandle.addFirst (parts.get (i));
 	}
 
+	@Override public void registerJumpTargets (String id, Label start, Label end) {
+	    if (id == null)
+		id = "";
+	    jumpTargets.put (id, new StartEndLabels (start, end));
+	}
+
+	@Override public void jumpToEnd (CodeBuilder cb, String id) {
+	    if (id == null)
+		id = "";
+	    StartEndLabels s = jumpTargets.get (id);
+	    cb.goto_ (s.end ());
+	}
+
+	@Override public void jumpToStart (CodeBuilder cb, String id) {
+	    if (id == null)
+		id = "";
+	    StartEndLabels s = jumpTargets.get (id);
+	    cb.goto_ (s.start ());
+	}
+
 	@Override public JavaTokens javaTokens () {
 	    return javaTokens;
 	}
@@ -797,4 +822,6 @@ public class BytecodeGenerator {
     private SignatureHelper.MethodSignatureHolder getMethodSignature (MethodDeclarationBase m) {
 	return SignatureHelper.getMethodSignature (cip, genericTypeHelper, m.getTypeParameters (), m.getFormalParameterList (), m.getResult ());
     }
+
+    private record StartEndLabels (Label start, Label end) { /* empty */ }
 }
