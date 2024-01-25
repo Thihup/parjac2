@@ -36,16 +36,18 @@ public class LoopGenerator {
 
 	if (forInit != null)
 	    mcg.handleStatements (cb, forInit);
-	Label lExp = cb.newBoundLabel ();
-	Label lEnd = cb.newLabel ();
-	mcg.registerJumpTargets ("", lExp, lEnd);
+	Label start = cb.newBoundLabel ();
+	Label next = cb.newLabel ();
+	Label end = cb.newLabel ();
+	mcg.registerJumpTargets ("", next, end);
 	if (expression != null) {
-	    handleExitTest (mcg, cb, expression, lEnd);
+	    handleExitTest (mcg, cb, expression, end);
 	}
 	mcg.handleStatements (cb, statement);
+	cb.labelBinding (next);
 	mcg.handleStatements (cb, forUpdate);
-	cb.goto_ (lExp); // what about goto_w?
-	cb.labelBinding (lEnd);
+	cb.goto_ (start); // what about goto_w?
+	cb.labelBinding (end);
     }
 
     public static void handleEnhancedFor (MethodContentGenerator mcg, CodeBuilder cb, EnhancedForStatement efs) {
@@ -81,15 +83,16 @@ public class LoopGenerator {
 	ArrayInfo ai = ArrayInfo.create (cb, kind);
 	arrayLoopSetup (mcg, cb, efs, ai);                    // copy array, store length
 
-	Label loopLabel = cb.newBoundLabel ();
-	Label endLabel = cb.newLabel ();
-	mcg.registerJumpTargets ("", loopLabel, endLabel);
-	arrayLoopIndexCheck (cb, ai, endLabel);          // i < s
+	Label start = cb.newBoundLabel ();
+	Label next = cb.newLabel ();
+	Label end = cb.newLabel ();
+	mcg.registerJumpTargets ("", next, end);
+	arrayLoopIndexCheck (cb, ai, end);          // i < s
 	storeArrayLoopValue (mcg, cb, ai, lv, vd, varKind);   // a = xc[i]
 	mcg.handleStatements (cb, efs.statement ());
 	cb.iinc (ai.indexSlot (), 1);                    // i++
-	cb.goto_ (loopLabel); // what about goto_w?
-	cb.labelBinding (endLabel);
+	cb.goto_ (start); // what about goto_w?
+	cb.labelBinding (end);
     }
 
     private static void arrayLoopSetup (MethodContentGenerator mcg, CodeBuilder cb, EnhancedForStatement efs, ArrayInfo ai) {
@@ -133,14 +136,15 @@ public class LoopGenerator {
 	cb.invokeinterface (owner, "iterator", type);
 	cb.astore (iteratorSlot);
 
-	Label loopLabel = cb.newBoundLabel ();
-	Label endLabel = cb.newLabel ();
-	mcg.registerJumpTargets ("", loopLabel, endLabel);
+	Label start = cb.newBoundLabel ();
+	Label next = cb.newLabel ();
+	Label end = cb.newLabel ();
+	mcg.registerJumpTargets ("", next, end);
 
 	cb.aload (iteratorSlot);
 	type = MethodTypeDesc.ofDescriptor ("()Z");
 	cb.invokeinterface (iteratorDesc, "hasNext", type);
-	cb.ifeq (endLabel);
+	cb.ifeq (end);
 
 	cb.aload (iteratorSlot);
 	type = MethodTypeDesc.of (ConstantDescs.CD_Object);
@@ -154,28 +158,31 @@ public class LoopGenerator {
 
 	mcg.handleStatements (cb, efs.statement ());
 
-	cb.goto_ (loopLabel); // what about goto_w?
-	cb.labelBinding (endLabel);
+	cb.labelBinding (next);
+	cb.goto_ (start); // what about goto_w?
+	cb.labelBinding (end);
     }
 
     public static void handleWhile (MethodContentGenerator mcg, CodeBuilder cb, WhileStatement ws) {
-	Label loopLabel = cb.newBoundLabel ();
-	Label endLabel = cb.newLabel ();
-	mcg.registerJumpTargets ("", loopLabel, endLabel);
+	Label start = cb.newBoundLabel ();
+	Label end = cb.newLabel ();
+	mcg.registerJumpTargets ("", start, end);
 
-	handleExitTest (mcg, cb, ws.expression (), endLabel);
+	handleExitTest (mcg, cb, ws.expression (), end);
 	mcg.handleStatements (cb, ws.statement ());
-	cb.goto_ (loopLabel);
-	cb.labelBinding (endLabel);
+	cb.goto_ (start);
+	cb.labelBinding (end);
     }
 
     public static void handleDo (MethodContentGenerator mcg, CodeBuilder cb, DoStatement ws) {
-	Label loopLabel = cb.newBoundLabel ();
-	Label endLabel = cb.newLabel ();
-	mcg.registerJumpTargets ("", loopLabel, endLabel);
+	Label start = cb.newBoundLabel ();
+	Label next = cb.newLabel ();
+	Label end = cb.newLabel ();
+	mcg.registerJumpTargets ("", next, end);
 	mcg.handleStatements (cb, ws.statement ());
-	handleRunAgainTest (mcg, cb, ws.expression (), loopLabel);
-	cb.labelBinding (endLabel);
+	cb.labelBinding (next);
+	handleRunAgainTest (mcg, cb, ws.expression (), start);
+	cb.labelBinding (end);
     }
 
     private static void handleExitTest (MethodContentGenerator mcg, CodeBuilder cb, ParseTreeNode exp, Label endLabel) {

@@ -280,7 +280,7 @@ public class BytecodeGenerator {
 	private final ClassBuilder classBuilder;
 	private final String methodName;
 	private final int flags;
-	private Map<String, StartEndLabels> jumpTargets = new HashMap<> ();
+	private Map<String, NextAndEndLabel> jumpTargets = new HashMap<> ();
 
 	public MethodContentBuilder (ClassBuilder classBuilder, String methodName, int flags) {
 	    this.classBuilder = classBuilder;
@@ -364,7 +364,7 @@ public class BytecodeGenerator {
 
 	    case LabeledStatement ls -> handleLabel (cb, ls);
 	    case BreakStatement bs -> jumpToEnd (cb, bs.id ());
-	    case ContinueStatement cs -> jumpToStart (cb, cs.id ());
+	    case ContinueStatement cs -> jumpToNext (cb, cs.id ());
 
 	    case CastExpression ce -> handleCast (cb, ce);
 	    case ClassType ct -> cb.ldc (ClassDescUtils.getClassDesc (ct.fullName ()));
@@ -798,24 +798,24 @@ public class BytecodeGenerator {
 		partsToHandle.addFirst (parts.get (i));
 	}
 
-	@Override public void registerJumpTargets (String id, Label start, Label end) {
+	@Override public void registerJumpTargets (String id, Label next, Label end) {
 	    if (id == null)
 		id = "";
-	    jumpTargets.put (id, new StartEndLabels (start, end));
+	    jumpTargets.put (id, new NextAndEndLabel (next, end));
+	}
+
+	@Override public void jumpToNext (CodeBuilder cb, String id) {
+	    if (id == null)
+		id = "";
+	    NextAndEndLabel s = jumpTargets.get (id);
+	    cb.goto_ (s.next ());
 	}
 
 	@Override public void jumpToEnd (CodeBuilder cb, String id) {
 	    if (id == null)
 		id = "";
-	    StartEndLabels s = jumpTargets.get (id);
+	    NextAndEndLabel s = jumpTargets.get (id);
 	    cb.goto_ (s.end ());
-	}
-
-	@Override public void jumpToStart (CodeBuilder cb, String id) {
-	    if (id == null)
-		id = "";
-	    StartEndLabels s = jumpTargets.get (id);
-	    cb.goto_ (s.start ());
 	}
 
 	@Override public JavaTokens javaTokens () {
@@ -831,5 +831,5 @@ public class BytecodeGenerator {
 	return SignatureHelper.getMethodSignature (cip, genericTypeHelper, m.getTypeParameters (), m.getFormalParameterList (), m.getResult ());
     }
 
-    private record StartEndLabels (Label start, Label end) { /* empty */ }
+    private record NextAndEndLabel (Label next, Label end) { /* empty */ }
 }

@@ -24,9 +24,9 @@ public interface MethodContentGenerator {
     Opcode getForwardZeroJump (Token t);
     Opcode getForwardTwoPartJump (TwoPartExpression t);
 
-    void registerJumpTargets (String id, Label start, Label end);
+    void registerJumpTargets (String id, Label next, Label end);
+    void jumpToNext (CodeBuilder cb, String id);
     void jumpToEnd (CodeBuilder cb, String id);
-    void jumpToStart (CodeBuilder cb, String id);
 
     JavaTokens javaTokens ();
 }

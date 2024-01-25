@@ -78,6 +78,14 @@ public class TestLoops extends CompileAndRun {
 	validateStaticIntIntMethodResult (m, 4, 270);
     }
 
+    @Test
+    public void testContinue () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static int foo (int skip) { int sum = 0; " +
+			      "for (int x = 1; x < 10; x++) { if (x == skip) continue; sum += x; } return sum; }}", "foo", Integer.TYPE);
+	validateStaticIntIntMethodResult (m, 1, 44);
+	validateStaticIntIntMethodResult (m, 6, 39);
+    }
+
     private void validateStaticIntIntMethodResult (Method m, int argument, int expectedResult) throws ReflectiveOperationException {
 	int r = (Integer)m.invoke (null, argument);
 	assert r == expectedResult : "Got wrong result back: argument: " + argument + ", expectedResult: " + expectedResult + ", actual result: " + r;
