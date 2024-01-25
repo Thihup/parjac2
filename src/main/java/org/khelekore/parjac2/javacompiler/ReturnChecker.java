@@ -233,6 +233,7 @@ public class ReturnChecker extends SemanticCheckerBase {
 	ParseTreeNode previous = labels.put (label.id (), label.statement ());
 	if (previous != null)
 	    warning (label, "Overwriting label %s", label.id ());
+	checkStatement (label.statement (), labels);
     }
 
     private void checkContinue (ContinueStatement cs, Map<String, ParseTreeNode> labels) {

@@ -362,7 +362,7 @@ public class BytecodeGenerator {
 	    case ThrowStatement ts -> handleThrowStatement (cb, ts);
 	    case TryStatement t -> TryGenerator.handleTryStatement (this, cb, t);
 
-	    case LabeledStatement ls -> { /* TODO */ } // TODO: register label id, but for the thing it deals with
+	    case LabeledStatement ls -> handleLabel (cb, ls);
 	    case BreakStatement bs -> jumpToEnd (cb, bs.id ());
 	    case ContinueStatement cs -> jumpToStart (cb, cs.id ());
 
@@ -549,6 +549,14 @@ public class BytecodeGenerator {
 	private void handleThrowStatement (CodeBuilder cb, ThrowStatement ts) {
 	    handleStatements (cb, ts.expression ());
 	    cb.athrow ();
+	}
+
+	private void handleLabel (CodeBuilder cb, LabeledStatement ls) {
+	    Label start = cb.newBoundLabel ();
+	    Label end = cb.newLabel ();
+	    registerJumpTargets (ls.id (), start, end);
+	    handleStatements (cb, ls.statement ());
+	    cb.labelBinding (end);
 	}
 
 	private void handleCast (CodeBuilder cb, CastExpression ce) {

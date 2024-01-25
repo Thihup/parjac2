@@ -28,6 +28,5 @@ public class TestBreakContinue extends TestCompilationErrorHandling {
     public void testBreakFromLambda () {
 	testClass ("C.java", "class C { void foo (int i) { for (int i = 0; i < 10; i++) { Runnable r = () -> { break; }; }}}", 1);
     }
-
 }
 
