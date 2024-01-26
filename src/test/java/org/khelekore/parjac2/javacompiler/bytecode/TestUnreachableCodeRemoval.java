@@ -27,7 +27,7 @@ public class TestUnreachableCodeRemoval extends CompileAndRun {
 	ClassModel model = ClassFile.of ().parse (bytecode);
 	List<MethodModel> methods = model.methods ();
 	for (MethodModel mm : methods) {
-	    if (mm.methodName ().stringValue ().equals ("foo"))
+	    if (mm.methodName ().stringValue ().equals (methodName))
 		return mm.code ().get ();
 	}
 	throw new IllegalStateException ("Method " + methodName + " not found");
