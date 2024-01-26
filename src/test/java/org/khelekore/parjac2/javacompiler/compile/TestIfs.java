@@ -43,6 +43,18 @@ public class TestIfs extends CompileAndRun {
     }
 
     @Test
+    public void testIfElseWithMultiEqualsPartExpression () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { public static int r (int s) { if (s == 3 || s == 4) return 3; else return 5; }}",
+			      "r", Integer.TYPE);
+	int r = (Integer)m.invoke (null, 1);
+	assert r == 5 : "Got wrong result: " + r + ", expected: " + 5;
+	r = (Integer)m.invoke (null, 3);
+	assert r == 3 : "Got wrong result: " + r + ", expected: " + 3;
+	r = (Integer)m.invoke (null, 4);
+	assert r == 3 : "Got wrong result: " + r + ", expected: " + 3;
+    }
+
+    @Test
     public void testReturnTernary () throws ReflectiveOperationException {
 	Method m = getMethod ("C", "class C { public static int r (boolean b, int x, int y) { return b ? x : y; }}",
 			      "r", Boolean.TYPE, Integer.TYPE, Integer.TYPE);

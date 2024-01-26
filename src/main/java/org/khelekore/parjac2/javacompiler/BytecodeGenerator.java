@@ -280,7 +280,8 @@ public class BytecodeGenerator {
 	private final ClassBuilder classBuilder;
 	private final String methodName;
 	private final int flags;
-	private Map<String, NextAndEndLabel> jumpTargets = new HashMap<> ();
+	private Map<String, ParseTreeNode> id2node = new HashMap<> ();
+	private Map<ParseTreeNode, NextAndEndLabel> node2target = new HashMap<> ();
 
 	public MethodContentBuilder (ClassBuilder classBuilder, String methodName, int flags) {
 	    this.classBuilder = classBuilder;
@@ -554,7 +555,7 @@ public class BytecodeGenerator {
 	private void handleLabel (CodeBuilder cb, LabeledStatement ls) {
 	    Label start = cb.newBoundLabel ();
 	    Label end = cb.newLabel ();
-	    registerJumpTargets (ls.id (), start, end);
+	    registerJumpTargets (ls.id (), ls.statement (), start, end);
 	    handleStatements (cb, ls.statement ());
 	    cb.labelBinding (end);
 	}
@@ -798,23 +799,27 @@ public class BytecodeGenerator {
 		partsToHandle.addFirst (parts.get (i));
 	}
 
-	@Override public void registerJumpTargets (String id, Label next, Label end) {
+	@Override public void registerJumpTargets (String id, ParseTreeNode n, Label next, Label end) {
 	    if (id == null)
 		id = "";
-	    jumpTargets.put (id, new NextAndEndLabel (next, end));
+	    id2node.put (id, n);
+	    node2target.put (n, new NextAndEndLabel (next, end));
 	}
 
 	@Override public void jumpToNext (CodeBuilder cb, String id) {
-	    if (id == null)
+	    if (id == null) {
 		id = "";
-	    NextAndEndLabel s = jumpTargets.get (id);
+	    }
+	    ParseTreeNode p = id2node.get (id);
+	    NextAndEndLabel s = node2target.get (p);
 	    cb.goto_ (s.next ());
 	}
 
 	@Override public void jumpToEnd (CodeBuilder cb, String id) {
 	    if (id == null)
 		id = "";
-	    NextAndEndLabel s = jumpTargets.get (id);
+	    ParseTreeNode p = id2node.get (id);
+	    NextAndEndLabel s = node2target.get (p);
 	    cb.goto_ (s.end ());
 	}
 

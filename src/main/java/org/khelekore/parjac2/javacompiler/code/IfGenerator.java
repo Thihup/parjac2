@@ -115,7 +115,11 @@ public class IfGenerator {
 	    handleInstanceOf (mcg, cb, tp2, elseLabel);
 	} else if (tp2 != null) {
 	    handleOtherTwoPart (mcg, cb, tp2);
-	    cb.branchInstruction (mcg.getReverseTwoPartJump (tp2), elseLabel);
+	    if (isOr) {
+		cb.branchInstruction (mcg.getForwardTwoPartJump (tp2), thenLabel);
+	    } else {
+		cb.branchInstruction (mcg.getReverseTwoPartJump (tp2), elseLabel);
+	    }
 	} else {
 	    mcg.handleStatements (cb, p1);
 	    firstTest (cb, isOr, thenLabel, elseLabel);

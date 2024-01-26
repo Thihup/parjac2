@@ -39,7 +39,7 @@ public class LoopGenerator {
 	Label start = cb.newBoundLabel ();
 	Label next = cb.newLabel ();
 	Label end = cb.newLabel ();
-	mcg.registerJumpTargets ("", next, end);
+	mcg.registerJumpTargets ("", bfs, next, end);
 	if (expression != null) {
 	    handleExitTest (mcg, cb, expression, end);
 	}
@@ -86,7 +86,7 @@ public class LoopGenerator {
 	Label start = cb.newBoundLabel ();
 	Label next = cb.newLabel ();
 	Label end = cb.newLabel ();
-	mcg.registerJumpTargets ("", next, end);
+	mcg.registerJumpTargets ("", efs, next, end);
 	arrayLoopIndexCheck (cb, ai, end);          // i < s
 	storeArrayLoopValue (mcg, cb, ai, lv, vd, varKind);   // a = xc[i]
 	mcg.handleStatements (cb, efs.statement ());
@@ -139,7 +139,7 @@ public class LoopGenerator {
 	Label start = cb.newBoundLabel ();
 	Label next = cb.newLabel ();
 	Label end = cb.newLabel ();
-	mcg.registerJumpTargets ("", next, end);
+	mcg.registerJumpTargets ("", efs, next, end);
 
 	cb.aload (iteratorSlot);
 	type = MethodTypeDesc.ofDescriptor ("()Z");
@@ -166,7 +166,7 @@ public class LoopGenerator {
     public static void handleWhile (MethodContentGenerator mcg, CodeBuilder cb, WhileStatement ws) {
 	Label start = cb.newBoundLabel ();
 	Label end = cb.newLabel ();
-	mcg.registerJumpTargets ("", start, end);
+	mcg.registerJumpTargets ("", ws, start, end);
 
 	handleExitTest (mcg, cb, ws.expression (), end);
 	mcg.handleStatements (cb, ws.statement ());
@@ -174,14 +174,14 @@ public class LoopGenerator {
 	cb.labelBinding (end);
     }
 
-    public static void handleDo (MethodContentGenerator mcg, CodeBuilder cb, DoStatement ws) {
+    public static void handleDo (MethodContentGenerator mcg, CodeBuilder cb, DoStatement ds) {
 	Label start = cb.newBoundLabel ();
 	Label next = cb.newLabel ();
 	Label end = cb.newLabel ();
-	mcg.registerJumpTargets ("", next, end);
-	mcg.handleStatements (cb, ws.statement ());
+	mcg.registerJumpTargets ("", ds, next, end);
+	mcg.handleStatements (cb, ds.statement ());
 	cb.labelBinding (next);
-	handleRunAgainTest (mcg, cb, ws.expression (), start);
+	handleRunAgainTest (mcg, cb, ds.expression (), start);
 	cb.labelBinding (end);
     }
 

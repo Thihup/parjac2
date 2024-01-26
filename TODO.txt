@@ -6,6 +6,7 @@ Bytecode generation:
 * yield
  ** verify correct handling of try/catch/finally and resource cleanup
 * TryWithResourcesStatement
+* investigate goto-target for if with break and continue
 
 Abstract:
 * Verify that classes implement all required methods
