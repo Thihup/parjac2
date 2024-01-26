@@ -6,7 +6,9 @@ Bytecode generation:
 * yield
  ** verify correct handling of try/catch/finally and resource cleanup
 * TryWithResourcesStatement
-* investigate goto-target for if with break and continue
+* investigate goto-target for if with break and continue, we currently
+  jump to the continue-goto, so two jumps rather than directly jumping
+  to th right position.
 
 Abstract:
 * Verify that classes implement all required methods
