@@ -141,9 +141,6 @@ public class ImplicitMethodGenerator {
 	    addImplicit (rpos, r, FullNameHandler.BOOLEAN, "equals", params, this::recordEquals, ret);
 	}
 
-	// We do not add toString, equals or hashCode here, they are added in bytecode generation
-	// Since they exist in Object we will find them if we use them anyway.
-
 	// Add a field-getter for each field.
 	for (RecordComponent rc : r.getRecordComponents ()) {
 	    int flags = Flags.ACC_PUBLIC;
@@ -178,11 +175,11 @@ public class ImplicitMethodGenerator {
     private void addImplicit (ParsePosition rpos, RecordDeclaration r,
 			      FullNameHandler returnType, String methodName, FormalParameterList params,
 			      Generator<RecordDeclaration> generator, List<MethodDeclaration> ls) {
-	    ClassType ctRet = new ClassType (returnType);
-	    MethodDeclaration m = new MethodDeclaration (rpos, RECORD_METHOD_FLAGS, methodName, ctRet, params,
-							 new Block (rpos, new RecordCodeBlock (r, generator)));
-	    r.addMethod (m);
-	    ls.add (m);
+	ClassType ctRet = new ClassType (returnType);
+	MethodDeclaration m = new MethodDeclaration (rpos, RECORD_METHOD_FLAGS, methodName, ctRet, params,
+						     new Block (rpos, new RecordCodeBlock (r, generator)));
+	r.addMethod (m);
+	ls.add (m);
     }
 
     private void recordToString (CodeBuilder cb, RecordDeclaration rd) {
