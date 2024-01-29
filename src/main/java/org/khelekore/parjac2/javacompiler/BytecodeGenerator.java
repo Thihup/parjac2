@@ -534,7 +534,12 @@ public class BytecodeGenerator {
 		if (exp instanceof IntLiteral il) {
 		    int value = il.getValue ();
 		    CodeUtil.handleInt (cb, -value);
+		} else {
+		    handleStatements (cb, exp);
+		    negate (cb, exp);
 		}
+	    } else if (t == javaTokens.PLUS) {
+		handleStatements (cb, u.expression ());
 	    } else if (t == javaTokens.TILDE) {
 		handleStatements (cb, u.expression ());
 		FullNameHandler fullName = FullNameHelper.type (u.expression ());
@@ -550,6 +555,20 @@ public class BytecodeGenerator {
 	    } else {
 		throw new IllegalStateException ("Unhandled unary expression: " + u);
 	    }
+	}
+
+	private void negate (CodeBuilder cb, ParseTreeNode exp) {
+	    FullNameHandler fn = FullNameHelper.type (exp);
+	    if (fn == FullNameHandler.INT)
+		cb.ineg ();
+	    else if (fn == FullNameHandler.LONG)
+		cb.lneg ();
+	    else if (fn == FullNameHandler.FLOAT)
+		cb.fneg ();
+	    else if (fn == FullNameHandler.DOUBLE)
+		cb.dneg ();
+	    else
+		throw new IllegalArgumentException ("unhandled type: "+ fn.getFullDotName ());
 	}
 
 	private void handleThrowStatement (CodeBuilder cb, ThrowStatement ts) {

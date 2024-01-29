@@ -215,6 +215,40 @@ public class TestFullCompilation extends CompileAndRun {
     }
 
     @Test
+    public void testNegateValue () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { public static int r (int x) { return -x; }}", "r", Integer.TYPE);
+	int r = (Integer)m.invoke (null, 3);
+	assert r == -3 : "wrong value from negation: " + r + ", expected: " + -3;
+	r = (Integer)m.invoke (null, -9);
+	assert r == 9 : "wrong value from negation: " + r + ", expected: " + 9;
+    }
+
+    @Test
+    public void testNegateLongValue () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { public static long r (long x) { return -x; }}", "r", Long.TYPE);
+	long r = (Long)m.invoke (null, 3L);
+	assert r == -3 : "wrong value from negation: " + r + ", expected: " + -3;
+	r = (Long)m.invoke (null, -9);
+	assert r == 9 : "wrong value from negation: " + r + ", expected: " + 9;
+    }
+
+    @Test
+    public void testNegateDoubleValue () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { public static double r (double x) { return -x; }}", "r", Double.TYPE);
+	double r = (Double)m.invoke (null, 3L);
+	assert r == -3 : "wrong value from negation: " + r + ", expected: " + -3;
+	r = (Double)m.invoke (null, -9);
+	assert r == 9 : "wrong value from negation: " + r + ", expected: " + 9;
+    }
+
+    @Test
+    public void testPositive () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "class C { public static long r (long x) { return +x; }}", "r", Long.TYPE);
+	long r = (Long)m.invoke (null, 3L);
+	assert r == 3 : "wrong value from negation: " + r + ", expected: " + 3;
+    }
+
+    @Test
     public void testUnaryIntOperations () throws ReflectiveOperationException {
 	Method m = getMethod ("C", "class C { public static int r (int x) { return ~x; }}", "r", Integer.TYPE);
 	int value = 0xff00ff00;
