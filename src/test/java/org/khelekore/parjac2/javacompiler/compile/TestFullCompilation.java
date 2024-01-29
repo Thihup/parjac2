@@ -206,6 +206,15 @@ public class TestFullCompilation extends CompileAndRun {
     }
 
     @Test
+    public void testArgArithmetics () throws ReflectiveOperationException {
+	Class<?> c = compileAndGetClass ("C", "public class C { public int foo (int i) { i += 2; return i; }}");
+	Object o = c.getConstructor ().newInstance ();
+	Method m = c.getMethod ("foo", Integer.TYPE);
+	int r = (Integer)m.invoke (o, 5);
+	assert r == 7 : "Failed to increment correctly, got: " + r;
+    }
+
+    @Test
     public void testUnaryIntOperations () throws ReflectiveOperationException {
 	Method m = getMethod ("C", "class C { public static int r (int x) { return ~x; }}", "r", Integer.TYPE);
 	int value = 0xff00ff00;

@@ -695,7 +695,7 @@ public class BytecodeGenerator {
 		case FIELD ->
 		    FieldGenerator.putField (this, cb, from, cip.getFullName (td), vi, value);
 		case PARAMETER ->
-		    putInLocalSlot (cb, kind, ((FormalParameterBase)vi).slot (), value);
+		    putInLocalSlot (cb, kind, cb.parameterSlot (((FormalParameterBase)vi).slot ()), value);
 		case LOCAL ->
 		    putInLocalSlot (cb, kind, ((LocalVariable)vi).slot (), value);
 		case ARRAY_LENGTH -> throw new IllegalStateException ("Can not update array.length");
