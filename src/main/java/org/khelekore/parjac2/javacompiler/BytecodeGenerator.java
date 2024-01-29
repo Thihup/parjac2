@@ -571,6 +571,9 @@ public class BytecodeGenerator {
 	    cb.getstatic (owner, ImplicitMethodGenerator.ASSERT_FIELD_NAME, ConstantDescs.CD_boolean);
 	    cb.ifne (end);
 	    handleStatements (cb, as.test ());
+	    FullNameHandler fn = FullNameHelper.type (as.test ());
+	    if (!fn.isPrimitive ())
+		CodeUtil.autoUnBox (cb, fn);
 	    cb.ifne (end);
 	    ClassDesc ae = ClassDesc.of ("java.lang.AssertionError");
 	    cb.new_ (ae);
