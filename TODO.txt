@@ -9,14 +9,12 @@ Bytecode generation:
 * investigate goto-target for if with break and continue, we currently
   jump to the continue-goto, so two jumps rather than directly jumping
   to th right position.
+* void foo (int i) { i += 2; } generates more complex code than javac (iinc)
 
 * Modules
 * class permits
 * ReceiverParameter
 * check class generation for Annotations
-
-Abstract:
-* Verify that classes implement all required methods
 
 Generics:
 * implement it
