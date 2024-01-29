@@ -108,4 +108,8 @@ public abstract class TypeDeclaration extends FlaggedBase {
     public abstract List<SyntaxTreeNode> getInstanceInitializers ();
 
     public abstract List<SyntaxTreeNode> getStaticInitializers ();
+
+    public void addStaticInitializer (Block b) {
+	getStaticInitializers ().add (b);
+    }
 }

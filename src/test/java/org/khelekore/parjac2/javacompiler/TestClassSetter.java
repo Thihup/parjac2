@@ -903,6 +903,18 @@ public class TestClassSetter {
 	getTypes ("class C { int foo (int i) { return switch (i) { case 0 -> { yield bar (); } default -> 14; };} void bar () { }}", 1);
     }
 
+    @Test
+    public void testAssertTestType () {
+	getTypes ("class C { void foo (boolean b) { assert b; }}", 0);
+	getTypes ("class C { void foo (int i) { assert i; }}", 1);
+    }
+
+    @Test
+    public void testAssertErrorMessageType () {
+	getTypes ("class C { void foo (boolean b) { assert b : \"asdf\"; }}", 0);
+	getTypes ("class C { void foo (boolean b) { assert b : bar (); } void bar () {}}", 1);
+    }
+
     /* TODO: implement full generic handling */
     /*
     @Test

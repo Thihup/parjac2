@@ -38,6 +38,7 @@ public class ClassSetter {
 
     // cache so we do not have to recalculate them, key is MethodDeclarationBase or Constructor or Class
     private final Map<Object, EnclosingTypes> enclosureCache = new HashMap<> ();
+    private boolean foundAsserts = false;
 
     /** High level description:
      *  For each class:
@@ -228,6 +229,9 @@ public class ClassSetter {
 	    td.getConstructors ().forEach (c -> checkConstructorBodies (c));
 	    td.getInstanceInitializers ().forEach (c -> checkInstanceInitializerBodies (ett, c));
 	    td.getStaticInitializers ().forEach (c -> checkStaticInitializerBodies (ett, c));
+
+	    if (foundAsserts)
+		img.addAssertFieldAndSetup (td);
 	} catch (Exception e) {
 	    System.err.println ("Exception during handling of " + tree.getOrigin ());
 	    throw e;
@@ -303,6 +307,8 @@ public class ClassSetter {
 
 	    case DimExpr de -> handlePartsAndHandler (et, de, e -> checkDimExpr (de), partsToHandle);
 	    case YieldStatement ys -> handlePartsAndHandler (et, ys, e -> checkYieldType (ys), partsToHandle);
+
+	    case AssertStatement as -> handlePartsAndHandler (et, as, e -> checkAssert (as), partsToHandle);
 
 	    case ParseTreeNode ptn -> addParts (et, ptn, partsToHandle);
 
@@ -1038,6 +1044,20 @@ public class ClassSetter {
 	FullNameHandler fn = FullNameHelper.type (p);
 	if (FullNameHandler.VOID.equals (fn))
 	    error (ys, "Yield may not be void");
+    }
+
+    private void checkAssert (AssertStatement as) {
+	foundAsserts = true;
+	ParseTreeNode p = as.test ();
+	FullNameHandler fn = FullNameHelper.type (p);
+	if (!FullNameHelper.isConvertibleToBoolean (fn))
+	    error (as, "Assert test must be convertible to boolean, current type: %s", fn.getFullDotName ());
+	if (as.hasErrorMessage ()) {
+	    p = as.errorMessage ();
+	    fn = FullNameHelper.type (p);
+	    if (FullNameHandler.VOID.equals (fn))
+		error (p, "The assert error message may not be void");
+	}
     }
 
     private MethodInfo lambdaMatch (FullNameHandler type, LambdaExpression le) {

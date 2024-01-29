@@ -111,10 +111,6 @@ public class EnumDeclaration extends TypeDeclaration {
 	return body.getStaticInitializers ();
     }
 
-    public void addStaticInitializer (Block b) {
-	getStaticInitializers ().add (b);
-    }
-
     public List<EnumConstant> constants () {
 	return body.constants ();
     }

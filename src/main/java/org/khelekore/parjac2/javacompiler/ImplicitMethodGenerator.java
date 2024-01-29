@@ -37,6 +37,7 @@ import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 import io.github.dmlloyd.classfile.CodeBuilder;
+import io.github.dmlloyd.classfile.Opcode;
 
 public class ImplicitMethodGenerator {
 
@@ -59,6 +60,12 @@ public class ImplicitMethodGenerator {
 	MethodTypeDesc.of (ConstantDescs.CD_Enum, ConstantDescs.CD_Class, ConstantDescs.CD_String);
     private static final MethodTypeDesc ENUM_INIT_SIGNATURE =
 	MethodTypeDesc.of (ConstantDescs.CD_void, ConstantDescs.CD_String, ConstantDescs.CD_int);
+
+    private static final String ASSERT_STATUS_METHOD = "desiredAssertionStatus";
+    public static final String ASSERT_FIELD_NAME = "$assertionsDisabled";
+    private static final int ASSERT_FIELD_FLAGS = Flags.ACC_STATIC | Flags.ACC_FINAL | Flags.ACC_SYNTHETIC;
+    private static final MethodTypeDesc ASSERT_STATUS_SIGNATURE =
+	MethodTypeDesc.of (ConstantDescs.CD_boolean);
 
     public ImplicitMethodGenerator (ClassInformationProvider cip,
 				    JavaTokens javaTokens,
@@ -103,6 +110,20 @@ public class ImplicitMethodGenerator {
 	case EnumDeclaration e -> addEnumStaticBlock (e);
 	default -> { /* empty */ }
 	}
+    }
+
+    public void addAssertFieldAndSetup (TypeDeclaration td) {
+	ClassType ct = new ClassType (FullNameHandler.BOOLEAN);
+	td.addField (new FieldInfo (VariableInfo.Type.FIELD, ASSERT_FIELD_NAME, td.position (), ASSERT_FIELD_FLAGS, ct, 0));
+	td.addStaticInitializer (new Block (td.position (), new GenericCodeBlock<TypeDeclaration> (td, this::assertStaticBlock)));
+    }
+
+    private void assertStaticBlock (CodeBuilder cb, TypeDeclaration td) {
+	ClassDesc currentType = ClassDescUtils.getClassDesc (cip.getFullName (td));
+	cb.ldc (currentType);
+	cb.invokevirtual (ConstantDescs.CD_Class, ASSERT_STATUS_METHOD, ASSERT_STATUS_SIGNATURE);
+	cb.ifThenElse (Opcode.IFEQ, cbt -> cbt.iconst_1 (), cbe -> cbe.iconst_0 ());
+	cb.putstatic (currentType, ASSERT_FIELD_NAME, ConstantDescs.CD_boolean);
     }
 
     private void addRecordFields (RecordDeclaration r) {

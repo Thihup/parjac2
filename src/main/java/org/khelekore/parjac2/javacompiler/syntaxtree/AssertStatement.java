@@ -7,26 +7,38 @@ import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public class AssertStatement extends SyntaxTreeNode {
-    private final ParseTreeNode expression1;
-    private final ParseTreeNode expression2;
+    private final ParseTreeNode test;
+    private final ParseTreeNode errorMessage;
 
     public AssertStatement (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
-	expression1 = children.get (1);
-	expression2 = (rule.size () > 3) ? children.get (3) : null;
+	test = children.get (1);
+	errorMessage = (rule.size () > 3) ? children.get (3) : null;
+    }
+
+    public ParseTreeNode test () {
+	return test;
+    }
+
+    public boolean hasErrorMessage () {
+	return errorMessage != null;
+    }
+
+    public ParseTreeNode errorMessage () {
+	return errorMessage;
     }
 
     @Override public Object getValue () {
 	StringBuilder sb = new StringBuilder ();
-	sb.append ("assert ").append (expression1);
-	if (expression2 != null)
-	    sb.append (" : ").append (expression2);
+	sb.append ("assert ").append (test);
+	if (errorMessage != null)
+	    sb.append (" : ").append (errorMessage);
 	return sb.toString ();
     }
 
     @Override public void visitChildNodes (NodeVisitor v) {
-	v.accept (expression1);
-	if (expression2 != null)
-	    v.accept (expression2);
+	v.accept (test);
+	if (errorMessage != null)
+	    v.accept (errorMessage);
     }
 }

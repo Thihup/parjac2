@@ -63,7 +63,10 @@ public class BytecodeGenerator {
     private static final String STATIC_INIT = "<clinit>";
 
     public static final String INSTANCE_INIT = "<init>";
-    public static final MethodTypeDesc INIT_SIGNATURE = MethodTypeDesc.ofDescriptor ("()V");
+    public static final MethodTypeDesc INIT_SIGNATURE =
+	MethodTypeDesc.of (ConstantDescs.CD_void);
+    public static final MethodTypeDesc ASSERTION_ERROR_INIT_VALUE =
+	MethodTypeDesc.of (ConstantDescs.CD_void, ConstantDescs.CD_Object);
 
     private enum ImplicitClassFlags {
 	CLASS_FLAGS (ClassFile.ACC_SUPER),
@@ -364,8 +367,10 @@ public class BytecodeGenerator {
 	    case TryStatement t -> TryGenerator.handleTryStatement (this, cb, t);
 
 	    case LabeledStatement ls -> handleLabel (cb, ls);
-	    case BreakStatement bs -> jumpToEnd (cb, bs.id ());
 	    case ContinueStatement cs -> jumpToNext (cb, cs.id ());
+	    case BreakStatement bs -> jumpToEnd (cb, bs.id ());
+
+	    case AssertStatement as -> handleAssert (cb, as);
 
 	    case CastExpression ce -> handleCast (cb, ce);
 	    case ClassType ct -> cb.ldc (ClassDescUtils.getClassDesc (ct.fullName ()));
@@ -557,6 +562,26 @@ public class BytecodeGenerator {
 	    Label end = cb.newLabel ();
 	    registerJumpTargets (ls.id (), ls.statement (), start, end);
 	    handleStatements (cb, ls.statement ());
+	    cb.labelBinding (end);
+	}
+
+	private void handleAssert (CodeBuilder cb, AssertStatement as) {
+	    Label end = cb.newLabel ();
+	    ClassDesc owner = ClassDescUtils.getClassDesc (cip.getFullName (td));
+	    cb.getstatic (owner, ImplicitMethodGenerator.ASSERT_FIELD_NAME, ConstantDescs.CD_boolean);
+	    cb.ifne (end);
+	    handleStatements (cb, as.test ());
+	    cb.ifne (end);
+	    ClassDesc ae = ClassDesc.of ("java.lang.AssertionError");
+	    cb.new_ (ae);
+	    cb.dup ();
+	    if (as.hasErrorMessage ()) {
+		handleStatements (cb, as.errorMessage ());
+		cb.invokespecial (ae, INSTANCE_INIT, ASSERTION_ERROR_INIT_VALUE);
+	    } else {
+		cb.invokespecial (ae, INSTANCE_INIT, INIT_SIGNATURE);
+	    }
+	    cb.athrow ();
 	    cb.labelBinding (end);
 	}
 
