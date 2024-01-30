@@ -62,4 +62,14 @@ public class TestReturnChecker extends TestCompilationErrorHandling {
     public void testCodeAfterInfiniteLoopIsUnreachable () {
 	testClass ("C.java", "class C { int foo () throws java.io.IOException { int x = 0; for (;;) System.in.read (); return x; }}", 1);
     }
+
+    @Test
+    public void testResource () {
+	testClass ("C.java", "import java.io.*; class C { void foo () throws java.io.IOException {" +
+		   "try (InputStream is = new FileInputStream(\"/tmp/foo\")) { int i = is.read (); }}}", 0);
+	testClass ("C.java", "import java.io.*; class C { void foo () throws java.io.IOException {" +
+		   "try (InputStream is = new FileInputStream(\"/tmp/foo\"); BufferedReader br = new BufferedReader (is)) {" +
+		   "String s = br.readLine (); }}}", 0);
+	testClass ("C.java", "class C { void foo () { try (String s = bar ()) { int i = s.length (); }} String bar () { return \"\"; }}", 1);
+    }
 }

@@ -243,7 +243,7 @@ public class SyntaxTreeBuilder {
 	register ("TryWithResourcesStatement", TryStatement::new);
 	register ("ResourceSpecification", ResourceSpecification::new);
 	register ("ResourceList", ResourceList::new);
-	register ("Resource", this::resource);
+	register ("Resource", (rule, input, children) -> new SimpleResource (children.get (0)));
 
 	/** TODO: not used anymore? */
 	register ("VariableAccess", this::liftUp);
@@ -430,12 +430,6 @@ public class SyntaxTreeBuilder {
 	if (rule.size () == 1)
 	    return children.get (0);
 	return new TryStatement (rule, n, children);
-    }
-
-    private ParseTreeNode resource (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
-	if (rule.size () == 1)
-	    return new SimpleResource (children.get (0));
-	return new Resource (rule, n, children);
     }
 
     private ParseTreeNode primaryNoNewArray (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {

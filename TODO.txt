@@ -42,3 +42,6 @@ Add warnings:
 Other:
 Rewrite the parser so we co not remove nullable rules and explode the rule numbers
 - first version in branch: nullable_grammar_rewrite, need to check performance
+
+Other:
+SimpleResource is a trivial wrapper, remove it and just lift up wrapped element instead.

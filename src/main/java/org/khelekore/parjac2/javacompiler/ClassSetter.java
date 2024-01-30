@@ -309,6 +309,7 @@ public class ClassSetter {
 	    case YieldStatement ys -> handlePartsAndHandler (et, ys, e -> checkYieldType (ys), partsToHandle);
 
 	    case AssertStatement as -> handlePartsAndHandler (et, as, e -> checkAssert (as), partsToHandle);
+	    case SimpleResource sr -> handlePartsAndHandler (et, sr, e -> checkResource (sr), partsToHandle);
 
 	    case ParseTreeNode ptn -> addParts (et, ptn, partsToHandle);
 
@@ -1058,6 +1059,17 @@ public class ClassSetter {
 	    if (FullNameHandler.VOID.equals (fn))
 		error (p, "The assert error message may not be void");
 	}
+    }
+
+    private void checkResource (SimpleResource sr) {
+	FullNameHandler fn = FullNameHelper.type (sr.resource ());
+	if (!isAutoCloseable (fn))
+	    error (sr, "Resource must implement AutoCloseable");
+    }
+
+    private boolean isAutoCloseable (FullNameHandler fn) {
+	Set<FullNameHandler> allSupers = getAllSuperTypes (fn);
+	return allSupers.contains (FullNameHandler.JL_AUTOCLOSEABLE);
     }
 
     private MethodInfo lambdaMatch (FullNameHandler type, LambdaExpression le) {

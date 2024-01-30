@@ -15,6 +15,7 @@ public interface FullNameHandler {
     public static final FullNameHandler JL_STRING = FullNameHandler.ofSimpleClassName ("java.lang.String");
     public static final FullNameHandler JL_THROWABLE = FullNameHandler.ofSimpleClassName ("java.lang.Throwable");
     public static final FullNameHandler JL_RUNTIME_EXCEPTION = FullNameHandler.ofSimpleClassName ("java.lang.RuntimeException");
+    public static final FullNameHandler JL_AUTOCLOSEABLE = FullNameHandler.ofSimpleClassName ("java.lang.AutoCloseable");
 
     public static final Primitive BYTE = new Primitive ("B", "byte");
     public static final Primitive SHORT = new Primitive ("S", "short");
