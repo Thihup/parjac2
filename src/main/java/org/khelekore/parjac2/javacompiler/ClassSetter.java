@@ -1068,6 +1068,8 @@ public class ClassSetter {
     }
 
     private boolean isAutoCloseable (FullNameHandler fn) {
+	if (fn.equals (FullNameHandler.JL_AUTOCLOSEABLE))
+	    return true;
 	Set<FullNameHandler> allSupers = getAllSuperTypes (fn);
 	return allSupers.contains (FullNameHandler.JL_AUTOCLOSEABLE);
     }
