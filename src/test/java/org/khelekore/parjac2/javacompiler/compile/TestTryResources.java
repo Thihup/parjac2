@@ -21,11 +21,30 @@ public class TestTryResources extends CompileAndRun {
 			      "f", Runnable.class, Runnable.class);
 	Runnable r1 = () -> {/* empty */};
 	Runnable r2 = () -> { throw new IllegalArgumentException (); };
-	ExceptionCatcher ec = new ExceptionCatcher ();
+	DidItRun ec = new DidItRun ();
 	m.invoke (null, r1, ec);
 	assert !ec.gotIt;
 	m.invoke (null, r2, ec);
 	assert ec.gotIt;
+    }
+
+    @Test
+    public void testCatchFinallyHandling () throws ReflectiveOperationException {
+	Method m = getMethod ("C", "public class C { public static void f (Runnable r, Runnable iaec, Runnable finallyRunner) { " +
+			      "try { r.run (); } catch (IllegalArgumentException e) { iaec.run (); } finally { finallyRunner.run (); }}}",
+			      "f", Runnable.class, Runnable.class, Runnable.class);
+	Runnable r1 = () -> {/* empty */};
+	Runnable r2 = () -> { throw new IllegalArgumentException (); };
+	DidItRun exceptionHandler = new DidItRun ();
+	DidItRun finallyHandler = new DidItRun ();
+
+	m.invoke (null, r1, exceptionHandler, finallyHandler);
+	assert !exceptionHandler.gotIt;
+	assert finallyHandler.gotIt;
+	finallyHandler = new DidItRun ();
+	m.invoke (null, r2, exceptionHandler, finallyHandler);
+	assert exceptionHandler.gotIt;
+	assert finallyHandler.gotIt;
     }
 
     private static class TestAutoCloseable implements AutoCloseable {
@@ -36,7 +55,7 @@ public class TestTryResources extends CompileAndRun {
 	}
     }
 
-    private static class ExceptionCatcher implements Runnable {
+    private static class DidItRun implements Runnable {
 	boolean gotIt = false;
 
 	@Override public void run () {
