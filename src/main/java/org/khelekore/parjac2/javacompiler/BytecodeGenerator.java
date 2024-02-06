@@ -572,6 +572,7 @@ public class BytecodeGenerator {
 	}
 
 	private void handleThrowStatement (CodeBuilder cb, ThrowStatement ts) {
+	    cb.lineNumber (ts.position ().getLineNumber ());
 	    handleStatements (cb, ts.expression ());
 	    cb.athrow ();
 	}
