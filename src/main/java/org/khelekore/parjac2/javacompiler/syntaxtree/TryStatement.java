@@ -2,6 +2,7 @@ package org.khelekore.parjac2.javacompiler.syntaxtree;
 
 import java.util.List;
 
+import org.khelekore.parjac2.javacompiler.ReturnState;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
@@ -11,6 +12,8 @@ public class TryStatement extends SyntaxTreeNode {
     private final Block block;
     private final Catches catches;
     private final Finally finallyBlock;
+
+    private ReturnState blockReturnStatus;
 
     public TryStatement (Rule rule, ParseTreeNode n, List<ParseTreeNode> children) {
 	super (n.position ());
@@ -71,5 +74,13 @@ public class TryStatement extends SyntaxTreeNode {
 	    v.accept (catches);
 	if (finallyBlock != null)
 	    v.accept (finallyBlock);
+    }
+
+    public void blockReturnStatus (ReturnState blockReturnStatus) {
+	this.blockReturnStatus = blockReturnStatus;
+    }
+
+    public ReturnState blockReturnStatus () {
+	return blockReturnStatus;
     }
 }

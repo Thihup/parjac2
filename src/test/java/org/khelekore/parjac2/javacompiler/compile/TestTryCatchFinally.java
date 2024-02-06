@@ -27,13 +27,21 @@ public class TestTryCatchFinally extends CompileAndRun {
      * TODO: and adds a jump to position outside of method (also wrong)
      * TODO: the jump is to an implicit return that we should not have since we always throw exceptions
      */
-    /*
     @Test
     public void testTryFinallyTryAlwaysThrows () throws ReflectiveOperationException {
 	Method m = getMethod ("C", "import java.io.*; class C { public static int a (boolean b) throws IOException {" +
 			      "int x = 7; try { if (b) throw new IOException (); else throw new RuntimeException (); } finally { x++; }}}",
 			      "a", Boolean.TYPE);
-	m.invoke (null, false);
+	try {
+	    m.invoke (null, false);
+	} catch (InvocationTargetException e) {
+	    assert e.getCause () instanceof RuntimeException;
+	}
+
+	try {
+	    m.invoke (null, true);
+	} catch (InvocationTargetException e) {
+	    assert e.getCause () instanceof IOException;
+	}
     }
-    */
 }

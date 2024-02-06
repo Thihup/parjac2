@@ -13,20 +13,6 @@ import org.khelekore.parjac2.parsetree.TokenNode;
 
 public class ReturnChecker extends SemanticCheckerBase {
 
-    private enum State {
-	RETURNS,      // returns or throws
-	SOFT_RETURN,  // returns or throws, but we treat it softly, see handleIf
-	NO_RETURN;    // does not return or throw
-
-	public State and (State other) {
-	    return values () [Math.max (ordinal (), other.ordinal ())];
-	}
-
-	public State or (State other) {
-	    return values () [Math.min (ordinal (), other.ordinal ())];
-	}
-    }
-
     // current loop or switch
     private static final String CURRENT_LOOP = "";
 
@@ -52,8 +38,8 @@ public class ReturnChecker extends SemanticCheckerBase {
 	ParseTreeNode body = m.getMethodBody ();
 	if (body instanceof Block block) {
 	    Map<String, ParseTreeNode> labels = new HashMap<> ();
-	    State endsWithReturnOrThrow = endsWithReturnOrThrow (block.get (), labels);
-	    if (endsWithReturnOrThrow != State.RETURNS) {
+	    ReturnState endsWithReturnOrThrow = endsWithReturnOrThrow (block.get (), labels);
+	    if (!endsWithReturnOrThrow.endsOrThrows ()) {
 		if (returnRequired)
 		    error (block, "Method %s does not end with return or throw", m.name ());
 		else
@@ -62,36 +48,35 @@ public class ReturnChecker extends SemanticCheckerBase {
 	}
     }
 
-    private State checkStatement (ParseTreeNode p, Map<String, ParseTreeNode> labels) {
+    private ReturnState checkStatement (ParseTreeNode p, Map<String, ParseTreeNode> labels) {
 	if (p == null)
-	    return State.NO_RETURN;
+	    return ReturnState.NO_RETURN;
 	if (p instanceof Block b) {
 	    return endsWithReturnOrThrow (b.get (), labels);
 	}
 	return endsWithReturnOrThrow (List.of (p), labels);
     }
 
-    private State endsWithReturnOrThrow (List<ParseTreeNode> ls, Map<String, ParseTreeNode> labels) {
+    private ReturnState endsWithReturnOrThrow (List<ParseTreeNode> ls, Map<String, ParseTreeNode> labels) {
 	int unreachableStart = -1;
-	State hasReturnOrThrow = State.NO_RETURN;
+	ReturnState hasReturnOrThrow = ReturnState.NO_RETURN;
 	for (int i = 0, s = ls.size (); i < s; i++) {
 	    ParseTreeNode p = ls.get (i);
 	    // Useful for debugging
 	    //System.err.println ("Checking return for: " + p + ", " + p.getClass ().getName ());
-	    if (hasReturnOrThrow == State.RETURNS) {
+	    if (hasReturnOrThrow.endsOrThrows ()) {
 		error (p, "Unreachable code");
 		unreachableStart = i;
 		break;
-	    }
-	    if (hasReturnOrThrow == State.SOFT_RETURN) {
+	    } else if (hasReturnOrThrow == ReturnState.SOFT_RETURN) {
 		warning (p, "Unreachable code");
 		if (unreachableStart < 0)
 		    unreachableStart = i;
 	    }
 	    switch (p) {
-	    case ReturnStatement rs -> hasReturnOrThrow = State.RETURNS;
-	    case ThrowStatement ts -> hasReturnOrThrow = State.RETURNS;
-	    case BytecodeBlockBase bb -> hasReturnOrThrow = State.RETURNS;
+	    case ReturnStatement rs -> hasReturnOrThrow = ReturnState.RETURNS;
+	    case ThrowStatement ts -> hasReturnOrThrow = ReturnState.THROWS;
+	    case BytecodeBlockBase bb -> hasReturnOrThrow = ReturnState.RETURNS;
 
 	    case IfThenStatement ifts -> hasReturnOrThrow = handleIf (ifts, labels);
 
@@ -128,9 +113,9 @@ public class ReturnChecker extends SemanticCheckerBase {
 	return hasReturnOrThrow;
     }
 
-    private State handleIf (IfThenStatement ifts, Map<String, ParseTreeNode> labels) {
+    private ReturnState handleIf (IfThenStatement ifts, Map<String, ParseTreeNode> labels) {
 	handleStatementList (ifts.test (), labels);
-	State endsWithReturnOrThrow = checkStatement (ifts.thenPart (), labels);
+	ReturnState endsWithReturnOrThrow = checkStatement (ifts.thenPart (), labels);
 	ParseTreeNode ep = ifts.elsePart ();
 	if (ep == null) {
 	    // The JLS wants to allow if(DEBUG) { ... } <whatever> to not warn no matter
@@ -138,42 +123,42 @@ public class ReturnChecker extends SemanticCheckerBase {
 	    // This also means that we will require things that follow to have a return
 	    // (but code generation may remove that).
 	    if (IfGenerator.isTrue (ifts.test (), javaTokens))
-		return State.SOFT_RETURN;
+		return ReturnState.SOFT_RETURN;
 	} else {
-	    State endsWithReturnOrThrowElse = checkStatement (ep, labels);
+	    ReturnState endsWithReturnOrThrowElse = checkStatement (ep, labels);
 	    return endsWithReturnOrThrow.and (endsWithReturnOrThrowElse);
 	}
 
-	return State.NO_RETURN;
+	return ReturnState.NO_RETURN;
     }
 
-    private State handleWhile (WhileStatement ws, Map<String, ParseTreeNode> labels) {
+    private ReturnState handleWhile (WhileStatement ws, Map<String, ParseTreeNode> labels) {
 	try (LabelPopper ac = pushLoop (ws, labels)) {
 	    handleStatementList (ws.expression (), labels);
 	    checkStatement (ws.statement (), labels);
 	    // TODO: investigate infinite loops
-	    return State.NO_RETURN;  // we do not know if it runs or not
+	    return ReturnState.NO_RETURN;  // we do not know if it runs or not
 	}
     }
 
-    private State handleDo (DoStatement ds, Map<String, ParseTreeNode> labels) {
+    private ReturnState handleDo (DoStatement ds, Map<String, ParseTreeNode> labels) {
 	try (LabelPopper ac = pushLoop (ds, labels)) {
 	    handleStatementList (ds.expression (), labels);
 	    checkStatement (ds.statement (), labels);
 	    // TODO: investigate infinite loops
-	    return State.NO_RETURN;
+	    return ReturnState.NO_RETURN;
 	}
     }
 
-    private State handleBasicFor (BasicForStatement bfs, Map<String, ParseTreeNode> labels) {
+    private ReturnState handleBasicFor (BasicForStatement bfs, Map<String, ParseTreeNode> labels) {
 	try (LabelPopper ac = pushLoop (bfs, labels)) {
 	    handleStatementList (bfs.forInit (), labels);
 	    handleStatementList (bfs.forUpdate (), labels);
 	    checkStatement (bfs.statement (), labels);
 
 	    if (isInfinite (bfs.expression ()))
-		return State.RETURNS; // TODO: do we want to have an infinite?
-	    return State.NO_RETURN;   // we do not know if it runs or not
+		return ReturnState.RETURNS; // TODO: do we want to have an infinite?
+	    return ReturnState.NO_RETURN;   // we do not know if it runs or not
 	}
     }
 
@@ -190,29 +175,30 @@ public class ReturnChecker extends SemanticCheckerBase {
 	}
     }
 
-    private State handleEnhancedFor (EnhancedForStatement efs, Map<String, ParseTreeNode> labels) {
+    private ReturnState handleEnhancedFor (EnhancedForStatement efs, Map<String, ParseTreeNode> labels) {
 	try (LabelPopper ac = pushLoop (efs, labels)) {
 	    checkStatement (efs.statement (), labels);
-	    return State.NO_RETURN;
+	    return ReturnState.NO_RETURN;
 	}
     }
 
-    private State handleSwitch (SwitchExpressionOrStatement sw, Map<String, ParseTreeNode> labels) {
+    private ReturnState handleSwitch (SwitchExpressionOrStatement sw, Map<String, ParseTreeNode> labels) {
 	try (LabelPopper ac = pushLoop (sw, labels)) {
 	    return checkStatement (sw.block (), labels);
 	}
     }
 
-    private State handleLambdaExpression (LambdaExpression le, Map<String, ParseTreeNode> labels) {
+    private ReturnState handleLambdaExpression (LambdaExpression le, Map<String, ParseTreeNode> labels) {
 	// The lambda body executes in another context, so new labels for it.
 	return checkStatement (le.body (), new HashMap<> ());
     }
 
-    private State handleTry (TryStatement t, Map<String, ParseTreeNode> labels) {
+    private ReturnState handleTry (TryStatement t, Map<String, ParseTreeNode> labels) {
 	handleStatementList (t.resources (), labels);
-	State blockEndsWithReturnOrThrow = checkStatement (t.block (), labels);
+	ReturnState blockEndsWithReturnOrThrow = checkStatement (t.block (), labels);
+	t.blockReturnStatus (blockEndsWithReturnOrThrow);
 
-	State allCatchReturnsOrThrows = State.RETURNS;
+	ReturnState allCatchReturnsOrThrows = ReturnState.RETURNS;
 	Catches c = t.catches ();
 	if (c != null) {
 	    for (ParseTreeNode cs : c.get ()) {
@@ -220,12 +206,12 @@ public class ReturnChecker extends SemanticCheckerBase {
 	    }
 	}
 
-	State finallyReturnsOrThrows = State.NO_RETURN;
+	ReturnState finallyReturnsOrThrows = ReturnState.NO_RETURN;
 	Finally fb = t.finallyBlock ();
 	if (fb != null)
 	    finallyReturnsOrThrows = checkStatement (fb.block (), labels);
 
-	State s1 = blockEndsWithReturnOrThrow.and (allCatchReturnsOrThrows);
+	ReturnState s1 = blockEndsWithReturnOrThrow.and (allCatchReturnsOrThrows);
 	return s1.or (finallyReturnsOrThrows);
     }
 

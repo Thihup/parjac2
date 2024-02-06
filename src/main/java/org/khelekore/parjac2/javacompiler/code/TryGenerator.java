@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.khelekore.parjac2.javacompiler.ClassDescUtils;
 import org.khelekore.parjac2.javacompiler.MethodContentGenerator;
+import org.khelekore.parjac2.javacompiler.ReturnState;
 import org.khelekore.parjac2.javacompiler.syntaxtree.CatchClause;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Catches;
 import org.khelekore.parjac2.javacompiler.syntaxtree.Finally;
@@ -48,11 +49,13 @@ public class TryGenerator {
 
 	Label finallyStart = cb.newBoundLabel ();
 	Finally finallyBlock = t.finallyBlock ();
-	if (finallyBlock != null) {
-	    cb.labelBinding (next.label);
-	    mcg.handleStatements (cb, finallyBlock);
+	if (t.blockReturnStatus () != ReturnState.THROWS) {
+	    if (finallyBlock != null) {
+		cb.labelBinding (next.label);
+		mcg.handleStatements (cb, finallyBlock);
+	    }
+	    cb.goto_ (afterTry);
 	}
-	cb.goto_ (afterTry);
 
 	int exceptionSlot = cb.allocateLocal (TypeKind.ReferenceType);
 	Label finallyAfterCatch = finallyBlock != null ? cb.newLabel () : null;
