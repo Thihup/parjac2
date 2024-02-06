@@ -22,6 +22,7 @@ import io.github.dmlloyd.classfile.MethodSignature;
 import io.github.dmlloyd.classfile.Opcode;
 import io.github.dmlloyd.classfile.Signature;
 import io.github.dmlloyd.classfile.TypeKind;
+import io.github.dmlloyd.classfile.attribute.ExceptionsAttribute;
 import io.github.dmlloyd.classfile.attribute.SignatureAttribute;
 import io.github.dmlloyd.classfile.attribute.SourceFileAttribute;
 
@@ -259,6 +260,12 @@ public class BytecodeGenerator {
 			}
 			if (msh.signature () != null)
 			    mb.with (SignatureAttribute.of (MethodSignature.parseFrom (msh.signature ())));
+
+			List<ClassType> thrownTypes = m.thrownTypes ();
+			if (thrownTypes != null) {
+			    List<ClassDesc> cdts = thrownTypes.stream ().map (ClassDescUtils::getClassDesc).toList ();
+			    mb.with (ExceptionsAttribute.ofSymbols (cdts));
+			}
 		    });
 	    });
     }
