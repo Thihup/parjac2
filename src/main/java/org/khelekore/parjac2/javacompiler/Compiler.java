@@ -156,7 +156,7 @@ public class Compiler {
 	    return;
 
 	runTimed (() -> SemanticCheckerBase.runChecks (cip, javaTokens, trees, diagnostics, DuplicateFinder::new),
-		  "Detecting duplicate methods");
+		  "Detecting duplicates");
 	if (diagnostics.hasError ())
 	    return;
 
