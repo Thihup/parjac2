@@ -2,15 +2,14 @@ package org.khelekore.parjac2.javacompiler;
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
-import java.util.List;
 import java.util.Map;
 
-import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.parser.ParsePosition;
 
 import io.github.dmlloyd.classfile.MethodSignature;
 import io.github.dmlloyd.classfile.Signature;
+import io.github.dmlloyd.classfile.attribute.ExceptionsAttribute;
 
 /** description of a method in a class. Used to make compiled
  *  methods and resource methods be handled the same way.
@@ -58,5 +57,5 @@ public interface MethodInfo {
     }
 
     /** Get the thrown ClassTypes, can only be used on code we are compiling */
-    List<ClassType> thrownTypes ();
+    ExceptionsAttribute exceptions ();
 }

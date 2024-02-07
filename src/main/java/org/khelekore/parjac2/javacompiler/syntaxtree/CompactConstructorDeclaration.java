@@ -9,6 +9,8 @@ import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
+import io.github.dmlloyd.classfile.attribute.ExceptionsAttribute;
+
 public class CompactConstructorDeclaration extends ConstructorBase {
     private final List<ParseTreeNode> modifiers;
     private final String name;
@@ -66,6 +68,10 @@ public class CompactConstructorDeclaration extends ConstructorBase {
 
     @Override public ConstructorBody body () {
 	return body;
+    }
+
+    @Override public ExceptionsAttribute exceptions () {
+	return null;
     }
 
     @Override public List<ClassType> thrownTypes () {

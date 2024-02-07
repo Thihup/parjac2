@@ -261,10 +261,9 @@ public class BytecodeGenerator {
 			if (msh.signature () != null)
 			    mb.with (SignatureAttribute.of (MethodSignature.parseFrom (msh.signature ())));
 
-			List<ClassType> thrownTypes = m.thrownTypes ();
+			ExceptionsAttribute thrownTypes = m.exceptions ();
 			if (thrownTypes != null) {
-			    List<ClassDesc> cdts = thrownTypes.stream ().map (ClassDescUtils::getClassDesc).toList ();
-			    mb.with (ExceptionsAttribute.ofSymbols (cdts));
+			    mb.with (thrownTypes);
 			}
 		    });
 	    });

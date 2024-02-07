@@ -4,11 +4,14 @@ import java.util.Collections;
 import java.util.List;
 
 import org.khelekore.parjac2.javacompiler.Context;
+import org.khelekore.parjac2.javacompiler.ExceptionsAttributeUtils;
 import org.khelekore.parjac2.javacompiler.JavaTokens;
 import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
+
+import io.github.dmlloyd.classfile.attribute.ExceptionsAttribute;
 
 public class ConstructorDeclaration extends ConstructorBase {
     private final List<ParseTreeNode> modifiers;
@@ -107,5 +110,9 @@ public class ConstructorDeclaration extends ConstructorBase {
 
     @Override public List<ClassType> thrownTypes () {
 	return t == null ? null : t.thrownTypes ();
+    }
+
+    @Override public ExceptionsAttribute exceptions () {
+	return ExceptionsAttributeUtils.get (thrownTypes ());
     }
 }

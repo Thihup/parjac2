@@ -25,6 +25,8 @@ import org.khelekore.parjac2.parser.Token;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
 import org.khelekore.parjac2.parsetree.TokenNode;
 
+import io.github.dmlloyd.classfile.attribute.ExceptionsAttribute;
+
 public class ClassSetter {
 
     private final JavaTokens javaTokens;
@@ -1954,7 +1956,7 @@ public class ClassSetter {
 	    throw new IllegalStateException ("Not implemented yet");
 	}
 
-	@Override public List<ClassType> thrownTypes () {
+	@Override public ExceptionsAttribute exceptions () {
 	    return null;
 	}
     }

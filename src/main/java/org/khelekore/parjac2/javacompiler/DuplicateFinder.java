@@ -9,10 +9,12 @@ import java.util.Map;
 import java.util.Set;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
-import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.TypeDeclaration;
 import org.khelekore.parjac2.parser.ParsePosition;
+
+import io.github.dmlloyd.classfile.attribute.ExceptionsAttribute;
+import io.github.dmlloyd.classfile.constantpool.ClassEntry;
 
 public class DuplicateFinder extends SemanticCheckerBase {
 
@@ -47,13 +49,14 @@ public class DuplicateFinder extends SemanticCheckerBase {
     }
 
     public void checkThrows (MethodInfo mi) {
-	List<ClassType> ts = mi.thrownTypes ();
-	if (ts != null) {
-	    Set<String> seen = new HashSet<> ();
-	    for (ClassType ct : ts) {
-		String fqn = ct.getFullDotName ();
-		if (!seen.add (fqn))
-		    warning (ct, "Duplicate exception thrown: %s", fqn);
+	ExceptionsAttribute ea = mi.exceptions ();
+	if (ea != null) {
+	    List<ClassEntry> ts = ea.exceptions ();
+	    Set<ClassDesc> seen = new HashSet<> ();
+	    for (ClassEntry ce : ts) {
+		ClassDesc cd = ce.asSymbol ();
+		if (!seen.add (cd))
+		    warning (mi.position (), "Duplicate exception thrown: %s", cd.displayName ());
 	    }
 	}
     }

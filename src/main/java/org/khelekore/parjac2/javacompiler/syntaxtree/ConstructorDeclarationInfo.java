@@ -34,6 +34,8 @@ public interface ConstructorDeclarationInfo extends MethodInfo {
 
     void owner (FullNameHandler owner);
 
+    List<ClassType> thrownTypes ();
+
     @Override default MethodTypeDesc methodTypeDesc () {
 	return ClassDescUtils.methodTypeDesc (getFormalParameterList (), result ());
     }

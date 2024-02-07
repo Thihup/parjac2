@@ -1,17 +1,21 @@
 package org.khelekore.parjac2.javacompiler.syntaxtree;
 
+import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.khelekore.parjac2.javacompiler.ClassDescUtils;
 import org.khelekore.parjac2.javacompiler.Context;
+import org.khelekore.parjac2.javacompiler.ExceptionsAttributeUtils;
 import org.khelekore.parjac2.javacompiler.Flags;
 import org.khelekore.parjac2.javacompiler.MethodInfo;
 import org.khelekore.parjac2.parser.ParsePosition;
 import org.khelekore.parjac2.parser.Rule;
 import org.khelekore.parjac2.parsetree.NodeVisitor;
 import org.khelekore.parjac2.parsetree.ParseTreeNode;
+
+import io.github.dmlloyd.classfile.attribute.ExceptionsAttribute;
 
 public class MethodDeclarationBase extends FlaggedBase implements MethodInfo {
 
@@ -135,8 +139,12 @@ public class MethodDeclarationBase extends FlaggedBase implements MethodInfo {
 	return header.getThrows ();
     }
 
-    @Override public List<ClassType> thrownTypes () {
+    public List<ClassType> thrownTypes () {
 	return header.thrownTypes ();
+    }
+
+    @Override public ExceptionsAttribute exceptions () {
+	return ExceptionsAttributeUtils.get (thrownTypes ());
     }
 
     public ParseTreeNode getMethodBody () {

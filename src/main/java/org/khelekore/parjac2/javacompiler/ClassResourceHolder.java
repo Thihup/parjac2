@@ -12,12 +12,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import org.khelekore.parjac2.CompilerDiagnosticCollector;
 import org.khelekore.parjac2.NoSourceDiagnostics;
-import org.khelekore.parjac2.javacompiler.syntaxtree.ClassType;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHandler;
 import org.khelekore.parjac2.javacompiler.syntaxtree.FullNameHelper;
 import org.khelekore.parjac2.parser.ParsePosition;
@@ -28,6 +29,7 @@ import io.github.dmlloyd.classfile.ClassSignature;
 import io.github.dmlloyd.classfile.ClassFile;
 import io.github.dmlloyd.classfile.FieldModel;
 import io.github.dmlloyd.classfile.MethodModel;
+import io.github.dmlloyd.classfile.attribute.ExceptionsAttribute;
 import io.github.dmlloyd.classfile.attribute.SignatureAttribute;
 import io.github.dmlloyd.classfile.constantpool.ClassEntry;
 
@@ -221,6 +223,8 @@ public class ClassResourceHolder {
 	private Map<String, VariableInfo> fields;
 	private Map<String, List<MethodInfo>> methods;
 
+	private Lock lock = new ReentrantLock ();
+
 	public ClasspathClassInformation (FullNameHandler fullName) {
 	    this.fullName = fullName;
 	}
@@ -233,16 +237,21 @@ public class ClassResourceHolder {
 	    return fullName.getFullDotName ();
 	}
 
-	public synchronized void ensureNodeIsLoaded () throws IOException {
-	    if (loaded)
-		return;
-	    loaded = true;
-	    readNode ();
+	public void ensureNodeIsLoaded () throws IOException {
+	    lock.lock ();
+	    try {
+		if (loaded)
+		    return;
+		loaded = true;
+		parse (readNode ());
+	    } finally {
+		lock.unlock ();
+	    }
 	}
 
-	public abstract void readNode () throws IOException;
+	public abstract byte[] readNode () throws IOException;
 
-	protected void readNode (byte[] data) throws IOException {
+	private void parse (byte[] data) throws IOException {
 	    try {
 		ClassModel model = ClassFile.of ().parse (data);
 		ClassInfoExtractor cie = new ClassInfoExtractor (this, model);
@@ -279,11 +288,11 @@ public class ClassResourceHolder {
 	    return getClass ().getName () + "{" + path + "}";
 	}
 
-	@Override public void readNode () throws IOException {
+	@Override public byte[] readNode () throws IOException {
 	    try (JarFile jf = new JarFile (ctSymFile.toFile ())) {
 		JarEntry e = jf.getJarEntry (path);
 		try (InputStream jis = jf.getInputStream (e)) {
-		    readNode (jis.readAllBytes ());
+		    return jis.readAllBytes ();
 		}
 	    }
 	}
@@ -305,8 +314,8 @@ public class ClassResourceHolder {
 	    return getClass ().getName () + "{" + path + "}";
 	}
 
-	@Override public void readNode () throws IOException {
-	    readNode (Files.readAllBytes (path));
+	@Override public byte[] readNode () throws IOException {
+	    return Files.readAllBytes (path);
 	}
 
 	@Override public String getPath () {
@@ -328,13 +337,13 @@ public class ClassResourceHolder {
 	    return getClass ().getName () + "{" + jarfile + "!" + path + "}";
 	}
 
-	@Override public void readNode () throws IOException {
+	@Override public byte[] readNode () throws IOException {
 	    // I tried to cache the jarfiles, but that made things a lot slower
 	    // due to less multi threading. Do if someone can prove it makes sense.
 	    try (JarFile jf = new JarFile (jarfile.toFile ())) {
 		JarEntry e = jf.getJarEntry (path);
 		try (InputStream jis = jf.getInputStream (e)) {
-		    readNode (jis.readAllBytes ());
+		    return jis.readAllBytes ();
 		}
 	    }
 	}
@@ -426,8 +435,10 @@ public class ClassResourceHolder {
 		    // TODO: example from String.transform
 		    // TODO:   <R:Ljava/lang/Object;>(Ljava/util/function/Function<-Ljava/lang/String;+TR;>;)TR;
 		}
+
+		ExceptionsAttribute thrownExceptions = mm.findAttribute (Attributes.EXCEPTIONS).orElse (null);
 		List<MethodInfo> ls = methods.computeIfAbsent (name, n -> new ArrayList<> ());
-		ls.add (new ClassResourceMethod (r.fullName, name, flags, md, signature));
+		ls.add (new ClassResourceMethod (r.fullName, name, flags, md, signature, thrownExceptions));
 	    }
 	    r.methods = methods;
 	}
@@ -450,17 +461,20 @@ public class ClassResourceHolder {
 	private final int flags;
 	private final MethodTypeDesc md;
 	private final String signature; // we will need this for generic handling
+	private final ExceptionsAttribute thrownExceptions;
 
 	private FullNameHandler returnType;
 	private List<FullNameHandler> params;
 
 	public ClassResourceMethod (FullNameHandler owner, String name, int flags,
-				    MethodTypeDesc md, String signature) {
-	    this.owner = owner;;
+				    MethodTypeDesc md, String signature,
+				    ExceptionsAttribute thrownExceptions) {
+	    this.owner = owner;
 	    this.name = name;
 	    this.flags = flags;
 	    this.md = md;
 	    this.signature = signature;
+	    this.thrownExceptions = thrownExceptions;
 	}
 
 	@Override public String toString () {
@@ -518,8 +532,8 @@ public class ClassResourceHolder {
 	    }
 	}
 
-	@Override public List<ClassType> thrownTypes () {
-	    throw new IllegalStateException ("Not implemented");
+	@Override public ExceptionsAttribute exceptions () {
+	    return thrownExceptions;
 	}
     }
 }
