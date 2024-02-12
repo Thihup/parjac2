@@ -93,6 +93,13 @@ public interface FullNameHandler {
 	return SimpleNameHandler.of (dollarName.replace ('$', '.'), dollarName);
     }
 
+    /** Get the full name handler from an internal name: "java/lang/InterruptedException" */
+    static FullNameHandler ofInternalName (String slashName) {
+	String dollarName = slashName.replace ('/', '.');
+	String dotName = dollarName.replace ('$', '.');
+	return SimpleNameHandler.of (dotName, dollarName);
+    }
+
     static FullNameHandler of (String dot, String dollar) {
 	return SimpleNameHandler.of (dot, dollar);
     }

@@ -17,6 +17,5 @@ public abstract class FlaggedBase extends SyntaxTreeNode implements Flagged {
     /** Set the flags for this type */
     @Override public void setFlags (int flags) {
 	this.flags = flags;
-	System.err.println ("FlaggedBase: flags: " + Integer.toHexString (flags));
     }
 }

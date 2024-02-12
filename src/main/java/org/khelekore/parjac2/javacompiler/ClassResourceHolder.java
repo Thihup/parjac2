@@ -131,9 +131,7 @@ public class ClassResourceHolder {
     private static FullNameHandler getFullName (String name, String extension, char dirSeparator) {
 	name = name.substring (0, name.length () - extension.length ());
 	String slashName = name.replace (dirSeparator, '/');
-	String dollarName = slashName.replace ('/', '.');
-	String dotName = dollarName.replace ('$', '.');
-	return FullNameHandler.of (dotName, dollarName);
+	return FullNameHandler.ofInternalName (slashName);
     }
 
     private void storeName (ClasspathClassInformation r) {
@@ -392,9 +390,7 @@ public class ClassResourceHolder {
 
 	private FullNameHandler getFullName (ClassEntry ce) {
 	    String slashName = ce.name ().stringValue ();
-	    String dollarName = slashName.replace ('/', '.');
-	    String dotName = dollarName.replace ('$', '.');
-	    return FullNameHandler.of (dotName, dollarName);
+	    return FullNameHandler.ofInternalName (slashName);
 	}
 
 	private void parseSignature () {

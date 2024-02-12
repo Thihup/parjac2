@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.SequencedSet;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
@@ -49,6 +50,20 @@ public class ClassInformationProvider {
 
     public SequencedSet<FullNameHandler> getAllSuperTypes (TypeDeclaration td) throws IOException {
 	return getAllSuperTypes (getFullName (td));
+    }
+
+    public boolean isSuperClass (FullNameHandler supertype, FullNameHandler subtype, CompilerDiagnosticCollector diagnostics) {
+	Set<FullNameHandler> allSuperTypes = getAllSuperTypesUnchecked (subtype, diagnostics);
+	return allSuperTypes.contains (supertype);
+    }
+
+    public SequencedSet<FullNameHandler> getAllSuperTypesUnchecked (FullNameHandler fn, CompilerDiagnosticCollector diagnostics) {
+	try {
+	    return getAllSuperTypes (fn);
+	} catch (IOException e) {
+	    diagnostics.report (new NoSourceDiagnostics ("Failed to load super types for class: " + fn.getFullDotName (), e));
+	}
+	return new TreeSet<> ();
     }
 
     public SequencedSet<FullNameHandler> getAllSuperTypes (FullNameHandler fn) throws IOException {

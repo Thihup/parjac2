@@ -72,4 +72,41 @@ public class TestReturnChecker extends TestCompilationErrorHandling {
 		   "String s = br.readLine (); }}}", 0);
 	testClass ("C.java", "class C { void foo () { try (String s = bar ()) { int i = s.length (); }} String bar () { return \"\"; }}", 1);
     }
+
+    @Test
+    public void testExceptionNeedsToBeDeclared () {
+	testClass ("C.java", "class C { void foo () throws InterruptedException { throw new InterruptedException (); }}", 0);
+	testClass ("C.java", "import java.io.IOException; class C { void a () throws IOException { throw new IOException (); }}", 0);
+	testClass ("C.java", "import java.io.IOException; class C { void a () { throw new IOException (); }}", 1);
+    }
+
+    @Test
+    public void testRuntimeExceptionsAreAllowed () {
+	testClass ("C.java", "class C { void foo () { throw new RuntimeException (); }}", 0);
+	testClass ("C.java", "class C { void foo () { throw new InterruptedException (); }}", 1);
+    }
+
+    @Test
+    public void testThrowingNonExceptionGivesErrors () {
+	testClass ("C.java", "class C { static void a () { throw Integer.valueOf (2); }}", 1);
+    }
+
+    @Test
+    public void testCaughtExceptionsAreAllowed () {
+	testClass ("C.java", "class C { void foo () { try { throw new InterruptedException (); } catch (InterruptedException e) {} }}", 0);
+    }
+
+    @Test
+    public void testThrownExceptionIsNotCaught () {
+	testClass ("C.java", "class C { void foo () { try { throw new InterruptedException (); } catch (NullPointerException e) {} }}", 1);
+    }
+
+    @Test
+    public void testThrowInLambda () {
+	testClass ("C.java", "class C { void foo () { Runnable r = () -> { }; }}", 0);
+	testClass ("C.java",
+		   "interface I { void x () throws InterruptedException;} " +
+		   "class C { void foo () { I i = () -> { throw new InterruptedException (); }; }}", 0);
+	testClass ("C.java", "class C { void foo () { Runnable r = () -> { throw new java.io.IOException ();}; }}", 1);
+    }
 }

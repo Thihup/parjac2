@@ -137,6 +137,7 @@ public class FullNameHelper {
 	case UnaryExpression ue -> primitiveType (ue.expression ());
 	case LambdaExpression le -> le.type ();
 	case MethodReference mr -> mr.type ();
+	case ThrowStatement ts -> type (ts.expression ());
 	case PostIncrementExpression pie -> type (pie.expression ());
 	case PostDecrementExpression pie -> type (pie.expression ());
 	case PreIncrementExpression pie -> type (pie.expression ());

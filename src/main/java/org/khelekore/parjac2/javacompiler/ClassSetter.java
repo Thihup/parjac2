@@ -304,7 +304,6 @@ public class ClassSetter {
 	    case BasicForStatement bfs -> handlePartsAndHandler (et, bfs, e -> checkBasicForExpression (e, bfs), partsToHandle);
 	    case EnhancedForStatement efs -> handlePartsAndHandler (et, efs, e -> checkEnhancedForExpression (e, efs), partsToHandle);
 
-	    case ThrowStatement ts -> handlePartsAndHandler (et, ts, e -> checkThrowStatement (e, ts), partsToHandle);
 	    case UnaryExpression ue -> handlePartsAndHandler (et, ue, e -> checkUnaryExpression (ue), partsToHandle);
 
 	    case DimExpr de -> handlePartsAndHandler (et, de, e -> checkDimExpr (de), partsToHandle);
@@ -373,7 +372,7 @@ public class ClassSetter {
 	FullNameHandler fo = FullNameHelper.type (ce);
 	FullNameHandler fi = FullNameHelper.type (ce.expression ());
 
-	if (fo.equals (fi) || getAllSuperTypes (fi).contains (fo)) {
+	if (fo.equals (fi) || cip.getAllSuperTypesUnchecked (fi, diagnostics).contains (fo)) {
 	    warning (ce, "Cast is not neccessary, expression is already: " + fi.getFullDotName ());
 	} else {
 	    if (fo.isPrimitive () && fi.isPrimitive ()) {
@@ -381,7 +380,7 @@ public class ClassSetter {
 		    error (ce, "Impossible cast from %s to %s", fi.getFullDotName (), fo.getFullDotName ());
 	    } else {
 		// We check that fo is a subclass of fi, complain if it is not
-		Set<FullNameHandler> supers = getAllSuperTypes (fo);
+		Set<FullNameHandler> supers = cip.getAllSuperTypesUnchecked (fo, diagnostics);
 		if (!supers.contains (fi)) {
 		    error (ce, "Impossible cast from %s to %s", fi.getFullDotName (), fo.getFullDotName ());
 		}
@@ -671,7 +670,7 @@ public class ClassSetter {
 
     private VariableInfo findField (EnclosingTypes et, String name) {
 	FullNameHandler fn = currentClass (et);
-	return getField (n -> et.enclosure ().getField (n), () -> getAllSuperTypes (fn), name);
+	return getField (n -> et.enclosure ().getField (n), () -> cip.getAllSuperTypesUnchecked (fn, diagnostics), name);
     }
 
     private String nonStaticAccess (String name) {
@@ -962,7 +961,7 @@ public class ClassSetter {
     }
 
     private boolean isIterable (FullNameHandler fn) {
-	Set<FullNameHandler> allSupers = getAllSuperTypes (fn);
+	Set<FullNameHandler> allSupers = cip.getAllSuperTypesUnchecked (fn, diagnostics);
 	return allSupers.contains (FullNameHandler.JL_ITERABLE);
     }
 
@@ -982,44 +981,6 @@ public class ClassSetter {
 	    type = fn.getFullDotName ();
 	}
 	error (test, "Test needs to evaluate to boolean value, current type: %s", type);
-    }
-
-    private void checkThrowStatement (EnclosingTypes et, ThrowStatement ts) {
-	ParseTreeNode exp = ts.expression ();
-	FullNameHandler fn = FullNameHelper.type (exp);
-	if (fn != null) {
-	    Set<FullNameHandler> allSupers = getAllSuperTypes (fn);
-	    List<FullNameHandler> allTypes = new ArrayList<> (allSupers.size () + 1);
-	    allTypes.add (fn);
-	    allTypes.addAll (allSupers);
-	    validateThrowable (exp, fn, allTypes);
-	    if (!isRuntimeException (allTypes)) {
-		validateThrowsContains (et, ts, allTypes);
-	    }
-	}
-    }
-
-    private void validateThrowsContains (EnclosingTypes et, ThrowStatement ts, List<FullNameHandler> exceptionTypes) {
-	List<ClassType> thrown = null;
-	while (et != null) {
-	    Enclosure<?> e = et.enclosure ();
-	    if (e instanceof EnclosingTypes.MethodEnclosure me) {
-		thrown = me.thrownTypes ();
-		break;
-	    } else if (e instanceof EnclosingTypes.TypeEnclosure) {
-		thrown = List.of ();
-		break;
-	    }
-	    et = et.previous ();
-	}
-
-	if (thrown != null) {
-	    Set<FullNameHandler> thrownTypes = thrown.stream ().map (ct -> ct.fullName ()).collect (Collectors.toSet ());
-	    for (FullNameHandler st : exceptionTypes)
-		if (thrownTypes.contains (st))
-		    return;
-	}
-	error (ts, "Exception not found in methods throws clause");
     }
 
     private void checkUnaryExpression (UnaryExpression ue) {
@@ -1072,7 +1033,7 @@ public class ClassSetter {
     private boolean isAutoCloseable (FullNameHandler fn) {
 	if (fn.equals (FullNameHandler.JL_AUTOCLOSEABLE))
 	    return true;
-	Set<FullNameHandler> allSupers = getAllSuperTypes (fn);
+	Set<FullNameHandler> allSupers = cip.getAllSuperTypesUnchecked (fn, diagnostics);
 	return allSupers.contains (FullNameHandler.JL_AUTOCLOSEABLE);
     }
 
@@ -1234,7 +1195,7 @@ public class ClassSetter {
 	    if (!have.isArray ())
 		return false;
 	    // both arrays
-	    if (isSuperClass (wanted.inner (), have.inner ()))
+	    if (cip.isSuperClass (wanted.inner (), have.inner (), diagnostics))
 		return true;
 	} else if (wanted.isPrimitive ()) {
 	    if (FullNameHelper.mayAutoCastPrimitives (have, wanted)) // widening
@@ -1248,7 +1209,7 @@ public class ClassSetter {
 		return wanted == FullNameHandler.JL_OBJECT;
 	    if (FullNameHelper.canAutoBoxTo (have, wanted))
 		return true;
-	    if (isSuperClass (wanted, have))
+	    if (cip.isSuperClass (wanted, have, diagnostics))
 		return true;
 	    if (isAutoboxSuperClass (wanted, have))
 		return true;
@@ -1258,23 +1219,9 @@ public class ClassSetter {
 
     private boolean isAutoboxSuperClass (FullNameHandler supertype, FullNameHandler subtype) {
 	FullNameHandler ab = FullNameHelper.getAutoBoxOption (subtype);
-	if (ab != null && isSuperClass (supertype, ab))
+	if (ab != null && cip.isSuperClass (supertype, ab, diagnostics))
 	    return true;
 	return false;
-    }
-
-    private boolean isSuperClass (FullNameHandler supertype, FullNameHandler subtype) {
-	Set<FullNameHandler> allSuperTypes = getAllSuperTypes (subtype);
-	return allSuperTypes.contains (supertype);
-    }
-
-    private Set<FullNameHandler> getAllSuperTypes (FullNameHandler subtype) {
-	try {
-	    return cip.getAllSuperTypes (subtype);
-	} catch (IOException e) {
-	    diagnostics.report (new NoSourceDiagnostics ("Failed to load super types for class: " + subtype, e));
-	}
-	return Set.of ();
     }
 
     private ParseTreeNode currentMethodReturn (EnclosingTypes et) {
@@ -1410,7 +1357,8 @@ public class ClassSetter {
     }
 
     private VariableInfo getField (FullNameHandler fn, String name) {
-	return getField (n -> cip.getFieldInformation (fn, n), () -> getAllSuperTypes (fn), name);
+	return getField (n -> cip.getFieldInformation (fn, n),
+			 () -> cip.getAllSuperTypesUnchecked (fn, diagnostics), name);
     }
 
     private VariableInfo getField (Function<String, VariableInfo> fieldGetter,
@@ -1861,7 +1809,7 @@ public class ClassSetter {
     private void validateThrowable (ParseTreeNode where, FullNameHandler fn) {
 	List<FullNameHandler> ls = new ArrayList<> ();
 	ls.add (fn);
-	ls.addAll (getAllSuperTypes (fn));
+	ls.addAll (cip.getAllSuperTypesUnchecked (fn, diagnostics));
 	validateThrowable (where, fn, ls);
     }
 
@@ -1872,10 +1820,6 @@ public class ClassSetter {
 
     private boolean isThrowable (List<FullNameHandler> allSupers) {
 	return allSupers.contains (FullNameHandler.JL_THROWABLE);
-    }
-
-    private boolean isRuntimeException (List<FullNameHandler> allSupers) {
-	return allSupers.contains (FullNameHandler.JL_RUNTIME_EXCEPTION);
     }
 
     private void error (ParseTreeNode where, String template, Object... args) {
