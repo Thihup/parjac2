@@ -591,7 +591,8 @@ public class SyntaxTreeBuilder {
 		return ConstantValueCalculator.bitNegate (javaTokens, (NumericLiteral)p);
 	    if (operator == javaTokens.MINUS && p instanceof NumericLiteral nl)
 		return nl.negate ();
-	    // TODO: deal with PLUS, MINUS, TILDE
+	    if (operator == javaTokens.PLUS && p instanceof NumericLiteral nl)
+		return p;
 	}
 	return new UnaryExpression (rule, n, children);
     }
