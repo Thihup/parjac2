@@ -31,4 +31,8 @@ public class LongLiteral extends TokenNode implements NumericLiteral {
     @Override public long longValue () {
 	return value;
     }
+
+    @Override public LongLiteral negate () {
+	return new LongLiteral (token (), -value, position ());
+    }
 }

@@ -589,6 +589,8 @@ public class SyntaxTreeBuilder {
 	    FullNameHandler fn = FullNameHelper.type (p);
 	    if (operator == javaTokens.TILDE && FullNameHelper.isIntegralType (fn))
 		return ConstantValueCalculator.bitNegate (javaTokens, (NumericLiteral)p);
+	    if (operator == javaTokens.MINUS && p instanceof NumericLiteral nl)
+		return nl.negate ();
 	    // TODO: deal with PLUS, MINUS, TILDE
 	}
 	return new UnaryExpression (rule, n, children);

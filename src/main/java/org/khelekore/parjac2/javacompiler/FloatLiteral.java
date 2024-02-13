@@ -31,4 +31,8 @@ public class FloatLiteral extends TokenNode implements NumericLiteral {
     @Override public long longValue () {
 	return (long)value;
     }
+
+    @Override public FloatLiteral negate () {
+	return new FloatLiteral (token (), -value, position ());
+    }
 }

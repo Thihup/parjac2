@@ -484,9 +484,9 @@ public class ClassSetter {
 	if (rhs instanceof IntLiteral il) {
 	    int intValue = il.intValue ();
 	    if (toType == FullNameHandler.BYTE)
-		return intValue < 1<<8;
+		return intValue >= Byte.MIN_VALUE && intValue <= Byte.MAX_VALUE;
 	    if (toType == FullNameHandler.SHORT)
-		return intValue < 1<<16;
+		return intValue >= Short.MIN_VALUE && intValue <= Short.MAX_VALUE;
 	}
 	return false;
     }

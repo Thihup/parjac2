@@ -1,6 +1,7 @@
 package org.khelekore.parjac2.javacompiler;
 
 import org.khelekore.parjac2.parser.ParsePosition;
+import org.khelekore.parjac2.parsetree.ParseTreeNode;
 
 public interface NumericLiteral {
     double doubleValue ();
@@ -9,4 +10,6 @@ public interface NumericLiteral {
     long longValue ();
 
     ParsePosition position ();
+
+    ParseTreeNode negate ();
 }

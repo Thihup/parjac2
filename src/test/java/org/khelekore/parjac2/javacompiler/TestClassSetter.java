@@ -546,6 +546,26 @@ public class TestClassSetter {
 	getTypes ("class C { long x = (long)5; }");
     }
 
+    @Test public void testTooLargeByte () {
+	getTypes ("class C { byte b = 128; }", 1);
+    }
+
+    @Test public void testTooSmallByte () {
+	getTypes ("class C { byte b = -129; }", 1);
+    }
+
+    @Test public void testNegativeWrappedByte () {
+	getTypes ("class C { byte x = -(-(-0)); }");
+    }
+
+    @Test public void testNegativeByte () {
+	getTypes ("class C { byte b = -1; }");
+    }
+
+    @Test public void testNegativeShort () {
+	getTypes ("class C { short b = -1; }");
+    }
+
     @Test
     public void testTwoPartString () {
 	getTypes ("class C { void foo () { int l = (\"a\" + \"b\").length (); }}");

@@ -31,4 +31,8 @@ public class IntLiteral extends TokenNode implements NumericLiteral {
     @Override public Integer getValue () {
 	return value;
     }
+
+    @Override public IntLiteral negate () {
+	return new IntLiteral (token (), -value, position ());
+    }
 }
