@@ -22,11 +22,6 @@ public class TestTryCatchFinally extends CompileAndRun {
 	}
     }
 
-    /* TODO: this crashes during bytecode generation:
-     * TODO: it tries to inline the finally after the throws (which is wrong, since the try-block always throws)
-     * TODO: and adds a jump to position outside of method (also wrong)
-     * TODO: the jump is to an implicit return that we should not have since we always throw exceptions
-     */
     @Test
     public void testTryFinallyTryAlwaysThrows () throws ReflectiveOperationException {
 	Method m = getMethod ("C", "import java.io.*; class C { public static int a (boolean b) throws IOException {" +
