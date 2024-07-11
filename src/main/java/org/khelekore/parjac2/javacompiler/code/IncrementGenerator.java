@@ -63,13 +63,13 @@ public class IncrementGenerator {
 	    mcg.handleStatements (cb, aa.slot ());
 	    cb.dup2 ();   // dup or dup2?
 	    TypeKind kind = FullNameHelper.getTypeKind (FullNameHelper.type (aa));
-	    cb.arrayLoadInstruction (kind);
+	    cb.arrayLoad (kind);
 	    if (valueIsUsed && valueFromBeforeChange)
 		arrayDupX2 (cb, kind);
 	    addOne (cb, kind, change);
 	    if (valueIsUsed && !valueFromBeforeChange)
 		arrayDupX2 (cb, kind);
-	    cb.arrayStoreInstruction (kind);
+	    cb.arrayStore (kind);
 	} else {
 	    throw new IllegalStateException ("Unhandled post increment type: " + tn + ", " + tn.getClass ().getName () +
 					     ", " + tn.position ().toShortString ());
@@ -96,7 +96,7 @@ public class IncrementGenerator {
     private static void incInt (CodeBuilder cb, int slot, int value, boolean valueIsUsed, boolean valueFromBeforeChange) {
 	if (valueIsUsed && valueFromBeforeChange)
 	    cb.iload (slot);
-	cb.incrementInstruction (slot, value);
+	cb.iinc (slot, value);
 	if (valueIsUsed && !valueFromBeforeChange)
 	    cb.iload (slot);
     }
@@ -137,7 +137,7 @@ public class IncrementGenerator {
 	cb.iadd ();
 	if (valueIsUsed && !valueFromBeforeChange)
 	    cb.dup ();
-	cb.convertInstruction(TypeKind.IntType, tk);
+	cb.conversion(TypeKind.IntType, tk);
 	cb.istore (slot);
     }
 

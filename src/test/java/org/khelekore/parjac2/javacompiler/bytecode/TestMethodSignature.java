@@ -28,7 +28,7 @@ public class TestMethodSignature extends CodeModelTest {
 	assert mtd.parameterCount () == 1;
 	assert mtd.parameterType (0).equals (ConstantDescs.CD_boolean);
 
-	List<ExceptionsAttribute> ls = method.findAttributes (Attributes.EXCEPTIONS);
+	List<ExceptionsAttribute> ls = method.findAttributes (Attributes.exceptions());
 	assert ls.size () == 1 : "Failed to find correct exceptions";
     }
 }

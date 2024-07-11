@@ -101,7 +101,7 @@ public class CodeUtil {
 		    to = FullNameHandler.INT;
 		if (!to.equals (from)) {
 		    TypeKind tkFrom = FullNameHelper.getTypeKind (from);
-		    cb.convertInstruction (tkFrom, tkTo);
+		    cb.conversion (tkFrom, tkTo);
 		}
 	    }
 	} else if (to.getType () == FullNameHandler.Type.PRIMITIVE) {

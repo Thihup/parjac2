@@ -394,7 +394,7 @@ public class ClassResourceHolder {
 	}
 
 	private void parseSignature () {
-	    Optional<SignatureAttribute> o = model.findAttribute (Attributes.SIGNATURE);
+	    Optional<SignatureAttribute> o = model.findAttribute (Attributes.signature());
 	    if (o.isPresent ()) {
 		SignatureAttribute sa = o.get ();
 		r.signature = sa.asClassSignature ();
@@ -407,7 +407,7 @@ public class ClassResourceHolder {
 		String name = fm.fieldName ().stringValue ();
 		int flags = fm.flags ().flagsMask ();
 		String typeName = fm.fieldType ().stringValue ();
-		Optional<SignatureAttribute> osa = fm.findAttribute (Attributes.SIGNATURE);
+		Optional<SignatureAttribute> osa = fm.findAttribute (Attributes.signature());
 		String signature = null;
 		if (osa.isPresent ()) {
 		    signature = osa.get ().signature ().stringValue ();
@@ -423,7 +423,7 @@ public class ClassResourceHolder {
 		String name = mm.methodName ().stringValue ();
 		int flags = mm.flags ().flagsMask ();
 		MethodTypeDesc md = mm.methodTypeSymbol ();
-		Optional<SignatureAttribute> osa = mm.findAttribute (Attributes.SIGNATURE);
+		Optional<SignatureAttribute> osa = mm.findAttribute (Attributes.signature());
 		String signature = null;
 		if (osa.isPresent ()) {
 		    signature = osa.get ().signature ().stringValue ();
@@ -432,7 +432,7 @@ public class ClassResourceHolder {
 		    // TODO:   <R:Ljava/lang/Object;>(Ljava/util/function/Function<-Ljava/lang/String;+TR;>;)TR;
 		}
 
-		ExceptionsAttribute thrownExceptions = mm.findAttribute (Attributes.EXCEPTIONS).orElse (null);
+		ExceptionsAttribute thrownExceptions = mm.findAttribute (Attributes.exceptions()).orElse (null);
 		List<MethodInfo> ls = methods.computeIfAbsent (name, n -> new ArrayList<> ());
 		ls.add (new ClassResourceMethod (r.fullName, name, flags, md, signature, thrownExceptions));
 	    }

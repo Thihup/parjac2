@@ -407,7 +407,7 @@ public class BytecodeGenerator {
 		int slot = lv.vd ().slot ();
 		FullNameHandler fn = FullNameHelper.type (lv.type ());
 		TypeKind kind = FullNameHelper.getTypeKind (fn);
-		cb.loadInstruction (kind, slot);
+		cb.loadLocal (kind, slot);
 	    } else { // field
 		FieldGenerator.getField (this, cb, from, cip.getFullName (td), vi);
 	    }
@@ -475,7 +475,7 @@ public class BytecodeGenerator {
 		fr = FullNameHelper.type (p);
 		loadValue (cb, p, fr, fm, tkm);
 	    }
-	    cb.returnInstruction (tkm);
+	    cb.return_ (tkm);
 	}
 
 	private void loadValue (CodeBuilder cb, ParseTreeNode p, FullNameHandler fromType, FullNameHandler toType, TypeKind tkTo) {
@@ -528,7 +528,7 @@ public class BytecodeGenerator {
 			    MethodContentBuilder mcb = new MethodContentBuilder (classBuilder, name, lambdaFlags);
 			    mcb.handleStatements (cb, le.body ());
 			    TypeKind returnType = FullNameHelper.getTypeKind (le.result ());
-			    cb.returnInstruction (returnType);
+			    cb.return_ (returnType);
 			});
 		});
 	}
@@ -632,7 +632,7 @@ public class BytecodeGenerator {
 		    FullNameHandler fe = FullNameHelper.type (exp);
 		    TypeKind from = FullNameHelper.getTypeKind (fe);
 		    TypeKind to = FullNameHelper.getTypeKind (fn);
-		    cb.convertInstruction (from, to);
+		    cb.conversion (from, to);
 		} else {
 		    cb.checkcast (ClassDescUtils.getParseTreeClassDesc (ce.baseType ()));
 		}
@@ -730,7 +730,7 @@ public class BytecodeGenerator {
 		// field, slot, value, arraystore
 		TypeKind kind = FullNameHelper.getTypeKind (FullNameHelper.type (p));
 		handleStatements (cb, List.of (aa.from (), aa.slot (), value));
-		cb.arrayStoreInstruction (kind);
+		cb.arrayStore (kind);
 	    } else {
 		throw new IllegalStateException ("Unhandled assignment type: " + p + ", " + p.getClass ().getName () +
 						 ", " + p.position ().toShortString ());
@@ -758,7 +758,7 @@ public class BytecodeGenerator {
 
 	private void putInLocalSlot (CodeBuilder cb, TypeKind kind, int slot, ParseTreeNode value) {
 	    handleStatements (cb, value);
-	    cb.storeInstruction (kind, slot);
+	    cb.storeLocal (kind, slot);
 	}
 
 	@Override public Opcode getForwardZeroJump (Token t) {

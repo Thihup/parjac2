@@ -78,7 +78,7 @@ public class DynamicGenerator {
 	argTypes.add (classDesc);
 	for (int i = 0; i < args.length; i++) {
 	    argTypes.add (ClassDescUtils.getClassDesc (args[i]));
-	    cb.loadInstruction (FullNameHelper.getTypeKind (args[i]), i + 1);
+	    cb.loadLocal (FullNameHelper.getTypeKind (args[i]), i + 1);
 	}
 	MethodTypeDesc invocationType = MethodTypeDesc.of (ClassDescUtils.getClassDesc (returnType), argTypes);
 	String fields = getAllFields (rd);

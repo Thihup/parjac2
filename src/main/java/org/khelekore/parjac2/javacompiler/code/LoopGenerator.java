@@ -118,7 +118,7 @@ public class LoopGenerator {
 	cb.iaload ();
 	LocalVariableHandler.handleLocalVariables (mcg, cb, lv);
 	int varSlot = vd.slot ();
-	cb.storeInstruction (varKind, varSlot);
+	cb.storeLocal (varKind, varSlot);
     }
 
     private record ArrayInfo (int arrayCopySlot, int lengthSlot, int indexSlot) {
@@ -154,7 +154,7 @@ public class LoopGenerator {
 	LocalVariableDeclaration lv = efs.localVariable ();
 	LocalVariableHandler.handleLocalVariables (mcg, cb, lv);
 	int varSlot = lv.getDeclarators ().get (0).slot ();
-	cb.storeInstruction (TypeKind.ReferenceType, varSlot);
+	cb.storeLocal (TypeKind.ReferenceType, varSlot);
 
 	mcg.handleStatements (cb, efs.statement ());
 
@@ -209,7 +209,7 @@ public class LoopGenerator {
 		operator = tester.twoPartJump (mcg, tp);
 	    }
 	}
-	cb.branchInstruction (operator, label);
+	cb.branch (operator, label);
     }
 
     private interface LoopTester {

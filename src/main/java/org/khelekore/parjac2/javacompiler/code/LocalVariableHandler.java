@@ -23,7 +23,7 @@ public class LocalVariableHandler {
 		mcg.handleStatements (cb, init);
 		FullNameHandler fromType = FullNameHelper.type (init);
 		CodeUtil.widenOrAutoBoxAsNeeded (cb, fromType, fn, kind);
-		cb.storeInstruction (kind, slot);
+		cb.storeLocal (kind, slot);
 	    }
 	}
     }

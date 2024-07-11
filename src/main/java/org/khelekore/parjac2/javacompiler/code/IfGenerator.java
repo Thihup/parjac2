@@ -53,7 +53,7 @@ public class IfGenerator {
 	    if (token == mcg.javaTokens ().INSTANCEOF) {
 		mcg.handleStatements (cb, tp.part1 ());
 		FullNameHandler check = FullNameHelper.type (tp.part2 ());
-		cb.instanceof_ (ClassDescUtils.getClassDesc (check));
+		cb.instanceOf (ClassDescUtils.getClassDesc (check));
 		jumpInstruction = Opcode.IFNE; // jump inverts, so we will use IFEQ
 	    } else {
 		handleTwoPartSetup (mcg, cb, tp);
@@ -116,9 +116,9 @@ public class IfGenerator {
 	} else if (tp2 != null) {
 	    handleOtherTwoPart (mcg, cb, tp2);
 	    if (isOr) {
-		cb.branchInstruction (mcg.getForwardTwoPartJump (tp2), thenLabel);
+		cb.branch (mcg.getForwardTwoPartJump (tp2), thenLabel);
 	    } else {
-		cb.branchInstruction (mcg.getReverseTwoPartJump (tp2), elseLabel);
+		cb.branch (mcg.getReverseTwoPartJump (tp2), elseLabel);
 	    }
 	} else {
 	    mcg.handleStatements (cb, p1);
@@ -134,7 +134,7 @@ public class IfGenerator {
 	    handleInstanceOf (mcg, cb, tp2, elseLabel);
 	} else if (tp2 != null) {
 	    handleOtherTwoPart (mcg, cb, tp2);
-	    cb.branchInstruction (mcg.getReverseTwoPartJump (tp2), elseLabel);
+	    cb.branch (mcg.getReverseTwoPartJump (tp2), elseLabel);
 	} else {
 	    mcg.handleStatements (cb, p2);
 	    secondTest (cb, isOr, thenLabel, elseLabel, insideOr);
@@ -191,7 +191,7 @@ public class IfGenerator {
 	mcg.handleStatements (cb, tp.part1 ());
 	ParseTreeNode p2 = tp.part2 ();
 	FullNameHandler check = FullNameHelper.type (p2);
-	cb.instanceof_ (ClassDescUtils.getClassDesc (check));
+	cb.instanceOf (ClassDescUtils.getClassDesc (check));
 	if (p2 instanceof LocalVariableDeclaration lvd) {
 	    cb.ifeq (elseLabel);
 	    LocalVariableHandler.handleLocalVariables (mcg, cb, lvd); // get slot for variable

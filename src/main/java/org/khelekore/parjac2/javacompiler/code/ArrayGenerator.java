@@ -50,7 +50,7 @@ public class ArrayGenerator {
 	mcg.handleStatements (cb, aa.from ());
 	mcg.handleStatements (cb, aa.slot ());
 	TypeKind tk = FullNameHelper.getTypeKind (FullNameHelper.type (aa));
-	cb.arrayLoadInstruction (tk);
+	cb.arrayLoad (tk);
     }
 
     public static void handleArrayInitializer (MethodContentGenerator mcg, CodeBuilder cb, ArrayInitializer ai) {
@@ -74,7 +74,7 @@ public class ArrayGenerator {
 	    cb.dup ();
 	    CodeUtil.handleInt (cb, pos++);
 	    mcg.handleStatements (cb, p);
-	    cb.arrayStoreInstruction (kind);
+	    cb.arrayStore (kind);
 	}
     }
 }
